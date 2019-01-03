@@ -35,3 +35,24 @@ var _ = Describe("RandKubeNameBytes", func() {
 		}
 	})
 })
+
+var _ = Describe("Contains", func() {
+	It("Should indicate the presence of a string in a slice", func() {
+		input := []string{"abc", "def", "ghi"}
+		Expect(common.Contains(input, input[0])).To(BeTrue())
+		Expect(common.Contains(input, "an excluded string")).To(BeFalse())
+	})
+})
+
+var _ = Describe("ContainsSubstring", func() {
+	It("Should indicate the presence of a substring in a slice", func() {
+		input := []string{"abc", "def", "ghi"}
+		Expect(common.ContainsSubstring(input, "a")).To(BeTrue())
+		Expect(common.ContainsSubstring(input, "b")).To(BeTrue())
+		Expect(common.ContainsSubstring(input, "bc")).To(BeTrue())
+		Expect(common.ContainsSubstring(input, "abc")).To(BeTrue())
+
+		Expect(common.ContainsSubstring(input, "bcd")).To(BeFalse())
+		Expect(common.ContainsSubstring(input, "xyz")).To(BeFalse())
+	})
+})
