@@ -1,4 +1,4 @@
-package common_test
+package kubeinstallutils_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCommon(t *testing.T) {
+func TestShared(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Common Suite")
+	RunSpecs(t, "Shared Suite")
 }

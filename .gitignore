@@ -1,0 +1,11 @@
+# dep
+vendor
+
+# intellij
+.idea
+
+# vscode
+.vscode
+
+# mac files
+.DS_Store
