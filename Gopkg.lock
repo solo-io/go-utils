@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:5ad08b0e14866764a6d7475eb11c9cf05cad9a52c442593bdfa544703ff77f61"
+  name = "cloud.google.com/go"
+  packages = ["compute/metadata"]
+  pruneopts = "UT"
+  revision = "0ebda48a7f143b1cce9eb37a8c1106ac762a3430"
+  version = "v0.34.0"
+
+[[projects]]
   branch = "master"
   digest = "1:d6afaeed1502aa28e80a4ed0981d570ad91b2579193404256ce672ed0a609e0d"
   name = "github.com/beorn7/perks"
@@ -125,6 +133,14 @@
   pruneopts = "UT"
   revision = "9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4"
   version = "v0.3.6"
+
+[[projects]]
+  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
 
 [[projects]]
   digest = "1:3e551bbb3a7c0ab2a2bf4660e7fcad16db089fdcfbb44b0199e62838038623ea"
@@ -310,18 +326,25 @@
   revision = "b1a0a9a36d7453ba0f62578b99712f3a6c5f82d1"
 
 [[projects]]
-  digest = "1:f4018719eb5e63991d5e530af4d7114e4575fd7c214935dba7bd3c1548973423"
+  digest = "1:4c43c46f4f577b81a3cf1d3094f9288277f27cffb8c88d75e4485c98eb2b11bb"
   name = "github.com/solo-io/solo-kit"
   packages = [
     "pkg/api/v1/clients",
     "pkg/api/v1/resources",
     "pkg/api/v1/resources/core",
     "pkg/errors",
-    "pkg/utils/contextutils",
   ]
   pruneopts = "UT"
   revision = "f2b636e31041dfcad17ed8deb4f52c19d19840de"
   version = "v0.2.12"
+
+[[projects]]
+  digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
 
 [[projects]]
   digest = "1:c1b1102241e7f645bc8e0c22ae352e8f0dc6484b6cb4d132fa9f24174e0119e2"
@@ -415,11 +438,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5276e08fe6a1dfdb65b4f46a2e5d5c9e00be6e499105e441049c3c04a0c83b36"
+  digest = "1:23443edff0740e348959763085df98400dcfd85528d7771bb0ce9f5f2754ff4a"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
+    "google",
     "internal",
+    "jws",
+    "jwt",
   ]
   pruneopts = "UT"
   revision = "d668ce993890a79bda886613ee587a69dd5da7a6"
@@ -479,13 +505,16 @@
   revision = "85acf8d2951cb2a3bde7632f9ff273ef0379bcbd"
 
 [[projects]]
-  digest = "1:6f3bd49ddf2e104e52062774d797714371fac1b8bddfd8e124ce78e6b2264a10"
+  digest = "1:fa026a5c59bd2df343ec4a3538e6288dcf4e2ec5281d743ae82c120affe6926a"
   name = "google.golang.org/appengine"
   packages = [
+    ".",
     "internal",
+    "internal/app_identity",
     "internal/base",
     "internal/datastore",
     "internal/log",
+    "internal/modules",
     "internal/remote_api",
     "internal/urlfetch",
     "urlfetch",
@@ -647,7 +676,7 @@
   revision = "849b284f3b756a3fbb5084b09d2718dd41373068"
 
 [[projects]]
-  digest = "1:20f641257f6c0c69ddf455a15b63b20bac524b08d90745da796d633724758bac"
+  digest = "1:c98af9b5828d3cd550e8f3c915d2e03db012a8e06cb0683db3ac74b76207dc5f"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -690,8 +719,10 @@
     "pkg/apis/clientauthentication/v1beta1",
     "pkg/version",
     "plugin/pkg/client/auth/exec",
+    "plugin/pkg/client/auth/gcp",
     "rest",
     "rest/watch",
+    "third_party/forked/golang/template",
     "tools/auth",
     "tools/clientcmd",
     "tools/clientcmd/api",
@@ -705,6 +736,7 @@
     "util/flowcontrol",
     "util/homedir",
     "util/integer",
+    "util/jsonpath",
   ]
   pruneopts = "UT"
   revision = "e64494209f554a6723674bd494d69445fb76a1d4"
@@ -744,7 +776,7 @@
     "github.com/pkg/errors",
     "github.com/solo-io/solo-kit/pkg/api/v1/clients",
     "github.com/solo-io/solo-kit/pkg/api/v1/resources/core",
-    "github.com/solo-io/solo-kit/pkg/utils/contextutils",
+    "github.com/spf13/cobra",
     "go.opencensus.io/exporter/prometheus",
     "go.opencensus.io/stats",
     "go.opencensus.io/stats/view",
@@ -765,6 +797,7 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/util/validation",
     "k8s.io/client-go/kubernetes",
+    "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/tools/clientcmd/api",

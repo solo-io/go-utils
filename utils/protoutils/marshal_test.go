@@ -3,6 +3,7 @@ package protoutils_test
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	. "github.com/onsi/ginkgo"

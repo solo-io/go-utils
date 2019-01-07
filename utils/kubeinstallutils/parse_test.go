@@ -3,11 +3,12 @@ package kubeinstallutils_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/utils/kubeinstallutils"
 	"github.com/solo-io/go-utils/test/testutils"
+	"github.com/solo-io/go-utils/utils/kubeinstallutils"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var _ = Describe("Parse", func() {

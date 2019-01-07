@@ -6,10 +6,10 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/solo-io/go-utils/utils/kubeinstallutils"
 	"github.com/solo-io/go-utils/utils/kubeutils"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiexts "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 // source: https://raw.githubusercontent.com/linkerd/linkerd2/master/cli/install/template.go

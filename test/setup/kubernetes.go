@@ -3,11 +3,12 @@ package setup
 import (
 	"bytes"
 	"fmt"
-	"github.com/solo-io/go-utils/common/logger"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/solo-io/go-utils/common/logger"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"

@@ -1,8 +1,9 @@
 package protoutils
 
 import (
-	"github.com/solo-io/go-utils/common/logger"
 	"testing"
+
+	"github.com/solo-io/go-utils/common/logger"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

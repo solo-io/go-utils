@@ -3,14 +3,15 @@ package kubeinstallutils_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/utils/kubeinstallutils"
-	"github.com/solo-io/go-utils/utils/kubeutils"
 	"github.com/solo-io/go-utils/test/helpers"
 	"github.com/solo-io/go-utils/test/setup"
 	"github.com/solo-io/go-utils/test/testutils"
+	"github.com/solo-io/go-utils/utils/kubeinstallutils"
+	"github.com/solo-io/go-utils/utils/kubeutils"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var _ = Describe("InstallKubeManifest", func() {
