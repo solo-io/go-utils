@@ -5,9 +5,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/test/helpers"
 	"github.com/solo-io/go-utils/test/setup"
-	"github.com/solo-io/go-utils/test/testutils"
 	"github.com/solo-io/go-utils/utils/kubeinstallutils"
 	"github.com/solo-io/go-utils/utils/kubeutils"
+	"github.com/solo-io/go-utils/utils/testutils"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -17,7 +17,7 @@ import (
 var _ = Describe("InstallKubeManifest", func() {
 	var namespace string
 	BeforeEach(func() {
-		namespace = "install-kube-manifest-" + helpers.RandString(8)
+		namespace = "install-kube-manifest-" + testutils.RandString(8)
 		err := setup.SetupKubeForTest(namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -60,7 +60,7 @@ func deployNginx(namespace string) error {
 
 	installer := kubeinstallutils.NewKubeInstaller(kube, apiext, namespace)
 
-	kubeObjs, err := kubeinstallutils.ParseKubeManifest(testutils.NginxYaml)
+	kubeObjs, err := kubeinstallutils.ParseKubeManifest(helpers.NginxYaml)
 	if err != nil {
 		return err
 	}

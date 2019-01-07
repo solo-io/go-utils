@@ -1,4 +1,4 @@
-package testutils
+package helpers
 
 import (
 	"github.com/solo-io/go-utils/utils/kubeinstallutils"

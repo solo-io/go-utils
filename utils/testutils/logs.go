@@ -1,4 +1,4 @@
-package helpers
+package testutils
 
 import (
 	"github.com/fgrosse/zaptest"

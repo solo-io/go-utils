@@ -1,4 +1,4 @@
-package testutils
+package helpers
 
 // used for testing because of complexity
 const Linkerd1Yaml = `
