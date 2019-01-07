@@ -2,7 +2,7 @@ package testutils
 
 import (
 	"github.com/fgrosse/zaptest"
-	"github.com/solo-io/go-utils/pkg/contextutils"
+	"github.com/solo-io/go-utils/contextutils"
 
 	. "github.com/onsi/ginkgo"
 )

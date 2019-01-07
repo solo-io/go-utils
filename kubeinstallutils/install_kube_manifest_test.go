@@ -3,11 +3,9 @@ package kubeinstallutils_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/test/helpers"
-	"github.com/solo-io/go-utils/test/setup"
-	"github.com/solo-io/go-utils/pkg/kubeinstallutils"
-	"github.com/solo-io/go-utils/pkg/kubeutils"
-	"github.com/solo-io/go-utils/pkg/testutils"
+	"github.com/solo-io/go-utils/kubeinstallutils"
+	"github.com/solo-io/go-utils/kubeutils"
+	"github.com/solo-io/go-utils/testutils"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -18,11 +16,11 @@ var _ = Describe("InstallKubeManifest", func() {
 	var namespace string
 	BeforeEach(func() {
 		namespace = "install-kube-manifest-" + testutils.RandString(8)
-		err := setup.SetupKubeForTest(namespace)
+		err := testutils.SetupKubeForTest(namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 	AfterEach(func() {
-		setup.TeardownKube(namespace)
+		testutils.TeardownKube(namespace)
 	})
 	It("installs arbitrary kube manifests", func() {
 		err := deployNginx(namespace)
@@ -60,7 +58,7 @@ func deployNginx(namespace string) error {
 
 	installer := kubeinstallutils.NewKubeInstaller(kube, apiext, namespace)
 
-	kubeObjs, err := kubeinstallutils.ParseKubeManifest(helpers.NginxYaml)
+	kubeObjs, err := kubeinstallutils.ParseKubeManifest(testutils.NginxYaml)
 	if err != nil {
 		return err
 	}

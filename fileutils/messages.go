@@ -6,7 +6,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/solo-io/go-utils/pkg/protoutils"
+	"github.com/solo-io/go-utils/protoutils"
 )
 
 func WriteToFile(filename string, pb proto.Message) error {

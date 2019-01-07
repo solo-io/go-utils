@@ -3,8 +3,8 @@ package kubeinstallutils_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/test/helpers"
-	"github.com/solo-io/go-utils/pkg/kubeinstallutils"
+	"github.com/solo-io/go-utils/kubeinstallutils"
+	"github.com/solo-io/go-utils/testutils"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Parse", func() {
 	It("works", func() {
-		out, err := kubeinstallutils.ParseKubeManifest(helpers.Linkerd1Yaml)
+		out, err := kubeinstallutils.ParseKubeManifest(testutils.Linkerd1Yaml)
 		Expect(err).NotTo(HaveOccurred())
 		list := kubeinstallutils.KubeObjectList{
 			&v1.ConfigMap{

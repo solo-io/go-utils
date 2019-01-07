@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/solo-io/go-utils/pkg/contextutils"
+	"github.com/solo-io/go-utils/contextutils"
 	"go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/zpages"

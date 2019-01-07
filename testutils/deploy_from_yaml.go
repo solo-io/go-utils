@@ -1,7 +1,7 @@
-package helpers
+package testutils
 
 import (
-	"github.com/solo-io/go-utils/pkg/kubeinstallutils"
+	"github.com/solo-io/go-utils/kubeinstallutils"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

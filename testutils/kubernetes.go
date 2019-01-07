@@ -1,4 +1,4 @@
-package setup
+package testutils
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/solo-io/go-utils/lib/logger"
+	"github.com/solo-io/go-utils/logger"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"

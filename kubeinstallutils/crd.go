@@ -1,7 +1,7 @@
 package kubeinstallutils
 
 import (
-	"github.com/solo-io/go-utils/lib/errors"
+	"github.com/solo-io/go-utils/errors"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiexts "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

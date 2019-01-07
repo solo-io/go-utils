@@ -1,4 +1,4 @@
-package helpers
+package testutils
 
 import (
 	"k8s.io/client-go/rest"
