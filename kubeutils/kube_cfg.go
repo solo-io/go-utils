@@ -33,3 +33,12 @@ func GetConfig(masterURL, kubeconfigPath string) (*rest.Config, error) {
 
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides).ClientConfig()
 }
+
+// GetConfig gets the kubernetes client config
+func GetKubeConfig(masterURL, kubeconfigPath string) (*clientcmdapi.Config, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	loadingRules.ExplicitPath = kubeconfigPath
+	configOverrides := &clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterURL}}
+
+	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides).ConfigAccess().GetStartingConfig()
+}
