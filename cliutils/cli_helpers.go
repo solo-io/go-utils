@@ -1,4 +1,4 @@
-package common
+package cliutils
 
 import (
 	"math/rand"
