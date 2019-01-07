@@ -10,7 +10,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/solo-io/go-utils/utils/protoutils"
+	"github.com/solo-io/go-utils/pkg/protoutils"
 )
 
 // Printer represents a function that prints a value to io.Writer, usually using

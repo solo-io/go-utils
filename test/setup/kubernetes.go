@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/solo-io/go-utils/common/logger"
+	"github.com/solo-io/go-utils/lib/logger"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"

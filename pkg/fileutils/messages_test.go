@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/gogo/protobuf/types"
-	. "github.com/solo-io/go-utils/utils/fileutils"
+	. "github.com/solo-io/go-utils/pkg/fileutils"
 )
 
 var _ = Describe("Messages", func() {

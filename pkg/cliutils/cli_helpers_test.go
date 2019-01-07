@@ -3,7 +3,7 @@ package cliutils_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/utils/cliutils"
+	"github.com/solo-io/go-utils/pkg/cliutils"
 )
 
 var _ = Describe("RandStringBytes", func() {

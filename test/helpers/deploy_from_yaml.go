@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"github.com/solo-io/go-utils/utils/kubeinstallutils"
+	"github.com/solo-io/go-utils/pkg/kubeinstallutils"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

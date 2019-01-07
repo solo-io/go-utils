@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/solo-io/go-utils/utils/protoutils"
+	. "github.com/solo-io/go-utils/pkg/protoutils"
 )
 
 type testType struct {

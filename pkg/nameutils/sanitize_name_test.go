@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/validation"
 
-	. "github.com/solo-io/go-utils/utils/nameutils"
+	. "github.com/solo-io/go-utils/pkg/nameutils"
 )
 
 var _ = Describe("SanitizeName", func() {
