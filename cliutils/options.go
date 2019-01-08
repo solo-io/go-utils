@@ -13,7 +13,7 @@ type Options interface {
 type OptionsFunc = func(*cobra.Command)
 type CmdFunc = func(Options,  ...OptionsFunc) *cobra.Command
 
-func ApplyOptions(cmd *cobra.Command, funcs... OptionsFunc) {
+func ApplyOptions(cmd *cobra.Command, funcs []OptionsFunc) {
 	for _, v := range funcs {
 		v(cmd)
 	}
