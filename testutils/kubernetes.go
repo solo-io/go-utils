@@ -199,16 +199,17 @@ func WaitNamespaceStatus(namespace, status string, finished func(output string) 
 }
 
 type CurlOpts struct {
-	Protocol      string
-	Path          string
-	Method        string
-	Host          string
-	Service       string
-	CaFile        string
-	Body          string
-	Headers       map[string]string
-	Port          int
-	ReturnHeaders bool
+	Protocol          string
+	Path              string
+	Method            string
+	Host              string
+	Service           string
+	CaFile            string
+	Body              string
+	Headers           map[string]string
+	Port              int
+	ReturnHeaders     bool
+	ConnectionTimeout int
 }
 
 func CurlEventuallyShouldRespond(opts CurlOpts, substr string, timeout ...time.Duration) {
@@ -237,7 +238,11 @@ func CurlEventuallyShouldRespond(opts CurlOpts, substr string, timeout ...time.D
 }
 
 func Curl(opts CurlOpts) (string, error) {
-	args := []string{"curl", "-v", "--connect-timeout", "10", "--max-time", "10"}
+	args := []string{"curl", "-v"}
+	if opts.ConnectionTimeout > 0 {
+		seconds := fmt.Sprintf("%v", opts.ConnectionTimeout)
+		args = append(args, "--connect-timeout", seconds, "--max-time", seconds)
+	}
 
 	if opts.ReturnHeaders {
 		args = append(args, "-I")
