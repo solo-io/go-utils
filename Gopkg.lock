@@ -18,17 +18,6 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:83aa580c4e4069d91e9ef4a90975e665b69a2f649d87bef9ed8f24f3711c4d11"
-  name = "github.com/bxcodec/faker"
-  packages = [
-    ".",
-    "support/slice",
-  ]
-  pruneopts = "UT"
-  revision = "4fc883c366aee07dc236743292ea86a649700b19"
-  version = "v1.5.0"
-
-[[projects]]
   digest = "1:a7dfc4c0fd180da3f69dae1b85d76f4ae3158000922d43caedd8ed61271a3355"
   name = "github.com/fgrosse/zaptest"
   packages = ["."]
@@ -45,13 +34,11 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:63dfa0378013bdefa3afabd8d4170af1d3b741204d4798563023b2f1b13e871b"
+  digest = "1:9a5568b3fd1e6429f25ca584f71a8f8b9992a821dc2d635b0c2fdccc65c232f3"
   name = "github.com/gogo/protobuf"
   packages = [
-    "gogoproto",
     "jsonpb",
     "proto",
-    "protoc-gen-gogo/descriptor",
     "sortkeys",
     "types",
   ]
@@ -324,19 +311,6 @@
   ]
   pruneopts = "UT"
   revision = "b1a0a9a36d7453ba0f62578b99712f3a6c5f82d1"
-
-[[projects]]
-  digest = "1:4c43c46f4f577b81a3cf1d3094f9288277f27cffb8c88d75e4485c98eb2b11bb"
-  name = "github.com/solo-io/solo-kit"
-  packages = [
-    "pkg/api/v1/clients",
-    "pkg/api/v1/resources",
-    "pkg/api/v1/resources/core",
-    "pkg/errors",
-  ]
-  pruneopts = "UT"
-  revision = "f2b636e31041dfcad17ed8deb4f52c19d19840de"
-  version = "v0.2.12"
 
 [[projects]]
   digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
@@ -762,7 +736,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/bxcodec/faker",
     "github.com/fgrosse/zaptest",
     "github.com/ghodss/yaml",
     "github.com/gogo/protobuf/jsonpb",
@@ -774,8 +747,6 @@
     "github.com/onsi/gomega",
     "github.com/onsi/gomega/gstruct",
     "github.com/pkg/errors",
-    "github.com/solo-io/solo-kit/pkg/api/v1/clients",
-    "github.com/solo-io/solo-kit/pkg/api/v1/resources/core",
     "github.com/spf13/cobra",
     "go.opencensus.io/exporter/prometheus",
     "go.opencensus.io/stats",
