@@ -8,13 +8,16 @@ steps:
   env: ['PROJECT_ROOT=github.com/solo-io/go-utils']
   id: 'dep'
 
-# e2e-ginkgo is produced from https://github.com/solo-io/cloud-builders/ginkgo
+# e2e-ginkgo is produced from https://github.com/solo-io/cloud-builders/e2e-ginkgo
 # sets up redis, consul, kubectl, go with required environment variables
 # need to use the provided entrypoint
-- name: 'gcr.io/$PROJECT_ID/ginkgo'
+- name: 'gcr.io/$PROJECT_ID/e2e-ginkgo'
   dir: './gopath/src/github.com/solo-io/go-utils'
   env:
     - 'PROJECT_ROOT=github.com/solo-io/go-utils'
+    - 'RUN_KUBE_TESTS=1'
     - 'GOPATH=/workspace/gopath'
+    - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+    - 'CLOUDSDK_CONTAINER_CLUSTER=test-cluster'
   args: ['-r']
   waitFor: ['dep']
