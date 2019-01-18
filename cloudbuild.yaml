@@ -8,10 +8,10 @@ steps:
   env: ['PROJECT_ROOT=github.com/solo-io/go-utils']
   id: 'dep'
 
-# e2e-ginkgo is produced from https://github.com/solo-io/cloud-builders/e2e-ginkgo
+# e2e-ginkgo is produced from https://github.com/solo-io/cloud-builders/ginkgo
 # sets up redis, consul, kubectl, go with required environment variables
 # need to use the provided entrypoint
-- name: 'gcr.io/$PROJECT_ID/e2e-ginkgo'
+- name: 'gcr.io/$PROJECT_ID/ginkgo'
   dir: './gopath/src/github.com/solo-io/go-utils'
   env:
     - 'PROJECT_ROOT=github.com/solo-io/go-utils'
