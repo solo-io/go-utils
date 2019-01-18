@@ -1,13 +1,15 @@
 package kubeinstallutils_test
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/kubeinstallutils"
 	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/solo-io/go-utils/testutils"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
@@ -15,6 +17,9 @@ import (
 var _ = Describe("InstallKubeManifest", func() {
 	var namespace string
 	BeforeEach(func() {
+		if os.Getenv("RUN_KUBE_TESTS") != "1" {
+			Skip("use RUN_KUBE_TESTS to run this test")
+		}
 		namespace = "install-kube-manifest-" + testutils.RandString(8)
 		err := testutils.SetupKubeForTest(namespace)
 		Expect(err).NotTo(HaveOccurred())
