@@ -31,7 +31,6 @@ func ExpectInteractive(userinput func(*Console), testcli func()) {
 		userinput(&Console{Console: c})
 	}()
 
-	//	time.Sleep(time.Hour)
 	go func() {
 		defer GinkgoRecover()
 
