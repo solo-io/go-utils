@@ -3,11 +3,11 @@ package cli
 import (
 	"time"
 
-	clisurvey "github.com/solo-io/go-utils/cliutils/survey"
 	expect "github.com/Netflix/go-expect"
 	"github.com/hinshun/vt10x"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	clisurvey "github.com/solo-io/go-utils/cliutils/survey"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 

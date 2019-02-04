@@ -220,9 +220,12 @@ func CurlEventuallyShouldRespond(opts CurlOpts, substr string, timeout ...time.D
 	// for some useful-ish output
 	tick := time.Tick(t / 8)
 	gomega.Eventually(func() string {
+		defer ginkgo.GinkgoRecover()
 		res, err := Curl(opts)
 		if err != nil {
 			res = err.Error()
+			// trigger an early exit if the pod has been deleted
+			gomega.Expect(res).NotTo(gomega.ContainSubstring(`pods "testrunner" not found`))
 		}
 		select {
 		default:
