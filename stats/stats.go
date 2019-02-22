@@ -40,7 +40,7 @@ func StartStatsServerWithPort(port string, addhandlers ...func(mux *http.ServeMu
 
 		// add the index
 		mux.HandleFunc("/", Index)
-		http.ListenAndServe("localhost:"+port, mux)
+		http.ListenAndServe(":"+port, mux)
 	}()
 }
 
