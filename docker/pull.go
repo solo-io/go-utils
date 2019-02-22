@@ -10,7 +10,7 @@ import (
 // it returns true if it attempted to pull, and any errors from pulling
 func PullIfNotPresent(image string, retries int) (pulled bool, err error) {
 	// if this did not return an error, then the image exists locally
-	cmd := Command("docker", "inspect", "--type=image", image)
+	cmd := Command("inspect", "--type=image", image)
 	if err := cmd.Run(); err == nil {
 		logger.Infof("Image: %s present locally", image)
 		return false, nil
@@ -22,13 +22,13 @@ func PullIfNotPresent(image string, retries int) (pulled bool, err error) {
 // Pull pulls an image, retrying up to retries times
 func Pull(image string, retries int) error {
 	logger.Infof("Pulling image: %s ...", image)
-	err := Command("docker", "pull", image).Run()
+	err := Command("pull", image).Run()
 	// retry pulling up to retries times if necessary
 	if err != nil {
 		for i := 0; i < retries; i++ {
 			time.Sleep(time.Second * time.Duration(i+1))
 			logger.Warnf(errors.Wrapf(err, "Trying again to pull image: %s ...", image).Error())
-			err = Command("docker", "pull", image).Run()
+			err = Command("pull", image).Run()
 			if err == nil {
 				break
 			}

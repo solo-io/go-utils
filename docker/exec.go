@@ -24,9 +24,8 @@ func init() {
 }
 
 
-func Command(command string, args ...string) *containerCmd {
+func Command(args ...string) *containerCmd {
 	return &containerCmd{
-		command:  command,
 		args:     args,
 	}
 }
@@ -34,7 +33,6 @@ func Command(command string, args ...string) *containerCmd {
 // containerCmd implements exec.Cmd for docker containers
 type containerCmd struct {
 	nameOrID string // the container name or ID
-	command  string
 	args     []string
 	env      []string
 	stdin    io.Reader
