@@ -1,27 +1,9 @@
 package docker
 
 import (
-	"fmt"
-	"go.uber.org/zap"
 	"io"
-	"os"
 	"os/exec"
 )
-
-
-var (
-	logger *zap.SugaredLogger
-)
-
-func init() {
-	var err error
-	devLogger, err := zap.NewDevelopment()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	logger = devLogger.Sugar()
-}
 
 
 func Command(args ...string) *containerCmd {

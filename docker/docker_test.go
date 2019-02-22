@@ -14,7 +14,7 @@ const (
 )
 
 var _ = BeforeSuite(func() {
-	exec.Command("docker", "image", "prune", "-af").Run()
+	exec.Command("docker", "image", "rm", validImage).Run()
 })
 
 var _ = Describe("Docker", func() {
