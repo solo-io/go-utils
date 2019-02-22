@@ -2,10 +2,38 @@ package githubutils
 
 import (
 	"context"
+	"github.com/solo-io/go-utils/errors"
+	"os"
 
 	"github.com/google/go-github/github"
 	"github.com/rs/zerolog"
+	"golang.org/x/oauth2"
 )
+
+const (
+	GITHUB_TOKEN = "GITHUB_TOKEN"
+)
+
+func getGithubToken() (string, error) {
+	token, found := os.LookupEnv(GITHUB_TOKEN)
+	if !found {
+		return "", errors.Errorf("Could not find %s in environment.", GITHUB_TOKEN)
+	}
+	return token, nil
+}
+
+func GetClient(ctx context.Context) (*github.Client, error) {
+	token, err := getGithubToken()
+	if err != nil {
+		return nil, err
+	}
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+	return client, nil
+}
 
 func FindStatus(ctx context.Context, client *github.Client, statusLabel, owner, repo, sha string) (*github.RepoStatus, error) {
 	logger := zerolog.Ctx(ctx)
