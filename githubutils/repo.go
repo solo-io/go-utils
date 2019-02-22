@@ -28,3 +28,11 @@ func FindStatus(ctx context.Context, client *github.Client, statusLabel, owner, 
 
 	return currentStatus, nil
 }
+
+func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
+	release, _, err := client.Repositories.GetLatestRelease(ctx, owner, repo)
+	if err != nil {
+		return "", err
+	}
+	return *release.TagName, nil
+}
