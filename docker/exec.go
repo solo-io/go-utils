@@ -23,7 +23,11 @@ type containerCmd struct {
 }
 
 func (c *containerCmd) Run() error {
-	var args []string
+	//var args []string
+	args := []string{
+		"exec",
+		"--privileged",
+	}
 
 	// set env
 	for _, env := range c.env {
