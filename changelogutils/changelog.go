@@ -79,6 +79,38 @@ func GetProposedTag(latestTag, changelogParentPath string) (string, error) {
 	return proposedVersion, err
 }
 
+func GetProposedTagFromGit(latestTag, changelogParentPath string) (string, error) {
+	changelogPath := filepath.Join(changelogParentPath, ChangelogDirectory)
+	subDirs, err := ioutil.ReadDir(changelogPath)
+	if err != nil {
+		return "", errors.Wrapf(err, "Error reading changelog directory")
+	}
+	proposedVersion := ""
+	for _, subDir := range subDirs {
+		if !subDir.IsDir() {
+			return "", errors.Errorf("Unexpected entry %s in changelog directory", subDir.Name())
+		}
+		if !versionutils.MatchesRegex(subDir.Name()) {
+			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", subDir.Name())
+		}
+		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
+		if err != nil {
+			return "", err
+		}
+		if greaterThan {
+			if proposedVersion != "" {
+				return "", errors.Errorf("Versions %s and %s are both greater than latest tag", subDir.Name(), proposedVersion)
+			}
+			proposedVersion = subDir.Name()
+		}
+	}
+	err = nil
+	if proposedVersion == "" {
+		err = errors.Errorf("No version greater than %s found", latestTag)
+	}
+	return proposedVersion, err
+}
+
 func ReadChangelogFile(path string) (*Changelog, error) {
 	var changelog Changelog
 	bytes, err := ioutil.ReadFile(path)

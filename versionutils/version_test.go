@@ -8,8 +8,8 @@ import (
 
 var _ = Describe("Version", func() {
 
-	getVersion := func(major, minor, patch int) *version.Version {
-		return &version.Version{
+	getVersion := func(major, minor, patch int) *versionutils.Version {
+		return &versionutils.Version{
 			Major: major,
 			Minor: minor,
 			Patch: patch,
@@ -18,20 +18,20 @@ var _ = Describe("Version", func() {
 
 	var _ = Context("matchesRegex", func() {
 		It("works", func() {
-			Expect(version.MatchesRegex("v0.1.2")).To(BeTrue())
-			Expect(version.MatchesRegex("v0.0.0")).To(BeTrue())
-			Expect(version.MatchesRegex("v0.0.1")).To(BeTrue())
-			Expect(version.MatchesRegex("v1.0.0")).To(BeTrue())
-			Expect(version.MatchesRegex("0.1.2")).To(BeFalse())
-			Expect(version.MatchesRegex("v1.2")).To(BeFalse())
-			Expect(version.MatchesRegex("v1.1.2.5")).To(BeFalse())
-			Expect(version.MatchesRegex("vX.Y.2")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v0.1.2")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v0.0.0")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v0.0.1")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.0.0")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("0.1.2")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.2")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.1.2.5")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("vX.Y.2")).To(BeFalse())
 		})
 	})
 
 	var _ = Context("ParseVersion", func() {
 		matches := func(tag string, major, minor, patch int) bool {
-			parsed, err := version.ParseVersion(tag)
+			parsed, err := versionutils.ParseVersion(tag)
 			return err == nil && (*parsed == *getVersion(major, minor, patch))
 		}
 
@@ -41,14 +41,14 @@ var _ = Describe("Version", func() {
 		})
 
 		It("errors when invalid semver version provided", func() {
-			parsed, err := version.ParseVersion("0.1.2")
+			parsed, err := versionutils.ParseVersion("0.1.2")
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(BeEquivalentTo("Tag 0.1.2 is not a valid semver version, must be of the form vX.Y.Z"))
 			Expect(parsed).To(BeNil())
 		})
 
 		It("errors when zero version provided", func() {
-			parsed, err := version.ParseVersion("v0.0.0")
+			parsed, err := versionutils.ParseVersion("v0.0.0")
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(BeEquivalentTo("Version v0.0.0 is not greater than v0.0.0"))
 			Expect(parsed).To(BeNil())
@@ -59,7 +59,7 @@ var _ = Describe("Version", func() {
 	var _ = Context("IsGreaterThanTag", func() {
 
 		expectResult := func(greater, lesser string, worked bool, err string) {
-			actualWorked, actualErr := version.IsGreaterThanTag(greater, lesser)
+			actualWorked, actualErr := versionutils.IsGreaterThanTag(greater, lesser)
 			Expect(actualWorked).To(BeEquivalentTo(worked))
 			if err == "" {
 				Expect(actualErr).To(BeNil())
