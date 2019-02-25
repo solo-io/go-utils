@@ -2,14 +2,12 @@ package changelogutils
 
 import (
 	"context"
-	"github.com/solo-io/go-utils/githubutils"
-	"io/ioutil"
-	"regexp"
-	"strconv"
-	"strings"
-
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"github.com/solo-io/go-utils/githubutils"
+	"github.com/solo-io/go-utils/versionutils"
+	"io/ioutil"
+	"path/filepath"
 )
 
 type ChangelogEntryType int
@@ -38,7 +36,7 @@ const (
 
 // Should return the last released version
 // Executes git commands, so this won't work if running from an unzipped archive of the code.
-func getLatestTag(ctx context.Context, owner, repo string) (string, error) {
+func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	client, err := githubutils.GetClient(ctx)
 	if err != nil {
 		return "", err
@@ -49,12 +47,9 @@ func getLatestTag(ctx context.Context, owner, repo string) (string, error) {
 // Should return the next version to release, based on the names of the subdirectories in the changelog
 // Will return an error if there is no version, or multiple versions, larger than the latest tag,
 // according to semver
-func getProposedTag(ctx context.Context, owner, repo string) (string, error) {
-	latestTag, err := getLatestTag(ctx, owner, repo)
-	if err != nil {
-		return "", err
-	}
-	subDirs, err := ioutil.ReadDir(ChangelogDirectory)
+func GetProposedTag(latestTag, changelogParentPath string) (string, error) {
+	changelogPath := filepath.Join(changelogParentPath, ChangelogDirectory)
+	subDirs, err := ioutil.ReadDir(changelogPath)
 	if err != nil {
 		return "", errors.Wrapf(err, "Error reading changelog directory")
 	}
@@ -63,10 +58,10 @@ func getProposedTag(ctx context.Context, owner, repo string) (string, error) {
 		if !subDir.IsDir() {
 			return "", errors.Errorf("Unexpected entry %s in changelog directory", subDir.Name())
 		}
-		if !isValidTag(subDir.Name()) {
+		if !version.MatchesRegex(subDir.Name()) {
 			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", subDir.Name())
 		}
-		greaterThan, err := isGreaterThan(latestTag, subDir.Name())
+		greaterThan, err := version.IsGreaterThanTag(latestTag, subDir.Name())
 		if err != nil {
 			return "", err
 		}
@@ -84,7 +79,7 @@ func getProposedTag(ctx context.Context, owner, repo string) (string, error) {
 	return proposedVersion, err
 }
 
-func readChangelogFile(path string) (*Changelog, error) {
+func ReadChangelogFile(path string) (*Changelog, error) {
 	var changelog Changelog
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -97,4 +92,3 @@ func readChangelogFile(path string) (*Changelog, error) {
 
 	return &changelog, nil
 }
-
