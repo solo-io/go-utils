@@ -1,4 +1,4 @@
-package version
+package versionutils
 
 import (
 	"github.com/pkg/errors"

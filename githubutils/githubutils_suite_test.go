@@ -1,4 +1,4 @@
-package versionutils_test
+package githubutils_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestVersionUtils(t *testing.T) {
+func TestGithubutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Versionutils Suite")
+	RunSpecs(t, "Githubutils Suite")
 }

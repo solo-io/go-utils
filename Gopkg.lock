@@ -389,6 +389,14 @@
   version = "v1.11.0"
 
 [[projects]]
+  digest = "1:a2ba1bac2e1c6e383775996bfe45d73fcdef67a08910ae1dbfc609ec0240fc69"
+  name = "github.com/solo-io/solo-kit"
+  packages = ["pkg/utils/log"]
+  pruneopts = "UT"
+  revision = "25c8016fed9ef58f7c53283a7a62ad661e0afb40"
+  version = "v0.2.29"
+
+[[projects]]
   digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
   name = "github.com/spf13/cobra"
   packages = ["."]
@@ -841,12 +849,14 @@
     "github.com/pelletier/go-toml",
     "github.com/pkg/errors",
     "github.com/rs/zerolog",
+    "github.com/solo-io/solo-kit/pkg/utils/log",
     "github.com/spf13/cobra",
     "go.opencensus.io/exporter/prometheus",
     "go.opencensus.io/stats",
     "go.opencensus.io/stats/view",
     "go.opencensus.io/zpages",
     "go.uber.org/zap",
+    "golang.org/x/oauth2",
     "gopkg.in/AlecAivazis/survey.v1",
     "gopkg.in/AlecAivazis/survey.v1/terminal",
     "k8s.io/api/admissionregistration/v1beta1",

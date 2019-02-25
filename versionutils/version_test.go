@@ -1,4 +1,4 @@
-package version_test
+package versionutils_test
 
 import (
 	. "github.com/onsi/ginkgo"
