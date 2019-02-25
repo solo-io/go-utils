@@ -58,10 +58,10 @@ func GetProposedTag(latestTag, changelogParentPath string) (string, error) {
 		if !subDir.IsDir() {
 			return "", errors.Errorf("Unexpected entry %s in changelog directory", subDir.Name())
 		}
-		if !version.MatchesRegex(subDir.Name()) {
+		if !versionutils.MatchesRegex(subDir.Name()) {
 			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", subDir.Name())
 		}
-		greaterThan, err := version.IsGreaterThanTag(subDir.Name(), latestTag)
+		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
 		if err != nil {
 			return "", err
 		}
