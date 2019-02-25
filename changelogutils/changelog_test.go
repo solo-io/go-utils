@@ -28,7 +28,7 @@ var _ = Describe("ChangelogTest", func() {
 		changelogDir := filepath.Join(tmpDir, ChangelogDirectory)
 		Expect(os.Mkdir(changelogDir, 0700)).To(BeNil())
 		Expect(createSubdirs(changelogDir, "v0.0.1", "v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
-		expectGetProposedTag("v0.0.3", changelogDir, "v0.0.4", "")
+		expectGetProposedTag("v0.0.3", tmpDir, "v0.0.4", "")
 	})
 })
 

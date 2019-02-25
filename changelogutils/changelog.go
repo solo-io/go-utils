@@ -61,7 +61,7 @@ func GetProposedTag(latestTag, changelogParentPath string) (string, error) {
 		if !version.MatchesRegex(subDir.Name()) {
 			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", subDir.Name())
 		}
-		greaterThan, err := version.IsGreaterThanTag(latestTag, subDir.Name())
+		greaterThan, err := version.IsGreaterThanTag(subDir.Name(), latestTag)
 		if err != nil {
 			return "", err
 		}
