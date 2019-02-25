@@ -1,8 +1,10 @@
 package changelogutils
 
 import (
+	"context"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/githubutils"
 
 	"github.com/solo-io/solo-kit/pkg/utils/log"
 	"io/ioutil"
@@ -13,7 +15,7 @@ import (
 var _ = Describe("ChangelogTest", func() {
 
 	expectGetProposedTag := func(latestTag, changelogDir, tag, err string) {
-		actualTag, actualErr := GetProposedTag(latestTag, changelogDir)
+		actualTag, actualErr := GetProposedTagLocal(latestTag, changelogDir)
 		Expect(actualTag).To(BeEquivalentTo(tag))
 		if err == "" {
 			Expect(actualErr).To(BeNil())
@@ -29,6 +31,16 @@ var _ = Describe("ChangelogTest", func() {
 		Expect(os.Mkdir(changelogDir, 0700)).To(BeNil())
 		Expect(createSubdirs(changelogDir, "v0.0.1", "v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
 		expectGetProposedTag("v0.0.3", tmpDir, "v0.0.4", "")
+	})
+
+	It("works with git", func() {
+		ctx := context.Background()
+		client, err := githubutils.GetClient(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		_, err = GetProposedTagFromGit(ctx, client, "solo-io", "testrepo", "v0.0.16")
+		Expect(err).NotTo(HaveOccurred())
+		_, err = ValidateProposedChangelogTag(ctx, client, "solo-io", "testrepo", "v0.0.16")
+		Expect(err).NotTo(HaveOccurred())
 	})
 })
 

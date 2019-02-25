@@ -16,11 +16,13 @@ import (
 const (
 	GITHUB_TOKEN = "GITHUB_TOKEN"
 
-
 	STATUS_SUCCESS = "success"
 	STATUS_FAILURE = "failure"
-	STATUS_ERROR = "error"
+	STATUS_ERROR   = "error"
 	STATUS_PENDING = "pending"
+
+	CONTENT_TYPE_FILE      = "file"
+	CONTENT_TYPE_DIRECTORY = "dir"
 )
 
 func getGithubToken() (string, error) {
@@ -66,14 +68,13 @@ func FindStatus(ctx context.Context, client *github.Client, statusLabel, owner, 
 	return currentStatus, nil
 }
 
-func GetFilesForChangelogVersion(ctx context.Context, client *github.Client, owner, repo, ref, version string) ([]*github.RepositoryContent, error) {
+func GetFilesFromGit(ctx context.Context, client *github.Client, owner, repo, ref, path string) ([]*github.RepositoryContent, error) {
 	var opts *github.RepositoryContentGetOptions
 	if ref != "" && ref != "master" {
 		opts = &github.RepositoryContentGetOptions{
 			Ref: ref,
 		}
 	}
-	path := fmt.Sprintf("changelog/%s", version)
 	var content []*github.RepositoryContent
 	single, list, _, err := client.Repositories.GetContents(ctx, owner, repo, path, opts)
 	if err != nil {
@@ -84,6 +85,11 @@ func GetFilesForChangelogVersion(ctx context.Context, client *github.Client, own
 	}
 	content = list
 	return content, nil
+}
+
+func GetFilesForChangelogVersion(ctx context.Context, client *github.Client, owner, repo, ref, version string) ([]*github.RepositoryContent, error) {
+	path := fmt.Sprintf("changelog/%s", version)
+	return GetFilesFromGit(ctx, client, owner, repo, ref, path)
 }
 
 func GetRawGitFile(ctx context.Context, client *github.Client, content *github.RepositoryContent, owner, repo, ref string) ([]byte, error) {
@@ -110,7 +116,6 @@ func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, rep
 	}
 	return *release.TagName, nil
 }
-
 
 func MarkInitialPending(ctx context.Context, client *github.Client, owner, repo, sha, description, label string) (*github.RepoStatus, error) {
 	return CreateStatus(ctx, client, owner, repo, sha, description, label, STATUS_PENDING)
