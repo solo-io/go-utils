@@ -2,8 +2,9 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"log"
+
+	"github.com/spf13/cobra"
 )
 
 type Options interface {
@@ -11,7 +12,7 @@ type Options interface {
 }
 
 type OptionsFunc = func(*cobra.Command)
-type CmdFunc = func(Options,  ...OptionsFunc) *cobra.Command
+type CmdFunc = func(Options, ...OptionsFunc) *cobra.Command
 
 func ApplyOptions(cmd *cobra.Command, funcs []OptionsFunc) {
 	for _, v := range funcs {

@@ -2,9 +2,10 @@ package docker
 
 import (
 	"context"
+	"time"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/errors"
-	"time"
 )
 
 // PullIfNotPresent will pull an image if it is not present locally

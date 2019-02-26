@@ -2,11 +2,12 @@ package docker_test
 
 import (
 	"context"
+	"io/ioutil"
+	"os/exec"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/docker"
-	"io/ioutil"
-	"os/exec"
 )
 
 const (
@@ -21,13 +22,13 @@ var _ = BeforeSuite(func() {
 var _ = Describe("Docker", func() {
 
 	pullValidImage := func() bool {
-		ok, err := docker.PullIfNotPresent(context.TODO(), validImage,1)
+		ok, err := docker.PullIfNotPresent(context.TODO(), validImage, 1)
 		Expect(err).NotTo(HaveOccurred())
 		return ok
 	}
 
 	pullInvalidImage := func() {
-		_, err := docker.PullIfNotPresent(context.TODO(), invalidImage,1)
+		_, err := docker.PullIfNotPresent(context.TODO(), invalidImage, 1)
 		Expect(err).To(HaveOccurred())
 	}
 
