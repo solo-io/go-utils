@@ -377,14 +377,6 @@
   revision = "b1a0a9a36d7453ba0f62578b99712f3a6c5f82d1"
 
 [[projects]]
-  digest = "1:a2ba1bac2e1c6e383775996bfe45d73fcdef67a08910ae1dbfc609ec0240fc69"
-  name = "github.com/solo-io/solo-kit"
-  packages = ["pkg/utils/log"]
-  pruneopts = "UT"
-  revision = "25c8016fed9ef58f7c53283a7a62ad661e0afb40"
-  version = "v0.2.29"
-
-[[projects]]
   digest = "1:3e39bafd6c2f4bf3c76c3bfd16a2e09e016510ad5db90dc02b88e2f565d6d595"
   name = "github.com/spf13/afero"
   packages = [
@@ -847,7 +839,6 @@
     "github.com/onsi/gomega/gstruct",
     "github.com/pelletier/go-toml",
     "github.com/pkg/errors",
-    "github.com/solo-io/solo-kit/pkg/utils/log",
     "github.com/spf13/afero",
     "github.com/spf13/cobra",
     "go.opencensus.io/exporter/prometheus",
