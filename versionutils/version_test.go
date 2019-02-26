@@ -80,7 +80,7 @@ var _ = Describe("Version", func() {
 	var _ = Context("IncrementVersion", func() {
 
 		expectResult := func(start *versionutils.Version, breakingChange bool, expected* versionutils.Version) {
-			actualIncremented := versionutils.IncrementVersion(start, breakingChange)
+			actualIncremented := start.IncrementVersion(breakingChange)
 			Expect(actualIncremented).To(BeEquivalentTo(expected))
 		}
 
