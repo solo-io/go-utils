@@ -1,6 +1,7 @@
 package versionutils
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,15 +15,19 @@ type Version struct {
 	Patch int
 }
 
-var (
-	zero = Version{
-		Major: 0,
-		Minor: 0,
-		Patch: 0,
+func NewVersion(major, minor, patch int) *Version {
+	return &Version{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
 	}
-)
+}
 
-func isGreaterThanVersion(greater, lesser *Version) bool {
+func (v *Version) String() string {
+	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
+}
+
+func (greater *Version) IsGreaterThan(lesser *Version) bool {
 	if greater.Major > lesser.Major {
 		return true
 	} else if greater.Major < lesser.Major {
@@ -44,6 +49,56 @@ func isGreaterThanVersion(greater, lesser *Version) bool {
 	return false
 }
 
+func (v *Version) Equals(other *Version) bool {
+	return *v == *other
+}
+
+func (v *Version) IncrementVersion(breakingChange bool) *Version {
+	newMajor := 0
+	newMinor := 0
+	newPatch := 0
+	if v.Major == 0 {
+		newMajor = v.Major
+		if !breakingChange {
+			newMinor = v.Minor
+			newPatch = v.Patch + 1
+		} else {
+			newMinor = v.Minor + 1
+			newPatch = 0
+		}
+	} else {
+		if breakingChange {
+			newMajor = v.Major + 1
+			newMinor = 0
+		} else {
+			newMajor = v.Major
+			newMinor = v.Minor + 1
+		}
+		newPatch = 0
+	}
+	return &Version{
+		Major: newMajor,
+		Minor: newMinor,
+		Patch: newPatch,
+	}
+}
+
+var (
+	Zero = Version{
+		Major: 0,
+		Minor: 0,
+		Patch: 0,
+	}
+
+	StableApiVersion = Version{
+		Major: 1,
+		Minor: 0,
+		Patch: 0,
+	}
+)
+
+
+
 func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
 	if err != nil {
@@ -53,7 +108,7 @@ func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return isGreaterThanVersion(greaterVersion, lesserVersion), nil
+	return greaterVersion.IsGreaterThan(lesserVersion), nil
 }
 
 func ParseVersion(tag string) (*Version, error) {
@@ -83,7 +138,7 @@ func ParseVersion(tag string) (*Version, error) {
 		Minor: minor,
 		Patch: patch,
 	}
-	if !isGreaterThanVersion(version, &zero) {
+	if !version.IsGreaterThan(&Zero) {
 		return nil, errors.Errorf("Version %s is not greater than v0.0.0", tag)
 	}
 	return version, nil
