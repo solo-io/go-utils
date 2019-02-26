@@ -30,7 +30,7 @@ type Changelog struct {
 
 const (
 	ChangelogDirectory = "changelog"
-	DescriptionFile = "description.md"
+	SummaryFile = "summary.md"
 )
 
 // Should return the last released version
@@ -122,12 +122,12 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 			return nil, errors.Errorf("Unexpected directory %s in changelog directory %s", changelogFileInfo.Name(), changelogPath)
 		}
 		changelogFilePath := filepath.Join(changelogPath, changelogFileInfo.Name())
-		if changelogFileInfo.Name() == DescriptionFile {
-			description, err := afero.ReadFile(fs, changelogFilePath)
+		if changelogFileInfo.Name() == SummaryFile {
+			summary, err := afero.ReadFile(fs, changelogFilePath)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Unable to read description file %s", changelogFilePath)
 			}
-			changelog.Summary = string(description)
+			changelog.Summary = string(summary)
 		} else {
 			changelogFile, err := ReadChangelogFile(fs, changelogFilePath)
 			if err != nil {

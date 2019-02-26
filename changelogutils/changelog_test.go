@@ -62,7 +62,7 @@ var _ = Describe("ChangelogTest", func() {
 			afero.WriteFile(fs, filepath, bytes, 0700)
 		}
 		writeSummaryFile := func(summary, tag string) {
-			filepath := filepath.Join(changelogutils.ChangelogDirectory, tag, changelogutils.DescriptionFile)
+			filepath := filepath.Join(changelogutils.ChangelogDirectory, tag, changelogutils.SummaryFile)
 			afero.WriteFile(fs, filepath, []byte(summary), 0700)
 		}
 		writeChangelog := func(changelog *changelogutils.Changelog) {
