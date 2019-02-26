@@ -4,10 +4,11 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
-	"github.com/spf13/afero"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/afero"
 )
 
 func Tar(src string, fs afero.Fs, writers ...io.Writer) error {

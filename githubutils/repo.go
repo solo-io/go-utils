@@ -3,11 +3,12 @@ package githubutils
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/errors"
 	"go.uber.org/zap"
-	"io/ioutil"
-	"os"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"

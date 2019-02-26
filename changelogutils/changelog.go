@@ -2,15 +2,15 @@ package changelogutils
 
 import (
 	"context"
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
-	"io/ioutil"
-	"path/filepath"
 )
-
 
 type ChangelogEntry struct {
 	Type        ChangelogEntryType
@@ -22,14 +22,9 @@ type ChangelogFile struct {
 }
 
 type Changelog struct {
-	Files []ChangelogFile
+	Files   []ChangelogFile
 	Summary string
 	Version string
-}
-
-type RawChangelogFile struct {
-	Filename string
-	Bytes []byte
 }
 
 const (
@@ -74,7 +69,7 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 		}
 	}
 	if proposedVersion == "" {
-		return "",  errors.Errorf("No version greater than %s found", latestTag)
+		return "", errors.Errorf("No version greater than %s found", latestTag)
 	}
 	return proposedVersion, nil
 }

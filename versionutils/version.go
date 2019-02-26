@@ -1,10 +1,11 @@
 package versionutils
 
 import (
-	"github.com/pkg/errors"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type Version struct {

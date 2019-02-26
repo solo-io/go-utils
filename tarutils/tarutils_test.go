@@ -13,7 +13,7 @@ var _ = Describe("tarutils", func() {
 			fs := afero.NewOsFs()
 			tmpDir := mustWriteTestDir(fs)
 			mustAddTestFiles(tmpDir, fs)
-			tmp, err := afero.TempFile(fs,"", "tar-zipped-file-")
+			tmp, err := afero.TempFile(fs, "", "tar-zipped-file-")
 			Expect(err).NotTo(HaveOccurred())
 			err = tarutils.Tar(tmpDir, fs, tmp)
 			Expect(err).NotTo(HaveOccurred())
@@ -31,7 +31,7 @@ var _ = Describe("tarutils", func() {
 			fs := afero.NewMemMapFs()
 			tmpDir := mustWriteTestDir(fs)
 			mustAddTestFiles(tmpDir, fs)
-			tmp, err := afero.TempFile(fs,"", "tar-zipped-file-")
+			tmp, err := afero.TempFile(fs, "", "tar-zipped-file-")
 			Expect(err).NotTo(HaveOccurred())
 			err = tarutils.Tar(tmpDir, fs, tmp)
 			Expect(err).NotTo(HaveOccurred())
@@ -48,16 +48,16 @@ var _ = Describe("tarutils", func() {
 func mustFindOriginalFiles(newTmpDir string, fs afero.Fs) {
 	files, err := afero.ReadDir(fs, newTmpDir)
 	Expect(err).NotTo(HaveOccurred())
-	for _,v := range files {
+	for _, v := range files {
 		if !v.IsDir() {
-			_, err := afero.ReadFile(fs, newTmpDir + "/" + v.Name())
+			_, err := afero.ReadFile(fs, newTmpDir+"/"+v.Name())
 			Expect(err).NotTo(HaveOccurred())
 		}
 	}
 }
 
 func mustWriteTestDir(fs afero.Fs) string {
-	tmpDir, err := afero.TempDir(fs,"", "tar-test-")
+	tmpDir, err := afero.TempDir(fs, "", "tar-test-")
 	Expect(err).NotTo(HaveOccurred())
 	return tmpDir
 }

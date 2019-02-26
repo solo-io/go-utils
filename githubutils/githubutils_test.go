@@ -2,6 +2,7 @@ package githubutils
 
 import (
 	"context"
+
 	"github.com/google/go-github/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,8 +15,8 @@ var _ = Describe("github utils", func() {
 		ctx      = context.Background()
 		owner    = "solo-io"
 		reponame = "testrepo"
-		version = "v0.0.16"
-		ref = "master"
+		version  = "v0.0.16"
+		ref      = "v0.0.17"
 	)
 
 	var _ = BeforeEach(func() {

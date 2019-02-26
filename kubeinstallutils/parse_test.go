@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/kubeinstallutils"
 	"github.com/solo-io/go-utils/testutils"
-	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
