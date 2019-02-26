@@ -77,4 +77,21 @@ var _ = Describe("Version", func() {
 		})
 	})
 
+	var _ = Context("IncrementVersion", func() {
+
+		expectResult := func(start *versionutils.Version, breakingChange bool, expected* versionutils.Version) {
+			actualIncremented := versionutils.IncrementVersion(start, breakingChange)
+			Expect(actualIncremented).To(BeEquivalentTo(expected))
+		}
+
+		It("works", func() {
+			expectResult(getVersion(0, 0, 1), true, getVersion(0, 1, 0))
+			expectResult(getVersion(0, 1, 10), true, getVersion(0, 2, 0))
+			expectResult(getVersion(1, 1, 10), true, getVersion(2, 0, 0))
+			expectResult(getVersion(0, 0, 1), false, getVersion(0, 0, 2))
+			expectResult(getVersion(0, 1, 10), false, getVersion(0, 1, 11))
+			expectResult(getVersion(1, 1, 10), false, getVersion(1, 2, 0))
+		})
+	})
+
 })

@@ -32,6 +32,10 @@ var _ = Describe("ChangelogTest", func() {
 		Expect(os.Mkdir(changelogDir, 0700)).To(BeNil())
 		Expect(createSubdirs(changelogDir, "v0.0.1", "v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
 		expectGetProposedTag("v0.0.3", tmpDir, "v0.0.4", "")
+		expectGetProposedTag("v0.0.2", tmpDir, "", "Versions v0.0.4 and v0.0.3 are both greater than latest tag v0.0.2")
+		expectGetProposedTag("v0.0.4", tmpDir, "", "No version greater than v0.0.4 found")
+		Expect(createSubdirs(changelogDir, "0.0.5")).To(BeNil())
+		expectGetProposedTag("v0.0.5", tmpDir, "", "Directory name 0.0.5 is not valid, must be of the form 'vX.Y.Z'")
 	})
 
 	It("can marshal changelog entries", func() {

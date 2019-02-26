@@ -93,3 +93,33 @@ func MatchesRegex(tag string) bool {
 	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+$)")
 	return regex.MatchString(tag)
 }
+
+func IncrementVersion(v *Version, breakingChange bool) *Version {
+	newMajor := 0
+	newMinor := 0
+	newPatch := 0
+	if v.Major == 0 {
+		newMajor = v.Major
+		if !breakingChange {
+			newMinor = v.Minor
+			newPatch = v.Patch + 1
+		} else {
+			newMinor = v.Minor + 1
+			newPatch = 0
+		}
+	} else {
+		if breakingChange {
+			newMajor = v.Major + 1
+			newMinor = 0
+		} else {
+			newMajor = v.Major
+			newMinor = v.Minor + 1
+		}
+		newPatch = 0
+	}
+	return &Version{
+		Major: newMajor,
+		Minor: newMinor,
+		Patch: newPatch,
+	}
+}

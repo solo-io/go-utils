@@ -2,7 +2,6 @@ package changelogutils
 
 import (
 	"context"
-	"io/ioutil"
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
@@ -29,6 +28,7 @@ type Changelog struct {
 
 const (
 	ChangelogDirectory = "changelog"
+	DescriptionFile = "description.md"
 )
 
 // Should return the last released version
@@ -63,7 +63,7 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 		}
 		if greaterThan {
 			if proposedVersion != "" {
-				return "", errors.Errorf("Versions %s and %s are both greater than latest tag", subDir.Name(), proposedVersion)
+				return "", errors.Errorf("Versions %s and %s are both greater than latest tag %s", subDir.Name(), proposedVersion, latestTag)
 			}
 			proposedVersion = subDir.Name()
 		}
@@ -74,9 +74,9 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 	return proposedVersion, nil
 }
 
-func ReadChangelogFile(path string) (*Changelog, error) {
+func ReadChangelogFile(fs afero.Fs, path string) (*Changelog, error) {
 	var changelog Changelog
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := afero.ReadFile(fs, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed reading changelog file: %s", path)
 	}
@@ -86,4 +86,27 @@ func ReadChangelogFile(path string) (*Changelog, error) {
 	}
 
 	return &changelog, nil
+}
+
+func ValidateChangelogDir(fs afero.Fs, latestTag, proposedTag, changelogParentPath string) error {
+	changelogPath := filepath.Join(changelogParentPath, ChangelogDirectory, proposedTag)
+	files, err := afero.ReadDir(fs, changelogPath)
+	if err != nil {
+		return errors.Wrapf(err, "Error reading changelog directory %s", changelogPath)
+	}
+	for _, changelogFile := range files {
+		if changelogFile.IsDir() {
+			return errors.Errorf("Unexpected directory %s in changelog directory %s", changelogFile.Name(), changelogPath)
+		}
+		if changelogFile.Name() != DescriptionFile {
+			changelogFilePath := filepath.Join(changelogPath, changelogFile.Name())
+			_, err := ReadChangelogFile(fs, changelogFilePath)
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+
+	return nil
 }
