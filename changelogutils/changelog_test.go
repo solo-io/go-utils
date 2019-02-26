@@ -249,11 +249,11 @@ var mockChangelog = `
 changelog:
 - type: FIX
   description: "fix 1"
-  issue: https://github.com/solo-io/testrepo/issues/9
+  issueLink: https://github.com/solo-io/testrepo/issues/9
 - type: NEW_FEATURE
   description: "new feature"
   issue: https://github.com/solo-io/testrepo/issues/9
 - type: BREAKING_CHANGE
   description: "It's a breaker"
-  issue: https://github.com/solo-io/testrepo/issues/9
+  issueLink: https://github.com/solo-io/testrepo/issues/9
 `

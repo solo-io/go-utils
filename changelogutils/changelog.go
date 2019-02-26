@@ -12,14 +12,14 @@ import (
 )
 
 type ChangelogEntry struct {
-	Type        ChangelogEntryType
-	Description string
-	IssueLink   string
+	Type        ChangelogEntryType `json:"type"`
+	Description string             `json:"description"`
+	IssueLink   string             `json:"issueLink"`
 }
 
 type ChangelogFile struct {
 	Entries          []*ChangelogEntry `json:"changelog,omitempty"`
-	ReleaseStableApi bool `json:"releaseStableApi,omitempty"`
+	ReleaseStableApi bool              `json:"releaseStableApi,omitempty"`
 }
 
 func (c *ChangelogFile) HasBreakingChange() bool {
@@ -39,7 +39,7 @@ type Changelog struct {
 
 const (
 	ChangelogDirectory = "changelog"
-	SummaryFile = "summary.md"
+	SummaryFile        = "summary.md"
 )
 
 // Should return the last released version
