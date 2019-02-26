@@ -2,7 +2,6 @@ package changelogutils
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
@@ -20,6 +19,15 @@ type ChangelogEntry struct {
 
 type ChangelogFile struct {
 	Entries []*ChangelogEntry `json:"changelog,omitempty"`
+}
+
+func (c *ChangelogFile) HasBreakingChange() bool {
+	for _, changelogEntry := range c.Entries {
+		if changelogEntry.Type == BREAKING_CHANGE {
+			return true
+		}
+	}
+	return false
 }
 
 type Changelog struct {
@@ -90,19 +98,6 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	return &changelog, nil
 }
 
-func VersionToString(v *versionutils.Version) string {
-	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
-}
-
-func hasBreakingChange(file *ChangelogFile) bool {
-	for _, changelogEntry := range file.Entries {
-		if changelogEntry.Type == BREAKING_CHANGE {
-			return true
-		}
-	}
-	return false
-}
-
 func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath string) (*Changelog, error) {
 	changelogPath := filepath.Join(changelogParentPath, ChangelogDirectory, proposedTag)
 	files, err := afero.ReadDir(fs, changelogPath)
@@ -134,16 +129,16 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 				return nil, err
 			}
 			changelog.Files = append(changelog.Files, changelogFile)
-			breakingChanges = breakingChanges || hasBreakingChange(changelogFile)
+			breakingChanges = breakingChanges || changelogFile.HasBreakingChange()
 		}
 	}
 	latestVersion, err := versionutils.ParseVersion(latestTag)
 	if err != nil {
 		return nil, err
 	}
-	expectedVersion := versionutils.IncrementVersion(latestVersion, breakingChanges)
+	expectedVersion := latestVersion.IncrementVersion(breakingChanges)
 	if *proposedVersion != *expectedVersion {
-		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", VersionToString(expectedVersion), VersionToString(proposedVersion))
+		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
 	}
 	return &changelog, nil
 }

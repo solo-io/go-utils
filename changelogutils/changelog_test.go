@@ -66,7 +66,7 @@ var _ = Describe("ChangelogTest", func() {
 			afero.WriteFile(fs, filepath, []byte(summary), 0700)
 		}
 		writeChangelog := func(changelog *changelogutils.Changelog) {
-			tag := changelogutils.VersionToString(changelog.Version)
+			tag := changelog.Version.String()
 			createChangelogDir(tag)
 			if changelog.Summary != "" {
 				writeSummaryFile(changelog.Summary, tag)
