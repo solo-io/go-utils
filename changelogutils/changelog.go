@@ -2,6 +2,7 @@ package changelogutils
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
@@ -14,16 +15,17 @@ import (
 type ChangelogEntry struct {
 	Type        ChangelogEntryType
 	Description string
+	IssueLink   string
 }
 
 type ChangelogFile struct {
-	Entries []ChangelogEntry `json:"changelog,omitempty"`
+	Entries []*ChangelogEntry `json:"changelog,omitempty"`
 }
 
 type Changelog struct {
-	Files   []ChangelogFile
+	Files   []*ChangelogFile
 	Summary string
-	Version string
+	Version *versionutils.Version
 }
 
 const (
@@ -74,8 +76,8 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 	return proposedVersion, nil
 }
 
-func ReadChangelogFile(fs afero.Fs, path string) (*Changelog, error) {
-	var changelog Changelog
+func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
+	var changelog ChangelogFile
 	bytes, err := afero.ReadFile(fs, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed reading changelog file: %s", path)
@@ -88,25 +90,61 @@ func ReadChangelogFile(fs afero.Fs, path string) (*Changelog, error) {
 	return &changelog, nil
 }
 
-func ValidateChangelogDir(fs afero.Fs, latestTag, proposedTag, changelogParentPath string) error {
+func toString(v *versionutils.Version) string {
+	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
+}
+
+func hasBreakingChange(file *ChangelogFile) bool {
+	for _, changelogEntry := range file.Entries {
+		if changelogEntry.Type == BREAKING_CHANGE {
+			return true
+		}
+	}
+	return false
+}
+
+func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath string) (*Changelog, error) {
 	changelogPath := filepath.Join(changelogParentPath, ChangelogDirectory, proposedTag)
 	files, err := afero.ReadDir(fs, changelogPath)
 	if err != nil {
-		return errors.Wrapf(err, "Error reading changelog directory %s", changelogPath)
+		return nil, errors.Wrapf(err, "Error reading changelog directory %s", changelogPath)
 	}
-	for _, changelogFile := range files {
-		if changelogFile.IsDir() {
-			return errors.Errorf("Unexpected directory %s in changelog directory %s", changelogFile.Name(), changelogPath)
+	proposedVersion, err := versionutils.ParseVersion(proposedTag)
+	if err != nil {
+		return nil, err
+	}
+	changelog := Changelog{
+		Version: proposedVersion,
+	}
+	breakingChanges := false
+	for _, changelogFileInfo := range files {
+		if changelogFileInfo.IsDir() {
+			return nil, errors.Errorf("Unexpected directory %s in changelog directory %s", changelogFileInfo.Name(), changelogPath)
 		}
-		if changelogFile.Name() != DescriptionFile {
-			changelogFilePath := filepath.Join(changelogPath, changelogFile.Name())
-			_, err := ReadChangelogFile(fs, changelogFilePath)
+		changelogFilePath := filepath.Join(changelogPath, changelogFileInfo.Name())
+		if changelogFileInfo.Name() == DescriptionFile {
+			description, err := afero.ReadFile(fs, changelogFilePath)
 			if err != nil {
-				return err
+				return nil, errors.Wrapf(err, "Unable to read description file %s", changelogFilePath)
 			}
-
+			changelog.Summary = string(description)
+		} else {
+			changelogFile, err := ReadChangelogFile(fs, changelogFilePath)
+			if err != nil {
+				return nil, err
+			}
+			changelog.Files = append(changelog.Files, changelogFile)
+			breakingChanges = breakingChanges || hasBreakingChange(changelogFile)
 		}
 	}
+	latestVersion, err := versionutils.ParseVersion(latestTag)
+	if err != nil {
+		return nil, err
+	}
+	expectedVersion := versionutils.IncrementVersion(latestVersion, breakingChanges)
+	if *proposedVersion != *expectedVersion {
+		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", toString(expectedVersion), toString(proposedVersion))
+	}
 
-	return nil
+	return &changelog, nil
 }
