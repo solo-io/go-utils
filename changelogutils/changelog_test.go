@@ -109,7 +109,7 @@ var _ = Describe("ChangelogTest", func() {
 					getEntry(changelogutils.FIX, "fixes bar", "bar"),
 					getEntry(changelogutils.NEW_FEATURE, "adds baz", "baz")),
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")),
-				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo3", "foo3")))
+				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo3", "foo3")))
 			writeChangelog(changelog)
 			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
 			Expect(err).NotTo(HaveOccurred())
