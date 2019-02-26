@@ -50,7 +50,7 @@ var _ = Describe("ChangelogTest", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var _ = Context("", func() {
+	var _ = Context("Changelog computing and rendering", func() {
 		var fs afero.Fs
 		createChangelogDir := func(tag string) {
 			fs.MkdirAll(filepath.Join(changelogutils.ChangelogDirectory, tag), 0700)
@@ -115,7 +115,7 @@ var _ = Describe("ChangelogTest", func() {
 			fs = afero.NewMemMapFs()
 		})
 
-		It("works", func() {
+		It("can compute changelog", func() {
 			tag := "v0.0.2"
 			changelog := getChangelog(tag, "blah", "closing",
 				getChangelogFile(
@@ -231,6 +231,58 @@ var _ = Describe("ChangelogTest", func() {
 			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Changelog entries must have an issue link"))
+		})
+
+		It("can render changelog", func() {
+			changelog := getChangelog("v0.0.1", "blah", "closing",
+				getChangelogFile(
+					getEntry(changelogutils.FIX, "fixes foo    ", "  foo  "), // testing trim space
+					getEntry(changelogutils.BREAKING_CHANGE, "fixes bar", "bar"),
+					getEntry(changelogutils.NEW_FEATURE, "adds baz", "baz")),
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")),
+				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo3", "foo3")))
+			output := changelogutils.GenerateChangelogMarkdown(changelog)
+			expected := `blah
+
+**Breaking Changes**
+- fixes bar (bar)
+
+**New Features**
+- adds baz (baz)
+
+**Fixes**
+- fixes foo (foo)
+- fixes foo2 (foo2)
+
+closing`
+			Expect(output).To(BeEquivalentTo(expected))
+		})
+
+		It("can render changelog with only fixes and closing", func() {
+			changelog := getChangelog("v0.0.1", "", "closing",
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")))
+			output := changelogutils.GenerateChangelogMarkdown(changelog)
+			expected := `**Fixes**
+- fixes foo2 (foo2)
+
+closing`
+			Expect(output).To(BeEquivalentTo(expected))
+		})
+
+		It("can render changelog with only summary", func() {
+			changelog := getChangelog("v0.0.1", "blah", "",
+				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo2", "foo2")))
+			output := changelogutils.GenerateChangelogMarkdown(changelog)
+			expected := "blah\n\n"
+			Expect(output).To(BeEquivalentTo(expected))
+		})
+
+		It("can render changelog with no user-facing content", func() {
+			changelog := getChangelog("v0.0.1", "", "",
+				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo2", "foo2")))
+			output := changelogutils.GenerateChangelogMarkdown(changelog)
+			expected := "This release contained no user-facing changes."
+			Expect(output).To(BeEquivalentTo(expected))
 		})
 	})
 
