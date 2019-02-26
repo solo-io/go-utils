@@ -45,6 +45,11 @@ var _ = Describe("ChangelogTest", func() {
 	It("can marshal changelog entries", func() {
 		var clf changelogutils.ChangelogFile
 		err := yaml.Unmarshal([]byte(mockChangelog), &clf)
+		for _, value := range clf.Entries {
+			Expect(value.Type.String()).NotTo(BeEmpty())
+			Expect(value.Description).NotTo(BeEmpty())
+			Expect(value.IssueLink).NotTo(BeEmpty())
+		}
 		Expect(err).NotTo(HaveOccurred())
 		_, err = yaml.Marshal(clf)
 		Expect(err).NotTo(HaveOccurred())
@@ -249,11 +254,11 @@ var mockChangelog = `
 changelog:
 - type: FIX
   description: "fix 1"
-  issue: https://github.com/solo-io/testrepo/issues/9
+  issueLink: https://github.com/solo-io/testrepo/issues/9
 - type: NEW_FEATURE
   description: "new feature"
-  issue: https://github.com/solo-io/testrepo/issues/9
+  issueLink: https://github.com/solo-io/testrepo/issues/9
 - type: BREAKING_CHANGE
   description: "It's a breaker"
-  issue: https://github.com/solo-io/testrepo/issues/9
+  issueLink: https://github.com/solo-io/testrepo/issues/9
 `
