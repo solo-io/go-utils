@@ -96,6 +96,15 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 		return nil, errors.Errorf("File %s is not a valid changelog file", path)
 	}
 
+	for _, entry := range changelog.Entries {
+		if entry.IssueLink == "" {
+			return nil, errors.Errorf("Changelog entries must have an issue link")
+		}
+		if entry.Description == "" {
+			return nil, errors.Errorf("Changelog entries must have a description")
+		}
+	}
+
 	return &changelog, nil
 }
 

@@ -204,6 +204,26 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Proposed version v0.1.0 must be greater than latest version v0.2.0"))
 		})
+
+		It("checks that changelog entries have a description", func() {
+			tag := "v0.3.0"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.FIX, "", "foo")))
+			writeChangelog(changelog)
+			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("Changelog entries must have a description"))
+		})
+
+		It("checks that changelog entries have an issue link", func() {
+			tag := "v0.3.0"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.FIX, "foo", "")))
+			writeChangelog(changelog)
+			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("Changelog entries must have an issue link"))
+		})
 	})
 
 })
