@@ -18,7 +18,8 @@ type ChangelogEntry struct {
 }
 
 type ChangelogFile struct {
-	Entries []*ChangelogEntry `json:"changelog,omitempty"`
+	Entries          []*ChangelogEntry `json:"changelog,omitempty"`
+	ReleaseStableApi bool `json:"releaseStableApi,omitempty"`
 }
 
 func (c *ChangelogFile) HasBreakingChange() bool {
@@ -104,14 +105,23 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error reading changelog directory %s", changelogPath)
 	}
+	latestVersion, err := versionutils.ParseVersion(latestTag)
+	if err != nil {
+		return nil, err
+	}
 	proposedVersion, err := versionutils.ParseVersion(proposedTag)
 	if err != nil {
 		return nil, err
 	}
+	if !proposedVersion.IsGreaterThan(latestVersion) {
+		return nil, errors.Errorf("Proposed version %s must be greater than latest version %s", proposedVersion, latestVersion)
+	}
+
 	changelog := Changelog{
 		Version: proposedVersion,
 	}
 	breakingChanges := false
+	releaseStableApi := false
 	for _, changelogFileInfo := range files {
 		if changelogFileInfo.IsDir() {
 			return nil, errors.Errorf("Unexpected directory %s in changelog directory %s", changelogFileInfo.Name(), changelogPath)
@@ -120,7 +130,7 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 		if changelogFileInfo.Name() == SummaryFile {
 			summary, err := afero.ReadFile(fs, changelogFilePath)
 			if err != nil {
-				return nil, errors.Wrapf(err, "Unable to read description file %s", changelogFilePath)
+				return nil, errors.Wrapf(err, "Unable to read summary file %s", changelogFilePath)
 			}
 			changelog.Summary = string(summary)
 		} else {
@@ -130,13 +140,18 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 			}
 			changelog.Files = append(changelog.Files, changelogFile)
 			breakingChanges = breakingChanges || changelogFile.HasBreakingChange()
+			releaseStableApi = releaseStableApi || changelogFile.ReleaseStableApi
 		}
 	}
-	latestVersion, err := versionutils.ParseVersion(latestTag)
-	if err != nil {
-		return nil, err
-	}
+
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges)
+	if releaseStableApi {
+		stableApiVersion := versionutils.NewVersion(1, 0, 0)
+		if !proposedVersion.Equals(stableApiVersion) {
+			return nil, errors.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", proposedVersion)
+		}
+		expectedVersion = stableApiVersion
+	}
 	if *proposedVersion != *expectedVersion {
 		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
 	}

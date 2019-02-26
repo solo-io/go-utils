@@ -89,6 +89,12 @@ var _ = Describe("ChangelogTest", func() {
 				Entries: entries,
 			}
 		}
+		getStableApiChangelogFile := func(entries ...*changelogutils.ChangelogEntry) *changelogutils.ChangelogFile {
+			return &changelogutils.ChangelogFile{
+				Entries: entries,
+				ReleaseStableApi: true,
+			}
+		}
 		getEntry := func(entryType changelogutils.ChangelogEntryType, description, issue string) *changelogutils.ChangelogEntry {
 			return &changelogutils.ChangelogEntry{
 				Type: entryType,
@@ -156,6 +162,47 @@ var _ = Describe("ChangelogTest", func() {
 			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file"))
+		})
+
+		It("validates no extra files are in the changelog directory", func() {
+			tag := "v0.0.2"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
+			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file"))
+		})
+
+		It("releasing stable API (v1.0.0) works", func() {
+			tag := "v1.0.0"
+			changelog := getChangelog(tag, "",
+				getStableApiChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
+		})
+
+		It("releasing stable API must happen in v1.0.0 release", func() {
+			tag := "v1.1.0"
+			changelog := getChangelog(tag, "",
+				getStableApiChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			_, err := changelogutils.ComputeChangelog(fs, "v1.0.1", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not v1.1.0"))
+		})
+
+		It("proposed version must be greater than latest", func() {
+			tag := "v0.1.0"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("Proposed version v0.1.0 must be greater than latest version v0.2.0"))
 		})
 	})
 

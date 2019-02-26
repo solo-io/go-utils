@@ -15,8 +15,42 @@ type Version struct {
 	Patch int
 }
 
+func NewVersion(major, minor, patch int) *Version {
+	return &Version{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+	}
+}
+
 func (v *Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
+}
+
+func (greater *Version) IsGreaterThan(lesser *Version) bool {
+	if greater.Major > lesser.Major {
+		return true
+	} else if greater.Major < lesser.Major {
+		return false
+	}
+
+	if greater.Minor > lesser.Minor {
+		return true
+	} else if greater.Minor < lesser.Minor {
+		return false
+	}
+
+	if greater.Patch > lesser.Patch {
+		return true
+	} else if greater.Patch < lesser.Patch {
+		return false
+	}
+
+	return false
+}
+
+func (v *Version) Equals(other *Version) bool {
+	return *v == *other
 }
 
 func (v *Version) IncrementVersion(breakingChange bool) *Version {
@@ -57,27 +91,7 @@ var (
 	}
 )
 
-func isGreaterThanVersion(greater, lesser *Version) bool {
-	if greater.Major > lesser.Major {
-		return true
-	} else if greater.Major < lesser.Major {
-		return false
-	}
 
-	if greater.Minor > lesser.Minor {
-		return true
-	} else if greater.Minor < lesser.Minor {
-		return false
-	}
-
-	if greater.Patch > lesser.Patch {
-		return true
-	} else if greater.Patch < lesser.Patch {
-		return false
-	}
-
-	return false
-}
 
 func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
@@ -88,7 +102,7 @@ func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return isGreaterThanVersion(greaterVersion, lesserVersion), nil
+	return greaterVersion.IsGreaterThan(lesserVersion), nil
 }
 
 func ParseVersion(tag string) (*Version, error) {
@@ -118,7 +132,7 @@ func ParseVersion(tag string) (*Version, error) {
 		Minor: minor,
 		Patch: patch,
 	}
-	if !isGreaterThanVersion(version, &zero) {
+	if !version.IsGreaterThan(&zero) {
 		return nil, errors.Errorf("Version %s is not greater than v0.0.0", tag)
 	}
 	return version, nil
