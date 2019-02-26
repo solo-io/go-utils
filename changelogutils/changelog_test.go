@@ -75,11 +75,12 @@ var _ = Describe("ChangelogTest", func() {
 				writeChangelogFile(file, fmt.Sprintf("%d.yaml", i), tag)
 			}
 		}
-		getChangelog := func(tag, summary string, files ...*changelogutils.ChangelogFile) *changelogutils.Changelog{
+		getChangelog := func(tag, summary, closing string, files ...*changelogutils.ChangelogFile) *changelogutils.Changelog{
 			version, err := versionutils.ParseVersion(tag)
 			Expect(err).NotTo(HaveOccurred())
 			return &changelogutils.Changelog{
 				Summary: summary,
+				Closing: closing,
 				Version: version,
 				Files: files,
 			}

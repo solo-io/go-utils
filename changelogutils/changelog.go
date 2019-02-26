@@ -35,11 +35,13 @@ type Changelog struct {
 	Files   []*ChangelogFile
 	Summary string
 	Version *versionutils.Version
+	Closing string
 }
 
 const (
 	ChangelogDirectory = "changelog"
 	SummaryFile = "summary.md"
+	ClosingFile = "closing.md"
 )
 
 // Should return the last released version
@@ -142,6 +144,12 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 				return nil, errors.Wrapf(err, "Unable to read summary file %s", changelogFilePath)
 			}
 			changelog.Summary = string(summary)
+		} else if changelogFileInfo.Name() == ClosingFile {
+			closing, err := afero.ReadFile(fs, changelogFilePath)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Unable to read closing file %s", changelogFilePath)
+			}
+			changelog.Closing = string(closing)
 		} else {
 			changelogFile, err := ReadChangelogFile(fs, changelogFilePath)
 			if err != nil {
