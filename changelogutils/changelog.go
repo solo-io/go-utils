@@ -33,7 +33,6 @@ type RawChangelogFile struct {
 
 const (
 	ChangelogDirectory = "changelog"
-	Master = "master"
 )
 
 // Should return the last released version

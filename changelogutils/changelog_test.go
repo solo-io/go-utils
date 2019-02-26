@@ -3,7 +3,6 @@ package changelogutils
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/solo-kit/pkg/utils/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,8 +43,6 @@ func createSubdirs(dir string, names ...string) error {
 
 func mustWriteTestDir() string {
 	tmpDir, err := ioutil.TempDir("", "changelog-test-")
-	if err != nil {
-		log.Fatalf("Failed to create test dir: %v", err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 	return tmpDir
 }
