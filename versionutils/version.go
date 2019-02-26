@@ -84,8 +84,14 @@ func (v *Version) IncrementVersion(breakingChange bool) *Version {
 }
 
 var (
-	zero = Version{
+	Zero = Version{
 		Major: 0,
+		Minor: 0,
+		Patch: 0,
+	}
+
+	StableApiVersion = Version{
+		Major: 1,
 		Minor: 0,
 		Patch: 0,
 	}
@@ -132,7 +138,7 @@ func ParseVersion(tag string) (*Version, error) {
 		Minor: minor,
 		Patch: patch,
 	}
-	if !version.IsGreaterThan(&zero) {
+	if !version.IsGreaterThan(&Zero) {
 		return nil, errors.Errorf("Version %s is not greater than v0.0.0", tag)
 	}
 	return version, nil

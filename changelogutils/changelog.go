@@ -146,11 +146,10 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges)
 	if releaseStableApi {
-		stableApiVersion := versionutils.NewVersion(1, 0, 0)
-		if !proposedVersion.Equals(stableApiVersion) {
+		if !proposedVersion.Equals(&versionutils.StableApiVersion) {
 			return nil, errors.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", proposedVersion)
 		}
-		expectedVersion = stableApiVersion
+		expectedVersion = &versionutils.StableApiVersion
 	}
 	if *proposedVersion != *expectedVersion {
 		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
