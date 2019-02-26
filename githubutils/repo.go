@@ -158,6 +158,7 @@ func CreateStatus(ctx context.Context, client *github.Client, owner, repo, sha, 
 	return st, nil
 }
 
+// This function writes directly to a writer, so the user is required to close the writer manually
 func DownloadRepoArchive(ctx context.Context, client *github.Client, w io.Writer, owner, repo, sha string) error {
 	logger := contextutils.LoggerFrom(ctx)
 	opt := &github.RepositoryContentGetOptions{
