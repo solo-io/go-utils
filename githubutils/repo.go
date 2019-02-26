@@ -22,6 +22,10 @@ const (
 	STATUS_ERROR   = "error"
 	STATUS_PENDING = "pending"
 
+	COMMIT_FILE_STATUS_ADDED    = "added"
+	COMMIT_FILE_STATUS_MODIFIED = "modified"
+	COMMIT_FILE_STATUS_DELETED  = "deleted"
+
 	CONTENT_TYPE_FILE      = "file"
 	CONTENT_TYPE_DIRECTORY = "dir"
 )
