@@ -3,7 +3,9 @@ package githubutils
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/solo-io/go-utils/contextutils"
@@ -155,3 +157,39 @@ func CreateStatus(ctx context.Context, client *github.Client, owner, repo, sha, 
 	}
 	return st, nil
 }
+
+// This function writes directly to a writer, so the user is required to close the writer manually
+func DownloadRepoArchive(ctx context.Context, client *github.Client, w io.Writer, owner, repo, sha string) error {
+	logger := contextutils.LoggerFrom(ctx)
+	opt := &github.RepositoryContentGetOptions{
+		Ref: sha,
+	}
+
+	archiveURL, _, err := client.Repositories.GetArchiveLink(ctx, owner, repo, github.Tarball, opt)
+	if err != nil {
+		logger.Errorw("can't get archive", zap.Error(err))
+		return err
+	}
+
+	err = downloadFile(archiveURL.String(), w)
+	if err != nil {
+		logger.Errorw("can't download file", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func downloadFile(url string, w io.Writer) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
