@@ -1,8 +1,10 @@
 package changelogutils_test
 
 import (
+	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/solo-io/go-utils/changelogutils"
+	"github.com/solo-io/go-utils/versionutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,28 +16,30 @@ import (
 
 var _ = Describe("ChangelogTest", func() {
 
-	expectGetProposedTag := func(latestTag, changelogDir, tag, err string) {
-		fs := afero.NewOsFs()
-		actualTag, actualErr := changelogutils.GetProposedTag(fs, latestTag, changelogDir)
-		Expect(actualTag).To(BeEquivalentTo(tag))
-		if err == "" {
-			Expect(actualErr).To(BeNil())
-		} else {
-			Expect(actualErr.Error()).To(BeEquivalentTo(err))
+	var _ = Context("GetProposedTag", func() {
+		expectGetProposedTag := func(latestTag, changelogDir, tag, err string) {
+			fs := afero.NewOsFs()
+			actualTag, actualErr := changelogutils.GetProposedTag(fs, latestTag, changelogDir)
+			Expect(actualTag).To(BeEquivalentTo(tag))
+			if err == "" {
+				Expect(actualErr).To(BeNil())
+			} else {
+				Expect(actualErr.Error()).To(BeEquivalentTo(err))
+			}
 		}
-	}
 
-	It("works", func() {
-		tmpDir := mustWriteTestDir()
-		defer os.RemoveAll(tmpDir)
-		changelogDir := filepath.Join(tmpDir, changelogutils.ChangelogDirectory)
-		Expect(os.Mkdir(changelogDir, 0700)).To(BeNil())
-		Expect(createSubdirs(changelogDir, "v0.0.1", "v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
-		expectGetProposedTag("v0.0.3", tmpDir, "v0.0.4", "")
-		expectGetProposedTag("v0.0.2", tmpDir, "", "Versions v0.0.4 and v0.0.3 are both greater than latest tag v0.0.2")
-		expectGetProposedTag("v0.0.4", tmpDir, "", "No version greater than v0.0.4 found")
-		Expect(createSubdirs(changelogDir, "0.0.5")).To(BeNil())
-		expectGetProposedTag("v0.0.5", tmpDir, "", "Directory name 0.0.5 is not valid, must be of the form 'vX.Y.Z'")
+		It("works", func() {
+			tmpDir := mustWriteTestDir()
+			defer os.RemoveAll(tmpDir)
+			changelogDir := filepath.Join(tmpDir, changelogutils.ChangelogDirectory)
+			Expect(os.Mkdir(changelogDir, 0700)).To(BeNil())
+			Expect(createSubdirs(changelogDir, "v0.0.1", "v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
+			expectGetProposedTag("v0.0.3", tmpDir, "v0.0.4", "")
+			expectGetProposedTag("v0.0.2", tmpDir, "", "Versions v0.0.4 and v0.0.3 are both greater than latest tag v0.0.2")
+			expectGetProposedTag("v0.0.4", tmpDir, "", "No version greater than v0.0.4 found")
+			Expect(createSubdirs(changelogDir, "0.0.5")).To(BeNil())
+			expectGetProposedTag("v0.0.5", tmpDir, "", "Directory name 0.0.5 is not valid, must be of the form 'vX.Y.Z'")
+		})
 	})
 
 	It("can marshal changelog entries", func() {
@@ -45,6 +49,116 @@ var _ = Describe("ChangelogTest", func() {
 		_, err = yaml.Marshal(clf)
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	var _ = Context("", func() {
+		var fs afero.Fs
+		createChangelogDir := func(tag string) {
+			fs.MkdirAll(filepath.Join(changelogutils.ChangelogDirectory, tag), 0700)
+		}
+		writeChangelogFile := func(file *changelogutils.ChangelogFile, filename, tag string) {
+			filepath := filepath.Join(changelogutils.ChangelogDirectory, tag, filename)
+			bytes, err := yaml.Marshal(file)
+			Expect(err).NotTo(HaveOccurred())
+			afero.WriteFile(fs, filepath, bytes, 0700)
+		}
+		writeSummaryFile := func(summary, tag string) {
+			filepath := filepath.Join(changelogutils.ChangelogDirectory, tag, changelogutils.DescriptionFile)
+			afero.WriteFile(fs, filepath, []byte(summary), 0700)
+		}
+		writeChangelog := func(changelog *changelogutils.Changelog) {
+			tag := changelogutils.VersionToString(changelog.Version)
+			createChangelogDir(tag)
+			if changelog.Summary != "" {
+				writeSummaryFile(changelog.Summary, tag)
+			}
+			for i, file := range changelog.Files {
+				writeChangelogFile(file, fmt.Sprintf("%d.yaml", i), tag)
+			}
+		}
+		getChangelog := func(tag, summary string, files ...*changelogutils.ChangelogFile) *changelogutils.Changelog{
+			version, err := versionutils.ParseVersion(tag)
+			Expect(err).NotTo(HaveOccurred())
+			return &changelogutils.Changelog{
+				Summary: summary,
+				Version: version,
+				Files: files,
+			}
+		}
+		getChangelogFile := func(entries ...*changelogutils.ChangelogEntry) *changelogutils.ChangelogFile {
+			return &changelogutils.ChangelogFile{
+				Entries: entries,
+			}
+		}
+		getEntry := func(entryType changelogutils.ChangelogEntryType, description, issue string) *changelogutils.ChangelogEntry {
+			return &changelogutils.ChangelogEntry{
+				Type: entryType,
+				Description: description,
+				IssueLink: issue,
+			}
+		}
+
+		BeforeEach(func() {
+			fs = afero.NewMemMapFs()
+		})
+
+		It("works", func() {
+			tag := "v0.0.2"
+			changelog := getChangelog(tag, "blah",
+				getChangelogFile(
+					getEntry(changelogutils.FIX, "fixes foo", "foo"),
+					getEntry(changelogutils.FIX, "fixes bar", "bar"),
+					getEntry(changelogutils.NEW_FEATURE, "adds baz", "baz")),
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")),
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo3", "foo3")))
+			writeChangelog(changelog)
+			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
+		})
+
+		It("validates minor version should get bumped for breaking change", func() {
+			tag := "v0.0.2"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("Expected version v0.1.0 to be next changelog version, found v0.0.2"))
+		})
+
+		It("validates major version should get bumped for breaking change", func() {
+			tag := "v2.0.0"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v1.2.2", tag, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
+		})
+
+		It("validates no extra subdirectories are in the changelog directory", func() {
+			tag := "v0.0.2"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			fs.Mkdir(filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), 0700)
+			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("Unexpected directory foo in changelog directory changelog/v0.0.2"))
+		})
+
+		It("validates no extra files are in the changelog directory", func() {
+			tag := "v0.0.2"
+			changelog := getChangelog(tag, "",
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
+			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file"))
+		})
+	})
+
 })
 
 func createSubdirs(dir string, names ...string) error {
@@ -68,8 +182,11 @@ var mockChangelog = `
 changelog:
 - type: FIX
   description: "fix 1"
+  issue: https://github.com/solo-io/testrepo/issues/9
 - type: NEW_FEATURE
   description: "new feature"
+  issue: https://github.com/solo-io/testrepo/issues/9
 - type: BREAKING_CHANGE
   description: "It's a breaker"
+  issue: https://github.com/solo-io/testrepo/issues/9
 `

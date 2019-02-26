@@ -83,14 +83,14 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 		return nil, errors.Wrapf(err, "failed reading changelog file: %s", path)
 	}
 
-	if err := yaml.Unmarshal(bytes, changelog); err != nil {
-		return nil, errors.Wrap(err, "failed parsing changelog file")
+	if err := yaml.Unmarshal(bytes, &changelog); err != nil {
+		return nil, errors.Errorf("File %s is not a valid changelog file", path)
 	}
 
 	return &changelog, nil
 }
 
-func toString(v *versionutils.Version) string {
+func VersionToString(v *versionutils.Version) string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
@@ -143,8 +143,7 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 	}
 	expectedVersion := versionutils.IncrementVersion(latestVersion, breakingChanges)
 	if *proposedVersion != *expectedVersion {
-		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", toString(expectedVersion), toString(proposedVersion))
+		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", VersionToString(expectedVersion), VersionToString(proposedVersion))
 	}
-
 	return &changelog, nil
 }
