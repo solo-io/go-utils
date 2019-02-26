@@ -2,6 +2,8 @@ package githubutils
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
 
 	"github.com/google/go-github/github"
 	. "github.com/onsi/ginkgo"
@@ -46,4 +48,24 @@ var _ = Describe("github utils", func() {
 		Expect(len(byt)).To(BeNumerically(">", 0))
 	})
 
+	It("can download and store archive from git", func() {
+		file, dir := mustSetupTempFiles()
+		defer os.Remove(dir)
+		defer os.Remove(file.Name())
+		err := DownloadRepoArchive(ctx, client, file, owner, reponame, ref)
+		Expect(err).NotTo(HaveOccurred())
+		defer file.Close()
+		info, err := file.Stat()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(info.Size()).To(BeNumerically(">", 0))
+	})
+
 })
+
+func mustSetupTempFiles() (file *os.File, dir string,) {
+	tmpf, err := ioutil.TempFile("", "tar-file-")
+	Expect(err).NotTo(HaveOccurred())
+	tmpd, err := ioutil.TempDir("", "tar-dir-")
+	Expect(err).NotTo(HaveOccurred())
+	return tmpf, tmpd
+}
