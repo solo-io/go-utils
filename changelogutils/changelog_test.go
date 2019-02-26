@@ -65,11 +65,18 @@ var _ = Describe("ChangelogTest", func() {
 			filepath := filepath.Join(changelogutils.ChangelogDirectory, tag, changelogutils.SummaryFile)
 			afero.WriteFile(fs, filepath, []byte(summary), 0700)
 		}
+		writeClosingFile := func(closing, tag string) {
+			filepath := filepath.Join(changelogutils.ChangelogDirectory, tag, changelogutils.ClosingFile)
+			afero.WriteFile(fs, filepath, []byte(closing), 0700)
+		}
 		writeChangelog := func(changelog *changelogutils.Changelog) {
 			tag := changelog.Version.String()
 			createChangelogDir(tag)
 			if changelog.Summary != "" {
 				writeSummaryFile(changelog.Summary, tag)
+			}
+			if changelog.Closing != "" {
+				writeClosingFile(changelog.Closing, tag)
 			}
 			for i, file := range changelog.Files {
 				writeChangelogFile(file, fmt.Sprintf("%d.yaml", i), tag)
@@ -110,7 +117,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("works", func() {
 			tag := "v0.0.2"
-			changelog := getChangelog(tag, "blah",
+			changelog := getChangelog(tag, "blah", "closing",
 				getChangelogFile(
 					getEntry(changelogutils.FIX, "fixes foo", "foo"),
 					getEntry(changelogutils.FIX, "fixes bar", "bar"),
@@ -125,7 +132,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("validates minor version should get bumped for breaking change", func() {
 			tag := "v0.0.2"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
@@ -135,7 +142,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("validates major version should get bumped for breaking change", func() {
 			tag := "v2.0.0"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v1.2.2", tag, "")
@@ -145,7 +152,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("validates no extra subdirectories are in the changelog directory", func() {
 			tag := "v0.0.2"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			fs.Mkdir(filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), 0700)
@@ -156,7 +163,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("validates no extra files are in the changelog directory", func() {
 			tag := "v0.0.2"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
@@ -167,7 +174,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("validates no extra files are in the changelog directory", func() {
 			tag := "v0.0.2"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
@@ -178,7 +185,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("releasing stable API (v1.0.0) works", func() {
 			tag := "v1.0.0"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getStableApiChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
@@ -188,7 +195,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("releasing stable API must happen in v1.0.0 release", func() {
 			tag := "v1.1.0"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getStableApiChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			_, err := changelogutils.ComputeChangelog(fs, "v1.0.1", tag, "")
@@ -198,7 +205,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("proposed version must be greater than latest", func() {
 			tag := "v0.1.0"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
@@ -208,7 +215,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("checks that changelog entries have a description", func() {
 			tag := "v0.3.0"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "", "foo")))
 			writeChangelog(changelog)
 			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
@@ -218,7 +225,7 @@ var _ = Describe("ChangelogTest", func() {
 
 		It("checks that changelog entries have an issue link", func() {
 			tag := "v0.3.0"
-			changelog := getChangelog(tag, "",
+			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "foo", "")))
 			writeChangelog(changelog)
 			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")

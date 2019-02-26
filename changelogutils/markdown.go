@@ -11,5 +11,5 @@ closing
 
  */
 func GenerateChangelogMarkdown(changelog *Changelog) string {
-	
+	return ""
 }
