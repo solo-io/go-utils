@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
+	"github.com/spf13/afero"
 	"io/ioutil"
 	"path/filepath"
 )
@@ -36,7 +37,6 @@ const (
 )
 
 // Should return the last released version
-// Executes git commands, so this won't work if running from an unzipped archive of the code.
 func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	client, err := githubutils.GetClient(ctx)
 	if err != nil {
@@ -48,9 +48,9 @@ func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 // Should return the next version to release, based on the names of the subdirectories in the changelog
 // Will return an error if there is no version, or multiple versions, larger than the latest tag,
 // according to semver
-func GetProposedTagLocal(latestTag, changelogParentPath string) (string, error) {
+func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string, error) {
 	changelogPath := filepath.Join(changelogParentPath, ChangelogDirectory)
-	subDirs, err := ioutil.ReadDir(changelogPath)
+	subDirs, err := afero.ReadDir(fs, changelogPath)
 	if err != nil {
 		return "", errors.Wrapf(err, "Error reading changelog directory")
 	}

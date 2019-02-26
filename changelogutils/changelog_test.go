@@ -3,6 +3,7 @@ package changelogutils
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,7 +12,8 @@ import (
 var _ = Describe("ChangelogTest", func() {
 
 	expectGetProposedTag := func(latestTag, changelogDir, tag, err string) {
-		actualTag, actualErr := GetProposedTagLocal(latestTag, changelogDir)
+		fs := afero.NewOsFs()
+		actualTag, actualErr := GetProposedTag(fs, latestTag, changelogDir)
 		Expect(actualTag).To(BeEquivalentTo(tag))
 		if err == "" {
 			Expect(actualErr).To(BeNil())
