@@ -1,9 +1,11 @@
 package changelogutils_test
 
 import (
+	"context"
 	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/solo-io/go-utils/changelogutils"
+	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"io/ioutil"
 	"os"
@@ -300,6 +302,26 @@ closing`
 			output := changelogutils.GenerateChangelogMarkdown(changelog)
 			expected := "This release contained no user-facing changes."
 			Expect(output).To(BeEquivalentTo(expected))
+		})
+	})
+
+	Context("Check for presence of changelog", func() {
+		It("passes on repo with changelog", func() {
+			ctx := context.TODO()
+			client, err := githubutils.GetClient(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "testrepo", "master")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasChangelog).To(BeTrue())
+		})
+
+		It("fails on repo with no changelog", func() {
+			ctx := context.TODO()
+			client, err := githubutils.GetClient(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "solobot", "master")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasChangelog).To(BeFalse())
 		})
 	})
 
