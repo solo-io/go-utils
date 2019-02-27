@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -62,7 +61,7 @@ func CreateDocsPR(owner, repo, product string, paths ...string) error {
 	}
 	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 	fmt.Printf(markdown)
-	updateChangelogFile(fs, product, markdown, proposedTag)
+	updateChangelogFile(fs, product, "", markdown, proposedTag)
 
 	branch := repo + "-docs-" + proposedTag
 	err = gitCheckoutNewBranch(branch)
@@ -111,53 +110,39 @@ func CreateDocsPR(owner, repo, product string, paths ...string) error {
 	return nil
 }
 
-const (
-	ChangelogFrontMatter = `---
-title: Changelog
-weight: 3
----
-
-<!-- Generated -- do not edit! -->
-`
-)
-
 func getChangelogDir(product string) string {
 	return filepath.Join(DocsRepo, product, "changelog")
 }
 
-func getChangelogFile(product string) string {
-	return filepath.Join(getChangelogDir(product), "_index.md")
+// getChangelogFile(gloo, glooe) -> solo-docs/gloo/changelog/glooe-changelog
+func getChangelogFile(product, project string) string {
+	return filepath.Join(getChangelogDir(product), project + "-changelog")
 }
 
-func updateChangelogFile(fs afero.Fs, product, markdown, tag string) error {
+// requires changelog dir to be setup, does not require changelog file to exist
+func updateChangelogFile(fs afero.Fs, product, project, markdown, tag string) error {
 	changelogDir := getChangelogDir(product)
-	changelogFile := getChangelogFile(product)
-	pageStart := fmt.Sprintf("%s\n## %s\n\n%s", ChangelogFrontMatter, tag, markdown)
+	changelogFile := getChangelogFile(product, project)
+	newContents := fmt.Sprintf("### %s\n\n%s", tag, markdown)
 	exists, err := afero.Exists(fs, changelogFile)
 	if err != nil {
 		return err
-	} else if exists {
+	}
+	if !exists {
+		dirExists, err := afero.Exists(fs, changelogDir)
+		if err != nil {
+			return err
+		} else if !dirExists {
+			return errors.Errorf("Directory %s must be set up for changelogs first", changelogDir)
+		}
+	} else {
 		bytes, err := afero.ReadFile(fs, changelogFile)
 		if err != nil {
 			return err
 		}
-		contents := string(bytes)
-		if !strings.HasPrefix(contents, ChangelogFrontMatter) {
-			return errors.Errorf("Changelog file %s must have prefix '%s'", changelogFile, ChangelogFrontMatter)
-		}
-		newContents := strings.Replace(contents, ChangelogFrontMatter, pageStart, 1)
-		return afero.WriteFile(fs, changelogFile, []byte(newContents), 0700)
+		newContents = newContents + string(bytes)
 	}
-	exists, err = afero.Exists(fs, changelogDir)
-	if err != nil {
-		return err
-	} else if !exists {
-		err = fs.MkdirAll(changelogDir, 0700)
-		if err != nil {
-			return err
-		}
-	}
-	return afero.WriteFile(fs, changelogFile, []byte(pageStart), 0700)
+	return afero.WriteFile(fs, changelogFile, []byte(newContents), 0700)
 }
 
 func gitCloneDocs() error {
