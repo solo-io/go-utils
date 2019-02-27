@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/afero"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -42,7 +43,7 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
 	}
-	err = removeDirectories(paths...)
+	err = replaceDirectories(paths...)
 	if err != nil {
 		return errors.Wrapf(err, "Error removing old docs")
 	}
@@ -145,7 +146,7 @@ func execGitWithOutput(argsString, dir string) (string, error) {
 	return string(output), nil
 }
 
-func removeDirectories(paths ...string) error {
+func replaceDirectories(product string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
 		exists, err := afero.Exists(fs, path)
@@ -158,6 +159,20 @@ func removeDirectories(paths ...string) error {
 				return err
 			}
 		}
+		err = copyRecursive(path, filepath.Join("solo-docs", product, path))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func copyRecursive(from, to string) error {
+	cmd := exec.Command("cp", "-r", from, to)
+	logger.Debugf("cp %v", cmd.Args)
+	cmd.Env = os.Environ()
+	// disable DEBUG=1 from getting through to kube
+	cmd.Stdout = ginkgo.GinkgoWriter
+	cmd.Stderr = ginkgo.GinkgoWriter
+	return cmd.Run()
 }
