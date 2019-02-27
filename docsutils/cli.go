@@ -112,8 +112,7 @@ func CreateDocsPR(owner, repo, product string, paths ...string) error {
 }
 
 const (
-	ChangelogFrontMatter = `
----
+	ChangelogFrontMatter = `---
 title: Changelog
 weight: 3
 ---
@@ -133,7 +132,7 @@ func getChangelogFile(product string) string {
 func updateChangelogFile(fs afero.Fs, product, markdown, tag string) error {
 	changelogDir := getChangelogDir(product)
 	changelogFile := getChangelogFile(product)
-	pageStart := fmt.Sprintf("%s\n##%s\n\n%s", ChangelogFrontMatter, tag, markdown)
+	pageStart := fmt.Sprintf("%s\n## %s\n\n%s", ChangelogFrontMatter, tag, markdown)
 	exists, err := afero.Exists(fs, changelogFile)
 	if err != nil {
 		return err
