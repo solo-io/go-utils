@@ -250,12 +250,15 @@ var _ = Describe("ChangelogTest", func() {
 			expected := `blah
 
 **Breaking Changes**
+
 - fixes bar (bar)
 
 **New Features**
+
 - adds baz (baz)
 
 **Fixes**
+
 - fixes foo (foo)
 - fixes foo2 (foo2)
 
@@ -268,6 +271,7 @@ closing`
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")))
 			output := changelogutils.GenerateChangelogMarkdown(changelog)
 			expected := `**Fixes**
+
 - fixes foo2 (foo2)
 
 closing`
