@@ -2,12 +2,15 @@ package docker
 
 import (
 	"io"
+	"os"
 	"os/exec"
 )
 
 func Command(args ...string) *containerCmd {
 	return &containerCmd{
 		args: args,
+		stderr: os.Stderr,
+		stdout: os.Stdout,
 	}
 }
 
