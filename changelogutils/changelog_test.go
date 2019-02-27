@@ -174,7 +174,7 @@ var _ = Describe("ChangelogTest", func() {
 			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
 			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file"))
+			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file. Error: error unmarshaling JSON: json: cannot unmarshal string into Go value of type changelogutils.ChangelogFile"))
 		})
 
 		It("validates no extra files are in the changelog directory", func() {
@@ -185,7 +185,7 @@ var _ = Describe("ChangelogTest", func() {
 			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
 			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file"))
+			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file. Error: error unmarshaling JSON: json: cannot unmarshal string into Go value of type changelogutils.ChangelogFile"))
 		})
 
 		It("releasing stable API (v1.0.0) works", func() {

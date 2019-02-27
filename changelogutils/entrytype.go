@@ -52,11 +52,11 @@ func (clt ChangelogEntryType) MarshalJSON() ([]byte, error) {
 func (clt *ChangelogEntryType) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("ShirtSize should be a string, got %s", data)
+		return fmt.Errorf("ChangelogEntryType should be a string, got %s", data)
 	}
 	v, ok := _ChangelogEntryTypeToValue[s]
 	if !ok {
-		return fmt.Errorf("invalid ShirtSize %q", s)
+		return fmt.Errorf("invalid ChangelogEntryType %q", s)
 	}
 	*clt = v
 	return nil
