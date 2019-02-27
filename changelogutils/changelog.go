@@ -2,6 +2,7 @@ package changelogutils
 
 import (
 	"context"
+	"github.com/google/go-github/github"
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
@@ -174,4 +175,21 @@ func ComputeChangelog(fs afero.Fs, latestTag, proposedTag, changelogParentPath s
 		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
 	}
 	return &changelog, nil
+}
+
+func RefHasChangelog(ctx context.Context, client *github.Client, owner, repo, sha string) (bool, error) {
+	opts := &github.RepositoryContentGetOptions{
+		Ref: sha,
+	}
+
+	_, branchRepoChangelog, branchResponse, err := client.Repositories.GetContents(ctx, owner, repo, ChangelogDirectory, opts)
+	if err == nil && len(branchRepoChangelog) > 0 {
+		return true, nil
+	} else {
+		if branchResponse.StatusCode != 404 {
+			return false, err
+		}
+	}
+
+	return false, nil
 }
