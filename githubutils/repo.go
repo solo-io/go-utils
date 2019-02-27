@@ -41,7 +41,7 @@ func GetGithubToken() (string, error) {
 }
 
 func GetClient(ctx context.Context) (*github.Client, error) {
-	token, err := getGithubToken()
+	token, err := GetGithubToken()
 	if err != nil {
 		return nil, err
 	}
