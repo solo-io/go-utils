@@ -32,7 +32,7 @@ const (
 	CONTENT_TYPE_DIRECTORY = "dir"
 )
 
-func getGithubToken() (string, error) {
+func GetGithubToken() (string, error) {
 	token, found := os.LookupEnv(GITHUB_TOKEN)
 	if !found {
 		return "", errors.Errorf("Could not find %s in environment.", GITHUB_TOKEN)
