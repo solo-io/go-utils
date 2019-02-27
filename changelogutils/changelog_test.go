@@ -293,6 +293,14 @@ closing`
 			expected := "This release contained no user-facing changes."
 			Expect(output).To(BeEquivalentTo(expected))
 		})
+
+		It("allows non user facing changes to not have a description or link", func() {
+			changelog := getChangelog("v0.0.1", "", "",
+				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "", "")))
+			output := changelogutils.GenerateChangelogMarkdown(changelog)
+			expected := "This release contained no user-facing changes."
+			Expect(output).To(BeEquivalentTo(expected))
+		})
 	})
 
 })

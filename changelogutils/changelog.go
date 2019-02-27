@@ -99,11 +99,13 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	}
 
 	for _, entry := range changelog.Entries {
-		if entry.IssueLink == "" {
-			return nil, errors.Errorf("Changelog entries must have an issue link")
-		}
-		if entry.Description == "" {
-			return nil, errors.Errorf("Changelog entries must have a description")
+		if entry.Type != NON_USER_FACING {
+			if entry.IssueLink == "" {
+				return nil, errors.Errorf("Changelog entries must have an issue link")
+			}
+			if entry.Description == "" {
+				return nil, errors.Errorf("Changelog entries must have a description")
+			}
 		}
 	}
 
