@@ -21,13 +21,13 @@ const (
 
 /*
 Example:
-CreateDocsPR("solo-io", "gloo", "v0.8.2", "gloo",
+CreateDocsPR("solo-io", "gloo", "gloo",
 "docs/v1/github.com/solo-io/gloo",
 "docs/v1/github.com/solo-io/solo-kit",
 "docs/v1/gogoproto",
 "docs/v1/google")
  */
-func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
+func CreateDocsPR(owner, repo, product string, paths ...string) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
 	exists, err := afero.Exists(fs, DocsRepo)
@@ -62,7 +62,7 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 	fmt.Printf(markdown)
 
-	branch := repo + "-docs-" + tag
+	branch := repo + "-docs-" + proposedTag
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
@@ -84,7 +84,7 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 		return nil
 	}
 
-	err = gitCommit(tag)
+	err = gitCommit(proposedTag)
 	if err != nil {
 		return errors.Wrapf(err, "Error doing git commit")
 	}
@@ -92,9 +92,9 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Error pushing docs branch")
 	}
-	
-	title := fmt.Sprintf("Update docs for %s %s", product, tag)
-	body := fmt.Sprintf("Automatically generated docs for %s %s", product, tag)
+
+	title := fmt.Sprintf("Update docs for %s %s", product, proposedTag)
+	body := fmt.Sprintf("Automatically generated docs for %s %s", product, proposedTag)
 	base := "master"
 	pr := github.NewPullRequest{
 		Title: &title,
