@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -61,6 +62,7 @@ func CreateDocsPR(owner, repo, product string, paths ...string) error {
 	}
 	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 	fmt.Printf(markdown)
+	updateChangelogFile(fs, markdown, proposedTag)
 
 	branch := repo + "-docs-" + proposedTag
 	err = gitCheckoutNewBranch(branch)
@@ -107,6 +109,38 @@ func CreateDocsPR(owner, repo, product string, paths ...string) error {
 		return errors.Wrapf(err, "Error creating PR")
 	}
 	return nil
+}
+
+var (
+	ChangelogFile = filepath.Join(DocsRepo, "changelog", "_index.md")
+	ChangelogFrontMatter = `
+---
+title: Changelog
+weight: 3
+---
+
+<!-- Generated -- do not edit! -->
+`
+)
+
+func updateChangelogFile(fs afero.Fs, markdown, tag string) error {
+	pageStart := fmt.Sprintf("%s\n##%s\n\n%s", ChangelogFrontMatter, tag, markdown)
+	exists, err := afero.Exists(fs, ChangelogFile)
+	if err != nil {
+		return err
+	} else if exists {
+		bytes, err := afero.ReadFile(fs, ChangelogFile)
+		if err != nil {
+			return err
+		}
+		contents := string(bytes)
+		if !strings.HasPrefix(contents, ChangelogFrontMatter) {
+			return errors.Errorf("Changelog file %s must have prefix '%s'", ChangelogFile, ChangelogFrontMatter)
+		}
+		newContents := strings.Replace(contents, ChangelogFrontMatter, pageStart, 1)
+		return afero.WriteFile(fs, ChangelogFile, []byte(newContents), 0700)
+	}
+	return afero.WriteFile(fs, ChangelogFile, []byte(pageStart), 0700)
 }
 
 func gitCloneDocs() error {
