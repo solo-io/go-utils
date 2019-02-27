@@ -20,17 +20,17 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 
 	breakingChanges := renderChangelogEntries(changelog, BREAKING_CHANGE)
 	if breakingChanges != "" {
-		output = output + "**Breaking Changes**\n" + breakingChanges + "\n"
+		output = output + "**Breaking Changes**\n\n" + breakingChanges + "\n"
 	}
 
 	newFeatures := renderChangelogEntries(changelog, NEW_FEATURE)
 	if newFeatures != "" {
-		output = output + "**New Features**\n" + newFeatures + "\n"
+		output = output + "**New Features**\n\n" + newFeatures + "\n"
 	}
 
 	fixes := renderChangelogEntries(changelog, FIX)
 	if fixes != "" {
-		output = output + "**Fixes**\n" + fixes + "\n"
+		output = output + "**Fixes**\n\n" + fixes + "\n"
 	}
 
 	output = output + changelog.Closing

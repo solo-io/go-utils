@@ -250,12 +250,15 @@ var _ = Describe("ChangelogTest", func() {
 			expected := `blah
 
 **Breaking Changes**
+
 - fixes bar (bar)
 
 **New Features**
+
 - adds baz (baz)
 
 **Fixes**
+
 - fixes foo (foo)
 - fixes foo2 (foo2)
 
@@ -268,6 +271,7 @@ closing`
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")))
 			output := changelogutils.GenerateChangelogMarkdown(changelog)
 			expected := `**Fixes**
+
 - fixes foo2 (foo2)
 
 closing`
@@ -285,6 +289,14 @@ closing`
 		It("can render changelog with no user-facing content", func() {
 			changelog := getChangelog("v0.0.1", "", "",
 				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo2", "foo2")))
+			output := changelogutils.GenerateChangelogMarkdown(changelog)
+			expected := "This release contained no user-facing changes."
+			Expect(output).To(BeEquivalentTo(expected))
+		})
+
+		It("allows non user facing changes to not have a description or link", func() {
+			changelog := getChangelog("v0.0.1", "", "",
+				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "", "")))
 			output := changelogutils.GenerateChangelogMarkdown(changelog)
 			expected := "This release contained no user-facing changes."
 			Expect(output).To(BeEquivalentTo(expected))
