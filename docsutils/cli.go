@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	DocsProject = "solo-docs"
+	DocsRepo = "solo-docs"
 )
 
 /*
@@ -29,15 +29,15 @@ CreateDocsPR("solo-io", "gloo", "v0.8.2", "gloo",
 func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
-	exists, err := afero.Exists(fs, DocsProject)
+	exists, err := afero.Exists(fs, DocsRepo)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return errors.Errorf("Cannot clone because %s already exists", DocsProject)
+		return errors.Errorf("Cannot clone because %s already exists", DocsRepo)
 	}
 	err = gitCloneDocs()
-	defer fs.RemoveAll(DocsProject)
+	defer fs.RemoveAll(DocsRepo)
 	if err != nil {
 		return errors.Wrapf(err, "Error cloning repo")
 	}
@@ -84,7 +84,7 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 		Head: &branch,
 		Base: &base,
 	}
-	_, _, err = client.PullRequests.Create(ctx, owner, repo, &pr)
+	_, _, err = client.PullRequests.Create(ctx, owner, DocsRepo, &pr)
 	if err != nil {
 		return errors.Wrapf(err, "Error creating PR")
 	}
@@ -96,23 +96,23 @@ func gitCloneDocs() error {
 	if err != nil {
 		return err
 	}
-	return execGit("", "clone", fmt.Sprintf("https://soloio-bot:%s@github.com/solo-io/%s.git", token, DocsProject))
+	return execGit("", "clone", fmt.Sprintf("https://soloio-bot:%s@github.com/solo-io/%s.git", token, DocsRepo))
 }
 
 func gitCheckoutNewBranch(branch string) error {
-	return execGit(DocsProject, "checkout", "-b", branch)
+	return execGit(DocsRepo, "checkout", "-b", branch)
 }
 
 func gitAddAll() error {
-	return execGit(DocsProject, "add", ".")
+	return execGit(DocsRepo, "add", ".")
 }
 
 func gitCommit(tag string) error {
-	return execGit(DocsProject, "commit", "-m", fmt.Sprintf("\"docs for %s\"", tag))
+	return execGit(DocsRepo, "commit", "-m", fmt.Sprintf("docs for %s", tag))
 }
 
 func gitDiffIsEmpty() (bool, error) {
-	output, err := execGitWithOutput(DocsProject, "status", "--porcelain")
+	output, err := execGitWithOutput(DocsRepo, "status", "--porcelain")
 	if err != nil {
 		return false, err
 	}
@@ -120,7 +120,7 @@ func gitDiffIsEmpty() (bool, error) {
 }
 
 func gitPush(branch string) error {
-	return execGit(DocsProject, "push", "origin", branch)
+	return execGit(DocsRepo, "push", "origin", branch)
 }
 
 func prepareCmd(dir string, args ...string) *exec.Cmd {
@@ -152,7 +152,7 @@ func execGitWithOutput(dir string, args ...string) (string, error) {
 func replaceDirectories(product string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
-		soloDocsPath := filepath.Join(DocsProject, product, path)
+		soloDocsPath := filepath.Join(DocsRepo, product, path)
 		exists, err := afero.Exists(fs, soloDocsPath)
 		if err != nil {
 			return err
