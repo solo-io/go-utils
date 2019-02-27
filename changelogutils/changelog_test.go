@@ -132,7 +132,7 @@ var _ = Describe("ChangelogTest", func() {
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")),
 				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo3", "foo3")))
 			writeChangelog(changelog)
-			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
 		})
@@ -142,7 +142,7 @@ var _ = Describe("ChangelogTest", func() {
 			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
-			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Expected version v0.1.0 to be next changelog version, found v0.0.2"))
 		})
@@ -152,7 +152,7 @@ var _ = Describe("ChangelogTest", func() {
 			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
-			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v1.2.2", tag, "")
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, "v1.2.2", tag, "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
 		})
@@ -163,7 +163,7 @@ var _ = Describe("ChangelogTest", func() {
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			fs.Mkdir(filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), 0700)
-			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Unexpected directory foo in changelog directory changelog/v0.0.2"))
 		})
@@ -174,7 +174,7 @@ var _ = Describe("ChangelogTest", func() {
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
-			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file. Error: error unmarshaling JSON: json: cannot unmarshal string into Go value of type changelogutils.ChangelogFile"))
 		})
@@ -185,7 +185,7 @@ var _ = Describe("ChangelogTest", func() {
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
 			afero.WriteFile(fs, filepath.Join(changelogutils.ChangelogDirectory, tag, "foo"), []byte("invalid changelog"), 0700)
-			_, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("File changelog/v0.0.2/foo is not a valid changelog file. Error: error unmarshaling JSON: json: cannot unmarshal string into Go value of type changelogutils.ChangelogFile"))
 		})
@@ -195,7 +195,7 @@ var _ = Describe("ChangelogTest", func() {
 			changelog := getChangelog(tag, "", "",
 				getStableApiChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
-			loadedChangelog, err := changelogutils.ComputeChangelog(fs, "v0.0.1", tag, "")
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
 		})
@@ -205,7 +205,7 @@ var _ = Describe("ChangelogTest", func() {
 			changelog := getChangelog(tag, "", "",
 				getStableApiChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
 			writeChangelog(changelog)
-			_, err := changelogutils.ComputeChangelog(fs, "v1.0.1", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v1.0.1", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not v1.1.0"))
 		})
@@ -215,7 +215,7 @@ var _ = Describe("ChangelogTest", func() {
 			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
 			writeChangelog(changelog)
-			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.2.0", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Proposed version v0.1.0 must be greater than latest version v0.2.0"))
 		})
@@ -225,7 +225,7 @@ var _ = Describe("ChangelogTest", func() {
 			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "", "foo")))
 			writeChangelog(changelog)
-			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.2.0", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Changelog entries must have a description"))
 		})
@@ -235,7 +235,7 @@ var _ = Describe("ChangelogTest", func() {
 			changelog := getChangelog(tag, "", "",
 				getChangelogFile(getEntry(changelogutils.FIX, "foo", "")))
 			writeChangelog(changelog)
-			_, err := changelogutils.ComputeChangelog(fs, "v0.2.0", tag, "")
+			_, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.2.0", tag, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(BeEquivalentTo("Changelog entries must have an issue link"))
 		})

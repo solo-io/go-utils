@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func GetChangelogMarkdown(owner, repo string) (string, error) {
+func GetChangelogMarkdownForPR(owner, repo string) (string, error) {
 	client, err := githubutils.GetClient(context.TODO())
 	if err != nil {
 		return "", err
@@ -20,7 +20,7 @@ func GetChangelogMarkdown(owner, repo string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	changelog, err := ComputeChangelog(fs, latestTag, proposedTag, "")
+	changelog, err := ComputeChangelogForNonRelease(fs, latestTag, proposedTag, "")
 	if err != nil {
 		return "", err
 	}
