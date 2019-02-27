@@ -32,7 +32,7 @@ const (
 	CONTENT_TYPE_DIRECTORY = "dir"
 )
 
-func getGithubToken() (string, error) {
+func GetGithubToken() (string, error) {
 	token, found := os.LookupEnv(GITHUB_TOKEN)
 	if !found {
 		return "", errors.Errorf("Could not find %s in environment.", GITHUB_TOKEN)
@@ -41,7 +41,7 @@ func getGithubToken() (string, error) {
 }
 
 func GetClient(ctx context.Context) (*github.Client, error) {
-	token, err := getGithubToken()
+	token, err := GetGithubToken()
 	if err != nil {
 		return nil, err
 	}
