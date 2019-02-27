@@ -43,11 +43,11 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 		return errors.Wrapf(err, "Error cloning repo")
 	}
 
-	client, err := githubutils.GetClient(context.TODO())
+	client, err := githubutils.GetClient(ctx)
 	if err != nil {
 		return err
 	}
-	latestTag, err := githubutils.FindLatestReleaseTag(context.TODO(), client, owner, repo)
+	latestTag, err := githubutils.FindLatestReleaseTag(ctx, client, owner, repo)
 	if err != nil {
 		return err
 	}
@@ -92,10 +92,7 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Error pushing docs branch")
 	}
-	client, err := githubutils.GetClient(ctx)
-	if err != nil {
-		return err
-	}
+	
 	title := fmt.Sprintf("Update docs for %s %s", product, tag)
 	body := fmt.Sprintf("Automatically generated docs for %s %s", product, tag)
 	base := "master"
