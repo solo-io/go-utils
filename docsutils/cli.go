@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/go-github/github"
 	"github.com/onsi/ginkgo"
+	"github.com/solo-io/go-utils/changelogutils"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/logger"
@@ -41,6 +42,26 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Error cloning repo")
 	}
+
+	client, err := githubutils.GetClient(context.TODO())
+	if err != nil {
+		return err
+	}
+	latestTag, err := githubutils.FindLatestReleaseTag(context.TODO(), client, owner, repo)
+	if err != nil {
+		return err
+	}
+	proposedTag, err := changelogutils.GetProposedTag(fs, latestTag, "")
+	if err != nil {
+		return err
+	}
+	changelog, err := changelogutils.ComputeChangelog(fs, latestTag, proposedTag, "")
+	if err != nil {
+		return err
+	}
+	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
+	fmt.Printf(markdown)
+
 	branch := repo + "-docs-" + tag
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
