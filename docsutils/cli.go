@@ -20,14 +20,21 @@ const (
 )
 
 /*
+Useful for cases where repo == docs product name == project name
+ */
+func CreateDocsPRSimple(owner, repo string, paths ...string) error {
+	return CreateDocsPR(owner, repo, repo, repo, paths...)
+}
+
+/*
 Example:
-CreateDocsPR("solo-io", "gloo", "gloo",
+CreateDocsPR("solo-io", "gloo", "gloo", "gloo",
 "docs/v1/github.com/solo-io/gloo",
 "docs/v1/github.com/solo-io/solo-kit",
 "docs/v1/gogoproto",
 "docs/v1/google")
  */
-func CreateDocsPR(owner, repo, product string, paths ...string) error {
+func CreateDocsPR(owner, repo, product, project string, paths ...string) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
 	exists, err := afero.Exists(fs, DocsRepo)
@@ -61,7 +68,7 @@ func CreateDocsPR(owner, repo, product string, paths ...string) error {
 	}
 	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 	fmt.Printf(markdown)
-	updateChangelogFile(fs, product, "", markdown, proposedTag)
+	updateChangelogFile(fs, product, project, markdown, proposedTag)
 
 	branch := repo + "-docs-" + proposedTag
 	err = gitCheckoutNewBranch(branch)
