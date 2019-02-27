@@ -68,7 +68,10 @@ func CreateDocsPR(owner, repo, product, project string, paths ...string) error {
 	}
 	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 	fmt.Printf(markdown)
-	updateChangelogFile(fs, product, project, markdown, proposedTag)
+	err = updateChangelogFile(fs, product, project, markdown, proposedTag)
+	if err != nil {
+		return err
+	}
 
 	branch := repo + "-docs-" + proposedTag
 	err = gitCheckoutNewBranch(branch)
@@ -118,7 +121,7 @@ func CreateDocsPR(owner, repo, product, project string, paths ...string) error {
 }
 
 func getChangelogDir(product string) string {
-	return filepath.Join(DocsRepo, product, "changelog")
+	return filepath.Join(DocsRepo, product, "docs", "changelog")
 }
 
 // getChangelogFile(gloo, glooe) -> solo-docs/gloo/changelog/glooe-changelog
