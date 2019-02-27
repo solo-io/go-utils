@@ -149,17 +149,18 @@ func execGitWithOutput(argsString, dir string) (string, error) {
 func replaceDirectories(product string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
-		exists, err := afero.Exists(fs, path)
+		soloDocsPath := filepath.Join("solo-docs", product, path)
+		exists, err := afero.Exists(fs, soloDocsPath)
 		if err != nil {
 			return err
 		}
 		if exists {
-			err = fs.RemoveAll(path)
+			err = fs.RemoveAll(soloDocsPath)
 			if err != nil {
 				return err
 			}
 		}
-		err = copyRecursive(path, filepath.Join("solo-docs", product, path))
+		err = copyRecursive(path, soloDocsPath)
 		if err != nil {
 			return err
 		}
