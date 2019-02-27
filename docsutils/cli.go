@@ -12,7 +12,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
+)
+
+const (
+	DocsProject = "solo-docs"
 )
 
 /*
@@ -26,15 +29,15 @@ CreateDocsPR("solo-io", "gloo", "v0.8.2", "gloo",
 func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
-	exists, err := afero.Exists(fs, "solo-docs")
+	exists, err := afero.Exists(fs, DocsProject)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return errors.Errorf("Cannot clone because solo-docs already exists")
+		return errors.Errorf("Cannot clone because %s already exists", DocsProject)
 	}
 	err = gitCloneDocs()
-	defer fs.RemoveAll("solo-docs")
+	defer fs.RemoveAll(DocsProject)
 	if err != nil {
 		return errors.Wrapf(err, "Error cloning repo")
 	}
@@ -93,23 +96,23 @@ func gitCloneDocs() error {
 	if err != nil {
 		return err
 	}
-	return execGit(fmt.Sprintf("clone https://soloio-bot:%s@github.com/solo-io/solo-docs.git", token), "")
+	return execGit("", "clone", fmt.Sprintf("https://soloio-bot:%s@github.com/solo-io/%s.git", token, DocsProject))
 }
 
 func gitCheckoutNewBranch(branch string) error {
-	return execGit(fmt.Sprintf("checkout -b %s", branch), "solo-docs")
+	return execGit(DocsProject, "checkout", "-b", branch)
 }
 
 func gitAddAll() error {
-	return execGit("add .", "solo-docs")
+	return execGit(DocsProject, "add", ".")
 }
 
 func gitCommit(tag string) error {
-	return execGit(fmt.Sprintf("commit -m \"docs for %s\"", tag), "solo-docs")
+	return execGit(DocsProject, "commit", "-m", fmt.Sprintf("\"docs for %s\"", tag))
 }
 
 func gitDiffIsEmpty() (bool, error) {
-	output, err := execGitWithOutput("status --porcelain", "solo-docs")
+	output, err := execGitWithOutput(DocsProject, "status", "--porcelain")
 	if err != nil {
 		return false, err
 	}
@@ -117,11 +120,10 @@ func gitDiffIsEmpty() (bool, error) {
 }
 
 func gitPush(branch string) error {
-	return execGit(fmt.Sprintf("push origin/%s", branch), "solo-docs")
+	return execGit(DocsProject, "push", "origin", branch)
 }
 
-func prepareCmd(argsString, dir string) *exec.Cmd {
-	args := strings.Split(argsString, " ")
+func prepareCmd(dir string, args ...string) *exec.Cmd {
 	cmd := exec.Command("git", args...)
 	logger.Debugf("git %v", cmd.Args)
 	cmd.Env = os.Environ()
@@ -132,13 +134,14 @@ func prepareCmd(argsString, dir string) *exec.Cmd {
 	return cmd
 }
 
-func execGit(argsString, dir string) error {
-	cmd := prepareCmd(argsString, dir)
+func execGit(dir string, args ...string) error {
+	cmd := prepareCmd(dir, args...)
 	return cmd.Run()
 }
 
-func execGitWithOutput(argsString, dir string) (string, error) {
-	cmd := prepareCmd(argsString, dir)
+func execGitWithOutput(dir string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -149,7 +152,7 @@ func execGitWithOutput(argsString, dir string) (string, error) {
 func replaceDirectories(product string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
-		soloDocsPath := filepath.Join("solo-docs", product, path)
+		soloDocsPath := filepath.Join(DocsProject, product, path)
 		exists, err := afero.Exists(fs, soloDocsPath)
 		if err != nil {
 			return err
