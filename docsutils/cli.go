@@ -9,10 +9,12 @@ import (
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/testutils"
 	"github.com/spf13/afero"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -65,7 +67,7 @@ func CreateDocsPR(owner, repo, product, project, tag string, paths ...string) er
 		return err
 	}
 
-	branch := repo + "-docs-" + tag
+	branch := repo + "-docs-" + tag + testutils.RandString(4)
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
@@ -141,6 +143,11 @@ func updateChangelogFile(fs afero.Fs, product, project, markdown, tag string) er
 		bytes, err := afero.ReadFile(fs, changelogFile)
 		if err != nil {
 			return err
+		}
+		oldContents := string(bytes)
+		if strings.Contains(oldContents, newContents) {
+			// re-release, don't do anything
+			return nil
 		}
 		newContents = newContents + string(bytes)
 	}
