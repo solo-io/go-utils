@@ -43,7 +43,7 @@ func CreateDocsPR(owner, repo, tag, product string, paths ...string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
 	}
-	err = replaceDirectories(paths...)
+	err = replaceDirectories(product, paths...)
 	if err != nil {
 		return errors.Wrapf(err, "Error removing old docs")
 	}
