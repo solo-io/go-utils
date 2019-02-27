@@ -22,19 +22,19 @@ const (
 /*
 Useful for cases where repo == docs product name == project name
  */
-func CreateDocsPRSimple(owner, repo string, paths ...string) error {
-	return CreateDocsPR(owner, repo, repo, repo, paths...)
+func CreateDocsPRSimple(owner, repo, tag string, paths ...string) error {
+	return CreateDocsPR(owner, repo, repo, repo, tag, paths...)
 }
 
 /*
 Example:
-CreateDocsPR("solo-io", "gloo", "gloo", "gloo",
+CreateDocsPR("solo-io", "gloo", "gloo", "gloo", "v0.8.2",
 "docs/v1/github.com/solo-io/gloo",
 "docs/v1/github.com/solo-io/solo-kit",
 "docs/v1/gogoproto",
 "docs/v1/google")
  */
-func CreateDocsPR(owner, repo, product, project string, paths ...string) error {
+func CreateDocsPR(owner, repo, product, project, tag string, paths ...string) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
 	exists, err := afero.Exists(fs, DocsRepo)
@@ -54,26 +54,18 @@ func CreateDocsPR(owner, repo, product, project string, paths ...string) error {
 	if err != nil {
 		return err
 	}
-	latestTag, err := githubutils.FindLatestReleaseTag(ctx, client, owner, repo)
-	if err != nil {
-		return err
-	}
-	proposedTag, err := changelogutils.GetProposedTag(fs, latestTag, "")
-	if err != nil {
-		return err
-	}
-	changelog, err := changelogutils.ComputeChangelog(fs, latestTag, proposedTag, "")
+	changelog, err := changelogutils.ComputeChangelogForTag(fs, tag, "")
 	if err != nil {
 		return err
 	}
 	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 	fmt.Printf(markdown)
-	err = updateChangelogFile(fs, product, project, markdown, proposedTag)
+	err = updateChangelogFile(fs, product, project, markdown, tag)
 	if err != nil {
 		return err
 	}
 
-	branch := repo + "-docs-" + proposedTag
+	branch := repo + "-docs-" + tag
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
@@ -95,7 +87,7 @@ func CreateDocsPR(owner, repo, product, project string, paths ...string) error {
 		return nil
 	}
 
-	err = gitCommit(proposedTag)
+	err = gitCommit(tag)
 	if err != nil {
 		return errors.Wrapf(err, "Error doing git commit")
 	}
@@ -104,8 +96,8 @@ func CreateDocsPR(owner, repo, product, project string, paths ...string) error {
 		return errors.Wrapf(err, "Error pushing docs branch")
 	}
 
-	title := fmt.Sprintf("Update docs for %s %s", product, proposedTag)
-	body := fmt.Sprintf("Automatically generated docs for %s %s", product, proposedTag)
+	title := fmt.Sprintf("Update docs for %s %s", product, tag)
+	body := fmt.Sprintf("Automatically generated docs for %s %s", product, tag)
 	base := "master"
 	pr := github.NewPullRequest{
 		Title: &title,
