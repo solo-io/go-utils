@@ -67,7 +67,7 @@ func CreateDocsPR(owner, repo, product, project, tag string, paths ...string) er
 		return err
 	}
 
-	branch := repo + "-docs-" + tag + testutils.RandString(4)
+	branch := repo + "-docs-" + tag + "-" + testutils.RandString(4)
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
@@ -127,7 +127,7 @@ func getChangelogFile(product, project string) string {
 func updateChangelogFile(fs afero.Fs, product, project, markdown, tag string) error {
 	changelogDir := getChangelogDir(product)
 	changelogFile := getChangelogFile(product, project)
-	newContents := fmt.Sprintf("### %s\n\n%s", tag, markdown)
+	newContents := fmt.Sprintf("### %s\n\n%s\n\n", tag, markdown)
 	exists, err := afero.Exists(fs, changelogFile)
 	if err != nil {
 		return err
