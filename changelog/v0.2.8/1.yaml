@@ -1,0 +1,7 @@
+changelog:
+  - type: FIX
+    description: Markdown generation now always ends in two new lines.
+    issueLink: https://github.com/solo-io/go-utils/issues/30
+  - type: NEW_FEATURE
+    description: Changelog now enabled for this repo.
+    issueLink: https://github.com/solo-io/go-utils/issues/31
