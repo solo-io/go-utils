@@ -36,7 +36,7 @@ CreateDocsPR("solo-io", "gloo", "gloo", "gloo", "v0.8.2",
 "docs/v1/gogoproto",
 "docs/v1/google")
  */
-func CreateDocsPR(owner, repo, product, project, tag string, paths ...string) error {
+func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
 	exists, err := afero.Exists(fs, DocsRepo)
@@ -46,37 +46,41 @@ func CreateDocsPR(owner, repo, product, project, tag string, paths ...string) er
 	if exists {
 		return errors.Errorf("Cannot clone because %s already exists", DocsRepo)
 	}
+
+	// setup repo
 	err = gitCloneDocs()
 	defer fs.RemoveAll(DocsRepo)
 	if err != nil {
 		return errors.Wrapf(err, "Error cloning repo")
 	}
 
-	client, err := githubutils.GetClient(ctx)
-	if err != nil {
-		return err
-	}
-	changelog, err := changelogutils.ComputeChangelogForTag(fs, tag, "")
-	if err != nil {
-		return err
-	}
-	markdown := changelogutils.GenerateChangelogMarkdown(changelog)
-	fmt.Printf(markdown)
-	err = updateChangelogFile(fs, product, project, markdown, tag)
-	if err != nil {
-		return err
-	}
-
-	branch := repo + "-docs-" + tag + testutils.RandString(4)
+	// setup branch
+	branch := repo + "-docs-" + tag + "-" + testutils.RandString(4)
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
 	}
-	err = replaceDirectories(product, paths...)
+
+	// update changelog if "changelog" directory exists in this repo
+	err = updateChangelogIfNecessary(fs, tag, product, project)
+	if err != nil {
+		return err
+	}
+
+	// replaceDirectories("gloo", "docs/v1") updates replaces contents of "solo-docs/gloo/docs/v1" with what's in "docs/v1"
+	err = replaceApiDirectories(product, apiPaths...)
 	if err != nil {
 		return errors.Wrapf(err, "Error removing old docs")
 	}
-	err = gitAddAll()
+
+	// see if there is something to commit, push and open PR if so
+	return submitPRIfChanges(ctx, owner, branch, tag, product)
+
+	return nil
+}
+
+func submitPRIfChanges(ctx context.Context, owner, branch, tag, product string) error {
+	err := gitAddAll()
 	if err != nil {
 		return errors.Wrapf(err, "Error doing git add")
 	}
@@ -88,10 +92,14 @@ func CreateDocsPR(owner, repo, product, project, tag string, paths ...string) er
 		// no diff, exit early cause we're done
 		return nil
 	}
-
 	err = gitCommit(tag)
 	if err != nil {
 		return errors.Wrapf(err, "Error doing git commit")
+	}
+	// make sure we can get the client before starting to push
+	client, err := githubutils.GetClient(ctx)
+	if err != nil {
+		return err
 	}
 	err = gitPush(branch)
 	if err != nil {
@@ -107,9 +115,30 @@ func CreateDocsPR(owner, repo, product, project, tag string, paths ...string) er
 		Head: &branch,
 		Base: &base,
 	}
+
 	_, _, err = client.PullRequests.Create(ctx, owner, DocsRepo, &pr)
 	if err != nil {
 		return errors.Wrapf(err, "Error creating PR")
+	}
+	return nil
+}
+
+func updateChangelogIfNecessary(fs afero.Fs, tag, product, project string) error {
+	exists, err := changelogutils.ChangelogDirExists(fs, "")
+	if err != nil {
+		return errors.Wrapf(err, "Error checking for changelog dir")
+	}
+	if exists {
+		changelog, err := changelogutils.ComputeChangelogForTag(fs, tag, "")
+		if err != nil {
+			return err
+		}
+		markdown := changelogutils.GenerateChangelogMarkdown(changelog)
+		fmt.Printf(markdown)
+		err = updateChangelogFile(fs, product, project, markdown, tag)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -127,7 +156,7 @@ func getChangelogFile(product, project string) string {
 func updateChangelogFile(fs afero.Fs, product, project, markdown, tag string) error {
 	changelogDir := getChangelogDir(product)
 	changelogFile := getChangelogFile(product, project)
-	newContents := fmt.Sprintf("### %s\n\n%s", tag, markdown)
+	newContents := fmt.Sprintf("### %s\n\n%s\n\n", tag, markdown)
 	exists, err := afero.Exists(fs, changelogFile)
 	if err != nil {
 		return err
@@ -186,7 +215,7 @@ func gitPush(branch string) error {
 	return execGit(DocsRepo, "push", "origin", branch)
 }
 
-func prepareCmd(dir string, args ...string) *exec.Cmd {
+func prepareGitCmd(dir string, args ...string) *exec.Cmd {
 	cmd := exec.Command("git", args...)
 	logger.Debugf("git %v", cmd.Args)
 	cmd.Env = os.Environ()
@@ -198,7 +227,7 @@ func prepareCmd(dir string, args ...string) *exec.Cmd {
 }
 
 func execGit(dir string, args ...string) error {
-	cmd := prepareCmd(dir, args...)
+	cmd := prepareGitCmd(dir, args...)
 	return cmd.Run()
 }
 
@@ -212,7 +241,7 @@ func execGitWithOutput(dir string, args ...string) (string, error) {
 	return string(output), nil
 }
 
-func replaceDirectories(product string, paths ...string) error {
+func replaceApiDirectories(product string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
 		soloDocsPath := filepath.Join(DocsRepo, product, path)

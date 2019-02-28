@@ -113,6 +113,10 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	return &changelog, nil
 }
 
+func ChangelogDirExists(fs afero.Fs, changelogParentPath string) (bool, error) {
+	return afero.Exists(fs, filepath.Join(changelogParentPath, ChangelogDirectory))
+}
+
 func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Changelog, error) {
 	version, err := versionutils.ParseVersion(tag)
 	if err != nil {
