@@ -9,12 +9,13 @@ import (
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/logger"
-	"github.com/solo-io/go-utils/testutils"
 	"github.com/spf13/afero"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -55,7 +56,7 @@ func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string)
 	}
 
 	// setup branch
-	branch := repo + "-docs-" + tag + "-" + testutils.RandString(4)
+	branch := repo + "-docs-" + tag + "-" + randString(4)
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
@@ -77,6 +78,20 @@ func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string)
 	return submitPRIfChanges(ctx, owner, branch, tag, product)
 
 	return nil
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz1234567890")
+
+func randString(length int) string {
+	b := make([]rune, length)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
 
 func submitPRIfChanges(ctx context.Context, owner, branch, tag, product string) error {
