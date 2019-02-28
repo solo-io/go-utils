@@ -264,7 +264,9 @@ var _ = Describe("ChangelogTest", func() {
 - fixes foo (foo)
 - fixes foo2 (foo2)
 
-closing`
+closing
+
+`
 			Expect(output).To(BeEquivalentTo(expected))
 		})
 
@@ -276,7 +278,9 @@ closing`
 
 - fixes foo2 (foo2)
 
-closing`
+closing
+
+`
 			Expect(output).To(BeEquivalentTo(expected))
 		})
 
@@ -292,7 +296,7 @@ closing`
 			changelog := getChangelog("v0.0.1", "", "",
 				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo2", "foo2")))
 			output := changelogutils.GenerateChangelogMarkdown(changelog)
-			expected := "This release contained no user-facing changes."
+			expected := "This release contained no user-facing changes.\n\n"
 			Expect(output).To(BeEquivalentTo(expected))
 		})
 
@@ -300,7 +304,7 @@ closing`
 			changelog := getChangelog("v0.0.1", "", "",
 				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "", "")))
 			output := changelogutils.GenerateChangelogMarkdown(changelog)
-			expected := "This release contained no user-facing changes."
+			expected := "This release contained no user-facing changes.\n\n"
 			Expect(output).To(BeEquivalentTo(expected))
 		})
 	})

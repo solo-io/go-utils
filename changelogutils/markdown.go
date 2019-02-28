@@ -33,10 +33,12 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 		output = output + "**Fixes**\n\n" + fixes + "\n"
 	}
 
-	output = output + changelog.Closing
+	if changelog.Closing != "" {
+		output = output + changelog.Closing + "\n\n"
+	}
 
 	if output == "" {
-		output = "This release contained no user-facing changes."
+		output = "This release contained no user-facing changes.\n\n"
 	}
 	return output
 }
