@@ -171,7 +171,7 @@ func getChangelogFile(product, project string) string {
 func updateChangelogFile(fs afero.Fs, product, project, markdown, tag string) error {
 	changelogDir := getChangelogDir(product)
 	changelogFile := getChangelogFile(product, project)
-	newContents := fmt.Sprintf("### %s\n\n%s\n\n", tag, markdown)
+	newContents := fmt.Sprintf("### %s\n\n%s", tag, markdown)
 	exists, err := afero.Exists(fs, changelogFile)
 	if err != nil {
 		return err
