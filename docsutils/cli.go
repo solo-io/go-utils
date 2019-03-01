@@ -250,19 +250,22 @@ func submitPRIfChanges(ctx context.Context, owner, branch, tag, product string) 
 	return nil
 }
 
-func updateChangelogIfNecessary(fs afero.Fs, tag, product, project string) error {
+func updateChangelogIfNecessary(fs afero.Fs, tag, product, changelogPrefix string) error {
 	exists, err := changelogutils.ChangelogDirExists(fs, "")
 	if err != nil {
 		return errors.Wrapf(err, "Error checking for changelog dir")
 	}
 	if exists {
+		if changelogPrefix == "" {
+			return errors.Errorf("ChangelogPrefix must be set.")
+		}
 		changelog, err := changelogutils.ComputeChangelogForTag(fs, tag, "")
 		if err != nil {
 			return err
 		}
 		markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 		fmt.Printf(markdown)
-		err = updateChangelogFile(fs, product, project, markdown, tag)
+		err = updateChangelogFile(fs, product, changelogPrefix, markdown, tag)
 		if err != nil {
 			return err
 		}
@@ -275,14 +278,14 @@ func getChangelogDir(product string) string {
 }
 
 // getChangelogFile(gloo, glooe) -> solo-docs/gloo/changelog/glooe-changelog
-func getChangelogFile(product, project string) string {
-	return filepath.Join(getChangelogDir(product), project + "-changelog")
+func getChangelogFile(product, changelogPrefix string) string {
+	return filepath.Join(getChangelogDir(product), changelogPrefix + "-changelog")
 }
 
 // requires changelog dir to be setup, does not require changelog file to exist
-func updateChangelogFile(fs afero.Fs, product, project, markdown, tag string) error {
+func updateChangelogFile(fs afero.Fs, product, changelogPrefix, markdown, tag string) error {
 	changelogDir := getChangelogDir(product)
-	changelogFile := getChangelogFile(product, project)
+	changelogFile := getChangelogFile(product, changelogPrefix)
 	newContents := fmt.Sprintf("### %s\n\n%s", tag, markdown)
 	exists, err := afero.Exists(fs, changelogFile)
 	if err != nil {
