@@ -23,13 +23,21 @@ const (
 )
 
 type DocsPRSpec struct {
+	// Repo owner, i.e. "solo-io"
 	Owner     string
+	// Repo, i.e. "gloo"
 	Repo      string
+	// Release tag, i.e. "v0.8.5"
 	Tag       string
+	// Product in docs, i.e. "gloo"
 	Product   string
+	// Project in github, i.e. "solo-projects"
 	Project   string
+	// Paths to generated API doc directory that should be copied into docs, i.e. "docs/v1/github.com/solo-io/gloo"
 	ApiPaths  []string // can be nil
+	// Path to generated CLI doc directory, i.e. "docs/cli"
 	CliPath   string   // can be empty string
+	// Prefix of CLI docs, i.e. "glooctl"
 	CliPrefix string   // can be empty string
 }
 
