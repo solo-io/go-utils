@@ -3,11 +3,12 @@
 Any repository set up with the Solo bot webhook for CI and release builds can opt into 
 using the automated changelog provided in this utility. The benefits of using the changelog include:
 
-- Automatically producing the description for the github release page, and optionally the docs. 
-- Ensuring that every change is described for in the release notes, with links to Github issues.  
+- Automatically producing the description for the github release page, and optionally the docs, with zero effort. 
+- Ensuring that every change is described in the release notes, with links to Github issues.  
+- Ensuring that the release notes are consistently formatted across releases and repos. 
 - Ensuring that the release versions are incremented correctly according to semantic versioning. 
 
-## Turning on Changelogs
+## Turning on Changelog
 
 Add a top-level directory called "changelog" in the repo. This directory will ultimately contain a structure like
 the following: 
@@ -46,6 +47,10 @@ Type must be one of `NEW_FEATURE`, `FIX`, `BREAKING_CHANGE`, or `NON_USER_FACING
 
 Changelog entries that are not of type `NON_USER_FACING` must have a description and an issue link. 
 Those fields are optional for `NON_USER_FACING` changes. 
+
+The description field should be one or more complete sentences (starting with a capital letter, ending 
+with a period). The issue link should point to a valid github URL. These conventions are currently
+not validated, but may be in a future version.  
 
 The name of the changelog filename does not matter. It is useful to pick a unique name for the PR, 
 to avoid potential merge conflicts. For instance, you may add this change in a file called 
@@ -89,6 +94,25 @@ releaseStableApi: true
 Changelogs will automatically be rendered into a markdown string, and the CI release bot will 
 immediately update a release description to be the changelog when a release is published. 
 No manually entered description should be used (it will get overwritten). 
+
+### Rendering notes
+
+Changelogs for a tag are merged and rendered in the following order:
+
+- Summary
+- Breaking changes
+- New Features
+- Fixes
+- Closing
+
+If the contents for a section are empty, it is omitted. 
+
+A breaking change, new feature, or fix are rendered in the following way: `<description> (<issueLink>)`
+
+Non-user facing changes are omitted from the changelog. If there are no user-facing changes in a release, 
+the rendered notes will just say: 
+
+> This release contained no user-facing changes.
 
 ## Pushing release notes and docs to Solo Docs
 
