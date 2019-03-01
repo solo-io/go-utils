@@ -151,14 +151,14 @@ func replaceCliDocs(product, cliPrefix, cliPath string) error {
 
 	soloCliDocsDir := filepath.Join(DocsRepo, product, "docs", "cli")
 	oldDocs := filepath.Join(soloCliDocsDir, cliPrefix + "*")
-	cmd := exec.Command("rm", oldDocs)
+	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("rm %s", oldDocs))
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, "Could not delete old docs %s", oldDocs)
+		return errors.Wrapf(err, "Could not delete old docs %s, %s", oldDocs)
 	}
 
 	newDocs := filepath.Join(cliPath, cliPrefix + "*")
-	cmd = exec.Command("cp", newDocs, soloCliDocsDir)
+	cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf("cp %s %s", newDocs, soloCliDocsDir))
 	err = cmd.Run()
 	if err != nil {
 		return errors.Wrapf(err, "Could not copy new docs %s", oldDocs)
