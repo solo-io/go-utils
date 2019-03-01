@@ -9,7 +9,9 @@ import (
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
+	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -22,11 +24,58 @@ const (
 	DocsRepo = "solo-docs"
 )
 
+type DocsPRSpec struct {
+	// Repo owner, i.e. "solo-io"
+	Owner           string
+	// Repo, i.e. "solo-projects"
+	Repo            string
+	// Release tag, i.e. "v0.8.5"
+	Tag             string
+	// Product in docs, i.e. "gloo"
+	Product         string
+	// Prefix to the changelog file in the docs repo, i.e. "glooe" -> push changelog to solo-docs/<product>/docs/changelog/glooe-changelog
+	ChangelogPrefix string
+	// Path to the directory containing "docs", i.e. "projects/gloo/doc
+	DocsParentPath  string
+	// Paths to generated API doc directory that should be copied into docs, i.e. "docs/v1/github.com/solo-io/gloo"
+	ApiPaths        []string // can be nil
+	// Prefix of the CLI docs files, i.e. "glooctl"
+	CliPrefix       string   // empty means don't copy docs files
+}
+
+func PushDocsCli(spec *DocsPRSpec) {
+	tag, present := os.LookupEnv("TAGGED_VERSION")
+	if !present || tag == "" {
+		fmt.Printf("TAGGED_VERSION not found in environment, skipping docs PR.\n", tag)
+		os.Exit(0)
+	}
+	_, err := versionutils.ParseVersion(tag)
+	if err != nil {
+		fmt.Printf("TAGGED_VERSION %s is not a valid semver version, skipping docs PR.\n", tag)
+		os.Exit(0)
+	}
+	spec.Tag = tag
+	err = CreateDocsPRFromSpec(spec)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+}
+
 /*
-Useful for cases where repo == docs product name == project name
+Useful for cases where repo == docs product name == changelogPrefix name
  */
 func CreateDocsPRSimple(owner, repo, tag string, paths ...string) error {
-	return CreateDocsPR(owner, repo, repo, repo, tag, paths...)
+	spec := DocsPRSpec{
+		Owner: owner,
+		Repo: repo,
+		Tag: tag,
+		Product: repo,
+		ChangelogPrefix: repo,
+		ApiPaths: paths,
+		CliPrefix: "",
+		DocsParentPath: "",
+	}
+	return CreateDocsPRFromSpec(&spec)
 }
 
 /*
@@ -37,9 +86,45 @@ CreateDocsPR("solo-io", "gloo", "gloo", "gloo", "v0.8.2",
 "docs/v1/gogoproto",
 "docs/v1/google")
  */
-func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string) error {
+func CreateDocsPR(owner, repo, product, changelogPrefix, tag string, apiPaths ...string) error {
+	spec := DocsPRSpec{
+		Owner: owner,
+		Repo: repo,
+		Tag: tag,
+		Product: product,
+		ChangelogPrefix: changelogPrefix,
+		ApiPaths: apiPaths,
+		CliPrefix: "",
+		DocsParentPath: "",
+	}
+	return CreateDocsPRFromSpec(&spec)
+}
+
+func validateSpec(spec *DocsPRSpec) error {
+	if spec.Owner == "" {
+		return errors.Errorf("Owner must not be empty")
+	}
+	if spec.Repo == "" {
+		return errors.Errorf("Repo must not be empty")
+	}
+	if spec.Tag == "" {
+		return errors.Errorf("Tag must not be empty")
+	}
+	if spec.Product == "" {
+		return errors.Errorf("Product must not be empty")
+	}
+	return nil
+}
+
+func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
+
+	err := validateSpec(spec)
+	if err != nil {
+		return err
+	}
+
 	exists, err := afero.Exists(fs, DocsRepo)
 	if err != nil {
 		return err
@@ -56,27 +141,54 @@ func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string)
 	}
 
 	// setup branch
-	branch := repo + "-docs-" + tag + "-" + randString(4)
+	branch := spec.Repo + "-docs-" + spec.Tag + "-" + randString(4)
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
 	}
 
 	// update changelog if "changelog" directory exists in this repo
-	err = updateChangelogIfNecessary(fs, tag, product, project)
+	err = updateChangelogIfNecessary(fs, spec.Tag, spec.Product, spec.ChangelogPrefix)
 	if err != nil {
 		return err
 	}
 
 	// replaceDirectories("gloo", "docs/v1") updates replaces contents of "solo-docs/gloo/docs/v1" with what's in "docs/v1"
-	err = replaceApiDirectories(product, apiPaths...)
+	err = replaceApiDirectories(spec.Product, spec.DocsParentPath, spec.ApiPaths...)
 	if err != nil {
 		return errors.Wrapf(err, "Error removing old docs")
 	}
 
-	// see if there is something to commit, push and open PR if so
-	return submitPRIfChanges(ctx, owner, branch, tag, product)
+	if spec.CliPrefix != "" {
+		replaceCliDocs(spec.Product, spec.DocsParentPath, spec.CliPrefix)
+	}
 
+	// see if there is something to commit, push and open PR if so
+	return submitPRIfChanges(ctx, spec.Owner, branch, spec.Tag, spec.Product)
+
+	return nil
+}
+
+func replaceCliDocs(product, cliPrefix, cliPath string) error {
+	// replaceCliDocs(gloo, glooctl, projects/gloo/doc/docs/cli) =>
+	//   rm solo-docs/gloo/docs/cli/glooctl*
+	//   cp projects/gloo/doc/docs/cli/glooctl* solo-docs/gloo/docs/cli/
+
+	cliDocsDir := filepath.Join("docs/cli")
+	soloCliDocsDir := filepath.Join(DocsRepo, product, cliDocsDir)
+	oldDocs := filepath.Join(soloCliDocsDir, cliPrefix + "*")
+	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("rm %s", oldDocs))
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrapf(err, "Could not delete old docs %s, %s", oldDocs)
+	}
+
+	newDocs := filepath.Join(cliDocsDir, cliPrefix + "*")
+	cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf("cp %s %s", newDocs, soloCliDocsDir))
+	err = cmd.Run()
+	if err != nil {
+		return errors.Wrapf(err, "Could not copy new docs %s", oldDocs)
+	}
 	return nil
 }
 
@@ -138,19 +250,22 @@ func submitPRIfChanges(ctx context.Context, owner, branch, tag, product string) 
 	return nil
 }
 
-func updateChangelogIfNecessary(fs afero.Fs, tag, product, project string) error {
+func updateChangelogIfNecessary(fs afero.Fs, tag, product, changelogPrefix string) error {
 	exists, err := changelogutils.ChangelogDirExists(fs, "")
 	if err != nil {
 		return errors.Wrapf(err, "Error checking for changelog dir")
 	}
 	if exists {
+		if changelogPrefix == "" {
+			return errors.Errorf("ChangelogPrefix must be set.")
+		}
 		changelog, err := changelogutils.ComputeChangelogForTag(fs, tag, "")
 		if err != nil {
 			return err
 		}
 		markdown := changelogutils.GenerateChangelogMarkdown(changelog)
 		fmt.Printf(markdown)
-		err = updateChangelogFile(fs, product, project, markdown, tag)
+		err = updateChangelogFile(fs, product, changelogPrefix, markdown, tag)
 		if err != nil {
 			return err
 		}
@@ -163,14 +278,14 @@ func getChangelogDir(product string) string {
 }
 
 // getChangelogFile(gloo, glooe) -> solo-docs/gloo/changelog/glooe-changelog
-func getChangelogFile(product, project string) string {
-	return filepath.Join(getChangelogDir(product), project + "-changelog")
+func getChangelogFile(product, changelogPrefix string) string {
+	return filepath.Join(getChangelogDir(product), changelogPrefix + "-changelog")
 }
 
 // requires changelog dir to be setup, does not require changelog file to exist
-func updateChangelogFile(fs afero.Fs, product, project, markdown, tag string) error {
+func updateChangelogFile(fs afero.Fs, product, changelogPrefix, markdown, tag string) error {
 	changelogDir := getChangelogDir(product)
-	changelogFile := getChangelogFile(product, project)
+	changelogFile := getChangelogFile(product, changelogPrefix)
 	newContents := fmt.Sprintf("### %s\n\n%s", tag, markdown)
 	exists, err := afero.Exists(fs, changelogFile)
 	if err != nil {
@@ -256,9 +371,10 @@ func execGitWithOutput(dir string, args ...string) (string, error) {
 	return string(output), nil
 }
 
-func replaceApiDirectories(product string, paths ...string) error {
+func replaceApiDirectories(product, docsParentPath string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
+		docsPath := filepath.Join(docsParentPath, path)
 		soloDocsPath := filepath.Join(DocsRepo, product, path)
 		exists, err := afero.Exists(fs, soloDocsPath)
 		if err != nil {
@@ -270,7 +386,7 @@ func replaceApiDirectories(product string, paths ...string) error {
 				return err
 			}
 		}
-		err = copyRecursive(path, soloDocsPath)
+		err = copyRecursive(docsPath, soloDocsPath)
 		if err != nil {
 			return err
 		}
