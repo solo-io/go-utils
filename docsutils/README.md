@@ -77,3 +77,5 @@ And finally, the cloudbuild step adds a call to `push-docs`:
   secretEnv: ['GITHUB_TOKEN', 'DOCKER_HUB_PASSWORD']
   id: 'release'
   ```
+  
+  Make sure `GITHUB_TOKEN` and `TAGGED_VERSION` are available in the environment. 
