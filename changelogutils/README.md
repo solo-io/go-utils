@@ -69,7 +69,7 @@ last released version was `v0.2.5`, new PRs that don't create breaking changes s
 files into `v0.2.6` (they should create the directory if it does not yet exist). If the PR contains 
 a breaking change entry, it should create or rename the existing directory to `v0.3.0`. 
 
-For projects that have already released `v1.0.0`, breaking changes should increment the minor version 
+For projects that have already released `v1.0.0`, breaking changes should increment the major version 
 instead (`v2.0.0`). Non-breaking changes should increment the minor version (`v1.1.0`).
 
 ## Releasing a stable v1.0 version
