@@ -24,21 +24,21 @@ const (
 
 type DocsPRSpec struct {
 	// Repo owner, i.e. "solo-io"
-	Owner     string
+	Owner          string
 	// Repo, i.e. "solo-projects"
-	Repo      string
+	Repo           string
 	// Release tag, i.e. "v0.8.5"
-	Tag       string
+	Tag            string
 	// Product in docs, i.e. "gloo"
-	Product   string
+	Product        string
 	// Project, i.e. "glooe"
-	Project   string
+	Project        string
+	// Path to the directory containing "docs", i.e. "projects/gloo/doc
+	DocsParentPath string
 	// Paths to generated API doc directory that should be copied into docs, i.e. "docs/v1/github.com/solo-io/gloo"
-	ApiPaths  []string // can be nil
-	// Path to generated CLI doc directory, i.e. "docs/cli"
-	CliPath   string   // can be empty string
-	// Prefix of CLI docs, i.e. "glooctl"
-	CliPrefix string   // can be empty string
+	ApiPaths       []string // can be nil
+	// Prefix of the CLI docs files, i.e. "glooctl"
+	CliPrefix       string   // empty means don't copy docs files
 }
 
 /*
@@ -52,8 +52,8 @@ func CreateDocsPRSimple(owner, repo, tag string, paths ...string) error {
 		Product: repo,
 		Project: repo,
 		ApiPaths: paths,
-		CliPath: "",
 		CliPrefix: "",
+		DocsParentPath: "",
 	}
 	return CreateDocsPRFromSpec(&spec)
 }
@@ -74,8 +74,8 @@ func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string)
 		Product: product,
 		Project: project,
 		ApiPaths: apiPaths,
-		CliPath: "",
 		CliPrefix: "",
+		DocsParentPath: "",
 	}
 	return CreateDocsPRFromSpec(&spec)
 }
@@ -137,13 +137,13 @@ func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 	}
 
 	// replaceDirectories("gloo", "docs/v1") updates replaces contents of "solo-docs/gloo/docs/v1" with what's in "docs/v1"
-	err = replaceApiDirectories(spec.Product, spec.ApiPaths...)
+	err = replaceApiDirectories(spec.Product, spec.DocsParentPath, spec.ApiPaths...)
 	if err != nil {
 		return errors.Wrapf(err, "Error removing old docs")
 	}
 
-	if spec.CliPrefix != "" && spec.CliPath != "" {
-		replaceCliDocs(spec.Product, spec.CliPrefix, spec.CliPath)
+	if spec.CliPrefix != "" {
+		replaceCliDocs(spec.Product, spec.DocsParentPath, spec.CliPrefix)
 	}
 
 	// see if there is something to commit, push and open PR if so
@@ -157,7 +157,8 @@ func replaceCliDocs(product, cliPrefix, cliPath string) error {
 	//   rm solo-docs/gloo/docs/cli/glooctl*
 	//   cp projects/gloo/doc/docs/cli/glooctl* solo-docs/gloo/docs/cli/
 
-	soloCliDocsDir := filepath.Join(DocsRepo, product, "docs", "cli")
+	cliDocsDir := filepath.Join("docs/cli")
+	soloCliDocsDir := filepath.Join(DocsRepo, product, cliDocsDir)
 	oldDocs := filepath.Join(soloCliDocsDir, cliPrefix + "*")
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("rm %s", oldDocs))
 	err := cmd.Run()
@@ -165,7 +166,7 @@ func replaceCliDocs(product, cliPrefix, cliPath string) error {
 		return errors.Wrapf(err, "Could not delete old docs %s, %s", oldDocs)
 	}
 
-	newDocs := filepath.Join(cliPath, cliPrefix + "*")
+	newDocs := filepath.Join(cliDocsDir, cliPrefix + "*")
 	cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf("cp %s %s", newDocs, soloCliDocsDir))
 	err = cmd.Run()
 	if err != nil {
@@ -350,9 +351,10 @@ func execGitWithOutput(dir string, args ...string) (string, error) {
 	return string(output), nil
 }
 
-func replaceApiDirectories(product string, paths ...string) error {
+func replaceApiDirectories(product, docsParentPath string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
+		docsPath := filepath.Join(docsParentPath, path)
 		soloDocsPath := filepath.Join(DocsRepo, product, path)
 		exists, err := afero.Exists(fs, soloDocsPath)
 		if err != nil {
@@ -364,7 +366,7 @@ func replaceApiDirectories(product string, paths ...string) error {
 				return err
 			}
 		}
-		err = copyRecursive(path, soloDocsPath)
+		err = copyRecursive(docsPath, soloDocsPath)
 		if err != nil {
 			return err
 		}

@@ -2,3 +2,6 @@ changelog:
   - type: NEW_FEATURE
     description: The docs push utility now supports automated CLI docs.
     issueLink: https://github.com/solo-io/go-utils/issues/33
+  - type: NEW_FEATURE
+    description: The docs can support API or CLI docs that are not in the root of the repo.
+    issueLink: https://github.com/solo-io/go-utils/issues/33
