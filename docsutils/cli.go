@@ -22,11 +22,32 @@ const (
 	DocsRepo = "solo-docs"
 )
 
+type DocsPRSpec struct {
+	Owner     string
+	Repo      string
+	Tag       string
+	Product   string
+	Project   string
+	ApiPaths  []string // can be nil
+	CliPath   string   // can be empty string
+	CliPrefix string   // can be empty string
+}
+
 /*
 Useful for cases where repo == docs product name == project name
  */
 func CreateDocsPRSimple(owner, repo, tag string, paths ...string) error {
-	return CreateDocsPR(owner, repo, repo, repo, tag, paths...)
+	spec := DocsPRSpec{
+		Owner: owner,
+		Repo: repo,
+		Tag: tag,
+		Product: repo,
+		Project: repo,
+		ApiPaths: paths,
+		CliPath: "",
+		CliPrefix: "",
+	}
+	return CreateDocsPRFromSpec(&spec)
 }
 
 /*
@@ -38,8 +59,47 @@ CreateDocsPR("solo-io", "gloo", "gloo", "gloo", "v0.8.2",
 "docs/v1/google")
  */
 func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string) error {
+	spec := DocsPRSpec{
+		Owner: owner,
+		Repo: repo,
+		Tag: tag,
+		Product: product,
+		Project: project,
+		ApiPaths: apiPaths,
+		CliPath: "",
+		CliPrefix: "",
+	}
+	return CreateDocsPRFromSpec(&spec)
+}
+
+func validateSpec(spec *DocsPRSpec) error {
+	if spec.Owner == "" {
+		return errors.Errorf("Owner must not be empty")
+	}
+	if spec.Repo == "" {
+		return errors.Errorf("Repo must not be empty")
+	}
+	if spec.Tag == "" {
+		return errors.Errorf("Tag must not be empty")
+	}
+	if spec.Product == "" {
+		return errors.Errorf("Product must not be empty")
+	}
+	if spec.Project == "" {
+		return errors.Errorf("Project must not be empty")
+	}
+	return nil
+}
+
+func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 	ctx := context.TODO()
 	fs := afero.NewOsFs()
+
+	err := validateSpec(spec)
+	if err != nil {
+		return err
+	}
+
 	exists, err := afero.Exists(fs, DocsRepo)
 	if err != nil {
 		return err
@@ -56,27 +116,53 @@ func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string)
 	}
 
 	// setup branch
-	branch := repo + "-docs-" + tag + "-" + randString(4)
+	branch := spec.Repo + "-docs-" + spec.Tag + "-" + randString(4)
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
 	}
 
 	// update changelog if "changelog" directory exists in this repo
-	err = updateChangelogIfNecessary(fs, tag, product, project)
+	err = updateChangelogIfNecessary(fs, spec.Tag, spec.Product, spec.Project)
 	if err != nil {
 		return err
 	}
 
 	// replaceDirectories("gloo", "docs/v1") updates replaces contents of "solo-docs/gloo/docs/v1" with what's in "docs/v1"
-	err = replaceApiDirectories(product, apiPaths...)
+	err = replaceApiDirectories(spec.Product, spec.ApiPaths...)
 	if err != nil {
 		return errors.Wrapf(err, "Error removing old docs")
 	}
 
-	// see if there is something to commit, push and open PR if so
-	return submitPRIfChanges(ctx, owner, branch, tag, product)
+	if spec.CliPrefix != "" && spec.CliPath != "" {
+		replaceCliDocs(spec.Product, spec.CliPrefix, spec.CliPath)
+	}
 
+	// see if there is something to commit, push and open PR if so
+	return submitPRIfChanges(ctx, spec.Owner, branch, spec.Tag, spec.Product)
+
+	return nil
+}
+
+func replaceCliDocs(product, cliPrefix, cliPath string) error {
+	// replaceCliDocs(gloo, glooctl, projects/gloo/doc/docs/cli) =>
+	//   rm solo-docs/gloo/docs/cli/glooctl*
+	//   cp projects/gloo/doc/docs/cli/glooctl* solo-docs/gloo/docs/cli/
+
+	soloCliDocsDir := filepath.Join(DocsRepo, product, "docs", "cli")
+	oldDocs := filepath.Join(soloCliDocsDir, cliPrefix + "*")
+	cmd := exec.Command("rm", oldDocs)
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrapf(err, "Could not delete old docs %s", oldDocs)
+	}
+
+	newDocs := filepath.Join(cliPath, cliPrefix + "*")
+	cmd = exec.Command("cp", newDocs, soloCliDocsDir)
+	err = cmd.Run()
+	if err != nil {
+		return errors.Wrapf(err, "Could not copy new docs %s", oldDocs)
+	}
 	return nil
 }
 
