@@ -9,7 +9,9 @@ import (
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
+	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -39,6 +41,23 @@ type DocsPRSpec struct {
 	ApiPaths       []string // can be nil
 	// Prefix of the CLI docs files, i.e. "glooctl"
 	CliPrefix       string   // empty means don't copy docs files
+}
+
+func PushDocsCli(spec *DocsPRSpec) {
+	tag, present := os.LookupEnv("TAGGED_VERSION")
+	if !present || tag == "" {
+		fmt.Printf("TAGGED_VERSION not found in environment, skipping docs PR.\n", tag)
+		os.Exit(0)
+	}
+	_, err := versionutils.ParseVersion(tag)
+	if err != nil {
+		fmt.Printf("TAGGED_VERSION %s is not a valid semver version, skipping docs PR.\n", tag)
+		os.Exit(0)
+	}
+	err = CreateDocsPRFromSpec(spec)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 }
 
 /*
