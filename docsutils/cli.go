@@ -54,6 +54,7 @@ func PushDocsCli(spec *DocsPRSpec) {
 		fmt.Printf("TAGGED_VERSION %s is not a valid semver version, skipping docs PR.\n", tag)
 		os.Exit(0)
 	}
+	spec.Tag = tag
 	err = CreateDocsPRFromSpec(spec)
 	if err != nil {
 		log.Fatalf(err.Error())
