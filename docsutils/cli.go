@@ -26,19 +26,19 @@ const (
 
 type DocsPRSpec struct {
 	// Repo owner, i.e. "solo-io"
-	Owner          string
+	Owner           string
 	// Repo, i.e. "solo-projects"
-	Repo           string
+	Repo            string
 	// Release tag, i.e. "v0.8.5"
-	Tag            string
+	Tag             string
 	// Product in docs, i.e. "gloo"
-	Product        string
-	// Project, i.e. "glooe"
-	Project        string
+	Product         string
+	// Prefix to the changelog file in the docs repo, i.e. "glooe" -> push changelog to solo-docs/<product>/docs/changelog/glooe-changelog
+	ChangelogPrefix string
 	// Path to the directory containing "docs", i.e. "projects/gloo/doc
-	DocsParentPath string
+	DocsParentPath  string
 	// Paths to generated API doc directory that should be copied into docs, i.e. "docs/v1/github.com/solo-io/gloo"
-	ApiPaths       []string // can be nil
+	ApiPaths        []string // can be nil
 	// Prefix of the CLI docs files, i.e. "glooctl"
 	CliPrefix       string   // empty means don't copy docs files
 }
@@ -62,7 +62,7 @@ func PushDocsCli(spec *DocsPRSpec) {
 }
 
 /*
-Useful for cases where repo == docs product name == project name
+Useful for cases where repo == docs product name == changelogPrefix name
  */
 func CreateDocsPRSimple(owner, repo, tag string, paths ...string) error {
 	spec := DocsPRSpec{
@@ -70,7 +70,7 @@ func CreateDocsPRSimple(owner, repo, tag string, paths ...string) error {
 		Repo: repo,
 		Tag: tag,
 		Product: repo,
-		Project: repo,
+		ChangelogPrefix: repo,
 		ApiPaths: paths,
 		CliPrefix: "",
 		DocsParentPath: "",
@@ -86,13 +86,13 @@ CreateDocsPR("solo-io", "gloo", "gloo", "gloo", "v0.8.2",
 "docs/v1/gogoproto",
 "docs/v1/google")
  */
-func CreateDocsPR(owner, repo, product, project, tag string, apiPaths ...string) error {
+func CreateDocsPR(owner, repo, product, changelogPrefix, tag string, apiPaths ...string) error {
 	spec := DocsPRSpec{
 		Owner: owner,
 		Repo: repo,
 		Tag: tag,
 		Product: product,
-		Project: project,
+		ChangelogPrefix: changelogPrefix,
 		ApiPaths: apiPaths,
 		CliPrefix: "",
 		DocsParentPath: "",
@@ -112,9 +112,6 @@ func validateSpec(spec *DocsPRSpec) error {
 	}
 	if spec.Product == "" {
 		return errors.Errorf("Product must not be empty")
-	}
-	if spec.Project == "" {
-		return errors.Errorf("Project must not be empty")
 	}
 	return nil
 }
@@ -151,7 +148,7 @@ func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 	}
 
 	// update changelog if "changelog" directory exists in this repo
-	err = updateChangelogIfNecessary(fs, spec.Tag, spec.Product, spec.Project)
+	err = updateChangelogIfNecessary(fs, spec.Tag, spec.Product, spec.ChangelogPrefix)
 	if err != nil {
 		return err
 	}
