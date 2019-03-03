@@ -9,9 +9,10 @@ import (
 )
 
 type UploadReleaseAssetSpec struct {
-	Owner  string
-	Repo   string
-	Assets map[string]*os.File
+	Owner             string
+	Repo              string
+	Assets            map[string]*os.File
+	SkipAlreadyExists bool
 }
 
 func UploadReleaseAssetCli(spec *UploadReleaseAssetSpec) {
@@ -24,6 +25,9 @@ func UploadReleaseAssetCli(spec *UploadReleaseAssetSpec) {
 
 func UploadReleaseAssetsOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec) {
 	for name, asset := range spec.Assets {
+		if spec.SkipAlreadyExists && AlreadyExists(release, name) {
+			continue
+		}
 		opts := &github.UploadOptions{
 			Name: name,
 		}
@@ -32,7 +36,15 @@ func UploadReleaseAssetsOrExit(ctx context.Context, client *github.Client, relea
 			log.Fatalf("Error uploading assets. Error was: %s", err.Error())
 		}
 	}
+}
 
+func AlreadyExists(release *github.RepositoryRelease, name string) bool {
+	for _, asset := range release.Assets {
+		if asset.GetName() == name {
+			return true
+		}
+	}
+	return false
 }
 
 func GetClientOrExit(ctx context.Context) *github.Client {
