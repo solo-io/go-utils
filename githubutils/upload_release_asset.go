@@ -11,7 +11,7 @@ import (
 type UploadReleaseAssetSpec struct {
 	Owner             string
 	Repo              string
-	Assets            map[string]*os.File
+	Assets            map[string]string // name -> path
 	SkipAlreadyExists bool
 }
 
@@ -20,25 +20,34 @@ func UploadReleaseAssetCli(spec *UploadReleaseAssetSpec) {
 	ctx := context.TODO()
 	client := GetClientOrExit(ctx)
 	release := GetReleaseOrExit(ctx, client, version, spec)
-	UploadReleaseAssetsOrExit(ctx, client, release, spec)
+	uploadReleaseAssetsOrExit(ctx, client, release, spec)
 }
 
-func UploadReleaseAssetsOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec) {
+func uploadReleaseAssetsOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec) {
 	for name, asset := range spec.Assets {
-		if spec.SkipAlreadyExists && AlreadyExists(release, name) {
+		if spec.SkipAlreadyExists && assetAlreadyExists(release, name) {
 			continue
 		}
+		file := readFileOrExit(name, asset)
 		opts := &github.UploadOptions{
 			Name: name,
 		}
-		_, _, err := client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, asset)
+		_, _, err := client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, file)
 		if err != nil {
 			log.Fatalf("Error uploading assets. Error was: %s", err.Error())
 		}
 	}
 }
 
-func AlreadyExists(release *github.RepositoryRelease, name string) bool {
+func readFileOrExit(name string, path string) *os.File {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("Error reading file %s: %s", path, err.Error())
+	}
+	return file
+}
+
+func assetAlreadyExists(release *github.RepositoryRelease, name string) bool {
 	for _, asset := range release.Assets {
 		if asset.GetName() == name {
 			return true
