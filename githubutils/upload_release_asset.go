@@ -2,16 +2,26 @@ package githubutils
 
 import (
 	"context"
+	"crypto/sha256"
 	"github.com/google/go-github/github"
 	"github.com/solo-io/go-utils/versionutils"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 )
+
+type ReleaseAssetSpec struct {
+	Name       string
+	ParentPath string
+	UploadSHA  bool
+}
 
 type UploadReleaseAssetSpec struct {
 	Owner             string
 	Repo              string
-	Assets            map[string]string // name -> path
+	Assets            []ReleaseAssetSpec
 	SkipAlreadyExists bool
 }
 
@@ -24,27 +34,60 @@ func UploadReleaseAssetCli(spec *UploadReleaseAssetSpec) {
 }
 
 func uploadReleaseAssetsOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec) {
-	for name, asset := range spec.Assets {
-		if spec.SkipAlreadyExists && assetAlreadyExists(release, name) {
-			continue
-		}
-		file := readFileOrExit(name, asset)
-		opts := &github.UploadOptions{
-			Name: name,
-		}
-		_, _, err := client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, file)
-		if err != nil {
-			log.Fatalf("Error uploading assets. Error was: %s", err.Error())
-		}
+	for _, assetSpec := range spec.Assets {
+		uploadReleaseAssetOrExit(ctx, client, release, spec, assetSpec)
 	}
 }
 
-func readFileOrExit(name string, path string) *os.File {
+func uploadReleaseAssetOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, asset ReleaseAssetSpec) {
+	if spec.SkipAlreadyExists && assetAlreadyExists(release, asset.Name) {
+		return
+	}
+	path := filepath.Join(asset.ParentPath, asset.Name)
+	uploadFileOrExit(ctx, client, release, spec, asset.Name, path)
+	if asset.UploadSHA {
+		uploadShaOrExit(ctx, client, release, spec, asset)
+	}
+}
+
+func uploadShaOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, asset ReleaseAssetSpec) {
+	path := filepath.Join(asset.ParentPath, asset.Name)
 	file, err := os.Open(path)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	shaName := asset.Name + ".sha256"
+	shaPath := filepath.Join(asset.ParentPath, shaName)
+	writeSha256OrExit(file, shaPath)
+	uploadFileOrExit(ctx, client, release, spec, shaName, shaPath)
+}
+
+func uploadFileOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name, path string) {
+	file, err := os.Open(path)
+	defer file.Close()
 	if err != nil {
 		log.Fatalf("Error reading file %s: %s", path, err.Error())
 	}
-	return file
+	opts := &github.UploadOptions{
+		Name: name,
+	}
+	_, _, err = client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, file)
+	if err != nil {
+		log.Fatalf("Error uploading assets. Error was: %s", err.Error())
+	}
+}
+
+func writeSha256OrExit(file *os.File, outputPath string)  {
+	h := sha256.New()
+	if _, err := io.Copy(h, file); err != nil {
+		log.Fatal(err)
+	}
+	sha256 := h.Sum(nil)
+	err := ioutil.WriteFile(outputPath, sha256, 0700)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func assetAlreadyExists(release *github.RepositoryRelease, name string) bool {
