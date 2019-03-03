@@ -2,3 +2,6 @@ changelog:
   - type: NEW_FEATURE
     description: A utility CLI has been added for uploading release artifacts to github, to replace the old shell script. See the [readme](https://github.com/solo-io/go-utils/tree/master/githubutils) for more information.
     issueLink: https://github.com/solo-io/go-utils/issues/38
+  - type: FIX
+    description: PushDocsCli no longer errors on the initial push when the destination directory doesn't exist.
+    issueLink: https://github.com/solo-io/go-utils/issues/40

@@ -376,6 +376,11 @@ func replaceApiDirectories(product, docsParentPath string, paths ...string) erro
 			if err != nil {
 				return err
 			}
+		} else {
+			err = fs.MkdirAll(soloDocsPath, 0700)
+			if err != nil {
+				return err
+			}
 		}
 		err = copyRecursive(docsPath, soloDocsPath)
 		if err != nil {
