@@ -44,18 +44,9 @@ type DocsPRSpec struct {
 }
 
 func PushDocsCli(spec *DocsPRSpec) {
-	tag, present := os.LookupEnv("TAGGED_VERSION")
-	if !present || tag == "" {
-		fmt.Printf("TAGGED_VERSION not found in environment, skipping docs PR.\n", tag)
-		os.Exit(0)
-	}
-	_, err := versionutils.ParseVersion(tag)
-	if err != nil {
-		fmt.Printf("TAGGED_VERSION %s is not a valid semver version, skipping docs PR.\n", tag)
-		os.Exit(0)
-	}
-	spec.Tag = tag
-	err = CreateDocsPRFromSpec(spec)
+	version := versionutils.GetReleaseVersionOrExitGracefully()
+	spec.Tag = version.String()
+	err := CreateDocsPRFromSpec(spec)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
