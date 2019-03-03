@@ -8,7 +8,7 @@ import (
 func GetReleaseVersionOrExitGracefully() *Version {
 	tag, present := os.LookupEnv("TAGGED_VERSION")
 	if !present || tag == "" {
-		fmt.Printf("TAGGED_VERSION not found in environment, skipping docs PR.\n", tag)
+		fmt.Printf("TAGGED_VERSION not found in environment, skipping docs PR.\n")
 		os.Exit(0)
 	}
 	version, err := ParseVersion(tag)
