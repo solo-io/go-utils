@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"sync"
 	"time"
 
 	expect "github.com/Netflix/go-expect"
@@ -23,29 +24,38 @@ func ExpectInteractive(userinput func(*Console), testcli func()) {
 	// Dump the terminal's screen.
 	defer func() { GinkgoWriter.Write([]byte(expect.StripTrailingEmptyLines(state.String()))) }()
 
-	donec := make(chan struct{})
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
 	go func() {
 		defer GinkgoRecover()
-		defer close(donec)
+		defer wg.Done()
 
 		userinput(&Console{Console: c})
 	}()
 
+	wg.Add(1)
 	go func() {
 		defer GinkgoRecover()
+		defer wg.Done()
 
 		testcli()
 
 		// Close the slave end of the pty, and read the remaining bytes from the master end.
 		c.Tty().Close()
-		<-donec
+	}()
+
+	done := make(chan struct{})
+	go func(){
+		wg.Wait()
+		close(done)
 	}()
 
 	select {
 	case <-time.After(10 * time.Second):
 		c.Tty().Close()
 		Fail("test timed out")
-	case <-donec:
+	case <-done:
 	}
 }
 
