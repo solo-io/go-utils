@@ -3,7 +3,7 @@ package githubutils
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"github.com/google/go-github/github"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/versionutils"
@@ -85,7 +85,7 @@ func writeSha256OrExit(ctx context.Context, file *os.File, outputPath string)  {
 	if _, err := io.Copy(h, file); err != nil {
 		contextutils.LoggerFrom(ctx).Fatal(err)
 	}
-	sha256String := base64.URLEncoding.EncodeToString(h.Sum(nil)) + " " + filepath.Base(file.Name())
+	sha256String := hex.EncodeToString(h.Sum(nil)) + " " + filepath.Base(file.Name())
 	err := ioutil.WriteFile(outputPath, []byte(sha256String), 0700)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Fatal(err)
