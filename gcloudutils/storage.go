@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/solo-io/go-utils/contextutils"
 	"io"
 	"os"
 
 	"cloud.google.com/go/storage"
-	"github.com/google/uuid"
 )
 
 const (
@@ -21,19 +19,8 @@ const (
 )
 
 var (
-	id                    uuid.UUID
-
 	projectId = os.Getenv("PROJECT_ID")
 )
-
-func init() {
-	var err error
-	id, err = uuid.NewRandom()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
 
 type GcloudStorageClient struct {
 	ctx    context.Context
