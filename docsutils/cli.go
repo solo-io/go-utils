@@ -377,7 +377,9 @@ func replaceApiDirectories(product, docsParentPath string, paths ...string) erro
 				return err
 			}
 		} else {
-			err = fs.MkdirAll(soloDocsPath, 0700)
+			// make sure the parent exists so the copy below will work
+			soloDocsParentPath := filepath.Dir(soloDocsPath)
+			err = fs.MkdirAll(soloDocsParentPath, 0700)
 			if err != nil {
 				return err
 			}

@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: No longer create unwanted nested directory when pushing solo-kit docs for the first time.
+    issueLink: https://github.com/solo-io/go-utils/issues/43
