@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fixes the sha upload in `UploadReleaseAssetsCli` to upload a checksum for `foo` that matches the output of `shasum -a 256 foo > foo.sha256`.
+    issueLink: https://github.com/solo-io/go-utils/issues/41
