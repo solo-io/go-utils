@@ -12,7 +12,7 @@ func GetChangelogMarkdownForPR(owner, repo string) (string, error) {
 		return "", err
 	}
 	fs := afero.NewOsFs()
-	latestTag, err := githubutils.FindLatestReleaseTag(context.TODO(), client, owner, repo)
+	latestTag, err := githubutils.FindLatestReleaseTagIncudingPrerelease(context.TODO(), client, owner, repo)
 	if err != nil {
 		return "", err
 	}
