@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fixes the behavior where changelog verification would fail if the latest release was a prerelease. 
+    issueLink: https://github.com/solo-io/go-utils/issues/45

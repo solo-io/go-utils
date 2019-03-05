@@ -116,6 +116,20 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 	return byt, err
 }
 
+func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
+	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, release := range releases {
+		if release.GetDraft() {
+			continue
+		}
+		return release.GetTagName(), nil
+	}
+	return "", errors.Errorf("Could not find any latest release on the first page of releases")
+}
+
 func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
 	release, _, err := client.Repositories.GetLatestRelease(ctx, owner, repo)
 	if err != nil {

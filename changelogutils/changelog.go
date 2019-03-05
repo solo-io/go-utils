@@ -51,7 +51,8 @@ func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return githubutils.FindLatestReleaseTag(ctx, client, owner, repo)
+
+	return githubutils.FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repo)
 }
 
 // Should return the next version to release, based on the names of the subdirectories in the changelog
