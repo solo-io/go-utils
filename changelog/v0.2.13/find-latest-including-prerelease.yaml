@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: When verifying the changelog, consider the most recent release including prereleases.
+    issueLink: https://github.com/solo-io/go-utils/issues/45
