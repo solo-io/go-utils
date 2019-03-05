@@ -1,4 +1,4 @@
 changelog:
   - type: FIX
-    description: When verifying the changelog, consider the most recent release including prereleases.
+    description: Fixes the behavior where changelog verification would fail if the latest release was a prerelease. 
     issueLink: https://github.com/solo-io/go-utils/issues/45
