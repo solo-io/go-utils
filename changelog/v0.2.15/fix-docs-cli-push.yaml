@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fixed bug in cli docs push logic.
+    issueLink: https://github.com/solo-io/go-utils/issues/50
