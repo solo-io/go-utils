@@ -101,7 +101,7 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	}
 
 	for _, entry := range changelog.Entries {
-		if entry.Type != NON_USER_FACING {
+		if entry.Type != NON_USER_FACING || entry.Type != DEPENDENCY_BUMP {
 			if entry.IssueLink == "" {
 				return nil, errors.Errorf("Changelog entries must have an issue link")
 			}
@@ -214,4 +214,11 @@ func RefHasChangelog(ctx context.Context, client *github.Client, owner, repo, sh
 	}
 
 	return false, nil
+}
+
+func GetDependencyChangelog(ctx context.Context, client *github.Client, owner, repo, tag string) (*Changelog, error) {
+	opts := &github.RepositoryContentGetOptions{
+		Ref: tag,
+	}
+	client.Repositories.GetContents(ctx, owner, repo, ChangelogDirectory, opts)
 }
