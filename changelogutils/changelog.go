@@ -104,7 +104,7 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	}
 
 	for _, entry := range changelog.Entries {
-		if entry.Type != NON_USER_FACING || entry.Type != DEPENDENCY_BUMP {
+		if entry.Type != NON_USER_FACING && entry.Type != DEPENDENCY_BUMP {
 			if entry.IssueLink == "" {
 				return nil, errors.Errorf("Changelog entries must have an issue link")
 			}
@@ -160,7 +160,7 @@ func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Chan
 		}
 	}
 
-
+	TryAddDependencyChangelogs(&changelog)
 
 	return &changelog, nil
 }
