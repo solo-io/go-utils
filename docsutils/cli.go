@@ -164,9 +164,9 @@ func replaceCliDocs(product, docsParentPath, cliPrefix string) error {
 	// replaceCliDocs(gloo, glooctl, projects/gloo/doc/docs/cli) =>
 	//   rm solo-docs/gloo/docs/cli/glooctl*
 	//   cp projects/gloo/doc/docs/cli/glooctl* solo-docs/gloo/docs/cli/
-
-	cliDocsDir := filepath.Join(docsParentPath, "docs/cli")
-	soloCliDocsDir := filepath.Join(DocsRepo, product, cliDocsDir)
+	docsPath := "docs/cli"
+	cliDocsDir := filepath.Join(docsParentPath, docsPath)
+	soloCliDocsDir := filepath.Join(DocsRepo, product, docsPath)
 	oldDocs := filepath.Join(soloCliDocsDir, cliPrefix + "*")
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("rm %s", oldDocs))
 	err := cmd.Run()
