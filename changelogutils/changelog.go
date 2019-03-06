@@ -112,6 +112,17 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 				return nil, errors.Errorf("Changelog entries must have a description")
 			}
 		}
+		if entry.Type == DEPENDENCY_BUMP {
+			if entry.DependencyOwner == "" {
+				return nil, errors.Errorf("Dependency bumps must have an owner")
+			}
+			if entry.DependencyRepo == "" {
+				return nil, errors.Errorf("Dependency bumps must have a repo")
+			}
+			if entry.DependencyTag == "" {
+				return nil, errors.Errorf("Dependency bumps must have a tag")
+			}
+		}
 	}
 
 	return &changelog, nil
@@ -286,7 +297,7 @@ func GetDependencyChangelog(ctx context.Context, client *github.Client, owner, r
 				return nil, errors.Errorf("Error parsing changelog file %s. Error: %v", contentFile.GetName(), err)
 			}
 			for _, entry := range changelogFile.Entries {
-				entry.Description = "(" + owner + "/" + repo + ":" + tag + ") " + entry.Description
+				entry.Description = "(" + repo + "-" + tag + ") " + entry.Description
 			}
 			changelog.Files = append(changelog.Files, &changelogFile)
 		}

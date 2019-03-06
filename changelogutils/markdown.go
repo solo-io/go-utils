@@ -18,6 +18,11 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 		output = output + "\n\n"
 	}
 
+	dependencyBumps := renderDependencyBumps(changelog)
+	if dependencyBumps != "" {
+		output = output + "**Dependency Bumps**\n\n" + dependencyBumps + "\n"
+	}
+
 	breakingChanges := renderChangelogEntries(changelog, BREAKING_CHANGE)
 	if breakingChanges != "" {
 		output = output + "**Breaking Changes**\n\n" + breakingChanges + "\n"
@@ -39,6 +44,18 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 
 	if output == "" {
 		output = "This release contained no user-facing changes.\n\n"
+	}
+	return output
+}
+
+func renderDependencyBumps(changelog *Changelog) string {
+	output := ""
+	for _, file := range changelog.Files {
+		for _, entry := range file.Entries {
+			if entry.Type == DEPENDENCY_BUMP {
+				output = output + "- " + entry.DependencyOwner + "/" + entry.DependencyRepo + " has been upgraded to " + entry.DependencyTag + ".\n"
+			}
+		}
 	}
 	return output
 }
