@@ -160,12 +160,12 @@ func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 	return nil
 }
 
-func replaceCliDocs(product, cliPrefix, cliPath string) error {
+func replaceCliDocs(product, docsParentPath, cliPrefix string) error {
 	// replaceCliDocs(gloo, glooctl, projects/gloo/doc/docs/cli) =>
 	//   rm solo-docs/gloo/docs/cli/glooctl*
 	//   cp projects/gloo/doc/docs/cli/glooctl* solo-docs/gloo/docs/cli/
 
-	cliDocsDir := filepath.Join("docs/cli")
+	cliDocsDir := filepath.Join(docsParentPath, "docs/cli")
 	soloCliDocsDir := filepath.Join(DocsRepo, product, cliDocsDir)
 	oldDocs := filepath.Join(soloCliDocsDir, cliPrefix + "*")
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("rm %s", oldDocs))
