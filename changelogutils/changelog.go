@@ -13,9 +13,12 @@ import (
 )
 
 type ChangelogEntry struct {
-	Type        ChangelogEntryType `json:"type"`
-	Description string             `json:"description"`
-	IssueLink   string             `json:"issueLink"`
+	Type            ChangelogEntryType `json:"type"`
+	Description     string             `json:"description"`
+	IssueLink       string             `json:"issueLink"`
+	DependencyOwner string             `json:"dependencyOwner,omitempty"`
+	DependencyRepo  string             `json:"dependencyRepo,omitempty"`
+	DependencyTag   string             `json:"dependencyTag,omitempty"`
 }
 
 type ChangelogFile struct {
@@ -156,6 +159,9 @@ func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Chan
 			changelog.Files = append(changelog.Files, changelogFile)
 		}
 	}
+
+
+
 	return &changelog, nil
 }
 
@@ -216,9 +222,69 @@ func RefHasChangelog(ctx context.Context, client *github.Client, owner, repo, sh
 	return false, nil
 }
 
+func TryAddDependencyChangelogs(changelog *Changelog) error {
+	ctx := context.TODO()
+	client, err := githubutils.GetClient(ctx)
+	if err != nil {
+		return err
+	}
+	// Add in dependency changelogs
+	var dependencyChangelogs []*Changelog
+	for _, changelogFile := range changelog.Files {
+		for _, changelogEntry := range changelogFile.Entries {
+			if changelogEntry.Type == DEPENDENCY_BUMP {
+				dependencyChangelog, err := GetDependencyChangelog(ctx, client, changelogEntry.DependencyOwner, changelogEntry.DependencyRepo, changelogEntry.DependencyTag)
+				if err != nil {
+					return err
+				}
+				dependencyChangelogs = append(dependencyChangelogs, dependencyChangelog)
+			}
+		}
+	}
+	MergeDependencyChangelogs(changelog, dependencyChangelogs...)
+	return nil
+}
+
+func MergeDependencyChangelogs(mainChangelog *Changelog, dependencyChangelogs ...*Changelog) {
+	for _, dependencyChangelog := range dependencyChangelogs {
+		for _, dependencyChangelogFile := range dependencyChangelog.Files {
+			mainChangelog.Files = append(mainChangelog.Files, dependencyChangelogFile)
+		}
+	}
+}
+
 func GetDependencyChangelog(ctx context.Context, client *github.Client, owner, repo, tag string) (*Changelog, error) {
+	version, err := versionutils.ParseVersion(tag)
+	if err != nil {
+		return nil, err
+	}
 	opts := &github.RepositoryContentGetOptions{
 		Ref: tag,
 	}
-	client.Repositories.GetContents(ctx, owner, repo, ChangelogDirectory, opts)
+	directory := filepath.Join(ChangelogDirectory, tag)
+	_, directoryContent, _, err := client.Repositories.GetContents(ctx, owner, repo, directory, opts)
+	if err != nil {
+		return nil, err
+	}
+	changelog := &Changelog{
+		Version: version,
+	}
+	for _, contentFile := range directoryContent {
+		content, err := contentFile.GetContent()
+		if err != nil {
+			return nil, err
+		}
+		if contentFile.GetName() == SummaryFile {
+			changelog.Summary = content
+		} else if contentFile.GetName() == ClosingFile {
+			changelog.Closing = content
+		} else {
+			var changelogFile ChangelogFile
+			if err := yaml.Unmarshal([]byte(content), &changelogFile); err != nil {
+				return nil, errors.Errorf("Error parsing changelog file %s. Error: %v", contentFile.GetName(), err)
+			}
+			changelog.Files = append(changelog.Files, &changelogFile)
+		}
+	}
+	return changelog, nil
 }
