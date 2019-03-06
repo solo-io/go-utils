@@ -285,6 +285,9 @@ func GetDependencyChangelog(ctx context.Context, client *github.Client, owner, r
 			if err := yaml.Unmarshal([]byte(content), &changelogFile); err != nil {
 				return nil, errors.Errorf("Error parsing changelog file %s. Error: %v", contentFile.GetName(), err)
 			}
+			for _, entry := range changelogFile.Entries {
+				entry.Description = "(" + owner + "/" + repo + ":" + tag + ") " + entry.Description
+			}
 			changelog.Files = append(changelog.Files, &changelogFile)
 		}
 	}
