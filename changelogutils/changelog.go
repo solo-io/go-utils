@@ -260,6 +260,7 @@ func GetDependencyChangelog(ctx context.Context, client *github.Client, owner, r
 	}
 	opts := &github.RepositoryContentGetOptions{
 		Ref: tag,
+
 	}
 	directory := filepath.Join(ChangelogDirectory, tag)
 	_, directoryContent, _, err := client.Repositories.GetContents(ctx, owner, repo, directory, opts)
@@ -270,7 +271,8 @@ func GetDependencyChangelog(ctx context.Context, client *github.Client, owner, r
 		Version: version,
 	}
 	for _, contentFile := range directoryContent {
-		content, err := contentFile.GetContent()
+		fileContent, _, _, err := client.Repositories.GetContents(ctx, owner, repo, contentFile.GetPath(), opts)
+		content, err := fileContent.GetContent()
 		if err != nil {
 			return nil, err
 		}
