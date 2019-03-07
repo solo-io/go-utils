@@ -23,7 +23,14 @@ type ChangelogEntry struct {
 
 type ChangelogFile struct {
 	Entries          []*ChangelogEntry `json:"changelog,omitempty"`
-	ReleaseStableApi bool              `json:"releaseStableApi,omitempty"`
+	ReleaseStableApi *bool              `json:"releaseStableApi,omitempty"`
+}
+
+func (c *ChangelogFile) GetReleaseStableApi() bool {
+	if c.ReleaseStableApi == nil {
+		return false
+	}
+	return *c.ReleaseStableApi
 }
 
 func (c *ChangelogFile) HasBreakingChange() bool {
@@ -235,7 +242,7 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 		for _, entry := range file.Entries {
 			breakingChanges = breakingChanges || entry.Type.BreakingChange()
 		}
-		releaseStableApi = releaseStableApi || file.ReleaseStableApi
+		releaseStableApi = releaseStableApi || file.GetReleaseStableApi()
 	}
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges)
