@@ -58,6 +58,41 @@ func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	return githubutils.FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repo)
 }
 
+func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
+	latestTag, err := githubutils.FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repo)
+	if err != nil {
+		return "", err
+	}
+	_, changelogContents, _, err := client.Repositories.GetContents(ctx, owner, repo, ChangelogDirectory, nil)
+	if err != nil {
+		return "", err
+	}
+	var proposedVersion string
+	for _, changelogFile := range changelogContents {
+		if changelogFile.GetType() != githubutils.CONTENT_TYPE_DIRECTORY {
+			continue
+		}
+
+		if !versionutils.MatchesRegex(changelogFile.GetName()) {
+			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", changelogFile.GetName())
+		}
+		greaterThan, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
+		if err != nil {
+			return "", err
+		}
+		if greaterThan {
+			if proposedVersion != "" {
+				return "", errors.Errorf("Versions %s and %s are both greater than latest tag %s", changelogFile.GetName(), proposedVersion, latestTag)
+			}
+			proposedVersion = changelogFile.GetName()
+		}
+	}
+	if proposedVersion == "" {
+		return "", errors.Errorf("No version greater than %s found", latestTag)
+	}
+	return proposedVersion, nil
+}
+
 // Should return the next version to release, based on the names of the subdirectories in the changelog
 // Will return an error if there is no version, or multiple versions, larger than the latest tag,
 // according to semver
