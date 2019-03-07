@@ -1,0 +1,4 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: Upgrade to go modules.
+    issueLink: https://github.com/solo-io/go-utils/issues/56
