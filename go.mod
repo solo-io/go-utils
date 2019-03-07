@@ -5,11 +5,12 @@ go 1.12
 require (
 	cloud.google.com/go v0.34.0
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
+	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 	github.com/cpuguy83/go-md2man v1.0.8
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gogo/protobuf v1.2.0
+	github.com/gogo/protobuf v1.2.1
 	github.com/golang/protobuf v1.2.0
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c
 	github.com/google/go-github v17.0.0+incompatible

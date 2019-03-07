@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add util method to wait for crds to become active.
+    issueLink: https://github.com/solo-io/go-utils/issues/59
