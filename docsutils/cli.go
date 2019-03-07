@@ -171,7 +171,7 @@ func replaceCliDocs(product, docsParentPath, cliPrefix string) error {
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("rm %s", oldDocs))
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, "Could not delete old docs %s, %s", oldDocs)
+		return errors.Wrapf(err, "Could not delete old docs %s", oldDocs)
 	}
 
 	newDocs := filepath.Join(cliDocsDir, cliPrefix + "*")
