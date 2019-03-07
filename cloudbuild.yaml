@@ -4,10 +4,21 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     args: ['container', 'clusters', 'get-credentials', 'test-cluster']
 
+  - name: gcr.io/cloud-builders/gsutil
+    entrypoint: 'bash'
+    args: ['-c', 'mkdir -p /go/pkg && cd /go/pkg && gsutil cat gs://$PROJECT_ID-cache/go-utils/go-utils-mod.tar.gz | tar -xzf -']
+    env:
+    volumes: &vol
+      - name: 'gopath'
+        path: '/go/pkg'
+    id: 'untar-mod-cache'
+
   - name: 'golang:1.12'
+    volumes: *vol
     args: ['go', 'build', './...']
 
-  - name: 'gcr.io/$PROJECT_ID/go-mod-ginkgo:0.0.1'
+  - name: 'gcr.io/$PROJECT_ID/go-mod-ginkgo:0.1.5'
+    volumes: *vol
     env:
       - 'RUN_KUBE_TESTS=1'
     secretEnv: ['GITHUB_TOKEN']
