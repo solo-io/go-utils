@@ -18,6 +18,14 @@
   revision = "9d1f4485533ba0665fa4ca2ef6f1210198f7eaae"
 
 [[projects]]
+  digest = "1:1c9dffe45896d21dc8e183fdc3cdb405249e6c7dd3d00792e534af3597d5e4fc"
+  name = "github.com/avast/retry-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "08d411bf8302219fe47ca04dbdf9de892010c5e5"
+  version = "v2.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:d6afaeed1502aa28e80a4ed0981d570ad91b2579193404256ce672ed0a609e0d"
   name = "github.com/beorn7/perks"
@@ -843,6 +851,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Netflix/go-expect",
+    "github.com/avast/retry-go",
     "github.com/fgrosse/zaptest",
     "github.com/ghodss/yaml",
     "github.com/gogo/protobuf/jsonpb",
