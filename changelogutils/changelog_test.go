@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -53,12 +54,18 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(value.IssueLink).NotTo(BeEmpty())
 		}
 		Expect(err).NotTo(HaveOccurred())
-		_, err = yaml.Marshal(clf)
+		byt, err := yaml.Marshal(clf)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(strings.Contains(string(byt), "releaseStableApi")).To(BeFalse())
 	})
 
 	var _ = Context("Changelog computing and rendering", func() {
-		var fs afero.Fs
+		var (
+			fs afero.Fs
+
+			boolean = true
+			boolPtr = &boolean
+		)
 		createChangelogDir := func(tag string) {
 			fs.MkdirAll(filepath.Join(changelogutils.ChangelogDirectory, tag), 0700)
 		}
@@ -107,7 +114,7 @@ var _ = Describe("ChangelogTest", func() {
 		getStableApiChangelogFile := func(entries ...*changelogutils.ChangelogEntry) *changelogutils.ChangelogFile {
 			return &changelogutils.ChangelogFile{
 				Entries: entries,
-				ReleaseStableApi: true,
+				ReleaseStableApi: boolPtr,
 			}
 		}
 		getEntry := func(entryType changelogutils.ChangelogEntryType, description, issue string) *changelogutils.ChangelogEntry {

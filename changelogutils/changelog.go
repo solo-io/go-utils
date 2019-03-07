@@ -13,14 +13,24 @@ import (
 )
 
 type ChangelogEntry struct {
-	Type        ChangelogEntryType `json:"type"`
-	Description string             `json:"description"`
-	IssueLink   string             `json:"issueLink"`
+	Type            ChangelogEntryType `json:"type"`
+	Description     string             `json:"description"`
+	IssueLink       string             `json:"issueLink"`
+	DependencyOwner string             `json:"dependencyOwner,omitempty"`
+	DependencyRepo  string             `json:"dependencyRepo,omitempty"`
+	DependencyTag   string             `json:"dependencyTag,omitempty"`
 }
 
 type ChangelogFile struct {
 	Entries          []*ChangelogEntry `json:"changelog,omitempty"`
-	ReleaseStableApi bool              `json:"releaseStableApi,omitempty"`
+	ReleaseStableApi *bool              `json:"releaseStableApi,omitempty"`
+}
+
+func (c *ChangelogFile) GetReleaseStableApi() bool {
+	if c.ReleaseStableApi == nil {
+		return false
+	}
+	return *c.ReleaseStableApi
 }
 
 func (c *ChangelogFile) HasBreakingChange() bool {
@@ -53,6 +63,41 @@ func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	}
 
 	return githubutils.FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repo)
+}
+
+func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
+	latestTag, err := githubutils.FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repo)
+	if err != nil {
+		return "", err
+	}
+	_, changelogContents, _, err := client.Repositories.GetContents(ctx, owner, repo, ChangelogDirectory, nil)
+	if err != nil {
+		return "", err
+	}
+	var proposedVersion string
+	for _, changelogFile := range changelogContents {
+		if changelogFile.GetType() != githubutils.CONTENT_TYPE_DIRECTORY {
+			continue
+		}
+
+		if !versionutils.MatchesRegex(changelogFile.GetName()) {
+			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", changelogFile.GetName())
+		}
+		greaterThan, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
+		if err != nil {
+			return "", err
+		}
+		if greaterThan {
+			if proposedVersion != "" {
+				return "", errors.Errorf("Versions %s and %s are both greater than latest tag %s", changelogFile.GetName(), proposedVersion, latestTag)
+			}
+			proposedVersion = changelogFile.GetName()
+		}
+	}
+	if proposedVersion == "" {
+		return "", errors.Errorf("No version greater than %s found", latestTag)
+	}
+	return proposedVersion, nil
 }
 
 // Should return the next version to release, based on the names of the subdirectories in the changelog
@@ -101,12 +146,23 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	}
 
 	for _, entry := range changelog.Entries {
-		if entry.Type != NON_USER_FACING {
+		if entry.Type != NON_USER_FACING && entry.Type != DEPENDENCY_BUMP {
 			if entry.IssueLink == "" {
 				return nil, errors.Errorf("Changelog entries must have an issue link")
 			}
 			if entry.Description == "" {
 				return nil, errors.Errorf("Changelog entries must have a description")
+			}
+		}
+		if entry.Type == DEPENDENCY_BUMP {
+			if entry.DependencyOwner == "" {
+				return nil, errors.Errorf("Dependency bumps must have an owner")
+			}
+			if entry.DependencyRepo == "" {
+				return nil, errors.Errorf("Dependency bumps must have a repo")
+			}
+			if entry.DependencyTag == "" {
+				return nil, errors.Errorf("Dependency bumps must have a tag")
 			}
 		}
 	}
@@ -156,6 +212,7 @@ func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Chan
 			changelog.Files = append(changelog.Files, changelogFile)
 		}
 	}
+	
 	return &changelog, nil
 }
 
@@ -183,7 +240,7 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 		for _, entry := range file.Entries {
 			breakingChanges = breakingChanges || entry.Type.BreakingChange()
 		}
-		releaseStableApi = releaseStableApi || file.ReleaseStableApi
+		releaseStableApi = releaseStableApi || file.GetReleaseStableApi()
 	}
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges)

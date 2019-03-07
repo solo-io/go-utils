@@ -12,6 +12,7 @@ const (
 	FIX
 	NEW_FEATURE
 	NON_USER_FACING
+	DEPENDENCY_BUMP
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 		"FIX":             FIX,
 		"NEW_FEATURE":     NEW_FEATURE,
 		"NON_USER_FACING": NON_USER_FACING,
+		"DEPENDENCY_BUMP": DEPENDENCY_BUMP,
 	}
 
 	_ChangelogEntryValueToType = map[ChangelogEntryType]string{
@@ -27,11 +29,12 @@ var (
 		FIX:             "FIX",
 		NEW_FEATURE:     "NEW_FEATURE",
 		NON_USER_FACING: "NON_USER_FACING",
+		DEPENDENCY_BUMP: "DEPENDENCY_BUMP",
 	}
 )
 
 func (clt ChangelogEntryType) String() string {
-	return [...]string{"BREAKING_CHANGE", "FIX", "NEW_FEATURE", "NON_USER_FACING"}[clt]
+	return [...]string{"BREAKING_CHANGE", "FIX", "NEW_FEATURE", "NON_USER_FACING", "DEPENDENCY_BUMP"}[clt]
 }
 
 func (clt ChangelogEntryType) BreakingChange() bool {
