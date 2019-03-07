@@ -1,10 +1,22 @@
 steps:
-  - name: 'golang:1.12'
-    args: ['go', 'mod', 'download']
+  - name: gcr.io/cloud-builders/gsutil
+    entrypoint: 'bash'
+    args: ['-c', 'mkdir -p /go/pkg && cd /go/pkg && gsutil cat gs://$PROJECT_ID-cache/go-utils/go-utils-mod.tar.gz | tar -xzf -']
+    env:
     volumes: &vol
       - name: 'gopath'
-        path: '/go'
+        path: '/go/pkg'
+    id: 'untar-mod-cache'
+
+  - name: 'golang:1.12'
+    args: ['go', 'mod', 'download']
+    volumes: *vol
     id: 'download'
+
+  - name: 'golang:1.12'
+    args: ['go', 'mod', 'tidy']
+    volumes: *vol
+    id: 'tidy'
 
   - name: 'golang:1.12'
     entrypoint: 'bash'

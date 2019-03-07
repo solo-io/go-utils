@@ -4,23 +4,14 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     args: ['container', 'clusters', 'get-credentials', 'test-cluster']
 
-  # Can create a go mod cache by running 'gcloud builds submit . --config=cloudbuild-cache.yaml'
   - name: gcr.io/cloud-builders/gsutil
-    args: ['cp', 'gs://$PROJECT_ID-cache/go-utils/go-utils-mod.tar.gz', '/workspace/go-utils-mod.tar.gz']
-    id: 'download-mod-cache'
-
-  - name: 'golang:1.12'
     entrypoint: 'bash'
-    args: ['-c', 'mkdir -p /go/pkg && cd /go/pkg && cat /workspace/go-utils-mod.tar.gz | tar -xzf - && ls mod']
+    args: ['-c', 'mkdir -p /go/pkg && cd /go/pkg && gsutil cat gs://$PROJECT_ID-cache/go-utils/go-utils-mod.tar.gz | tar -xzf -']
     env:
     volumes: &vol
       - name: 'gopath'
-        path: '/go'
+        path: '/go/pkg'
     id: 'untar-mod-cache'
-
-  - name: 'golang:1.12'
-    volumes: *vol
-    args: ['go', 'mod', 'download']
 
   - name: 'golang:1.12'
     volumes: *vol
