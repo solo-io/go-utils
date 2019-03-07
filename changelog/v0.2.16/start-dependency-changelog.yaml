@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Begin work on dependency changelogs.
+    issueLink: https://github.com/solo-io/go-utils/issues/48
