@@ -1,27 +1,17 @@
 steps:
+  - name: gcr.io/cloud-builders/gcloud
+    args: ['config', 'set', 'compute/zone', 'us-central1-a']
+  - name: gcr.io/cloud-builders/gcloud
+    args: ['container', 'clusters', 'get-credentials', 'test-cluster']
 
-# Using dep container from github.com/solo-io/cloud-builders/dep
-# This copies files into the proper workspace layout and so must be run before other tasks
-# Subsequent steps should set GOPATH variable to avoid setting up unnecessary sym link
-- name: 'gcr.io/$PROJECT_ID/dep'
-  args: ['ensure']
-  env: ['PROJECT_ROOT=github.com/solo-io/go-utils']
-  id: 'dep'
+  - name: 'golang:1.12'
+    args: ['go', 'build', './...']
 
-# e2e-ginkgo is produced from https://github.com/solo-io/cloud-builders/e2e-ginkgo
-# sets up redis, consul, kubectl, go with required environment variables
-# need to use the provided entrypoint
-- name: 'gcr.io/$PROJECT_ID/e2e-ginkgo'
-  dir: './gopath/src/github.com/solo-io/go-utils'
-  env:
-    - 'PROJECT_ROOT=github.com/solo-io/go-utils'
-    - 'RUN_KUBE_TESTS=1'
-    - 'GOPATH=/workspace/gopath'
-    - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
-    - 'CLOUDSDK_CONTAINER_CLUSTER=test-cluster'
-  secretEnv: ['GITHUB_TOKEN']
-  args: ['-r']
-  waitFor: ['dep']
+  - name: 'gcr.io/$PROJECT_ID/go-mod-ginkgo:0.0.1'
+    env:
+      - 'RUN_KUBE_TESTS=1'
+    secretEnv: ['GITHUB_TOKEN']
+    args: ['-r']
 
 
 secrets:
