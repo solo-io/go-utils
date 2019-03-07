@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -53,8 +54,9 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(value.IssueLink).NotTo(BeEmpty())
 		}
 		Expect(err).NotTo(HaveOccurred())
-		_, err = yaml.Marshal(clf)
+		byt, err := yaml.Marshal(clf)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(strings.Contains(string(byt), "releaseStableApi")).To(BeFalse())
 	})
 
 	var _ = Context("Changelog computing and rendering", func() {
