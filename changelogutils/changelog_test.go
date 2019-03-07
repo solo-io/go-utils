@@ -58,7 +58,12 @@ var _ = Describe("ChangelogTest", func() {
 	})
 
 	var _ = Context("Changelog computing and rendering", func() {
-		var fs afero.Fs
+		var (
+			fs afero.Fs
+
+			boolean = true
+			boolPtr = &boolean
+		)
 		createChangelogDir := func(tag string) {
 			fs.MkdirAll(filepath.Join(changelogutils.ChangelogDirectory, tag), 0700)
 		}
@@ -107,7 +112,7 @@ var _ = Describe("ChangelogTest", func() {
 		getStableApiChangelogFile := func(entries ...*changelogutils.ChangelogEntry) *changelogutils.ChangelogFile {
 			return &changelogutils.ChangelogFile{
 				Entries: entries,
-				ReleaseStableApi: true,
+				ReleaseStableApi: boolPtr,
 			}
 		}
 		getEntry := func(entryType changelogutils.ChangelogEntryType, description, issue string) *changelogutils.ChangelogEntry {
