@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Utility to get TAGGED_VERSION no longer refers specifically to docs.
+    issueLink: https://github.com/solo-io/go-utils/issues/53
