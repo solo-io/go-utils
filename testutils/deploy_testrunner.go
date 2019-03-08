@@ -4,6 +4,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// Deprecated: no one calls this
 func DeployTestRunner(cfg *rest.Config, namespace string) error {
 	return DeployFromYaml(cfg, namespace, TestRunnerYaml)
 }
