@@ -9,7 +9,7 @@ type ChangelogParser interface {
 	ParseChangelogFile(contents string) (*ChangelogFile, error)
 }
 
-type changelogParser struct {}
+type changelogParser struct{}
 
 func NewChangelogParser() ChangelogParser {
 	return &changelogParser{}

@@ -11,7 +11,7 @@ new features
 fixes
 closing
 
- */
+*/
 func GenerateChangelogMarkdown(changelog *Changelog) string {
 	output := changelog.Summary
 	if output != "" {
@@ -75,5 +75,5 @@ func renderChangelogEntries(changelog *Changelog, entryType ChangelogEntryType) 
 func renderChangelogEntry(entry *ChangelogEntry) string {
 	description := strings.TrimSpace(entry.Description)
 	link := strings.TrimSpace(entry.IssueLink)
-	return "- " + description + " (" + link +")"
+	return "- " + description + " (" + link + ")"
 }

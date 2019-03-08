@@ -97,8 +97,6 @@ var (
 	}
 )
 
-
-
 func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
 	if err != nil {

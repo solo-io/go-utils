@@ -80,7 +80,7 @@ func uploadFileOrExit(ctx context.Context, client *github.Client, release *githu
 	}
 }
 
-func writeSha256OrExit(ctx context.Context, file *os.File, outputPath string)  {
+func writeSha256OrExit(ctx context.Context, file *os.File, outputPath string) {
 	h := sha256.New()
 	if _, err := io.Copy(h, file); err != nil {
 		contextutils.LoggerFrom(ctx).Fatal(err)
