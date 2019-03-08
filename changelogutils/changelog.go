@@ -23,7 +23,7 @@ type ChangelogEntry struct {
 
 type ChangelogFile struct {
 	Entries          []*ChangelogEntry `json:"changelog,omitempty"`
-	ReleaseStableApi *bool              `json:"releaseStableApi,omitempty"`
+	ReleaseStableApi *bool             `json:"releaseStableApi,omitempty"`
 }
 
 func (c *ChangelogFile) GetReleaseStableApi() bool {
@@ -212,7 +212,7 @@ func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Chan
 			changelog.Files = append(changelog.Files, changelogFile)
 		}
 	}
-	
+
 	return &changelog, nil
 }
 

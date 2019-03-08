@@ -96,14 +96,14 @@ var _ = Describe("ChangelogTest", func() {
 				writeChangelogFile(file, fmt.Sprintf("%d.yaml", i), tag)
 			}
 		}
-		getChangelog := func(tag, summary, closing string, files ...*changelogutils.ChangelogFile) *changelogutils.Changelog{
+		getChangelog := func(tag, summary, closing string, files ...*changelogutils.ChangelogFile) *changelogutils.Changelog {
 			version, err := versionutils.ParseVersion(tag)
 			Expect(err).NotTo(HaveOccurred())
 			return &changelogutils.Changelog{
 				Summary: summary,
 				Closing: closing,
 				Version: version,
-				Files: files,
+				Files:   files,
 			}
 		}
 		getChangelogFile := func(entries ...*changelogutils.ChangelogEntry) *changelogutils.ChangelogFile {
@@ -113,15 +113,15 @@ var _ = Describe("ChangelogTest", func() {
 		}
 		getStableApiChangelogFile := func(entries ...*changelogutils.ChangelogEntry) *changelogutils.ChangelogFile {
 			return &changelogutils.ChangelogFile{
-				Entries: entries,
+				Entries:          entries,
 				ReleaseStableApi: boolPtr,
 			}
 		}
 		getEntry := func(entryType changelogutils.ChangelogEntryType, description, issue string) *changelogutils.ChangelogEntry {
 			return &changelogutils.ChangelogEntry{
-				Type: entryType,
+				Type:        entryType,
 				Description: description,
-				IssueLink: issue,
+				IssueLink:   issue,
 			}
 		}
 

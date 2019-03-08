@@ -206,4 +206,3 @@ func downloadFile(url string, w io.Writer) error {
 
 	return nil
 }
-

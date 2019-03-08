@@ -8,7 +8,7 @@ import (
 
 func Command(args ...string) *containerCmd {
 	return &containerCmd{
-		args: args,
+		args:   args,
 		stderr: os.Stderr,
 		stdout: os.Stdout,
 	}

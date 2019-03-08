@@ -25,7 +25,7 @@ func NewGithubChangelogReader(ctx context.Context) (*GithubChangelogReader, erro
 		return nil, err
 	}
 	return &GithubChangelogReader{
-		ctx: ctx,
+		ctx:    ctx,
 		client: client,
 		parser: NewChangelogParser(),
 	}, nil

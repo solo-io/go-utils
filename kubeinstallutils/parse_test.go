@@ -9,8 +9,6 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 

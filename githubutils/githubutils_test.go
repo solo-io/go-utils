@@ -62,7 +62,7 @@ var _ = Describe("github utils", func() {
 
 })
 
-func mustSetupTempFiles() (file *os.File, dir string,) {
+func mustSetupTempFiles() (file *os.File, dir string) {
 	tmpf, err := ioutil.TempFile("", "tar-file-")
 	Expect(err).NotTo(HaveOccurred())
 	tmpd, err := ioutil.TempDir("", "tar-dir-")
