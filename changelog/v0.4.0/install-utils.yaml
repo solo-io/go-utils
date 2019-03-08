@@ -1,0 +1,6 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Figured out the go-mod-cache.
+  - type: BREAKING_CHANGE
+    description: Move install utils into this repo and start cleanup.
+    issueLink: https://github.com/solo-io/go-utils/issues/61

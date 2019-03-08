@@ -1,4 +1,0 @@
-changelog:
-  - type: BREAKING_CHANGE
-    description: Move install utils into this repo and start cleanup.
-    issueLink: https://github.com/solo-io/go-utils/issues/61
