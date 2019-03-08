@@ -1,13 +1,15 @@
 package install
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
+
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/logger"
 	"github.com/solo-io/go-utils/testutils/exec"
 	"k8s.io/helm/pkg/repo"
-	"os"
-	"path/filepath"
-	"runtime"
 )
 
 const (
@@ -22,6 +24,7 @@ var defaults = TestConfig{
 	BuildAssetDir:         "_output",
 	HelmRepoIndexFileName: "index.yaml",
 	GlooctlExecName:       "glooctl-" + runtime.GOOS + "-amd64",
+	DeployTestRunner:      true,
 }
 
 // Function to provide/override test configuration. Default values will be passed in.
@@ -38,10 +41,14 @@ type TestConfig struct {
 	HelmChartName string
 	// Name of the helm index file name
 	HelmRepoIndexFileName string
+	// The namespace gloo (and the test runner) will be installed to. If empty, will use the helm chart version.
+	InstallNamespace string
 	// Name of the glooctl executable
 	GlooctlExecName string
 	// If provided, the licence key to install the enterprise version of Gloo
 	LicenseKey string
+	// Determines whether the test runner pod gets deployed
+	DeployTestRunner bool
 
 	// The version of the Helm chart
 	version string
@@ -53,6 +60,7 @@ type TestConfig struct {
 // It also assumes that a kubectl executable is on the PATH.
 type SoloTestHelper struct {
 	*TestConfig
+	*TestRunner
 }
 
 func NewSoloTestHelper(configFunc TestConfigFunc) (*SoloTestHelper, error) {
@@ -73,7 +81,25 @@ func NewSoloTestHelper(configFunc TestConfigFunc) (*SoloTestHelper, error) {
 	}
 	testConfig.version = version
 
-	return &SoloTestHelper{&testConfig}, nil
+	// Default the install namespace to the chart version.
+	// Currently the test chart version built in CI contains the build id, so the namespace will be unique).
+	if testConfig.InstallNamespace == "" {
+		testConfig.InstallNamespace = version
+	}
+
+	// Optionally, initialize a test runner
+	var testRunner *TestRunner
+	if testConfig.DeployTestRunner {
+		testRunner, err = NewTestRunner(testConfig.InstallNamespace)
+		if err != nil {
+			return nil, errors.Wrapf(err, "initializing testrunner")
+		}
+	}
+
+	return &SoloTestHelper{
+		TestConfig: &testConfig,
+		TestRunner: testRunner,
+	}, nil
 }
 
 // Return the version of the Helm chart
@@ -81,17 +107,42 @@ func (h *SoloTestHelper) ChartVersion() string {
 	return h.version
 }
 
-func (h *SoloTestHelper) InstallGloo(deploymentType, namespace string) error {
+// Installs Gloo (and, optionally, the test runner)
+func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration) error {
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
 		"install", deploymentType,
-		"-n", namespace,
+		"-n", h.InstallNamespace,
 		"-f", filepath.Join(h.TestAssetDir, h.HelmChartName+"-"+h.version+".tgz"),
 	}
 	if h.LicenseKey != "" {
 		glooctlCommand = append(glooctlCommand, "--license-key", h.LicenseKey)
 	}
-	return exec.RunCommand(h.RootDir, true, glooctlCommand...)
+	if err := exec.RunCommand(h.RootDir, true, glooctlCommand...); err != nil {
+		return errors.Wrapf(err, "error while installing gloo")
+	}
+
+	if h.TestRunner != nil {
+		if err := h.TestRunner.Deploy(timeout); err != nil {
+			return errors.Wrapf(err, "deploying testrunner")
+		}
+	}
+	return nil
+}
+
+func (h *SoloTestHelper) UninstallGloo() error {
+
+	if h.TestRunner != nil {
+		logger.Debugf("terminating %s...", testrunnerName)
+		if err := h.TestRunner.Terminate(); err != nil {
+			// Just log a warning, we don't want to fail
+			logger.Warnf("error terminating %s", testrunnerName)
+		}
+	}
+
+	return exec.RunCommand(h.RootDir, true,
+		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace,
+	)
 }
 
 // Parses the Helm index file and returns the version of the chart.
