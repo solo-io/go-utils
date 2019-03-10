@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prometheus/common/log"
+	"github.com/solo-io/go-utils/logger"
+
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/solo-io/go-utils/testutils"
@@ -121,7 +122,7 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 		if _, err := t.Exec("python", "-m", "SimpleHTTPServer", fmt.Sprintf("%v", TestRunnerPort)); err != nil {
 			// if an error happened after 5 seconds, it's probably not an error.. just the pod terminating.
 			if time.Now().Sub(start).Seconds() < 5.0 {
-				log.Warnf("failed to start HTTP Server in Test Runner: %v", err)
+				logger.Warnf("failed to start HTTP Server in Test Runner: %v", err)
 			}
 		}
 	}()

@@ -48,7 +48,7 @@ func (t *TestRunner) CurlEventuallyShouldRespond(opts CurlOpts, substr string, g
 			logger.GreyPrintf("success: %v", res)
 		}
 		return res
-	}, t, "5s").Should(gomega.ContainSubstring(substr))
+	}, timeout, "5s").Should(gomega.ContainSubstring(substr))
 }
 
 func (t *TestRunner) Curl(opts CurlOpts) (string, error) {
