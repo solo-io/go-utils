@@ -3,6 +3,7 @@ package install
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/prometheus/common/log"
@@ -117,7 +118,7 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 	go func() {
 		start := time.Now()
 		// This command start an http SimpleHttpServer and blocks until the server terminates
-		if _, err := t.Exec("python", "-m", "SimpleHTTPServer", string(TestRunnerPort)); err != nil {
+		if _, err := t.Exec("python", "-m", "SimpleHTTPServer", fmt.Sprintf("%v", TestRunnerPort)); err != nil {
 			// if an error happened after 5 seconds, it's probably not an error.. just the pod terminating.
 			if time.Now().Sub(start).Seconds() < 5.0 {
 				log.Warnf("failed to start HTTP Server in Test Runner: %v", err)
