@@ -2,6 +2,7 @@ package changelogutils
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/go-github/github"
 	"path/filepath"
 
@@ -55,6 +56,58 @@ const (
 	ClosingFile        = "closing.md"
 )
 
+type errorNoVersionFound struct {
+	version string
+}
+
+func newErrorNoVersionFound(version string) *errorNoVersionFound {
+	return &errorNoVersionFound{version: version}
+}
+
+func (e *errorNoVersionFound) Error() string {
+	return fmt.Sprintf("No version greater than %s found", e.version)
+}
+
+
+func IsNoVersionFoundError(err error) bool {
+	_, ok := err.(*errorNoVersionFound)
+	return ok
+}
+
+type errorMultipleVersionsFound struct {
+	changelogFile, proposedVersion, latestTag string
+}
+
+func newErrorMultipleVersionsFound(changelogFile string, proposedVersion string, latestTag string) *errorMultipleVersionsFound {
+	return &errorMultipleVersionsFound{changelogFile: changelogFile, proposedVersion: proposedVersion, latestTag: latestTag}
+}
+
+func (e *errorMultipleVersionsFound) Error() string {
+	return fmt.Sprintf("Versions %s and %s are both greater than latest tag %s", e.changelogFile, e.proposedVersion, e.latestTag)
+}
+
+func IsMultipleVersionsFoundError(err error) bool {
+	_, ok := err.(*errorMultipleVersionsFound)
+	return ok
+}
+
+type errorInvalidDirectoryName struct {
+	dir string
+}
+
+func newErrorInvalidDirectoryName(dir string) *errorInvalidDirectoryName {
+	return &errorInvalidDirectoryName{dir: dir}
+}
+
+func IsInvalidDirectoryNameError(err error) bool {
+	_, ok := err.(*errorInvalidDirectoryName)
+	return ok
+}
+
+func (e *errorInvalidDirectoryName) Error() string {
+	return fmt.Sprintf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", e.dir)
+}
+
 // Should return the last released version
 func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	client, err := githubutils.GetClient(ctx)
@@ -81,7 +134,7 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 		}
 
 		if !versionutils.MatchesRegex(changelogFile.GetName()) {
-			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", changelogFile.GetName())
+			return "", newErrorInvalidDirectoryName(changelogFile.GetName())
 		}
 		greaterThan, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
 		if err != nil {
@@ -89,13 +142,13 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 		}
 		if greaterThan {
 			if proposedVersion != "" {
-				return "", errors.Errorf("Versions %s and %s are both greater than latest tag %s", changelogFile.GetName(), proposedVersion, latestTag)
+				return "", newErrorMultipleVersionsFound(changelogFile.GetName(), proposedVersion, latestTag)
 			}
 			proposedVersion = changelogFile.GetName()
 		}
 	}
 	if proposedVersion == "" {
-		return "", errors.Errorf("No version greater than %s found", latestTag)
+		return "", newErrorNoVersionFound(latestTag)
 	}
 	return proposedVersion, nil
 }
@@ -115,7 +168,7 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 			return "", errors.Errorf("Unexpected entry %s in changelog directory", subDir.Name())
 		}
 		if !versionutils.MatchesRegex(subDir.Name()) {
-			return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", subDir.Name())
+			return "", newErrorInvalidDirectoryName(subDir.Name())
 		}
 		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
 		if err != nil {
@@ -123,13 +176,13 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 		}
 		if greaterThan {
 			if proposedVersion != "" {
-				return "", errors.Errorf("Versions %s and %s are both greater than latest tag %s", subDir.Name(), proposedVersion, latestTag)
+				return "", newErrorMultipleVersionsFound(subDir.Name(), proposedVersion, latestTag)
 			}
 			proposedVersion = subDir.Name()
 		}
 	}
 	if proposedVersion == "" {
-		return "", errors.Errorf("No version greater than %s found", latestTag)
+		return "", newErrorNoVersionFound(latestTag)
 	}
 	return proposedVersion, nil
 }
