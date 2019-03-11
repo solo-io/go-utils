@@ -109,6 +109,7 @@ func (h *SoloTestHelper) ChartVersion() string {
 
 // Installs Gloo (and, optionally, the test runner)
 func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration) error {
+	logger.Debugf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
 		"install", deploymentType,

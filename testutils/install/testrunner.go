@@ -118,6 +118,7 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 
 	go func() {
 		start := time.Now()
+		logger.Debugf("starting http server listening on port %v", TestRunnerPort)
 		// This command start an http SimpleHttpServer and blocks until the server terminates
 		if _, err := t.Exec("python", "-m", "SimpleHTTPServer", fmt.Sprintf("%v", TestRunnerPort)); err != nil {
 			// if an error happened after 5 seconds, it's probably not an error.. just the pod terminating.

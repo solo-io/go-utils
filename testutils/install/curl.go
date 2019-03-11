@@ -31,7 +31,7 @@ func (t *TestRunner) CurlEventuallyShouldRespond(opts CurlOpts, substr string, g
 	// for some useful-ish output
 	tick := time.Tick(timeout / 8)
 
-	gomega.EventuallyWithOffset(ginkgoOffset, func() string {
+	gomega.EventuallyWithOffset(ginkgoOffset+1, func() string {
 		res, err := t.Curl(opts)
 		if err != nil {
 			res = err.Error()
