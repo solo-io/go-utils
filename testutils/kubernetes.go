@@ -42,7 +42,6 @@ func DeleteCrd(crd string) error {
 
 func Kubectl(args ...string) error {
 	cmd := exec.Command("kubectl", args...)
-	logger.Debugf("k command: %v", cmd.Args)
 	cmd.Env = os.Environ()
 	// disable DEBUG=1 from getting through to kube
 	for i, pair := range cmd.Env {
@@ -53,6 +52,7 @@ func Kubectl(args ...string) error {
 	}
 	cmd.Stdout = ginkgo.GinkgoWriter
 	cmd.Stderr = ginkgo.GinkgoWriter
+	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	return cmd.Run()
 }
 
@@ -66,6 +66,7 @@ func KubectlOut(args ...string) (string, error) {
 			break
 		}
 	}
+	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("%s (%v)", out, err)
@@ -86,6 +87,7 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
+	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	err := cmd.Start()
 	if err != nil {
 		err = fmt.Errorf("%s (%v)", buf.Bytes(), err)
