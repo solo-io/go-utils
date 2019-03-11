@@ -115,6 +115,7 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 	if err := testutils.WaitPodsRunning(ctx, time.Second, t.namespace, "gloo="+testrunnerName); err != nil {
 		return err
 	}
+	logger.Printf("deployed %s", testrunnerName)
 
 	go func() {
 		start := time.Now()

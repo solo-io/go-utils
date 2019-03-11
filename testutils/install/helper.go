@@ -109,7 +109,7 @@ func (h *SoloTestHelper) ChartVersion() string {
 
 // Installs Gloo (and, optionally, the test runner)
 func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration) error {
-	logger.Debugf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
+	logger.Printf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
 		"install", deploymentType,
@@ -155,7 +155,7 @@ func getChartVersion(config TestConfig) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "parsing Helm index file")
 	}
-	logger.Debugf("found Helm index file at: %s", helmIndexFile)
+	logger.Printf("found Helm index file at: %s", helmIndexFile)
 
 	// Read and return version from helm index file
 	if chartVersions, ok := helmIndex.Entries[config.HelmChartName]; !ok {
@@ -164,7 +164,7 @@ func getChartVersion(config TestConfig) (string, error) {
 		return "", errors.Errorf("expected a single entry with name [%s], found: %v", config.HelmChartName, len(chartVersions))
 	} else {
 		version := chartVersions[0].Version
-		logger.Debugf("version of [%s] Helm chart is: %s", config.HelmChartName, version)
+		logger.Printf("version of [%s] Helm chart is: %s", config.HelmChartName, version)
 		return version, nil
 	}
 }

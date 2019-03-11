@@ -87,7 +87,7 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
-	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
+	logger.Debugf("async running: %s", strings.Join(cmd.Args, " "))
 	err := cmd.Start()
 	if err != nil {
 		err = fmt.Errorf("%s (%v)", buf.Bytes(), err)

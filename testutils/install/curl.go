@@ -91,6 +91,6 @@ func (t *TestRunner) Curl(opts CurlOpts) (string, error) {
 		service = "test-ingress"
 	}
 	args = append(args, fmt.Sprintf("%v://%s:%v%s", protocol, service, port, opts.Path))
-	logger.Debugf("running: curl %v", strings.Join(args, " "))
+	logger.Printf("running: %v", strings.Join(args, " "))
 	return t.Exec(args...)
 }
