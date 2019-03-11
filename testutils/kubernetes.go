@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,12 +12,7 @@ import (
 	"github.com/solo-io/go-utils/logger"
 
 	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
-)
-
-const (
-	testrunner = "testrunner"
 )
 
 func SetupKubeForTest(namespace string) error {
@@ -39,9 +35,13 @@ func SetupKubeForTest(namespace string) error {
 func TeardownKube(namespace string) error {
 	return Kubectl("delete", "namespace", namespace)
 }
+
+func DeleteCrd(crd string) error {
+	return Kubectl("delete", "crd", crd)
+}
+
 func Kubectl(args ...string) error {
 	cmd := exec.Command("kubectl", args...)
-	logger.Debugf("k command: %v", cmd.Args)
 	cmd.Env = os.Environ()
 	// disable DEBUG=1 from getting through to kube
 	for i, pair := range cmd.Env {
@@ -52,6 +52,7 @@ func Kubectl(args ...string) error {
 	}
 	cmd.Stdout = ginkgo.GinkgoWriter
 	cmd.Stderr = ginkgo.GinkgoWriter
+	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	return cmd.Run()
 }
 
@@ -65,6 +66,7 @@ func KubectlOut(args ...string) (string, error) {
 			break
 		}
 	}
+	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("%s (%v)", out, err)
@@ -85,6 +87,7 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
+	logger.Debugf("async running: %s", strings.Join(cmd.Args, " "))
 	err := cmd.Start()
 	if err != nil {
 		err = fmt.Errorf("%s (%v)", buf.Bytes(), err)
@@ -100,71 +103,46 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 }
 
 // WaitPodsRunning waits for all pods to be running
-func WaitPodsRunning(podNames ...string) error {
+func WaitPodsRunning(ctx context.Context, interval time.Duration, namespace string, labels ...string) error {
 	finished := func(output string) bool {
+		return strings.Contains(output, "Running") || strings.Contains(output, "ContainerCreating")
+	}
+	for _, label := range labels {
+		if err := WaitPodStatus(ctx, interval, namespace, label, "Running or ContainerCreating", finished); err != nil {
+			return err
+		}
+	}
+	finished = func(output string) bool {
 		return strings.Contains(output, "Running")
 	}
-	for _, pod := range podNames {
-		if err := WaitPodStatus(pod, "Running", finished); err != nil {
+	for _, label := range labels {
+		if err := WaitPodStatus(ctx, interval, namespace, label, "Running", finished); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// waitPodsTerminated waits for all pods to be terminated
-func WaitPodsTerminated(podNames ...string) error {
-	for _, pod := range podNames {
-		finished := func(output string) bool {
-			return !strings.Contains(output, pod)
-		}
-		if err := WaitPodStatus(pod, "terminated", finished); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// TestRunner executes a command inside the TestRunner container
-func TestRunner(namespace string, command ...string) (string, error) {
-	args := []string{"exec", "-i", testrunner}
-	if namespace != "" {
-		args = append(args, "-n", namespace)
-	}
-	args = append(args, "--")
-	args = append(args, command...)
-	return KubectlOut(args...)
-}
-
-// TestRunnerAsync executes a command inside the TestRunner container
-// returning a buffer that can be read from as it executes
-func TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
-	args = append([]string{"exec", "-i", testrunner, "--"}, args...)
-	return KubectlOutAsync(args...)
-}
-
-func WaitPodStatus(pod, status string, finished func(output string) bool) error {
-	timeout := time.Second * 20
-	interval := time.Millisecond * 1000
+func WaitPodStatus(ctx context.Context, interval time.Duration, namespace, label, status string, finished func(output string) bool) error {
 	tick := time.Tick(interval)
-
-	logger.Debugf("waiting %v for pod %v to be %v...", timeout, pod, status)
+	deadline, _ := ctx.Deadline()
+	logger.Debugf("waiting till %v for pod %v to be %v...", deadline, label, status)
 	for {
 		select {
-		case <-time.After(timeout):
-			return fmt.Errorf("timed out waiting for %v to be %v", pod, status)
+		case <-ctx.Done():
+			return fmt.Errorf("timed out waiting for %v to be %v", label, status)
 		case <-tick:
-			out, err := KubectlOut("get", "pod", "-l", "gloo="+pod)
+			out, err := KubectlOut("get", "pod", "-l", label, "-n", namespace)
 			if err != nil {
 				return fmt.Errorf("failed getting pod: %v", err)
 			}
 			if strings.Contains(out, "CrashLoopBackOff") {
-				out = KubeLogs(pod)
-				return errors.Errorf("%v in crash loop with logs %v", pod, out)
+				out = KubeLogs(label)
+				return errors.Errorf("%v in crash loop with logs %v", label, out)
 			}
 			if strings.Contains(out, "ErrImagePull") || strings.Contains(out, "ImagePullBackOff") {
-				out, _ = KubectlOut("describe", "pod", "-l", "gloo="+pod)
-				return errors.Errorf("%v in ErrImagePull with description %v", pod, out)
+				out, _ = KubectlOut("describe", "pod", "-l", label)
+				return errors.Errorf("%v in ErrImagePull with description %v", label, out)
 			}
 			if finished(out) {
 				return nil
@@ -173,117 +151,10 @@ func WaitPodStatus(pod, status string, finished func(output string) bool) error 
 	}
 }
 
-func KubeLogs(pod string) string {
-	out, err := KubectlOut("logs", "-l", "gloo="+pod)
+func KubeLogs(label string) string {
+	out, err := KubectlOut("logs", "-l", label)
 	if err != nil {
 		out = err.Error()
 	}
 	return out
-}
-
-func WaitNamespaceStatus(namespace, status string, finished func(output string) bool) error {
-	timeout := time.Second * 20
-	interval := time.Millisecond * 1000
-	tick := time.Tick(interval)
-
-	logger.Debugf("waiting %v for namespace %v to be %v...", timeout, namespace, status)
-	for {
-		select {
-		case <-time.After(timeout):
-			return fmt.Errorf("timed out waiting for %v to be %v", namespace, status)
-		case <-tick:
-			out, err := KubectlOut("get", "namespace", namespace)
-			if err != nil {
-				return fmt.Errorf("failed getting pod: %v", err)
-			}
-			if finished(out) {
-				return nil
-			}
-		}
-	}
-}
-
-type CurlOpts struct {
-	Protocol          string
-	Path              string
-	Method            string
-	Host              string
-	Service           string
-	CaFile            string
-	Body              string
-	Headers           map[string]string
-	Port              int
-	ReturnHeaders     bool
-	ConnectionTimeout int
-}
-
-func CurlEventuallyShouldRespond(opts CurlOpts, namespace, substr string, ginkgoOffset int, timeout ...time.Duration) {
-	t := time.Second * 20
-	if len(timeout) > 0 {
-		t = timeout[0]
-	}
-	// for some useful-ish output
-	tick := time.Tick(t / 8)
-	gomega.EventuallyWithOffset(ginkgoOffset, func() string {
-		res, err := Curl(opts, namespace)
-		if err != nil {
-			res = err.Error()
-			// trigger an early exit if the pod has been deleted
-			gomega.Expect(res).NotTo(gomega.ContainSubstring(`pods "testrunner" not found`))
-		}
-		select {
-		default:
-			break
-		case <-tick:
-			logger.GreyPrintf("running: %v\nwant %v\nhave: %s", opts, substr, res)
-		}
-		if strings.Contains(res, substr) {
-			logger.GreyPrintf("success: %v", res)
-		}
-		return res
-	}, t, "5s").Should(gomega.ContainSubstring(substr))
-}
-
-func Curl(opts CurlOpts, namespace string) (string, error) {
-	args := []string{"curl", "-v"}
-	if opts.ConnectionTimeout > 0 {
-		seconds := fmt.Sprintf("%v", opts.ConnectionTimeout)
-		args = append(args, "--connect-timeout", seconds, "--max-time", seconds)
-	}
-
-	if opts.ReturnHeaders {
-		args = append(args, "-I")
-	}
-
-	if opts.Method != "GET" && opts.Method != "" {
-		args = append(args, "-X"+opts.Method)
-	}
-	if opts.Host != "" {
-		args = append(args, "-H", "Host: "+opts.Host)
-	}
-	if opts.CaFile != "" {
-		args = append(args, "--cacert", opts.CaFile)
-	}
-	if opts.Body != "" {
-		args = append(args, "-H", "Content-Type: application/json")
-		args = append(args, "-d", opts.Body)
-	}
-	for h, v := range opts.Headers {
-		args = append(args, "-H", fmt.Sprintf("%v: %v", h, v))
-	}
-	port := opts.Port
-	if port == 0 {
-		port = 8080
-	}
-	protocol := opts.Protocol
-	if protocol == "" {
-		protocol = "http"
-	}
-	service := opts.Service
-	if service == "" {
-		service = "test-ingress"
-	}
-	args = append(args, fmt.Sprintf("%v://%s:%v%s", protocol, service, port, opts.Path))
-	logger.Debugf("running: curl %v", strings.Join(args, " "))
-	return TestRunner(namespace, args...)
 }
