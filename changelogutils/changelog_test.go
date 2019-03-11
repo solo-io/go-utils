@@ -20,15 +20,11 @@ import (
 var _ = Describe("ChangelogTest", func() {
 
 	var _ = Context("GetProposedTag", func() {
-		expectGetProposedTag := func(latestTag, changelogDir, tag, err string) {
+		getProposedTag := func(latestTag, changelogDir, tag string) error {
 			fs := afero.NewOsFs()
 			actualTag, actualErr := changelogutils.GetProposedTag(fs, latestTag, changelogDir)
 			Expect(actualTag).To(BeEquivalentTo(tag))
-			if err == "" {
-				Expect(actualErr).To(BeNil())
-			} else {
-				Expect(actualErr.Error()).To(BeEquivalentTo(err))
-			}
+			return actualErr
 		}
 
 		It("works", func() {
@@ -37,11 +33,11 @@ var _ = Describe("ChangelogTest", func() {
 			changelogDir := filepath.Join(tmpDir, changelogutils.ChangelogDirectory)
 			Expect(os.Mkdir(changelogDir, 0700)).To(BeNil())
 			Expect(createSubdirs(changelogDir, "v0.0.1", "v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
-			expectGetProposedTag("v0.0.3", tmpDir, "v0.0.4", "")
-			expectGetProposedTag("v0.0.2", tmpDir, "", "Versions v0.0.4 and v0.0.3 are both greater than latest tag v0.0.2")
-			expectGetProposedTag("v0.0.4", tmpDir, "", "No version greater than v0.0.4 found")
+			Expect(getProposedTag("v0.0.3", tmpDir, "v0.0.4")).To(BeNil())
+			Expect(changelogutils.IsMultipleVersionsFoundError(getProposedTag("v0.0.2", tmpDir, ""))).To(BeTrue())
+			Expect(changelogutils.IsNoVersionFoundError(getProposedTag("v0.0.4", tmpDir, ""))).To(BeTrue())
 			Expect(createSubdirs(changelogDir, "0.0.5")).To(BeNil())
-			expectGetProposedTag("v0.0.5", tmpDir, "", "Directory name 0.0.5 is not valid, must be of the form 'vX.Y.Z'")
+			Expect(changelogutils.IsInvalidDirectoryNameError(getProposedTag("v0.0.5", tmpDir, ""))).To(BeTrue())
 		})
 	})
 
