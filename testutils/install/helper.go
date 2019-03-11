@@ -132,7 +132,6 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 }
 
 func (h *SoloTestHelper) UninstallGloo() error {
-
 	if h.TestRunner != nil {
 		logger.Debugf("terminating %s...", testrunnerName)
 		if err := h.TestRunner.Terminate(); err != nil {
@@ -141,6 +140,7 @@ func (h *SoloTestHelper) UninstallGloo() error {
 		}
 	}
 
+	logger.Printf("uninstalling gloo...")
 	return exec.RunCommand(h.RootDir, true,
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace,
 	)
