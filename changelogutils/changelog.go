@@ -135,7 +135,6 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 
 		if !versionutils.MatchesRegex(changelogFile.GetName()) {
 			return "", newErrorInvalidDirectoryName(changelogFile.GetName())
-			//return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", changelogFile.GetName())
 		}
 		greaterThan, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
 		if err != nil {
@@ -170,7 +169,6 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 		}
 		if !versionutils.MatchesRegex(subDir.Name()) {
 			return "", newErrorInvalidDirectoryName(subDir.Name())
-			//return "", errors.Errorf("Directory name %s is not valid, must be of the form 'vX.Y.Z'", subDir.Name())
 		}
 		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
 		if err != nil {
