@@ -3,6 +3,7 @@ package changelogutils
 import (
 	"context"
 	"github.com/google/go-github/github"
+	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 type ChangelogReader interface {
 	ReadChangelogFile(owner, repo, ref, path string) (*ChangelogFile, error)
 	ReadChangelogForTag(owner, repo, ref, tag string) (*Changelog, error)
+	GetProposedChangelog(owner, repo, ref string) (*Changelog, error)
 }
 
 type githubChangelogReader struct {
@@ -85,4 +87,49 @@ func (reader *githubChangelogReader) readFile(owner, repo, ref, path string) (st
 		return "", err
 	}
 	return content, nil
+}
+
+func (reader *githubChangelogReader) GetProposedChangelog(owner, repo, ref string) (*Changelog, error) {
+	proposedTag, err := reader.getProposedTag(owner, repo, ref)
+	if err != nil {
+		return nil, err
+	}
+	return reader.ReadChangelogForTag(owner, repo, ref, proposedTag)
+}
+
+func (reader *githubChangelogReader) getProposedTag(owner, repo, ref string) (string, error) {
+	opts := &github.RepositoryContentGetOptions{
+		Ref: ref,
+	}
+	_, directoryContent, _, err := reader.client.Repositories.GetContents(reader.ctx, owner, repo, ChangelogDirectory, opts)
+	if err != nil {
+		return "", err
+	}
+	proposedTag := ""
+	latestTag, err := githubutils.FindLatestReleaseTagIncudingPrerelease(reader.ctx, reader.client, owner, repo)
+	if err != nil {
+		return "", err
+	}
+	for _, subdirectory := range directoryContent {
+		if subdirectory.GetType() != "dir" {
+			return "", errors.Errorf("Expected contents of changelog to be type dir, found %s of type %s", subdirectory.GetName(), subdirectory.GetType())
+		}
+		if !versionutils.MatchesRegex(subdirectory.GetName()) {
+			return "", newErrorInvalidDirectoryName(subdirectory.GetName())
+		}
+		greaterThan, err := versionutils.IsGreaterThanTag(subdirectory.GetName(), latestTag)
+		if err != nil {
+			return "", err
+		}
+		if greaterThan {
+			if proposedTag != "" {
+				return "", newErrorMultipleVersionsFound(subdirectory.GetName(), proposedTag, latestTag)
+			}
+			proposedTag = subdirectory.GetName()
+		}
+	}
+	if proposedTag == "" {
+		return "", newErrorNoVersionFound(latestTag)
+	}
+	return proposedTag, nil
 }
