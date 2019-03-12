@@ -1,3 +1,0 @@
-changelog:
-  - type: NON_USER_FACING
-    description: Remove remnants of changelog refactor that wasn't done on master. 

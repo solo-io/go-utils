@@ -1,0 +1,4 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: Remove remnants of changelog refactor that wasn't done on master. 
+    issueLink: https://github.com/solo-io/go-utils/issues/55
