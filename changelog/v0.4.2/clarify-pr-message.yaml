@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Use more specific project name in docs PRs, if repo is configured with changelogs.
+    issueLink: https://github.com/solo-io/go-utils/issues/39

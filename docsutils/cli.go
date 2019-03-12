@@ -155,7 +155,11 @@ func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 	}
 
 	// see if there is something to commit, push and open PR if so
-	return submitPRIfChanges(ctx, spec.Owner, branch, spec.Tag, spec.Product)
+	project := spec.ChangelogPrefix
+	if project == "" {
+		project = spec.Product
+	}
+	return submitPRIfChanges(ctx, spec.Owner, branch, spec.Tag, project)
 
 	return nil
 }
@@ -197,7 +201,7 @@ func randString(length int) string {
 	return string(b)
 }
 
-func submitPRIfChanges(ctx context.Context, owner, branch, tag, product string) error {
+func submitPRIfChanges(ctx context.Context, owner, branch, tag, project string) error {
 	err := gitAddAll()
 	if err != nil {
 		return errors.Wrapf(err, "Error doing git add")
@@ -224,8 +228,8 @@ func submitPRIfChanges(ctx context.Context, owner, branch, tag, product string) 
 		return errors.Wrapf(err, "Error pushing docs branch")
 	}
 
-	title := fmt.Sprintf("Update docs for %s %s", product, tag)
-	body := fmt.Sprintf("Automatically generated docs for %s %s", product, tag)
+	title := fmt.Sprintf("Update docs for %s %s", project, tag)
+	body := fmt.Sprintf("Automatically generated docs for %s %s", project, tag)
 	base := "master"
 	pr := github.NewPullRequest{
 		Title: &title,
