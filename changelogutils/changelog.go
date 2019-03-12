@@ -6,7 +6,6 @@ import (
 	"github.com/google/go-github/github"
 	"path/filepath"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
@@ -188,39 +187,12 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 }
 
 func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
-	var changelog ChangelogFile
 	bytes, err := afero.ReadFile(fs, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed reading changelog file: %s", path)
 	}
-
-	if err := yaml.Unmarshal(bytes, &changelog); err != nil {
-		return nil, errors.Errorf("File %s is not a valid changelog file. Error: %v", path, err)
-	}
-
-	for _, entry := range changelog.Entries {
-		if entry.Type != NON_USER_FACING && entry.Type != DEPENDENCY_BUMP {
-			if entry.IssueLink == "" {
-				return nil, errors.Errorf("Changelog entries must have an issue link")
-			}
-			if entry.Description == "" {
-				return nil, errors.Errorf("Changelog entries must have a description")
-			}
-		}
-		if entry.Type == DEPENDENCY_BUMP {
-			if entry.DependencyOwner == "" {
-				return nil, errors.Errorf("Dependency bumps must have an owner")
-			}
-			if entry.DependencyRepo == "" {
-				return nil, errors.Errorf("Dependency bumps must have a repo")
-			}
-			if entry.DependencyTag == "" {
-				return nil, errors.Errorf("Dependency bumps must have a tag")
-			}
-		}
-	}
-
-	return &changelog, nil
+	parser := NewChangelogParser()
+	return parser.ParseChangelogFile(string(bytes))
 }
 
 func ChangelogDirExists(fs afero.Fs, changelogParentPath string) (bool, error) {

@@ -13,25 +13,25 @@ type ChangelogReader interface {
 	ReadChangelogForTag(owner, repo, ref, tag string) (*Changelog, error)
 }
 
-type GithubChangelogReader struct {
+type githubChangelogReader struct {
 	ctx    context.Context
 	client *github.Client
 	parser ChangelogParser
 }
 
-func NewGithubChangelogReader(ctx context.Context) (*GithubChangelogReader, error) {
+func NewGithubChangelogReader(ctx context.Context) (*githubChangelogReader, error) {
 	client, err := githubutils.GetClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &GithubChangelogReader{
+	return &githubChangelogReader{
 		ctx:    ctx,
 		client: client,
 		parser: NewChangelogParser(),
 	}, nil
 }
 
-func (reader *GithubChangelogReader) ReadChangelogFile(owner, repo, ref, path string) (*ChangelogFile, error) {
+func (reader *githubChangelogReader) ReadChangelogFile(owner, repo, ref, path string) (*ChangelogFile, error) {
 	contents, err := reader.readFile(owner, repo, ref, path)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (reader *GithubChangelogReader) ReadChangelogFile(owner, repo, ref, path st
 	return reader.parser.ParseChangelogFile(contents)
 }
 
-func (reader *GithubChangelogReader) ReadChangelog(owner, repo, ref, tag string) (*Changelog, error) {
+func (reader *githubChangelogReader) ReadChangelogForTag(owner, repo, ref, tag string) (*Changelog, error) {
 	version, err := versionutils.ParseVersion(tag)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (reader *GithubChangelogReader) ReadChangelog(owner, repo, ref, tag string)
 	return &changelog, nil
 }
 
-func (reader *GithubChangelogReader) readFile(owner, repo, ref, path string) (string, error) {
+func (reader *githubChangelogReader) readFile(owner, repo, ref, path string) (string, error) {
 	opts := &github.RepositoryContentGetOptions{
 		Ref: ref,
 	}
