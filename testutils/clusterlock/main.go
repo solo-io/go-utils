@@ -16,7 +16,7 @@ import (
 const (
 	// default namespace to install
 	LockDefaultNamespace = "default"
-	// name of kubermnetes service holding the lock
+	// name of kubernetes service holding the lock
 	LockResourceName = "test-lock"
 	// name of the annotation containing the lock
 	LockAnnotationKey = "test.lock"
