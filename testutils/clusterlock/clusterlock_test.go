@@ -1,6 +1,7 @@
 package clusterlock_test
 
 import (
+	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/solo-io/go-utils/testutils/clusterlock"
 	"sync"
 	"time"
@@ -8,8 +9,7 @@ import (
 	"github.com/avast/retry-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/testutils"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -18,7 +18,7 @@ var _ = Describe("cluster lock test", func() {
 	var kubeClient kubernetes.Interface
 
 	var _ = BeforeSuite(func() {
-		kubeClient = testutils.MustKubeClient()
+		kubeClient = MustKubeClient()
 	})
 
 	var _ = AfterSuite(func() {
@@ -72,3 +72,13 @@ var _ = Describe("cluster lock test", func() {
 		Expect(lock2.AcquireLock(retry.Delay(time.Millisecond))).To(HaveOccurred())
 	})
 })
+
+
+func MustKubeClient() kubernetes.Interface {
+	restConfig, err := kubeutils.GetConfig("", "")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	kubeClient, err := kubernetes.NewForConfig(restConfig)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	return kubeClient
+}
+

@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/kubeutils"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"os/exec"
 	"strings"
@@ -161,12 +158,3 @@ func KubeLogs(label string) string {
 	}
 	return out
 }
-
-func MustKubeClient() kubernetes.Interface {
-	restConfig, err := kubeutils.GetConfig("", "")
-	gomega.ExpectWithOffset(1, err).NotTo(gomega.HaveOccurred())
-	kubeClient, err := kubernetes.NewForConfig(restConfig)
-	gomega.ExpectWithOffset(1, err).NotTo(gomega.HaveOccurred())
-	return kubeClient
-}
-
