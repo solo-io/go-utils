@@ -122,7 +122,32 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 
 }
 
+var (
+	emptyLockReleaseError = fmt.Errorf("cannot release empty lock")
+	IsEmptyLockReleaseError = func(e error) bool {
+		return e == emptyLockReleaseError
+	}
+
+	notLockOwnerError = fmt.Errorf("only the lock owner can release the lock")
+	IsNotLockOwnerError = func(e error) bool {
+		return e == notLockOwnerError
+	}
+)
+
+
 func (t *TestClusterLocker) ReleaseLock() error {
+	cfgMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if cfgMap.Annotations == nil || len(cfgMap.Annotations) == 0 {
+		return emptyLockReleaseError
+	} else if val, ok := cfgMap.Annotations[LockAnnotationKey] ; ok && val != t.buidldId {
+		return notLockOwnerError
+	}
+
+
 	if _, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Update(defaultConfigMap); err != nil {
 		return err
 	}
