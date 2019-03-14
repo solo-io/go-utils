@@ -1,0 +1,3 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Only allow the person holding the lock to release it.
