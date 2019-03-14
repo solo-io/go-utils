@@ -69,10 +69,11 @@ var _ = Describe("cluster lock test", func() {
 		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
 		lock2, err := clusterlock.NewTestClusterLocker(kubeClient, "default")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(lock2.AcquireLock(retry.Delay(time.Millisecond))).To(HaveOccurred())
+		Expect(lock2.AcquireLock(retry.Delay(time.Millisecond), retry.Attempts(3))).To(HaveOccurred())
+		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
 	})
 
-	FIt("Take back timed out lock", func() {
+	It("Take back timed out lock", func() {
 		lock, err := clusterlock.NewTestClusterLocker(kubeClient, "default")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
