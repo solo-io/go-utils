@@ -9,7 +9,7 @@ import (
 	"github.com/avast/retry-go"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -20,6 +20,12 @@ const (
 	LockResourceName = "test-lock"
 	// name of the annotation containing the lock
 	LockAnnotationKey = "test.lock"
+	// name of the annotation containing the timeout
+	LockTimeoutAnnotationKey = "test.lock.timeout"
+
+	// Default timeout for lock to be held
+	DefaultLockTimeout = time.Minute * 30
+	DefaultTimeFormat = time.RFC3339Nano
 )
 
 var defaultConfigMap = &coreV1.ConfigMap{
@@ -29,8 +35,8 @@ var defaultConfigMap = &coreV1.ConfigMap{
 }
 
 var defaultOpts = []retry.Option{
-	retry.Delay(30 * time.Second),
-	retry.Attempts(20),
+	retry.Delay(10 * time.Second),
+	retry.Attempts(60),
 	retry.DelayType(retry.FixedDelay),
 	retry.RetryIf(func(e error) bool {
 		if e != nil {
@@ -78,10 +84,27 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 			}
 
 			if cfgMap.Annotations == nil || len(cfgMap.Annotations) == 0 {
+				// Case if annotations are empty
 				cfgMap.Annotations = map[string]string{
 					LockAnnotationKey: t.buidldId,
+					LockTimeoutAnnotationKey: time.Now().Format(DefaultTimeFormat),
 				}
+
 			} else {
+				if timeoutStr, ok := cfgMap.Annotations[LockTimeoutAnnotationKey]; ok {
+					// case if timeout has expired
+					savedTime, err := time.Parse(DefaultTimeFormat, timeoutStr)
+					if err != nil {
+						return err
+					}
+					if time.Since(savedTime) > DefaultLockTimeout {
+						cfgMap.Annotations = map[string]string{
+							LockAnnotationKey:        t.buidldId,
+							LockTimeoutAnnotationKey: time.Now().Format(DefaultTimeFormat),
+						}
+					}
+				}
+
 				if val, ok := cfgMap.Annotations[LockAnnotationKey]; ok && val != t.buidldId {
 					return lockInUseError
 				}
