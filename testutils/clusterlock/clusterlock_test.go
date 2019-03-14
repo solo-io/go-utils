@@ -94,7 +94,7 @@ var _ = Describe("cluster lock test", func() {
 		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
 		lock2, err := clusterlock.NewTestClusterLocker(kubeClient, "default")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(lock2.ReleaseLock()).To(HaveOccurred())
+		Expect(clusterlock.IsNotLockOwnerError(lock2.ReleaseLock())).To(BeTrue())
 	})
 })
 
