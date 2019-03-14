@@ -11,6 +11,10 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 	return renderer.Render(changelog)
 }
 
+func NewDefaultChangelogRenderer() ChangelogRenderer {
+	return &markdownChangelogRenderer{}
+}
+
 type markdownChangelogRenderer struct{}
 
 func (renderer *markdownChangelogRenderer) Render(changelog *Changelog) string {

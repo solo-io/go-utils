@@ -97,6 +97,18 @@ var (
 	}
 )
 
+type ByVersionDesc []*Version
+
+func (s ByVersionDesc) Len() int {
+	return len(s)
+}
+func (s ByVersionDesc) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s ByVersionDesc) Less(i, j int) bool {
+	return s[i].IsGreaterThan(s[j])
+}
+
 func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
 	if err != nil {

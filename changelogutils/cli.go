@@ -3,26 +3,27 @@ package changelogutils
 import (
 	"context"
 	"github.com/solo-io/go-utils/githubutils"
-	"github.com/spf13/afero"
 )
 
 func GetChangelogMarkdownForPR(owner, repo string) (string, error) {
+	ctx := context.TODO()
 	client, err := githubutils.GetClient(context.TODO())
 	if err != nil {
 		return "", err
 	}
-	fs := afero.NewOsFs()
 	latestTag, err := githubutils.FindLatestReleaseTagIncudingPrerelease(context.TODO(), client, owner, repo)
 	if err != nil {
 		return "", err
 	}
-	proposedTag, err := GetProposedTag(fs, latestTag, "")
+	reader, err := NewChangelogReader(ctx)
 	if err != nil {
 		return "", err
 	}
-	changelog, err := ComputeChangelogForNonRelease(fs, latestTag, proposedTag, "")
+	changelog, err := reader.ReadChangelogForTag(owner, repo, "master", latestTag)
 	if err != nil {
 		return "", err
 	}
-	return GenerateChangelogMarkdown(changelog), nil
+	renderer := NewDefaultChangelogRenderer()
+	return renderer.Render(changelog), nil
 }
+

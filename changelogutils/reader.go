@@ -7,12 +7,14 @@ import (
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"path/filepath"
+	"sort"
 )
 
 type ChangelogReader interface {
+	GetAllChangelogVersionsDesc(owner, repo, ref string) ([]*versionutils.Version, error)
 	ReadChangelogFile(owner, repo, ref, path string) (*ChangelogFile, error)
 	ReadChangelogForTag(owner, repo, ref, tag string) (*Changelog, error)
-	GetProposedChangelog(owner, repo, ref string) (*Changelog, error)
+	GetProposedChangelog(owner, repo, ref string) (*versionutils.Version, *Changelog, error)
 }
 
 type githubChangelogReader struct {
@@ -21,7 +23,7 @@ type githubChangelogReader struct {
 	parser ChangelogParser
 }
 
-func NewGithubChangelogReader(ctx context.Context) (*githubChangelogReader, error) {
+func NewChangelogReader(ctx context.Context) (ChangelogReader, error) {
 	client, err := githubutils.GetClient(ctx)
 	if err != nil {
 		return nil, err
@@ -89,47 +91,78 @@ func (reader *githubChangelogReader) readFile(owner, repo, ref, path string) (st
 	return content, nil
 }
 
-func (reader *githubChangelogReader) GetProposedChangelog(owner, repo, ref string) (*Changelog, error) {
-	proposedTag, err := reader.getProposedTag(owner, repo, ref)
+func (reader *githubChangelogReader) GetProposedChangelog(owner, repo, ref string) (*versionutils.Version, *Changelog, error) {
+	proposedVersion, err := reader.getProposedVersion(owner, repo, ref)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return reader.ReadChangelogForTag(owner, repo, ref, proposedTag)
+	changelog, err := reader.ReadChangelogForTag(owner, repo, ref, proposedVersion.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	return proposedVersion, changelog, nil
 }
 
-func (reader *githubChangelogReader) getProposedTag(owner, repo, ref string) (string, error) {
+func (reader *githubChangelogReader) getProposedVersion(owner, repo, ref string) (*versionutils.Version, error) {
 	opts := &github.RepositoryContentGetOptions{
 		Ref: ref,
 	}
 	_, directoryContent, _, err := reader.client.Repositories.GetContents(reader.ctx, owner, repo, ChangelogDirectory, opts)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	proposedTag := ""
 	latestTag, err := githubutils.FindLatestReleaseTagIncudingPrerelease(reader.ctx, reader.client, owner, repo)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	for _, subdirectory := range directoryContent {
 		if subdirectory.GetType() != "dir" {
-			return "", errors.Errorf("Expected contents of changelog to be type dir, found %s of type %s", subdirectory.GetName(), subdirectory.GetType())
+			return nil, errors.Errorf("Expected contents of changelog to be type dir, found %s of type %s", subdirectory.GetName(), subdirectory.GetType())
 		}
 		if !versionutils.MatchesRegex(subdirectory.GetName()) {
-			return "", newErrorInvalidDirectoryName(subdirectory.GetName())
+			return nil, newErrorInvalidDirectoryName(subdirectory.GetName())
 		}
 		greaterThan, err := versionutils.IsGreaterThanTag(subdirectory.GetName(), latestTag)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		if greaterThan {
 			if proposedTag != "" {
-				return "", newErrorMultipleVersionsFound(subdirectory.GetName(), proposedTag, latestTag)
+				return nil, newErrorMultipleVersionsFound(subdirectory.GetName(), proposedTag, latestTag)
 			}
 			proposedTag = subdirectory.GetName()
 		}
 	}
 	if proposedTag == "" {
-		return "", newErrorNoVersionFound(latestTag)
+		return nil, newErrorNoVersionFound(latestTag)
 	}
-	return proposedTag, nil
+	proposedVersion, err := versionutils.ParseVersion(proposedTag)
+	if err != nil {
+		return nil, err
+	}
+	return proposedVersion, nil
+}
+
+func (reader *githubChangelogReader) GetAllChangelogVersionsDesc(owner, repo, ref string) ([]*versionutils.Version, error) {
+	opts := github.RepositoryContentGetOptions{
+		Ref: ref,
+	}
+	_, contents, _, err := reader.client.Repositories.GetContents(reader.ctx, owner, repo, ChangelogDirectory, &opts)
+	if err != nil {
+		return nil, err
+	}
+	var versions []*versionutils.Version
+	for _, subdirectory := range contents {
+		if subdirectory.GetType() != "dir" {
+			return nil, errors.Errorf("Expected contents of changelog to be type dir, found %s of type %s", subdirectory.GetName(), subdirectory.GetType())
+		}
+		version, err := versionutils.ParseVersion(subdirectory.GetName())
+		if err != nil {
+			return nil, newErrorInvalidDirectoryName(subdirectory.GetName())
+		}
+		versions = append(versions, version)
+	}
+	sort.Sort(versionutils.ByVersionDesc(versions))
+	return versions, nil
 }
