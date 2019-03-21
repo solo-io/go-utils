@@ -25,11 +25,11 @@ const (
 	LockTimeoutAnnotationKey = "test.lock.timeout"
 
 	// Default timeout for lock to be held
-	DefaultLockTimeout = time.Minute/2
+	DefaultLockTimeout = time.Second*30
 	DefaultTimeFormat  = time.RFC3339Nano
 
 	// heartbeat settings
-	DefaultHeartbeatTime = time.Second * 30
+	DefaultHeartbeatTime = time.Second * 15
 )
 
 var defaultConfigMap = &coreV1.ConfigMap{
@@ -67,16 +67,27 @@ type TestClusterLocker struct {
 	ctx       context.Context
 }
 
-func NewTestClusterLocker(ctx context.Context, clientset kubernetes.Interface, namespace string) (*TestClusterLocker, error) {
-	if namespace == "" {
-		namespace = LockDefaultNamespace
+type Options struct {
+	Namespace string
+	IdPrefix string
+	Context context.Context
+}
+
+func NewTestClusterLocker(clientset kubernetes.Interface, options Options) (*TestClusterLocker, error) {
+
+
+	if options.Namespace == "" {
+		options.Namespace = LockDefaultNamespace
 	}
-	_, err := clientset.CoreV1().ConfigMaps(namespace).Create(defaultConfigMap)
+	if options.Context == nil {
+		options.Context = context.Background()
+	}
+	buildId := options.IdPrefix + uuid.New().String()
+	_, err := clientset.CoreV1().ConfigMaps(options.Namespace).Create(defaultConfigMap)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return nil, err
 	}
-	buildId := uuid.New().String()
-	return &TestClusterLocker{clientset: clientset, namespace: namespace, buidldId: buildId, ctx: ctx}, nil
+	return &TestClusterLocker{clientset: clientset, namespace: options.Namespace, buidldId: buildId, ctx: options.Context}, nil
 }
 
 func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
@@ -113,6 +124,13 @@ func (t *TestClusterLocker) reacquireLock() error {
 	if err != nil {
 		return err
 	}
+
+	if cfgMap.Annotations == nil || len(cfgMap.Annotations) == 0 {
+		return emptyLockReleaseError
+	} else if val, ok := cfgMap.Annotations[LockAnnotationKey]; ok && val != t.buidldId {
+		return notLockOwnerError
+	}
+
 	cfgMap.Annotations = map[string]string{
 		LockAnnotationKey:        t.buidldId,
 		LockTimeoutAnnotationKey: time.Now().Format(DefaultTimeFormat),
