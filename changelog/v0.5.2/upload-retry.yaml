@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Retry uploading assets to github if there's an error.
+    issueLink: https://github.com/solo-io/go-utils/issues/76
