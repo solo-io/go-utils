@@ -1,0 +1,4 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: create heartbeat for cluster lock to allow for quicker recovery
+    issueLink: https://github.com/solo-io/go-utils/issues/77
