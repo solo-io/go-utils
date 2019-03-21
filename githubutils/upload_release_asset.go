@@ -27,6 +27,8 @@ type UploadReleaseAssetSpec struct {
 	SkipAlreadyExists bool
 }
 
+const uploadRetries = 5
+
 func UploadReleaseAssetCli(spec *UploadReleaseAssetSpec) {
 	version := versionutils.GetReleaseVersionOrExitGracefully()
 	ctx := context.TODO()
@@ -71,13 +73,41 @@ func uploadFileOrExit(ctx context.Context, client *github.Client, release *githu
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Fatalf("Error reading file %s: %s", path, err.Error())
 	}
+
+	for try := 0; try < uploadRetries; try++ {
+		err = tryUploadAsset(ctx, client, release, spec, name, file)
+		if err == nil {
+			return
+		}
+	}
+
+	contextutils.LoggerFrom(ctx).Fatalf("Error uploading assets. Error was: %s", err.Error())
+}
+
+func tryUploadAsset(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name string, file *os.File) error {
 	opts := &github.UploadOptions{
 		Name: name,
 	}
-	_, _, err = client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, file)
+	_, _, err := client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, file)
 	if err != nil {
-		contextutils.LoggerFrom(ctx).Fatalf("Error uploading assets. Error was: %s", err.Error())
+		loadedRelease, _, _ := client.Repositories.GetRelease(ctx, spec.Owner, spec.Repo, release.GetID())
+		if loadedRelease != nil {
+			tryDeleteAsset(ctx, client, loadedRelease, spec, name)
+		}
 	}
+	return err
+}
+
+func tryDeleteAsset(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name string) error {
+	for _, asset := range release.Assets {
+		if asset.GetName() == name {
+			_, err := client.Repositories.DeleteReleaseAsset(ctx, spec.Owner, spec.Repo, asset.GetID())
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func writeSha256OrExit(ctx context.Context, file *os.File, outputPath string) {
