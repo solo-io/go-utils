@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/avast/retry-go"
 	"github.com/google/go-github/github"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/versionutils"
@@ -74,12 +75,10 @@ func uploadFileOrExit(ctx context.Context, client *github.Client, release *githu
 		contextutils.LoggerFrom(ctx).Fatalf("Error reading file %s: %s", path, err.Error())
 	}
 
-	for try := 0; try < uploadRetries; try++ {
-		err = tryUploadAsset(ctx, client, release, spec, name, file)
-		if err == nil {
-			return
-		}
-	}
+	// Using default retry settings for now, 10 attempts, 100ms delay with backoff
+	retry.Do(func() error {
+		return tryUploadAsset(ctx, client, release, spec, name, file)
+	})
 
 	contextutils.LoggerFrom(ctx).Fatalf("Error uploading assets. Error was: %s", err.Error())
 }
