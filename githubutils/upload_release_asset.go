@@ -28,8 +28,6 @@ type UploadReleaseAssetSpec struct {
 	SkipAlreadyExists bool
 }
 
-const uploadRetries = 5
-
 func UploadReleaseAssetCli(spec *UploadReleaseAssetSpec) {
 	version := versionutils.GetReleaseVersionOrExitGracefully()
 	ctx := context.TODO()
