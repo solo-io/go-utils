@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fixes a bug where locks will fail if the lock present in the cluster is deleted while trying to acquire.
+    issueLink: https://github.com/solo-io/go-utils/issues/83

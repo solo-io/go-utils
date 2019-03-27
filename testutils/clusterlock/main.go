@@ -50,15 +50,15 @@ var defaultOpts = []retry.Option{
 			if errors.IsConflict(e) {
 				return true
 			}
+			if errors.IsNotFound(e) {
+				return true
+			}
 		}
 		return false
 	}),
 }
 
-var lockInUseError = fmt.Errorf("lock is currently in use")
-var IsLockIsUseError = func(e error) bool {
-	return e == lockInUseError
-}
+
 
 type TestClusterLocker struct {
 	clientset kubernetes.Interface
@@ -143,7 +143,7 @@ func (t *TestClusterLocker) reacquireLock() error {
 
 func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 	var callback = func() error {
-		cfgMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
+		cfgMap, err := t.concurrentLockGet()
 		if err != nil && !errors.IsTimeout(err) {
 			return err
 		}
@@ -175,12 +175,32 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 			}
 		}
 
-		if _, err = t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap); err != nil {
+		if _, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap); err != nil {
 			return err
 		}
 		return nil
 	}
 	return callback
+}
+
+func (t *TestClusterLocker) concurrentLockGet() (*coreV1.ConfigMap, error) {
+	originalConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			newConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Create(defaultConfigMap)
+			if err != nil {
+				// force the loop to restart
+				if errors.IsAlreadyExists(err) {
+					return nil, lockInUseError
+				}
+				// actual error to be handled above
+				return nil, err
+			}
+			return newConfigMap, nil
+		}
+		return nil, err
+	}
+	return originalConfigMap, nil
 }
 
 var (
@@ -193,6 +213,11 @@ var (
 	IsNotLockOwnerError = func(e error) bool {
 		return e == notLockOwnerError
 	}
+
+	lockInUseError = fmt.Errorf("lock is currently in use")
+	IsLockIsUseError = func(e error) bool {
+		return e == lockInUseError
+	}
 )
 
 func (t *TestClusterLocker) ReleaseLock() error {
@@ -200,6 +225,9 @@ func (t *TestClusterLocker) ReleaseLock() error {
 	cancel()
 	cfgMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
