@@ -143,7 +143,9 @@ func (t *TestClusterLocker) reacquireLock() error {
 
 func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 	var callback = func() error {
-		cfgMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
+		cfgMap, err := t.tryLockAction(func() ( *coreV1.ConfigMap, error) {
+			return t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
+		})
 		if err != nil && !errors.IsTimeout(err) {
 			return err
 		}
@@ -175,12 +177,29 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 			}
 		}
 
-		if _, err = t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap); err != nil {
+		if _, err := t.tryLockAction(func() (*coreV1.ConfigMap, error) {
+			return t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap)
+		}); err != nil {
 			return err
 		}
 		return nil
 	}
 	return callback
+}
+
+func (t *TestClusterLocker) tryLockAction(f func() (*coreV1.ConfigMap, error)) (*coreV1.ConfigMap, error) {
+	originalConfigMap, err := f()
+	if err != nil {
+		if errors.IsNotFound(err) {
+			newConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Create(defaultConfigMap)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return nil, err
+			}
+			return newConfigMap, nil
+		}
+		return nil, err
+	}
+	return originalConfigMap, nil
 }
 
 var (
@@ -200,6 +219,9 @@ func (t *TestClusterLocker) ReleaseLock() error {
 	cancel()
 	cfgMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
