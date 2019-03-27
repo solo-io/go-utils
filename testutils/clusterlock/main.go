@@ -50,6 +50,9 @@ var defaultOpts = []retry.Option{
 			if errors.IsConflict(e) {
 				return true
 			}
+			if errors.IsNotFound(e) {
+				return true
+			}
 		}
 		return false
 	}),
@@ -174,9 +177,7 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 			}
 		}
 
-		if _, err := t.tryLockAction(func() (*coreV1.ConfigMap, error) {
-			return t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap)
-		}); err != nil {
+		if _, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap); err != nil {
 			return err
 		}
 		return nil
