@@ -55,10 +55,7 @@ var defaultOpts = []retry.Option{
 	}),
 }
 
-var lockInUseError = fmt.Errorf("lock is currently in use")
-var IsLockIsUseError = func(e error) bool {
-	return e == lockInUseError
-}
+
 
 type TestClusterLocker struct {
 	clientset kubernetes.Interface
@@ -192,7 +189,12 @@ func (t *TestClusterLocker) tryLockAction(f func() (*coreV1.ConfigMap, error)) (
 	if err != nil {
 		if errors.IsNotFound(err) {
 			newConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Create(defaultConfigMap)
-			if err != nil && !errors.IsAlreadyExists(err) {
+			if err != nil {
+				// force the loop to restart
+				if errors.IsAlreadyExists(err) {
+					return nil, lockInUseError
+				}
+				// actual error to be handled above
 				return nil, err
 			}
 			return newConfigMap, nil
@@ -211,6 +213,11 @@ var (
 	notLockOwnerError   = fmt.Errorf("only the lock owner can release the lock")
 	IsNotLockOwnerError = func(e error) bool {
 		return e == notLockOwnerError
+	}
+
+	lockInUseError = fmt.Errorf("lock is currently in use")
+	IsLockIsUseError = func(e error) bool {
+		return e == lockInUseError
 	}
 )
 
