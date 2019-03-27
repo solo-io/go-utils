@@ -143,9 +143,7 @@ func (t *TestClusterLocker) reacquireLock() error {
 
 func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 	var callback = func() error {
-		cfgMap, err := t.tryLockAction(func() ( *coreV1.ConfigMap, error) {
-			return t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
-		})
+		cfgMap, err := t.concurrentLockGet()
 		if err != nil && !errors.IsTimeout(err) {
 			return err
 		}
@@ -185,8 +183,8 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 	return callback
 }
 
-func (t *TestClusterLocker) tryLockAction(f func() (*coreV1.ConfigMap, error)) (*coreV1.ConfigMap, error) {
-	originalConfigMap, err := f()
+func (t *TestClusterLocker) concurrentLockGet() (*coreV1.ConfigMap, error) {
+	originalConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			newConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Create(defaultConfigMap)
