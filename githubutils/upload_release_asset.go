@@ -74,11 +74,13 @@ func uploadFileOrExit(ctx context.Context, client *github.Client, release *githu
 	}
 
 	// Using default retry settings for now, 10 attempts, 100ms delay with backoff
-	retry.Do(func() error {
+	err = retry.Do(func() error {
 		return tryUploadAsset(ctx, client, release, spec, name, file)
 	})
 
-	contextutils.LoggerFrom(ctx).Fatalf("Error uploading assets. Error was: %s", err.Error())
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Fatalf("Error uploading assets. Error was: %s", err.Error())
+	}
 }
 
 func tryUploadAsset(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name string, file *os.File) error {

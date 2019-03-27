@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fixes a regression introduced in v0.6.0 where uploading github release assets would always fail.
+    issueLink: https://github.com/solo-io/go-utils/issues/81
