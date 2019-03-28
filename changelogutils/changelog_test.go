@@ -3,17 +3,17 @@ package changelogutils_test
 import (
 	"context"
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/solo-io/go-utils/changelogutils"
-	"github.com/solo-io/go-utils/githubutils"
-	"github.com/solo-io/go-utils/versionutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/changelogutils"
+	"github.com/solo-io/go-utils/githubutils"
+	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
 )
 
@@ -41,18 +41,70 @@ var _ = Describe("ChangelogTest", func() {
 		})
 	})
 
-	It("can marshal changelog entries", func() {
-		var clf changelogutils.ChangelogFile
-		err := yaml.Unmarshal([]byte(mockChangelog), &clf)
-		for _, value := range clf.Entries {
-			Expect(value.Type.String()).NotTo(BeEmpty())
-			Expect(value.Description).NotTo(BeEmpty())
-			Expect(value.IssueLink).NotTo(BeEmpty())
-		}
-		Expect(err).NotTo(HaveOccurred())
-		byt, err := yaml.Marshal(clf)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(strings.Contains(string(byt), "releaseStableApi")).To(BeFalse())
+	var _ = Context("Changelog marshaling", func() {
+
+		It("can marshal changelog entries", func() {
+			var clf changelogutils.ChangelogFile
+			err := yaml.Unmarshal([]byte(mockChangelog), &clf)
+			for _, value := range clf.Entries {
+				Expect(value.Type.String()).NotTo(BeEmpty())
+				Expect(value.Description).NotTo(BeEmpty())
+				Expect(value.IssueLink).NotTo(BeEmpty())
+				Expect(value.GetResolvesIssue()).To(BeTrue()) // default
+			}
+			Expect(err).NotTo(HaveOccurred())
+			byt, err := yaml.Marshal(clf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.Contains(string(byt), "releaseStableApi")).To(BeFalse())
+		})
+
+		It("can handle resolvesIssue set to false", func() {
+			var clf changelogutils.ChangelogFile
+			contents := `changelog:
+- type: FIX
+  description: foo
+  issueLink: bar
+  resolvesIssue: false`
+			err := yaml.Unmarshal([]byte(contents), &clf)
+			Expect(err).NotTo(HaveOccurred())
+			boolValue := new(bool)
+			*boolValue = false
+			expected := changelogutils.ChangelogFile{
+				Entries: []*changelogutils.ChangelogEntry{
+					{
+						Type:          changelogutils.FIX,
+						Description:   "foo",
+						IssueLink:     "bar",
+						ResolvesIssue: boolValue,
+					},
+				},
+			}
+			Expect(clf).To(BeEquivalentTo(expected))
+		})
+
+		It("can handle resolvesIssue set to true", func() {
+			var clf changelogutils.ChangelogFile
+			contents := `changelog:
+- type: FIX
+  description: foo
+  issueLink: bar
+  resolvesIssue: true`
+			err := yaml.Unmarshal([]byte(contents), &clf)
+			Expect(err).NotTo(HaveOccurred())
+			boolValue := new(bool)
+			*boolValue = true
+			expected := changelogutils.ChangelogFile{
+				Entries: []*changelogutils.ChangelogEntry{
+					{
+						Type:          changelogutils.FIX,
+						Description:   "foo",
+						IssueLink:     "bar",
+						ResolvesIssue: boolValue,
+					},
+				},
+			}
+			Expect(clf).To(BeEquivalentTo(expected))
+		})
 	})
 
 	var _ = Context("Changelog computing and rendering", func() {

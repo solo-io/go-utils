@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Changelog entries now support an optional `resolvesIssue` boolean field, defaulting to `true`, to specify if the issue referenced in `issueLink` should be resolved when the PR merges.
+    issueLink: https://github.com/solo-io/go-utils/issues/88

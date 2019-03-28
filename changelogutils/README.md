@@ -43,10 +43,25 @@ changelog:
   - ...
 ```
  
-Type must be one of `NEW_FEATURE`, `FIX`, `BREAKING_CHANGE`, or `NON_USER_FACING`. 
+Type must be one of `NEW_FEATURE`, `FIX`, `BREAKING_CHANGE`, `DEPENDENCY_BUMP`, or `NON_USER_FACING`. 
 
-Changelog entries that are not of type `NON_USER_FACING` must have a description and an issue link. 
-Those fields are optional for `NON_USER_FACING` changes. 
+Changelog entries that are not of type `NON_USER_FACING` or `DEPENDENCY_BUMP` must have a description and an issue link. 
+Those fields are optional for `NON_USER_FACING` and `DEPENDENCY_BUMP` changes.
+
+`DEPENDENCY_BUMP` changes have a few additional required fields: `dependencyTag`, `dependencyOwner`, and `dependencyRepo`. For example, 
+this is a valid changelog file containing a dependency bump:
+
+```yaml
+changelog:
+  - type: DEPENDENCY_BUMP
+    description: Bumped the version of go-utils to pick up the new changelog feature.
+    dependencyOwner: solo-io
+    dependencyRepo: go-utils
+    dependencyTag: v0.6.2
+``` 
+
+Changelog entries can set an optional boolean field called `resolvesIssue`. This can be used by CI 
+systems to automatically close issues linked to the changelog. The default value for this field is `true`. 
 
 The description field should be one or more complete sentences (starting with a capital letter, ending 
 with a period). The issue link should point to a valid github URL. These conventions are currently
