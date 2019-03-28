@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  description: Add options to curl wrapper for toggling -v and -s flags for verbosity specification.
+  issueLink: https://github.com/solo-io/go-utils/issues/91
