@@ -20,6 +20,14 @@ type ChangelogEntry struct {
 	DependencyOwner string             `json:"dependencyOwner,omitempty"`
 	DependencyRepo  string             `json:"dependencyRepo,omitempty"`
 	DependencyTag   string             `json:"dependencyTag,omitempty"`
+	ResolvesIssue   *bool              `json:"resolvesIssue,omitempty"`
+}
+
+func (c* ChangelogEntry) GetResolvesIssue() bool {
+	if c.ResolvesIssue == nil {
+		return true
+	}
+	return *c.ResolvesIssue
 }
 
 type ChangelogFile struct {
