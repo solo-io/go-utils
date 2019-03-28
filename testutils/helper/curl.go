@@ -21,6 +21,9 @@ type CurlOpts struct {
 	Port              int
 	ReturnHeaders     bool
 	ConnectionTimeout int
+	Verbose           bool
+	// WithoutStats sets the -s flag to prevent download stats from printing
+	WithoutStats bool
 }
 
 func (t *TestRunner) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout time.Duration) {
@@ -52,12 +55,17 @@ func (t *TestRunner) CurlEventuallyShouldRespond(opts CurlOpts, substr string, g
 }
 
 func (t *TestRunner) Curl(opts CurlOpts) (string, error) {
-	args := []string{"curl", "-v"}
+	args := []string{"curl"}
+	if opts.Verbose {
+		args = append(args, "-v")
+	}
+	if opts.WithoutStats {
+		args = append(args, "-s")
+	}
 	if opts.ConnectionTimeout > 0 {
 		seconds := fmt.Sprintf("%v", opts.ConnectionTimeout)
 		args = append(args, "--connect-timeout", seconds, "--max-time", seconds)
 	}
-
 	if opts.ReturnHeaders {
 		args = append(args, "-I")
 	}
