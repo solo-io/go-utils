@@ -3,8 +3,9 @@ package changelogutils
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/github"
 	"path/filepath"
+
+	"github.com/google/go-github/github"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -23,7 +24,7 @@ type ChangelogEntry struct {
 	ResolvesIssue   *bool              `json:"resolvesIssue,omitempty"`
 }
 
-func (c* ChangelogEntry) GetResolvesIssue() bool {
+func (c *ChangelogEntry) GetResolvesIssue() bool {
 	if c.ResolvesIssue == nil {
 		return true
 	}
@@ -75,7 +76,6 @@ func newErrorNoVersionFound(version string) *errorNoVersionFound {
 func (e *errorNoVersionFound) Error() string {
 	return fmt.Sprintf("No version greater than %s found", e.version)
 }
-
 
 func IsNoVersionFoundError(err error) bool {
 	_, ok := err.(*errorNoVersionFound)

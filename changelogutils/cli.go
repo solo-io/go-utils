@@ -2,6 +2,7 @@ package changelogutils
 
 import (
 	"context"
+
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/spf13/afero"
 )

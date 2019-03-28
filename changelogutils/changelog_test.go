@@ -3,6 +3,11 @@ package changelogutils_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -10,10 +15,6 @@ import (
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var _ = Describe("ChangelogTest", func() {
@@ -71,9 +72,9 @@ var _ = Describe("ChangelogTest", func() {
 			expected := changelogutils.ChangelogFile{
 				Entries: []*changelogutils.ChangelogEntry{
 					{
-						Type: changelogutils.FIX,
-						Description: "foo",
-						IssueLink: "bar",
+						Type:          changelogutils.FIX,
+						Description:   "foo",
+						IssueLink:     "bar",
 						ResolvesIssue: boolValue,
 					},
 				},
@@ -95,9 +96,9 @@ var _ = Describe("ChangelogTest", func() {
 			expected := changelogutils.ChangelogFile{
 				Entries: []*changelogutils.ChangelogEntry{
 					{
-						Type: changelogutils.FIX,
-						Description: "foo",
-						IssueLink: "bar",
+						Type:          changelogutils.FIX,
+						Description:   "foo",
+						IssueLink:     "bar",
 						ResolvesIssue: boolValue,
 					},
 				},
@@ -105,8 +106,6 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(clf).To(BeEquivalentTo(expected))
 		})
 	})
-
-
 
 	var _ = Context("Changelog computing and rendering", func() {
 		var (
