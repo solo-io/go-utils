@@ -74,5 +74,4 @@ var _ = Describe("GetInput", func() {
 			})
 		})
 	})
-
 })

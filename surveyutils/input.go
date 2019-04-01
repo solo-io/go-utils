@@ -72,11 +72,17 @@ func GetBoolInput(msg string, value *bool) error {
 
 func GetBoolInputDefault(msg string, value *bool, defaultValue bool) error {
 	var strValue string
-	defaultValueStr := "N"
+	defaultNo, defaultYes := "n", "y"
+	var defaultValueStr string
 	if defaultValue {
-		defaultValueStr = "y"
+		defaultYes = "Y"
+		defaultValueStr = defaultYes
+	} else {
+		defaultNo = "N"
+		defaultValueStr = defaultNo
 	}
-	prompt := &survey.Input{Message: msg + " [y/N]: ", Default: defaultValueStr}
+	brackets := fmt.Sprintf(" [%s/%s]: ", defaultYes, defaultNo)
+	prompt := &survey.Input{Message: msg + brackets, Default: defaultValueStr}
 	if err := AskOne(prompt, &strValue, nil); err != nil {
 		return err
 	}
