@@ -3,11 +3,11 @@ package cli
 import (
 	"time"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/hinshun/vt10x"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	clisurvey "github.com/solo-io/go-utils/cliutils/survey"
+	"github.com/solo-io/go-utils/cliutils"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
@@ -19,7 +19,7 @@ func ExpectInteractive(userinput func(*Console), testcli func()) {
 	c, state, err := vt10x.NewVT10XConsole()
 	Expect(err).NotTo(HaveOccurred())
 	defer c.Close()
-	clisurvey.UseStdio(Stdio(c))
+	cliutils.UseStdio(Stdio(c))
 	// Dump the terminal's screen.
 	defer func() { GinkgoWriter.Write([]byte(expect.StripTrailingEmptyLines(state.String()))) }()
 
