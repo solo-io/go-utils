@@ -1,9 +1,9 @@
-package cliutils_test
+package surveyutils_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/cliutils"
+	"github.com/solo-io/go-utils/surveyutils"
 	clitestutils "github.com/solo-io/go-utils/testutils/cli"
 )
 
@@ -16,7 +16,7 @@ var _ = Describe("GetInput", func() {
 				c.ExpectEOF()
 			}, func() {
 				var val bool
-				err := cliutils.GetBoolInput("test msg", &val)
+				err := surveyutils.GetBoolInput("test msg", &val)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(val).To(BeTrue())
 			})
@@ -34,7 +34,7 @@ var _ = Describe("GetInput", func() {
 					c.ExpectEOF()
 				}, func() {
 					var val string
-					err := cliutils.ChooseFromList("select option", &val, options)
+					err := surveyutils.ChooseFromList("select option", &val, options)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(val).To(Equal("two"))
 				})
@@ -50,7 +50,7 @@ var _ = Describe("GetInput", func() {
 					c.ExpectEOF()
 				}, func() {
 					var val []string
-					err := cliutils.ChooseMultiFromList("select option", &val, options)
+					err := surveyutils.ChooseMultiFromList("select option", &val, options)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(val).To(Equal([]string{"two"}))
 				})
@@ -67,7 +67,7 @@ var _ = Describe("GetInput", func() {
 					c.ExpectEOF()
 				}, func() {
 					var val []string
-					err := cliutils.ChooseMultiFromList("select option", &val, options)
+					err := surveyutils.ChooseMultiFromList("select option", &val, options)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(val).To(Equal([]string{"two", "three"}))
 				})
