@@ -1,0 +1,4 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: Moves testutils from gloo into go-utils.
+    issueLink: https://github.com/solo-io/go-utils/issues/95
