@@ -1,0 +1,6 @@
+changelog:
+- type: NEW_FEATURE
+  description: |
+    Include a stack trace on ginkgo failures to identify the exact line of the failure.
+    Output trims any identifiable "overhead" to reduce noise.
+  issueLink: https://github.com/solo-io/go-utils/issues/97
