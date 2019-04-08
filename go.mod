@@ -56,9 +56,10 @@ require (
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
-	k8s.io/api v0.0.0-20181221193117-173ce66c1e39
-	k8s.io/apiextensions-apiserver v0.0.0-20190103235604-e7617803aceb
-	k8s.io/apimachinery v0.0.0-20190104073114-849b284f3b75
+	k8s.io/api v0.0.0-20181221193117-173ce66c1e39+incompatible
+	k8s.io/apiextensions-apiserver v0.0.0-20190103235604-e7617803aceb+incompatible
+	k8s.io/apimachinery v0.0.0-20190104073114-849b284f3b75+incompatible
+	k8s.io/cli-runtime v0.0.0-20190111035321-c7263d800665+incompatible
 	k8s.io/client-go v10.0.0+incompatible
 	k8s.io/helm v2.13.0+incompatible
 	k8s.io/klog v0.1.0 // indirect
