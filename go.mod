@@ -3,17 +3,30 @@ module github.com/solo-io/go-utils
 go 1.12
 
 require (
+	bitbucket.org/ww/goautoneg v0.0.0-20120707110453-75cd24fc2f2c // indirect
 	cloud.google.com/go v0.34.0 // indirect
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/Masterminds/semver v1.4.2 // indirect
+	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/avast/retry-go v2.2.0+incompatible
+	github.com/coreos/etcd v3.3.12+incompatible // indirect
+	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
+	github.com/docker/docker v1.13.1 // indirect
+	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
+	github.com/emicklei/go-restful v2.9.3+incompatible // indirect
+	github.com/emicklei/go-restful-swagger12 v0.0.0-20170926063155-7524189396c6 // indirect
+	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-openapi/spec v0.19.0 // indirect
+	github.com/go-openapi/strfmt v0.19.0 // indirect
+	github.com/go-openapi/validate v0.19.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.2.1
+	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
@@ -21,6 +34,8 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f // indirect
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
+	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -32,6 +47,7 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20120707110453-a547fc61f48d // indirect
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.3
 	github.com/pelletier/go-toml v1.2.0
@@ -55,15 +71,17 @@ require (
 	google.golang.org/grpc v1.17.0 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20181221193117-173ce66c1e39+incompatible
-	k8s.io/apiextensions-apiserver v0.0.0-20190103235604-e7617803aceb+incompatible
+	k8s.io/apiextensions-apiserver v0.0.0-20190111034747-7d26de67f177+incompatible
 	k8s.io/apimachinery v0.0.0-20190104073114-849b284f3b75+incompatible
 	k8s.io/apiserver v0.0.0-20190111033246-d50e9ac5404f+incompatible // indirect
 	k8s.io/cli-runtime v0.0.0-20190111035321-c7263d800665+incompatible
 	k8s.io/client-go v10.0.0+incompatible
 	k8s.io/helm v2.13.0+incompatible
 	k8s.io/klog v0.1.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20190401085232-94e1e7b7574c // indirect
 	k8s.io/kubernetes v1.13.2 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
