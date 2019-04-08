@@ -3,14 +3,19 @@ package contextutils
 import (
 	"context"
 
+	"github.com/solo-io/go-utils/logger"
+
 	"go.uber.org/zap"
 )
 
+// Deprecated:
 func SilenceLogger(ctx context.Context) context.Context {
 	return withLogger(ctx, zap.NewNop().Sugar())
 }
 
+// Deprecated:
 func WithLogger(ctx context.Context, name string) context.Context {
+	return logger.WithContext(ctx).Named(name)
 	return withLogger(ctx, fromContext(ctx).Named(name))
 }
 

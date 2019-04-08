@@ -1,56 +1,48 @@
 package logger
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"regexp"
-	"runtime"
-	"time"
+	"context"
 
-	"github.com/k0kubun/pp"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var debugMode = os.Getenv("DEBUG") == "1"
-var DefaultOut io.Writer = os.Stdout
+type loggerKey struct{}
+
+// This logger is used when there is no logger attached to the context.
+// Rather than returning nil and causing a panic, we will use the fallback
+// logger. Fallback logger is tagged with logger=fallback to make sure
+// that code that doesn't set the logger correctly can be caught at runtime.
+var fallbackLogger *zap.SugaredLogger
 
 func init() {
-	if os.Getenv("DISABLE_COLOR") == "1" {
-		pp.ColoringEnabled = false
+	config := zap.NewProductionConfig()
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	if logger, err := config.Build(); err != nil {
+
+		// We failed to create a fallback logger. Our fallback
+		// unfortunately falls back to noop.
+		fallbackLogger = zap.NewNop().Sugar()
+	} else {
+		fallbackLogger = logger.Sugar()
 	}
 }
 
-var rxp = regexp.MustCompile(".*/src/")
-
-func Sprintf(format string, a ...interface{}) string {
-	return pp.Sprintf("%v\t"+format, append([]interface{}{line()}, a...)...)
+func WithLogger(ctx context.Context, log *zap.SugaredLogger) context.Context {
+	return context.WithValue(ctx, loggerKey{}, log)
 }
 
-func GreyPrintf(format string, a ...interface{}) {
-	fmt.Fprintf(DefaultOut, "%v\t"+format+"\n", append([]interface{}{line()}, a...)...)
+func NewContext(ctx context.Context, fields ...zap.Field) context.Context {
+	return context.WithValue(ctx, loggerKey{}, WithContext(ctx).With(fields))
 }
 
-func Printf(format string, a ...interface{}) {
-	fmt.Fprintln(DefaultOut, Sprintf(format, a...))
-}
-
-func Warnf(format string, a ...interface{}) {
-	fmt.Fprintln(DefaultOut, Sprintf("WARNING:\n"+format+"\n", a...))
-}
-
-func Debugf(format string, a ...interface{}) {
-	if debugMode {
-		fmt.Fprintln(DefaultOut, Sprintf(format, a...))
+func WithContext(ctx context.Context) *zap.SugaredLogger {
+	if ctx == nil {
+		return fallbackLogger
 	}
-}
-
-func Fatalf(format string, a ...interface{}) {
-	fmt.Fprintln(DefaultOut, Sprintf(format, a...))
-	os.Exit(1)
-}
-
-func line() string {
-	_, file, line, _ := runtime.Caller(3)
-	file = rxp.ReplaceAllString(file, "")
-	return fmt.Sprintf("%v: %v:%v", time.Now().Format(time.RFC1123), file, line)
+	if ctxLogger, ok := ctx.Value(loggerKey{}).(*zap.SugaredLogger); ok {
+		return ctxLogger
+	} else {
+		return fallbackLogger
+	}
 }

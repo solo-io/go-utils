@@ -1,0 +1,5 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Define common interface for logging that we can start to use all over our projects.
+    issueLink: https://github.com/solo-io/go-utils/issues/87
+    resolvesIssue: false
