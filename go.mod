@@ -12,6 +12,7 @@ require (
 	github.com/Masterminds/sprig v2.18.0+incompatible // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
+	github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30 // indirect
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible // indirect
@@ -28,6 +29,8 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-logr/logr v0.1.0 // indirect
+	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/go-openapi/spec v0.19.0 // indirect
 	github.com/go-openapi/strfmt v0.19.0 // indirect
 	github.com/go-openapi/validate v0.19.0 // indirect
@@ -40,6 +43,7 @@ require (
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.2.0 // indirect
+	github.com/goph/emperror v0.17.1
 	github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
@@ -57,8 +61,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20120707110453-a547fc61f48d // indirect
-	github.com/onsi/ginkgo v1.7.0
-	github.com/onsi/gomega v1.4.3
+	github.com/onsi/ginkgo v1.8.0
+	github.com/onsi/gomega v1.5.0
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/pelletier/go-toml v1.2.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
@@ -75,6 +79,7 @@ require (
 	go.uber.org/zap v1.9.1
 	golang.org/x/net v0.0.0-20181220203305-927f97764cc3 // indirect
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
+	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f
 	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	google.golang.org/appengine v1.4.0 // indirect
@@ -96,6 +101,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20190401085232-94e1e7b7574c // indirect
 	k8s.io/kubernetes v1.13.2 // indirect
 	k8s.io/utils v0.0.0-20190308190857-21c4ce38f2a7 // indirect
+	sigs.k8s.io/controller-runtime v0.1.10
 	sigs.k8s.io/yaml v1.1.0 // indirect
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787 // indirect
 )
