@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: The test Gloo wrapper now calls `glooctl uninstall` with the `--delete-namespace` flag.
+    issueLink: https://github.com/solo-io/go-utils/issues/90

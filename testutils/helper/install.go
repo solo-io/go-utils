@@ -142,7 +142,7 @@ func (h *SoloTestHelper) UninstallGloo() error {
 
 	logger.Printf("uninstalling gloo...")
 	return exec.RunCommand(h.RootDir, true,
-		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace,
+		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace, "--delete-namespace",
 	)
 }
 
