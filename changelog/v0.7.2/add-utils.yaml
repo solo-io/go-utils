@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Added a `SanitizeName` function to `kubeutils`.
+    issueLink: https://github.com/solo-io/go-utils/issues/108
+  - type: FIX
+    description: Remove reference to docs in shared `versionutils` function to get `TAGGED_VERSION` from the environment.
+    issueLink: https://github.com/solo-io/go-utils/issues/99
