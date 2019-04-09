@@ -22,7 +22,7 @@ type PurgeParams struct {
 	InstallLabels map[string]string
 }
 
-func (i *MockKubeInstaller) ReconcilleResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error {
+func (i *MockKubeInstaller) ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error {
 	i.ReconcileCalledWith = ReconcileParams{installNamespace, resources, installLabels}
 	return i.ReturnErr
 }

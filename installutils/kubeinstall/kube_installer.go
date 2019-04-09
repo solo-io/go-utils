@@ -33,7 +33,7 @@ import (
 
 // an interface allowing these methods to be mocked
 type Installer interface {
-	ReconcilleResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error
+	ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error
 	PurgeResources(ctx context.Context, withLabels map[string]string) error
 }
 
@@ -160,7 +160,7 @@ func (r *KubeInstaller) postDelete(res *unstructured.Unstructured) error {
 	return nil
 }
 
-func (r *KubeInstaller) ReconcilleResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, ownerLabels map[string]string) error {
+func (r *KubeInstaller) ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, ownerLabels map[string]string) error {
 	if err := r.preInstall(); err != nil {
 		return errors.Wrapf(err, "error in pre-install hook")
 	}
