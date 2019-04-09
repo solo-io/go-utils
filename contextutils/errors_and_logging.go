@@ -14,6 +14,10 @@ func WithLogger(ctx context.Context, name string) context.Context {
 	return withLogger(ctx, fromContext(ctx).Named(name))
 }
 
+func WithContextualLogger(ctx context.Context, meta ...interface{}) context.Context {
+	return withLogger(ctx, fromContext(ctx).With(meta...))
+}
+
 func LoggerFrom(ctx context.Context) *zap.SugaredLogger {
 	return fromContext(ctx)
 }
