@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  description: Enable adding arbitrary logging meta in context logger
+  issueLink: https://github.com/solo-io/go-utils/issues/105
