@@ -14,7 +14,7 @@ func WithLogger(ctx context.Context, name string) context.Context {
 	return withLogger(ctx, fromContext(ctx).Named(name))
 }
 
-func WithContextualLogger(ctx context.Context, meta ...interface{}) context.Context {
+func WithLoggerValues(ctx context.Context, meta ...interface{}) context.Context {
 	return withLogger(ctx, fromContext(ctx).With(meta...))
 }
 
