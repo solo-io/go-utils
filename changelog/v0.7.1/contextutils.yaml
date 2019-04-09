@@ -1,0 +1,3 @@
+changelog:
+- type: NEW_FEATURE
+  description: Enable adding arbitrary logging meta in context logger
