@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Finished porting over installer from Supergloo.
+    issueLink: https://github.com/solo-io/go-utils/issues/103
