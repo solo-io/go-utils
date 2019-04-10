@@ -164,8 +164,8 @@ mixer:
 				}
 			}
 
-			Expect(inst.ListAllCachedValues(context.TODO(), "unique")).To(ConsistOf("setoflabels"))
-			Expect(inst.ListAllCachedValues(context.TODO(), "unknown")).To(BeEmpty())
+			Expect(ListAllCachedValues(context.TODO(), "unique", inst)).To(ConsistOf("setoflabels"))
+			Expect(ListAllCachedValues(context.TODO(), "unknown", inst)).To(BeEmpty())
 
 			// expect the mixer deployments to be created
 			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-policy", v1.GetOptions{})
@@ -182,7 +182,7 @@ mixer:
 			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-telemetry", v1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 
-			Expect(inst.ListAllCachedValues(context.TODO(), "unique")).To(BeEmpty())
+			Expect(ListAllCachedValues(context.TODO(), "unique", inst)).To(BeEmpty())
 		})
 	})
 })
