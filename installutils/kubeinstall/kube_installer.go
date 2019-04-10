@@ -37,7 +37,7 @@ import (
 type Installer interface {
 	ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error
 	PurgeResources(ctx context.Context, withLabels map[string]string) error
-	ListAllCachedValues(ctx context.Context, labelKey string) []string
+	ListAllResources(ctx context.Context) kuberesource.UnstructuredResources
 }
 
 type KubeInstaller struct {
@@ -478,9 +478,13 @@ func (r *KubeInstaller) PurgeResources(ctx context.Context, withLabels map[strin
 	return r.reconcileResources(ctx, "", nil, withLabels)
 }
 
-func (r *KubeInstaller) ListAllCachedValues(ctx context.Context, labelKey string) []string {
+func (r *KubeInstaller) ListAllResources(ctx context.Context) kuberesource.UnstructuredResources {
+	return r.cache.resources.List()
+}
+
+func ListAllCachedValues(ctx context.Context, labelKey string, installer Installer) []string {
 	var values []string
-	for _, res := range r.cache.List() {
+	for _, res := range installer.ListAllResources(ctx) {
 		value := res.GetLabels()[labelKey]
 		if value != "" {
 			if !stringutils.ContainsString(value, values) {
