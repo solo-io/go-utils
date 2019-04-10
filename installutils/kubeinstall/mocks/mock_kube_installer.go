@@ -31,3 +31,7 @@ func (i *MockKubeInstaller) PurgeResources(ctx context.Context, withLabels map[s
 	i.PurgeCalledWith = PurgeParams{withLabels}
 	return i.ReturnErr
 }
+
+func (i *MockKubeInstaller) ListAllResources(ctx context.Context) kuberesource.UnstructuredResources {
+	return i.ReconcileCalledWith.Resources
+}

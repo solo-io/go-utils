@@ -1,0 +1,6 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      Allow listing from the cache all the unique values for a particular label key. This enables discovering label
+      key/value pairs that should be purged because the CRD that led to the creation of that resource was deleted.
+    issueLink: https://github.com/solo-io/go-utils/issues/110

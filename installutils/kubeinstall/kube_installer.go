@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/solo-io/go-utils/stringutils"
+
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
@@ -35,6 +37,7 @@ import (
 type Installer interface {
 	ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error
 	PurgeResources(ctx context.Context, withLabels map[string]string) error
+	ListAllResources(ctx context.Context) kuberesource.UnstructuredResources
 }
 
 type KubeInstaller struct {
@@ -473,6 +476,21 @@ func (r *KubeInstaller) updateResourceVersion(ctx context.Context, res *unstruct
 
 func (r *KubeInstaller) PurgeResources(ctx context.Context, withLabels map[string]string) error {
 	return r.reconcileResources(ctx, "", nil, withLabels)
+}
+
+func (r *KubeInstaller) ListAllResources(ctx context.Context) kuberesource.UnstructuredResources {
+	return r.cache.resources.List()
+}
+
+func ListAllCachedValues(ctx context.Context, labelKey string, installer Installer) []string {
+	var values []string
+	for _, res := range installer.ListAllResources(ctx) {
+		value := res.GetLabels()[labelKey]
+		if value != "" && !stringutils.ContainsString(value, values) {
+			values = append(values, value)
+		}
+	}
+	return values
 }
 
 func (r *KubeInstaller) waitForResourceReady(ctx context.Context, res *unstructured.Unstructured) error {
