@@ -309,7 +309,12 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 				resKey := fmt.Sprintf("%v %v.%v", res.GroupVersionKind().Kind, res.GetNamespace(), res.GetName())
 				logger.Infof("deleting resource %v", resKey)
 
-				if err := retry.Do(func() error { return r.client.Delete(ctx, res.DeepCopy()) }); err != nil && !kubeerrs.IsNotFound(err) {
+				if err := retry.Do(func() error {
+					return r.client.Delete(ctx, res.DeepCopy(), func(options *client.DeleteOptions) {
+						p := v1.DeletePropagationForeground
+						options.PropagationPolicy = &p
+					})
+				}); err != nil && !kubeerrs.IsNotFound(err) {
 					return errors.Wrapf(err, "deleting  %v", resKey)
 				}
 				if err := r.postDelete(res); err != nil {

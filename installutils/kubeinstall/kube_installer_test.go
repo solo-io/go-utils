@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
+	kubev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/solo-io/go-utils/testutils/kube"
 
@@ -120,7 +124,7 @@ mixer:
 `
 			manifests, err := helmchart.RenderManifests(
 				context.TODO(),
-				"https://s3.amazonaws.com/supergloo.solo.io/istio-1.0.3.tgz",
+				"https://storage.googleapis.com/supergloo-charts/istio-1.0.6.tgz",
 				values,
 				"aaa",
 				ns,
@@ -181,6 +185,13 @@ mixer:
 			Expect(err).To(HaveOccurred())
 			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-telemetry", v1.GetOptions{})
 			Expect(err).To(HaveOccurred())
+
+			// pods deleted
+			Eventually(func() []kubev1.Pod {
+				pods, err := kubeClient.CoreV1().Pods(ns).List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"app": "telemetry"}).String()})
+				Expect(err).NotTo(HaveOccurred())
+				return pods.Items
+			}, time.Minute).Should(HaveLen(0))
 
 			Expect(ListAllCachedValues(context.TODO(), "unique", inst)).To(BeEmpty())
 		})
