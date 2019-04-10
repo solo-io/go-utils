@@ -74,6 +74,10 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, callbacks ...CallbackOptio
 		return nil, err
 	}
 
+	for _, cb := range initCallbacks() {
+		callbacks = append(callbacks, cb)
+	}
+
 	return &KubeInstaller{
 		cache:         cache,
 		cfg:           cfg,
@@ -104,9 +108,6 @@ func (r *KubeInstaller) postInstall() error {
 }
 
 func (r *KubeInstaller) preCreate(res *unstructured.Unstructured) error {
-	if err := setInstallationAnnotation(res); err != nil {
-		return err
-	}
 	for _, cb := range r.callbacks {
 		if err := cb.PreCreate(res); err != nil {
 			return errors.Wrapf(err, "error in pre-create hook")
