@@ -486,10 +486,8 @@ func ListAllCachedValues(ctx context.Context, labelKey string, installer Install
 	var values []string
 	for _, res := range installer.ListAllResources(ctx) {
 		value := res.GetLabels()[labelKey]
-		if value != "" {
-			if !stringutils.ContainsString(value, values) {
-				values = append(values, value)
-			}
+		if value != "" && !stringutils.ContainsString(value, values) {
+			values = append(values, value)
 		}
 	}
 	return values
