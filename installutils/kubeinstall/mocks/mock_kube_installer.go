@@ -31,3 +31,23 @@ func (i *MockKubeInstaller) PurgeResources(ctx context.Context, withLabels map[s
 	i.PurgeCalledWith = PurgeParams{withLabels}
 	return i.ReturnErr
 }
+
+func (i *MockKubeInstaller) ListAllCachedValues(ctx context.Context, labelKey string) []string {
+	// check if this key was reconciled
+	if i.ReconcileCalledWith.InstallLabels == nil {
+		return []string{}
+	}
+	labelValue := i.ReconcileCalledWith.InstallLabels[labelKey]
+	if labelValue == "" {
+		return []string{}
+	}
+	if i.PurgeCalledWith.InstallLabels == nil {
+		return []string{labelValue}
+	}
+	// check if this value was purged
+	purgedLabelValue := i.PurgeCalledWith.InstallLabels[labelKey]
+	if labelValue == purgedLabelValue {
+		return []string{}
+	}
+	return []string{labelValue}
+}
