@@ -1,0 +1,5 @@
+changelog:
+  - type: FIX
+    description: >
+      Ensure that subresources are deleted by the kube installer on delete
+    issueLink: https://github.com/solo-io/go-utils/issues/113
