@@ -1,0 +1,4 @@
+changelog:
+- type: NON_USER_FACING
+  description: Update logger returned from contextutils to record readable timestamps.
+  issueLink: https://github.com/solo-io/go-utils/issues/115
