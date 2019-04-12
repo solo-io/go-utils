@@ -89,7 +89,7 @@ var _ = Describe("KubeInstaller", func() {
 			err = dynamicClient.Create(context.TODO(), written)
 			Expect(err).NotTo(HaveOccurred())
 
-			inst, err := NewKubeInstaller(restCfg, cache)
+			inst, err := NewKubeInstaller(restCfg, cache, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = inst.ReconcileResources(context.TODO(), ns, kuberesource.UnstructuredResources{resource}, nil)
@@ -137,7 +137,7 @@ mixer:
 			cache := NewCache()
 			err = cache.Init(context.TODO(), restCfg)
 			Expect(err).NotTo(HaveOccurred())
-			inst, err := NewKubeInstaller(restCfg, cache)
+			inst, err := NewKubeInstaller(restCfg, cache, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			resources, err := manifests.ResourceList()
