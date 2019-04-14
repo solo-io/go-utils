@@ -506,7 +506,7 @@ func (r *KubeInstaller) PurgeResources(ctx context.Context, withLabels map[strin
 }
 
 func (r *KubeInstaller) ListAllResources(ctx context.Context) kuberesource.UnstructuredResources {
-	return r.cache.resources.List()
+	return r.cache.List()
 }
 
 func ListAllCachedValues(ctx context.Context, labelKey string, installer Installer) []string {
@@ -583,7 +583,7 @@ func (r *KubeInstaller) waitForCrd(ctx context.Context, crdName string) error {
 
 		return nil
 	},
-		r.retryOptions...
+		r.retryOptions...,
 	)
 }
 
@@ -617,7 +617,7 @@ func (r *KubeInstaller) waitForDeploymentReplica(ctx context.Context, name, name
 		contextutils.LoggerFrom(ctx).Infof("deployment %v.%v ready", namespace, name)
 		return nil
 	},
-		r.retryOptions...
+		r.retryOptions...,
 	)
 }
 

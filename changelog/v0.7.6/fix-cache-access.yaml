@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: List resources should access the cached resources via the cache API, which properly locks.
+    issueLink: https://github.com/solo-io/go-utils/issues/119
