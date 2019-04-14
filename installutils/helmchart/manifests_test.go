@@ -93,10 +93,16 @@ metadata:
 	})
 
 	Context("load from github", func() {
-		FIt("works", func() {
-			chart, err := RenderChartFromGithub(context.TODO(), "helm", "charts", "master", "stable/envoy")
+		It("works", func() {
+			ref := GithubChartRef{
+				Ref:            "master",
+				Repo:           "charts",
+				Owner:          "helm",
+				ChartDirectory: "stable/envoy",
+			}
+			manifests, err := RenderManifestsFromGithub(context.TODO(), ref, "", "test", "test", "")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(chart.Metadata).NotTo(BeNil())
+			Expect(len(manifests)).To(BeEquivalentTo(4))
 		})
 	})
 })

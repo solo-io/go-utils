@@ -10,9 +10,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/github"
+	"github.com/solo-io/go-utils/fsutils"
+	"github.com/solo-io/go-utils/githubutils"
+	"github.com/solo-io/go-utils/tarutils"
+	"github.com/spf13/afero"
 	"k8s.io/helm/pkg/ignore"
 
 	"github.com/solo-io/go-utils/contextutils"
@@ -139,6 +142,15 @@ func RenderManifests(ctx context.Context, chartUri, values, releaseName, namespa
 		file = f
 	}
 
+	// Check chart requirements to make sure all dependencies are present in /charts
+	chart, err := chartutil.LoadArchive(file)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading chart")
+	}
+	return renderManifests(ctx, chart, values, releaseName, namespace, kubeVersion)
+}
+
+func renderManifests(ctx context.Context, c *chart.Chart, values, releaseName, namespace, kubeVersion string) ([]manifest.Manifest, error) {
 	if kubeVersion == "" {
 		kubeVersion = defaultKubeVersion
 	}
@@ -150,12 +162,6 @@ func RenderManifests(ctx context.Context, chartUri, values, releaseName, namespa
 			Namespace: namespace,
 		},
 		KubeVersion: kubeVersion,
-	}
-
-	// Check chart requirements to make sure all dependencies are present in /charts
-	c, err := chartutil.LoadArchive(file)
-	if err != nil {
-		return nil, errors.Wrapf(err, "loading chart")
 	}
 
 	config := &chart.Config{Raw: values, Values: map[string]*chart.Value{}}
@@ -174,116 +180,70 @@ func RenderManifests(ctx context.Context, chartUri, values, releaseName, namespa
 	return tiller.SortByKind(manifests), nil
 }
 
-type contentMap map[string]*github.RepositoryContent
+type GithubChartRef struct {
+	Owner          string
+	Repo           string
+	Ref            string
+	ChartDirectory string
+}
 
-func RenderChartFromGithub(ctx context.Context, org, repo, ref, chartDirectory string) (*chart.Chart, error) {
-	toplevelContents, err := getGitDirectory(ctx, org, repo, ref, chartDirectory)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error reading git directory")
-	}
-	rules, err := getRules(toplevelContents)
+func RenderChartFromGithub(ctx context.Context, ref GithubChartRef) (*chart.Chart, error) {
+	fs := afero.NewMemMapFs()
+	tmpf, tmpd, err := fsutils.SetupTemporaryFiles(fs)
+	defer fs.Remove(tmpf.Name())
+	defer fs.Remove(tmpd)
 	if err != nil {
 		return nil, err
 	}
-	prefix := chartDirectory + "/"
-	files, err := getFiles(ctx, rules, prefix, org, repo, ref, toplevelContents)
+	chartRoot, err := mountChartDirectory(fs, ctx, tmpf, tmpd, ref)
 	if err != nil {
 		return nil, err
 	}
-	return chartutil.LoadFiles(files)
-}
-
-func getFiles(ctx context.Context, rules *ignore.Rules, prefix, org, repo, ref string, contents contentMap) ([]*chartutil.BufferedFile, error) {
-	var files []*chartutil.BufferedFile
-	for _, content := range contents {
-		relativePath := strings.TrimPrefix(content.GetPath(), prefix)
-		if content.GetType() == "dir" {
-			if rules.Ignore(relativePath, GetFileInfo(content)) {
-				continue
-			} else {
-				subdirContents, err := getGitDirectory(ctx, org, repo, ref, content.GetPath())
-				if err != nil {
-					return nil, errors.Wrapf(err, "error loading subdirectory")
-				}
-				subdirFiles, err := getFiles(ctx, rules, prefix, org, repo, ref, subdirContents)
-				if err != nil {
-					return nil, err
-				}
-				files = append(files, subdirFiles...)
-				continue
-			}
-		}
-		if rules.Ignore(relativePath, GetFileInfo(content)) {
-			continue
-		}
-		loaded, err := loadFileContent(ctx, org, repo, ref, content.GetPath())
-		if err != nil {
-			return nil, err
-		}
-		file := chartutil.BufferedFile{
-			Name: relativePath,
-			Data: []byte(loaded),
-		}
-		files = append(files, &file)
+	rules, err := getRulesFromArchive(fs, chartRoot)
+	if err != nil {
+		return nil, err
 	}
-	return files, nil
+	return loadFiles(rules, fs, chartRoot+"/")
 }
 
-func loadFileContent(ctx context.Context, org, repo, ref, path string) (string, error) {
+func RenderManifestsFromGithub(ctx context.Context, ref GithubChartRef, values, releaseName, namespace, kubeVersion string) ([]manifest.Manifest, error) {
+	chart, err := RenderChartFromGithub(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+	return renderManifests(ctx, chart, values, releaseName, namespace, kubeVersion)
+}
+
+func mountChartDirectory(fs afero.Fs, ctx context.Context, tmpf afero.File, tmpd string, ref GithubChartRef) (string, error) {
 	client := github.NewClient(nil)
-	getOpts := github.RepositoryContentGetOptions{
-		Ref: ref,
+	if err := githubutils.DownloadRepoArchive(ctx, client, tmpf, ref.Owner, ref.Repo, ref.Ref); err != nil {
+		return "", err
 	}
-	file, dir, _, err := client.Repositories.GetContents(ctx, org, repo, path, &getOpts)
+
+	if err := tarutils.Untar(tmpd, tmpf.Name(), fs); err != nil {
+		return "", err
+	}
+
+	repoFolderName, err := fsutils.GetRepoFolder(fs, tmpd)
 	if err != nil {
-		return "", errors.Wrapf(err, "error loading file contents")
+		return "", err
 	}
-	if dir != nil {
-		return "", errors.Errorf("expected file not directory")
-	}
-	return file.GetContent()
+	return filepath.Join(repoFolderName, ref.ChartDirectory), nil
 }
 
-func GetFileInfo(content *github.RepositoryContent) os.FileInfo {
-	return &githubFileInfo{content: content}
-}
-
-type githubFileInfo struct {
-	content *github.RepositoryContent
-}
-
-func (g *githubFileInfo) Name() string {
-	return g.content.GetName()
-}
-
-func (g *githubFileInfo) Size() int64 {
-	return int64(g.content.GetSize())
-}
-
-func (g *githubFileInfo) Mode() os.FileMode {
-	return os.ModePerm
-}
-
-func (g *githubFileInfo) ModTime() time.Time {
-	return time.Now()
-}
-
-func (g *githubFileInfo) IsDir() bool {
-	return g.content.GetType() == "dir"
-}
-
-func (g *githubFileInfo) Sys() interface{} {
-	return nil
-}
-
-func getRules(toplevelContents contentMap) (*ignore.Rules, error) {
+func getRulesFromArchive(fs afero.Fs, chartRoot string) (*ignore.Rules, error) {
 	rules := ignore.Empty()
-	if content, ok := toplevelContents[ignore.HelmIgnore]; ok {
-		contentString, err := content.GetContent()
+	helmignore := filepath.Join(chartRoot, ignore.HelmIgnore)
+	exists, err := afero.Exists(fs, helmignore)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error checking if helmignore exists")
+	}
+	if exists {
+		contents, err := afero.ReadFile(fs, helmignore)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to read .helmignore")
+			return nil, errors.Wrapf(err, "error reading helmignore")
 		}
-		reader := strings.NewReader(contentString)
+		reader := bytes.NewReader(contents)
 		r, err := ignore.Parse(reader)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to parse .helmignore")
@@ -294,25 +254,46 @@ func getRules(toplevelContents contentMap) (*ignore.Rules, error) {
 	return rules, nil
 }
 
-func getGitDirectory(ctx context.Context, org, repo, ref, chartDirectory string) (contentMap, error) {
-	client := github.NewClient(nil)
-	getOpts := github.RepositoryContentGetOptions{
-		Ref: ref,
-	}
-	file, dir, _, err := client.Repositories.GetContents(ctx, org, repo, chartDirectory, &getOpts)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error getting repo contents")
-	}
-	if file != nil {
-		return nil, errors.Errorf("Expected directory, found file")
-	}
-	return getContentMap(dir), nil
-}
+func loadFiles(rules *ignore.Rules, fs afero.Fs, chartDir string) (*chart.Chart, error) {
+	var files []*chartutil.BufferedFile
+	walk := func(name string, fi os.FileInfo, err error) error {
+		n := strings.TrimPrefix(name, chartDir)
+		if n == "" {
+			// No need to process top level. Avoid bug with helmignore .* matching
+			// empty names. See issue 1779.
+			return nil
+		}
 
-func getContentMap(contents []*github.RepositoryContent) contentMap {
-	nameMap := make(map[string]*github.RepositoryContent)
-	for _, content := range contents {
-		nameMap[content.GetName()] = content
+		// Normalize to / since it will also work on Windows
+		n = filepath.ToSlash(n)
+
+		if err != nil {
+			return err
+		}
+		if fi.IsDir() {
+			// Directory-based ignore rules should involve skipping the entire
+			// contents of that directory.
+			if rules.Ignore(n, fi) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// If a .helmignore file matches, skip this file.
+		if rules.Ignore(n, fi) {
+			return nil
+		}
+
+		data, err := afero.ReadFile(fs, name)
+		if err != nil {
+			return fmt.Errorf("error reading %s: %s", n, err)
+		}
+
+		files = append(files, &chartutil.BufferedFile{Name: n, Data: data})
+		return nil
 	}
-	return nameMap
+	if err := afero.Walk(fs, chartDir, walk); err != nil {
+		return nil, err
+	}
+	return chartutil.LoadFiles(files)
 }

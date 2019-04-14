@@ -1,0 +1,9 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      The utilities in `installutils/helmchart` now support loading a helm chart and rendering manifests from a
+      directory in a github repository.
+    issueLink: https://github.com/solo-io/go-utils/issues/121
+  - type: NEW_FEATURE
+    description: There is now a new utility package called `fsutils` to support common file-system operations.
+    issueLink: https://github.com/solo-io/go-utils/issues/122
