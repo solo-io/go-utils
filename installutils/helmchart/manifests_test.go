@@ -93,7 +93,7 @@ metadata:
 	})
 
 	Context("load from github", func() {
-		It("works", func() {
+		It("works for a single chart", func() {
 			ref := GithubChartRef{
 				Ref:            "master",
 				Repo:           "charts",
@@ -103,6 +103,18 @@ metadata:
 			manifests, err := RenderManifestsFromGithub(context.TODO(), ref, "", "test", "test", "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(manifests)).To(BeEquivalentTo(4))
+		})
+
+		It("works for a directory of charts", func() {
+			ref := GithubChartRef{
+				Ref:            "c00d740c83ec5b5439bf2f58fee110a546af7177",
+				Repo:           "charts",
+				Owner:          "helm",
+				ChartDirectory: "stable",
+			}
+			charts, err := RenderChartsFromGithub(context.TODO(), ref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(charts)).To(BeEquivalentTo(270))
 		})
 	})
 })

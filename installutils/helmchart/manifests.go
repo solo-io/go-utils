@@ -187,6 +187,38 @@ type GithubChartRef struct {
 	ChartDirectory string
 }
 
+func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*chart.Chart, error) {
+	fs := afero.NewMemMapFs()
+	tmpf, tmpd, err := fsutils.SetupTemporaryFiles(fs)
+	defer fs.Remove(tmpf.Name())
+	defer fs.Remove(tmpd)
+	if err != nil {
+		return nil, err
+	}
+	chartParent, err := mountChartDirectory(fs, ctx, tmpf, tmpd, parentRef)
+	if err != nil {
+		return nil, err
+	}
+	subdirs, err := afero.ReadDir(fs, chartParent)
+	if err != nil {
+		return nil, err
+	}
+	var charts []*chart.Chart
+	for _, subdir := range subdirs {
+		chartRoot := filepath.Join(chartParent, subdir.Name())
+		rules, err := getRulesFromArchive(fs, chartRoot)
+		if err != nil {
+			return nil, err
+		}
+		chart, err := loadFiles(rules, fs, chartRoot+"/")
+		if err != nil {
+			return nil, err
+		}
+		charts = append(charts, chart)
+	}
+	return charts, nil
+}
+
 func RenderChartFromGithub(ctx context.Context, ref GithubChartRef) (*chart.Chart, error) {
 	fs := afero.NewMemMapFs()
 	tmpf, tmpd, err := fsutils.SetupTemporaryFiles(fs)
