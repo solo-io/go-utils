@@ -3,7 +3,7 @@ changelog:
     description: >
       The utilities in `installutils/helmchart` now support loading a helm chart and rendering manifests from a
       directory in a github repository. There is also a utility for batch loading charts from a github directory,
-      for example to batch load several hundred charts from `https://github.com/helm/charts/tree/master/stable`. 
+      for example to batch load several hundred charts from `https://github.com/helm/charts/tree/master/stable`.
     issueLink: https://github.com/solo-io/go-utils/issues/121
   - type: NEW_FEATURE
     description: There is now a new utility package called `fsutils` to support common file-system operations.

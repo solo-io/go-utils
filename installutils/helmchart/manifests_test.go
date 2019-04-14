@@ -95,7 +95,7 @@ metadata:
 	Context("load from github", func() {
 		It("works for a single chart", func() {
 			ref := GithubChartRef{
-				Ref:            "master",
+				Ref:            "c00d740c83ec5b5439bf2f58fee110a546af7177",
 				Repo:           "charts",
 				Owner:          "helm",
 				ChartDirectory: "stable/envoy",
