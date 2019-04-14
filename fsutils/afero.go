@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-// These two utils copied from solobot
 func SetupTemporaryFiles(fs afero.Fs) (file afero.File, dir string, err error) {
 	tmpf, err := afero.TempFile(fs, "", "tar-file-")
 	if err != nil {
