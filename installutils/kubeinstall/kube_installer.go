@@ -48,15 +48,27 @@ type KubeInstaller struct {
 	core          kubernetes.Interface
 	apiExtensions apiexts.Interface
 	callbacks     []CallbackOptions
+	retryOptions  []retry.Option
 }
 
 var _ Installer = &KubeInstaller{}
 
+type KubeInstallerOptions struct {
+	Callbacks    []CallbackOptions
+	RetryOptions []retry.Option
+}
+
+var defaultRetryOptions = []retry.Option{
+	retry.Delay(time.Millisecond * 250),
+	retry.DelayType(retry.FixedDelay),
+	retry.Attempts(500), // give a considerable amount of time for pulling images
+}
+
 /*
-NewKubeInstaller does not initialize the cache.
-Should be one once globally
+   NewKubeInstaller does not initialize the cache.
+   Should be one once globally
 */
-func NewKubeInstaller(cfg *rest.Config, cache *Cache, callbacks ...CallbackOptions) (*KubeInstaller, error) {
+func NewKubeInstaller(cfg *rest.Config, cache *Cache, opts *KubeInstallerOptions) (*KubeInstaller, error) {
 	apiExts, err := apiexts.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -74,8 +86,16 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, callbacks ...CallbackOptio
 		return nil, err
 	}
 
-	for _, cb := range initCallbacks() {
-		callbacks = append(callbacks, cb)
+	callbacks := initCallbacks()
+	retryOpts := defaultRetryOptions
+
+	if opts != nil {
+		for _, cb := range opts.Callbacks {
+			callbacks = append(callbacks, cb)
+		}
+		if len(opts.RetryOptions) > 0 {
+			retryOpts = opts.RetryOptions
+		}
 	}
 
 	return &KubeInstaller{
@@ -86,6 +106,7 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, callbacks ...CallbackOptio
 		dynamic:       dynamicClient,
 		core:          core,
 		callbacks:     callbacks,
+		retryOptions:  retryOpts,
 	}, nil
 }
 
@@ -485,7 +506,7 @@ func (r *KubeInstaller) PurgeResources(ctx context.Context, withLabels map[strin
 }
 
 func (r *KubeInstaller) ListAllResources(ctx context.Context) kuberesource.UnstructuredResources {
-	return r.cache.resources.List()
+	return r.cache.List()
 }
 
 func ListAllCachedValues(ctx context.Context, labelKey string, installer Installer) []string {
@@ -562,9 +583,7 @@ func (r *KubeInstaller) waitForCrd(ctx context.Context, crdName string) error {
 
 		return nil
 	},
-		retry.Delay(time.Millisecond*250),
-		retry.DelayType(retry.FixedDelay),
-		retry.Attempts(500), // give a considerable amount of time to pull the image
+		r.retryOptions...,
 	)
 }
 
@@ -598,9 +617,7 @@ func (r *KubeInstaller) waitForDeploymentReplica(ctx context.Context, name, name
 		contextutils.LoggerFrom(ctx).Infof("deployment %v.%v ready", namespace, name)
 		return nil
 	},
-		retry.Delay(time.Millisecond*250),
-		retry.DelayType(retry.FixedDelay),
-		retry.Attempts(100),
+		r.retryOptions...,
 	)
 }
 
