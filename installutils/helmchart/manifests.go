@@ -10,6 +10,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/google/go-github/github"
+	"k8s.io/helm/pkg/ignore"
 
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/errors"
@@ -168,4 +172,147 @@ func RenderManifests(ctx context.Context, chartUri, values, releaseName, namespa
 	}
 	manifests := manifest.SplitManifests(renderedTemplates)
 	return tiller.SortByKind(manifests), nil
+}
+
+type contentMap map[string]*github.RepositoryContent
+
+func RenderChartFromGithub(ctx context.Context, org, repo, ref, chartDirectory string) (*chart.Chart, error) {
+	toplevelContents, err := getGitDirectory(ctx, org, repo, ref, chartDirectory)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error reading git directory")
+	}
+	rules, err := getRules(toplevelContents)
+	if err != nil {
+		return nil, err
+	}
+	prefix := chartDirectory + "/"
+	files, err := getFiles(ctx, rules, prefix, org, repo, ref, toplevelContents)
+	if err != nil {
+		return nil, err
+	}
+	return chartutil.LoadFiles(files)
+}
+
+func getFiles(ctx context.Context, rules *ignore.Rules, prefix, org, repo, ref string, contents contentMap) ([]*chartutil.BufferedFile, error) {
+	var files []*chartutil.BufferedFile
+	for _, content := range contents {
+		relativePath := strings.TrimPrefix(content.GetPath(), prefix)
+		if content.GetType() == "dir" {
+			if rules.Ignore(relativePath, GetFileInfo(content)) {
+				continue
+			} else {
+				subdirContents, err := getGitDirectory(ctx, org, repo, ref, content.GetPath())
+				if err != nil {
+					return nil, errors.Wrapf(err, "error loading subdirectory")
+				}
+				subdirFiles, err := getFiles(ctx, rules, prefix, org, repo, ref, subdirContents)
+				if err != nil {
+					return nil, err
+				}
+				files = append(files, subdirFiles...)
+				continue
+			}
+		}
+		if rules.Ignore(relativePath, GetFileInfo(content)) {
+			continue
+		}
+		loaded, err := loadFileContent(ctx, org, repo, ref, content.GetPath())
+		if err != nil {
+			return nil, err
+		}
+		file := chartutil.BufferedFile{
+			Name: relativePath,
+			Data: []byte(loaded),
+		}
+		files = append(files, &file)
+	}
+	return files, nil
+}
+
+func loadFileContent(ctx context.Context, org, repo, ref, path string) (string, error) {
+	client := github.NewClient(nil)
+	getOpts := github.RepositoryContentGetOptions{
+		Ref: ref,
+	}
+	file, dir, _, err := client.Repositories.GetContents(ctx, org, repo, path, &getOpts)
+	if err != nil {
+		return "", errors.Wrapf(err, "error loading file contents")
+	}
+	if dir != nil {
+		return "", errors.Errorf("expected file not directory")
+	}
+	return file.GetContent()
+}
+
+func GetFileInfo(content *github.RepositoryContent) os.FileInfo {
+	return &githubFileInfo{content: content}
+}
+
+type githubFileInfo struct {
+	content *github.RepositoryContent
+}
+
+func (g *githubFileInfo) Name() string {
+	return g.content.GetName()
+}
+
+func (g *githubFileInfo) Size() int64 {
+	return int64(g.content.GetSize())
+}
+
+func (g *githubFileInfo) Mode() os.FileMode {
+	return os.ModePerm
+}
+
+func (g *githubFileInfo) ModTime() time.Time {
+	return time.Now()
+}
+
+func (g *githubFileInfo) IsDir() bool {
+	return g.content.GetType() == "dir"
+}
+
+func (g *githubFileInfo) Sys() interface{} {
+	return nil
+}
+
+func getRules(toplevelContents contentMap) (*ignore.Rules, error) {
+	rules := ignore.Empty()
+	if content, ok := toplevelContents[ignore.HelmIgnore]; ok {
+		contentString, err := content.GetContent()
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to read .helmignore")
+		}
+		reader := strings.NewReader(contentString)
+		r, err := ignore.Parse(reader)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to parse .helmignore")
+		}
+		rules = r
+	}
+	rules.AddDefaults()
+	return rules, nil
+}
+
+func getGitDirectory(ctx context.Context, org, repo, ref, chartDirectory string) (contentMap, error) {
+	client := github.NewClient(nil)
+	getOpts := github.RepositoryContentGetOptions{
+		Ref: ref,
+	}
+	file, dir, _, err := client.Repositories.GetContents(ctx, org, repo, chartDirectory, &getOpts)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error getting repo contents")
+	}
+	if file != nil {
+		return nil, errors.Errorf("Expected directory, found file")
+	}
+	return getContentMap(dir), nil
+}
+
+func getContentMap(contents []*github.RepositoryContent) contentMap {
+	nameMap := make(map[string]*github.RepositoryContent)
+	for _, content := range contents {
+		nameMap[content.GetName()] = content
+	}
+	return nameMap
 }

@@ -91,4 +91,12 @@ metadata:
 
 		})
 	})
+
+	Context("load from github", func() {
+		FIt("works", func() {
+			chart, err := RenderChartFromGithub(context.TODO(), "helm", "charts", "master", "stable/envoy")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Metadata).NotTo(BeNil())
+		})
+	})
 })
