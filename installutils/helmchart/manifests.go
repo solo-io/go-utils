@@ -12,9 +12,9 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
-	"github.com/solo-io/go-utils/fsutils"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/tarutils"
+	"github.com/solo-io/go-utils/vfsutils"
 	"github.com/spf13/afero"
 	"k8s.io/helm/pkg/ignore"
 
@@ -189,7 +189,7 @@ type GithubChartRef struct {
 
 func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*chart.Chart, error) {
 	fs := afero.NewMemMapFs()
-	tmpf, tmpd, err := fsutils.SetupTemporaryFiles(fs)
+	tmpf, tmpd, err := vfsutils.SetupTemporaryFiles(fs)
 	defer fs.Remove(tmpf.Name())
 	defer fs.Remove(tmpd)
 	if err != nil {
@@ -221,7 +221,7 @@ func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*c
 
 func RenderChartFromGithub(ctx context.Context, ref GithubChartRef) (*chart.Chart, error) {
 	fs := afero.NewMemMapFs()
-	tmpf, tmpd, err := fsutils.SetupTemporaryFiles(fs)
+	tmpf, tmpd, err := vfsutils.SetupTemporaryFiles(fs)
 	defer fs.Remove(tmpf.Name())
 	defer fs.Remove(tmpd)
 	if err != nil {
@@ -256,7 +256,7 @@ func mountChartDirectory(fs afero.Fs, ctx context.Context, tmpf afero.File, tmpd
 		return "", err
 	}
 
-	repoFolderName, err := fsutils.GetRepoFolder(fs, tmpd)
+	repoFolderName, err := vfsutils.GetRepoFolder(fs, tmpd)
 	if err != nil {
 		return "", err
 	}
