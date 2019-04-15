@@ -1,13 +1,39 @@
 package vfsutils
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
+
+	"github.com/google/go-github/github"
+	"github.com/solo-io/go-utils/githubutils"
+	"github.com/solo-io/go-utils/tarutils"
 
 	"github.com/spf13/afero"
 )
 
-func SetupTemporaryFiles(fs afero.Fs) (file afero.File, dir string, err error) {
+func MountCode(fs afero.Fs, ctx context.Context, client *github.Client, owner, repo, ref string) (dir string, err error) {
+	tarFile, codeDir, err := setupTemporaryFiles(fs)
+	if err != nil {
+		return "", err
+	}
+	defer fs.Remove(tarFile.Name())
+	if err := githubutils.DownloadRepoArchive(ctx, client, tarFile, owner, repo, ref); err != nil {
+		return "", err
+	}
+
+	if err := tarutils.Untar(codeDir, tarFile.Name(), fs); err != nil {
+		return "", err
+	}
+
+	repoFolderName, err := getRepoFolder(fs, codeDir)
+	if err != nil {
+		return "", err
+	}
+	return repoFolderName, nil
+}
+
+func setupTemporaryFiles(fs afero.Fs) (file afero.File, dir string, err error) {
 	tmpf, err := afero.TempFile(fs, "", "tar-file-")
 	if err != nil {
 		return nil, "", err
@@ -20,7 +46,7 @@ func SetupTemporaryFiles(fs afero.Fs) (file afero.File, dir string, err error) {
 	return tmpf, tmpd, err
 }
 
-func GetRepoFolder(fs afero.Fs, tmpd string) (string, error) {
+func getRepoFolder(fs afero.Fs, tmpd string) (string, error) {
 	files, err := afero.ReadDir(fs, tmpd)
 	if err != nil {
 		return "", err

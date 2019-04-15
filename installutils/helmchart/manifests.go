@@ -12,8 +12,6 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
-	"github.com/solo-io/go-utils/githubutils"
-	"github.com/solo-io/go-utils/tarutils"
 	"github.com/solo-io/go-utils/vfsutils"
 	"github.com/spf13/afero"
 	"k8s.io/helm/pkg/ignore"
@@ -189,16 +187,12 @@ type GithubChartRef struct {
 
 func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*chart.Chart, error) {
 	fs := afero.NewMemMapFs()
-	tmpf, tmpd, err := vfsutils.SetupTemporaryFiles(fs)
-	defer fs.Remove(tmpf.Name())
-	defer fs.Remove(tmpd)
+	codeDir, err := vfsutils.MountCode(fs, ctx, github.NewClient(nil), parentRef.Owner, parentRef.Repo, parentRef.Ref)
 	if err != nil {
 		return nil, err
 	}
-	chartParent, err := mountChartDirectory(fs, ctx, tmpf, tmpd, parentRef)
-	if err != nil {
-		return nil, err
-	}
+	defer fs.Remove(codeDir)
+	chartParent := filepath.Join(codeDir, parentRef.ChartDirectory)
 	subdirs, err := afero.ReadDir(fs, chartParent)
 	if err != nil {
 		return nil, err
@@ -221,16 +215,12 @@ func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*c
 
 func RenderChartFromGithub(ctx context.Context, ref GithubChartRef) (*chart.Chart, error) {
 	fs := afero.NewMemMapFs()
-	tmpf, tmpd, err := vfsutils.SetupTemporaryFiles(fs)
-	defer fs.Remove(tmpf.Name())
-	defer fs.Remove(tmpd)
+	codeDir, err := vfsutils.MountCode(fs, ctx, github.NewClient(nil), ref.Owner, ref.Repo, ref.Ref)
 	if err != nil {
 		return nil, err
 	}
-	chartRoot, err := mountChartDirectory(fs, ctx, tmpf, tmpd, ref)
-	if err != nil {
-		return nil, err
-	}
+	defer fs.Remove(codeDir)
+	chartRoot := filepath.Join(codeDir, ref.ChartDirectory)
 	rules, err := getRulesFromArchive(fs, chartRoot)
 	if err != nil {
 		return nil, err
@@ -244,23 +234,6 @@ func RenderManifestsFromGithub(ctx context.Context, ref GithubChartRef, values, 
 		return nil, err
 	}
 	return renderManifests(ctx, chart, values, releaseName, namespace, kubeVersion)
-}
-
-func mountChartDirectory(fs afero.Fs, ctx context.Context, tmpf afero.File, tmpd string, ref GithubChartRef) (string, error) {
-	client := github.NewClient(nil)
-	if err := githubutils.DownloadRepoArchive(ctx, client, tmpf, ref.Owner, ref.Repo, ref.Ref); err != nil {
-		return "", err
-	}
-
-	if err := tarutils.Untar(tmpd, tmpf.Name(), fs); err != nil {
-		return "", err
-	}
-
-	repoFolderName, err := vfsutils.GetRepoFolder(fs, tmpd)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(repoFolderName, ref.ChartDirectory), nil
 }
 
 func getRulesFromArchive(fs afero.Fs, chartRoot string) (*ignore.Rules, error) {
