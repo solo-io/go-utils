@@ -185,7 +185,7 @@ type GithubChartRef struct {
 	ChartDirectory string
 }
 
-func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*chart.Chart, error) {
+func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) (map[string]*chart.Chart, error) {
 	fs := afero.NewMemMapFs()
 	codeDir, err := vfsutils.MountCode(fs, ctx, github.NewClient(nil), parentRef.Owner, parentRef.Repo, parentRef.Ref)
 	if err != nil {
@@ -197,7 +197,7 @@ func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*c
 	if err != nil {
 		return nil, err
 	}
-	var charts []*chart.Chart
+	charts := make(map[string]*chart.Chart)
 	for _, subdir := range subdirs {
 		chartRoot := filepath.Join(chartParent, subdir.Name())
 		rules, err := getRulesFromArchive(fs, chartRoot)
@@ -208,7 +208,7 @@ func RenderChartsFromGithub(ctx context.Context, parentRef GithubChartRef) ([]*c
 		if err != nil {
 			return nil, err
 		}
-		charts = append(charts, chart)
+		charts[subdir.Name()] = chart
 	}
 	return charts, nil
 }
