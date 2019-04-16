@@ -28,10 +28,7 @@ type sha256Outputs struct {
 func getLocalBinarySha256(outputDir string) (*sha256Outputs, error) {
 	shas := sha256Outputs{}
 
-	//
 	// Scan outputDir directory looking for any files that match the reOS regular expression as targets for extraction
-	//
-
 	reOS := regexp.MustCompile(`(darwin|linux|windows)`)
 
 	files, _ := ioutil.ReadDir(outputDir)

@@ -49,9 +49,6 @@ type FormulaStatus struct {
 }
 
 func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathSha256 string, fOpts []FormulaOptions) ([]FormulaStatus, error) {
-	//
-	// Gather new version details
-	//
 	versionStr := versionutils.GetReleaseVersionOrExitGracefully().String()
 	version := versionStr[1:]
 
@@ -61,6 +58,7 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 		return nil, err
 	}
 
+	// Get version tag SHA
 	// GitHub API docs: https://developer.github.com/v3/git/refs/#get-a-reference
 	ref, _, err := client.Git.GetRef(ctx, projectRepoOwner, projectRepoName, "refs/tags/"+versionStr)
 	if err != nil {
@@ -86,10 +84,8 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 		if fOpt.PRRepoName == fOpt.RepoName && fOpt.PRRepoOwner == fOpt.RepoOwner {
 			err = updateAndPushAllRemote(client, ctx, version, versionSha, branchName, commitString, shas, &fOpt)
 		} else {
-			//
 			// GitHub APIs do NOT have a way to git pull --ff <remote repo>, so need to clone implementation repo locally
 			// and pull remote updates.
-			//
 			err = updateAndPushLocalClone(version, versionSha, branchName, commitString, shas, &fOpt, true)
 		}
 		if err != nil {
@@ -102,20 +98,15 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 
 		// Do NOT create PR when dryRun
 		if !fOpt.dryRun {
-			//
-			// Create GitHub PR
-			//
-
-			// For same repo branch, head is set to branch name
-			// For cross-repo PR, head should be in format of "username:branch"
 			prRepoOwner := fOpt.PRRepoOwner
 			prRepoName := fOpt.PRRepoName
-			prHead := branchName
+			prHead := branchName // For same repo PR case
 
 			if prRepoOwner == "" {
 				prRepoOwner = fOpt.RepoOwner
 				prRepoName = fOpt.RepoName
 			} else if prRepoOwner != fOpt.RepoOwner {
+				// For cross-repo PR, prHead should be in format of "<change repo owner>:branch"
 				prHead = fOpt.RepoOwner + ":" + branchName
 			}
 
@@ -124,6 +115,7 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 				base = PRBaseBranchDefault
 			}
 
+			// Create GitHub Pull Request
 			// GitHub API docs: https://developer.github.com/v3/pulls/#create-a-pull-request
 			_, _, err = client.PullRequests.Create(ctx, prRepoOwner, prRepoName, &github.NewPullRequest{
 				Title:               github.String(commitString),
@@ -136,7 +128,7 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 				status[i].Err = err
 				continue
 			}
-		} // !dryRun
+		}
 
 		status[i].Updated = true
 	}
@@ -185,10 +177,7 @@ func updateFormula(byt []byte, version string, versionSha string, shas *sha256Ou
 }
 
 func updateAndPushLocalClone(version string, versionSha string, branchName string, commitString string, shas *sha256Outputs, fOpt *FormulaOptions, mergeRemote bool) error {
-	//
-	// Clone repo locally
-	//
-
+	// create temp dir for local git clone
 	dirTemp, err := ioutil.TempDir("", fOpt.RepoName)
 	if err != nil {
 		return err
@@ -203,20 +192,14 @@ func updateAndPushLocalClone(version string, versionSha string, branchName strin
 		return err
 	}
 
-	//
-	// Get original Formula
-	//
-
+	// Get git repo contents locally
 	w, err := repo.Worktree()
 	if err != nil {
 		return err
 	}
 
 	if mergeRemote {
-		//
 		// git Pull remote PR repo
-		//
-
 		_, err = repo.CreateRemote(&config.RemoteConfig{
 			Name: "upstream",
 			URLs: []string{"https://github.com/" + fOpt.PRRepoOwner + "/" + fOpt.PRRepoName + ".git"},
@@ -239,6 +222,7 @@ func updateAndPushLocalClone(version string, versionSha string, branchName strin
 		}
 	}
 
+	// git checkout -b <branchName>
 	err = w.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branchName),
 		Create: true,
@@ -254,10 +238,7 @@ func updateAndPushLocalClone(version string, versionSha string, branchName strin
 		return err
 	}
 
-	//
 	// Update formula with new version information
-	//
-
 	byt, err = updateFormula(byt, version, versionSha, shas, fOpt)
 	if err != nil {
 		return err
@@ -269,10 +250,7 @@ func updateAndPushLocalClone(version string, versionSha string, branchName strin
 		return err
 	}
 
-	//
-	// git Commit all changes
-	//
-
+	// git commit --all
 	_, err = w.Commit(commitString, &git.CommitOptions{
 		All: true,
 		Author: &object.Signature{
@@ -285,15 +263,12 @@ func updateAndPushLocalClone(version string, versionSha string, branchName strin
 		return err
 	}
 
-	//
-	// git Push updates to GitHub
-	//
-
 	token, err := githubutils.GetGithubToken()
 	if err != nil {
 		return err
 	}
 
+	// git push origin
 	err = repo.Push(&git.PushOptions{
 		RemoteName: "origin",
 		Auth: &http.BasicAuth{
@@ -309,10 +284,7 @@ func updateAndPushLocalClone(version string, versionSha string, branchName strin
 }
 
 func updateAndPushAllRemote(client *github.Client, ctx context.Context, version string, versionSha string, branchName string, commitString string, shas *sha256Outputs, fOpt *FormulaOptions) error {
-	//
-	// Get original Formula
-	//
-
+	// Get original Formula contents
 	// GitHub API docs: https://developer.github.com/v3/repos/contents/#get-contents
 	fileContent, _, _, err := client.Repositories.GetContents(ctx, fOpt.RepoOwner, fOpt.RepoName, fOpt.Path, &github.RepositoryContentGetOptions{
 		Ref: "refs/heads/master",
@@ -326,18 +298,11 @@ func updateAndPushAllRemote(client *github.Client, ctx context.Context, version 
 		return err
 	}
 
-	//
 	// Update formula with new version information
-	//
-
 	byt, err := updateFormula([]byte(c), version, versionSha, shas, fOpt)
 	if err != nil {
 		return err
 	}
-
-	//
-	// git Create Branch <formula name>-<version> from master
-	//
 
 	// get master branch reference
 	// GitHub API docs: https://developer.github.com/v3/git/refs/#get-a-reference
@@ -358,12 +323,9 @@ func updateAndPushAllRemote(client *github.Client, ctx context.Context, version 
 		return err
 	}
 
-	//
-	// Update and Commit File
-	//
-
 	now := time.Now()
 
+	// git commit and push equivalent
 	// GitHub API docs: https://developer.github.com/v3/repos/contents/#update-a-file
 	_, _, err = client.Repositories.UpdateFile(ctx, fOpt.RepoOwner, fOpt.RepoName, fOpt.Path, &github.RepositoryContentFileOptions{
 		Message: github.String(commitString),
