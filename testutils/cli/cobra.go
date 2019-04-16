@@ -2,12 +2,11 @@ package cli
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"io"
 	"os"
-	"os/exec"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 func ExecuteCli(command *cobra.Command, args string) error {
@@ -44,14 +43,4 @@ func ExecuteCliOut(command *cobra.Command, args string) (string, error) {
 	out := <-outC
 
 	return strings.TrimSuffix(out, "\n"), err
-}
-
-func Make(dir, args string) error {
-	make := exec.Command("make", strings.Split(args, " ")...)
-	make.Dir = dir
-	out, err := make.CombinedOutput()
-	if err != nil {
-		return errors.Errorf("make failed with err: %s", out)
-	}
-	return nil
 }
