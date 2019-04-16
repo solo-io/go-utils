@@ -145,7 +145,7 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 }
 
 var (
-	ErrAlreadyUpdated = errors.New("formula already updated")
+	ErrAlreadyUpdated = errors.New("pkgmgmtutils: formula already updated")
 )
 
 func updateFormula(byt []byte, version string, versionSha string, shas *sha256Outputs, fOpt *FormulaOptions) ([]byte, error) {
@@ -326,13 +326,11 @@ func updateAndPushAllRemote(client *github.Client, ctx context.Context, version 
 		return err
 	}
 
-	byt := []byte(c)
-
 	//
 	// Update formula with new version information
 	//
 
-	byt, err = updateFormula(byt, version, versionSha, shas, fOpt)
+	byt, err := updateFormula([]byte(c), version, versionSha, shas, fOpt)
 	if err != nil {
 		return err
 	}

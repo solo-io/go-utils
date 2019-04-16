@@ -6,7 +6,8 @@ import (
 )
 
 var _ = Describe("package management utils", func() {
-	/*	It("can get latest release version", func() {
+	/* Keeping this example code till we integrate into individual projects like solo-io/gloo
+	It("can get latest release version", func() {
 
 		fopts := []FormulaOptions{
 			{

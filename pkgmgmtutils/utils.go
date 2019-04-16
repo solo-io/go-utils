@@ -3,6 +3,7 @@ package pkgmgmtutils
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -10,8 +11,8 @@ import (
 )
 
 var (
-	ErrNoSha256sFound = errors.New("did not find all needed sha256 files")
-	ErrNoShaDataFound = errors.New("no data in SHA256 file")
+	ErrNoSha256sFound = errors.New("pkgmgmtutils: did not find all needed sha256 files")
+	ErrNoShaDataFound = errors.New("pkgmgmtutils: no data in SHA256 file")
 )
 
 type sha256Outputs struct {
@@ -78,7 +79,7 @@ func extractShaFromFile(filename string) ([]byte, error) {
 
 	s := strings.Fields(string(b))
 	if len(s) != 2 {
-		return nil, errors.New("Sha256 file " + filename + " is not in expected format")
+		return nil, fmt.Errorf("pkgmgmtutils: Sha256 file %s is not in expected format", filename)
 	}
 
 	return []byte(s[0]), nil
