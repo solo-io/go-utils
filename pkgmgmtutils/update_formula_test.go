@@ -7,8 +7,6 @@ import (
 
 var _ = Describe("package management utils", func() {
 	/*	It("can get latest release version", func() {
-		os.Setenv("TAGGED_VERSION", "v0.13.14")
-		os.Setenv("GITHUB_TOKEN", "43b115bc7d9decbb6c9ba544c89ffb2bd0021b93")
 
 		fopts := []FormulaOptions{
 			{
