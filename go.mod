@@ -88,6 +88,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.3.0 // indirect
+	gopkg.in/src-d/go-git.v4 v4.10.0
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20181221193117-173ce66c1e39+incompatible
 	k8s.io/apiextensions-apiserver v0.0.0-20190111034747-7d26de67f177+incompatible
