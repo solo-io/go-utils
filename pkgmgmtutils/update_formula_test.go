@@ -24,7 +24,6 @@ var _ = Describe("package management utils", func() {
 				VersionRegex:    `version\s*"([0-9.]+)"`,
 				DarwinShaRegex:  `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
 				LinuxShaRegex:   `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
-				WindowsShaRegex: `url\s*".*-windows.*\W*sha256\s*"(.*)"`,
 
 				dryRun: true, // do NOT create a PR
 			},
@@ -94,9 +93,6 @@ var _ = Describe("package management utils", func() {
   elsif OS.linux?
     url "https://github.com/solo-io/gloo/releases/download/v#{version}/glooctl-linux-amd64"
     sha256 "9e173748ca85c5505909c4c7abe0cb03a58aef3b56dc134ece62d2306433347f"
-  else
-    url "https://github.com/solo-io/gloo/releases/download/v#{version}/glooctl-windows-amd64.exe"
-    sha256 "031434d831a394af2b7882b6f1a220e34efc91c4e4ef807a530fc8ec7990d2ca"
   end
 
   def install
@@ -104,8 +100,6 @@ var _ = Describe("package management utils", func() {
       File.rename "#{name}-darwin-amd64", name
     elsif OS.linux?
       File.rename "#{name}-linux-amd64", name
-    else
-      File.rename "#{name}-windows-amd64.exe", name
     end
 
     bin.install name
@@ -122,10 +116,9 @@ var _ = Describe("package management utils", func() {
   end
 end`)
 		fopt := FormulaOptions{
-			VersionRegex:    `version\s*"([0-9.]+)"`,
-			DarwinShaRegex:  `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
-			LinuxShaRegex:   `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
-			WindowsShaRegex: `url\s*".*-windows.*\W*sha256\s*"(.*)"`,
+			VersionRegex:   `version\s*"([0-9.]+)"`,
+			DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
+			LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
 		}
 
 		shas := sha256Outputs{
@@ -147,9 +140,6 @@ end`)
   elsif OS.linux?
     url "https://github.com/solo-io/gloo/releases/download/v#{version}/glooctl-linux-amd64"
     sha256 "9876"
-  else
-    url "https://github.com/solo-io/gloo/releases/download/v#{version}/glooctl-windows-amd64.exe"
-    sha256 "abcd"
   end
 
   def install
@@ -157,8 +147,6 @@ end`)
       File.rename "#{name}-darwin-amd64", name
     elsif OS.linux?
       File.rename "#{name}-linux-amd64", name
-    else
-      File.rename "#{name}-windows-amd64.exe", name
     end
 
     bin.install name
