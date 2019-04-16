@@ -1,0 +1,6 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      The utilities in `pkgmgmtutils/` now support updating homebrew and gofish style formulas as part of a release
+      process.
+    issueLink: https://github.com/solo-io/gloo/issues/520
