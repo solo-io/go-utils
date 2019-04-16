@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Move cobra command utilities from gloo to go-utils.
+    issueLink: https://github.com/solo-io/go-utils/issues/124
