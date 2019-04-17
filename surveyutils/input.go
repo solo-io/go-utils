@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -21,7 +22,6 @@ func AskOne(p survey.Prompt, response interface{}, v survey.Validator, opts ...s
 	}
 	return survey.AskOne(p, response, v, opts...)
 }
-
 
 func GetYesInput(msg string) (bool, error) {
 	var yesAnswer string
@@ -223,5 +223,32 @@ func EnsureKVCsv(message string, source string, target *map[string]string, stati
 	for i := 0; i < len(parts)/2; i++ {
 		(*target)[parts[i*2]] = parts[i*2+1]
 	}
+	return nil
+}
+
+func GetDurationInput(msg string, duration *time.Duration) error {
+	var durStr string
+	if err := GetStringInput(msg, &durStr); err != nil {
+		return err
+	}
+	dur, err := time.ParseDuration(durStr)
+	if err != nil {
+		return err
+	}
+	*duration = dur
+	return nil
+}
+
+func GetFloat32Input(msg string, value *float32) error {
+	var strValue string
+	prompt := &survey.Input{Message: msg, Default: "0"}
+	if err := AskOne(prompt, &strValue, nil); err != nil {
+		return err
+	}
+	val, err := strconv.ParseFloat(strValue, 32)
+	if err != nil {
+		return err
+	}
+	*value = float32(val)
 	return nil
 }

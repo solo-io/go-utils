@@ -1,0 +1,5 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      Added some utility functions to cliutils.
+    issueLink: https://github.com/solo-io/go-utils/issues/130
