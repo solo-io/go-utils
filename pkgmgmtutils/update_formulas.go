@@ -23,7 +23,8 @@ import (
 const PRBaseBranchDefault = "master"
 
 type FormulaOptions struct {
-	Name            string
+	Name            string // Descriptive name to be used for logging and general identification
+	FormulaName     string // proper formula name without file extension
 	Path            string // repo relative path with file extension
 	RepoOwner       string // repo owner for Formula change
 	RepoName        string // repo name for Formula change
@@ -78,8 +79,8 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 		status[i].Name = fOpt.Name
 		status[i].Updated = false
 
-		branchName := fOpt.Name + "-" + version
-		commitString := fOpt.Name + ": update " + version
+		branchName := fOpt.FormulaName + "-" + version
+		commitString := fOpt.FormulaName + ": update " + version
 
 		if fOpt.PRRepoName == fOpt.RepoName && fOpt.PRRepoOwner == fOpt.RepoOwner {
 			err = updateAndPushAllRemote(client, ctx, version, versionSha, branchName, commitString, shas, &fOpt)

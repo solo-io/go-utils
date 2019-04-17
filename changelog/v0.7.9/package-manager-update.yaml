@@ -1,0 +1,7 @@
+changelog:
+  - type: FIX
+    description: >
+      Added a FormulaOptions.FormulaName field to allow the FormulaOptions.Name field to be a descriptive name, and
+      FormulaOptions.FormulaName to be used to reference the proper formula name as needed in branch and commit name
+      conventions for external PRs.
+    issueLink: https://github.com/solo-io/go-utils/issues/128

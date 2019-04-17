@@ -6,29 +6,31 @@ import (
 )
 
 var _ = Describe("package management utils", func() {
-	/* Keeping this example code till we integrate into individual projects like solo-io/gloo
-	It("can get latest release version", func() {
+	// Keeping this example code till we integrate into individual projects like solo-io/gloo
+	/*	It("can get latest release version", func() {
 
 		fopts := []FormulaOptions{
 			{
-				Name:            "glooctl",
-				Path:            "Formula/glooctl.rb",
-				RepoOwner:       "scranton",     // Make change in this repo
-				RepoName:        "homebrew-tap", // assumes this repo is forked from PRRepo
-				PRRepoOwner:     "solo-io",      // Make PR to this repo
-				PRRepoName:      "homebrew-tap",
-				PRBranch:        "solo-io",
-				PRDescription:   "",
-				PRCommitName:    "Solo-io Bot",
-				PRCommitEmail:   "bot@solo.io",
-				VersionRegex:    `version\s*"([0-9.]+)"`,
-				DarwinShaRegex:  `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
-				LinuxShaRegex:   `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
+				Name:           "homebrew-tap/glooctl",
+				FormulaName:    "glooctl",
+				Path:           "Formula/glooctl.rb",
+				RepoOwner:      "solo-io",      // Make change in this repo
+				RepoName:       "homebrew-tap", // assumes this repo is forked from PRRepo
+				PRRepoOwner:    "solo-io",      // Make PR to this repo
+				PRRepoName:     "homebrew-tap",
+				PRBranch:       "solo-io",
+				PRDescription:  "",
+				PRCommitName:   "Solo-io Bot",
+				PRCommitEmail:  "bot@solo.io",
+				VersionRegex:   `version\s*"([0-9.]+)"`,
+				DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
+				LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
 
 				dryRun: true, // do NOT create a PR
 			},
 			{
-				Name:            "glooctl",
+				Name:            "fish-food/glooctl",
+				FormulaName:     "glooctl",
 				Path:            "Food/glooctl.lua",
 				RepoOwner:       "solo-io",
 				RepoName:        "fish-food",
@@ -46,7 +48,8 @@ var _ = Describe("package management utils", func() {
 				dryRun: true, // do NOT create a PR
 			},
 			{
-				Name:            "glooctl",
+				Name:            "homebrew-core/glooctl",
+				FormulaName:     "glooctl",
 				Path:            "Formula/glooctl.rb",
 				RepoOwner:       "solo-io",
 				RepoName:        "homebrew-core",
