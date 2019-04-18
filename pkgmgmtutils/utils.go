@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	ErrNoSha256sFound = errors.New("pkgmgmtutils: did not find all needed sha256 files")
-	ErrNoShaDataFound = errors.New("pkgmgmtutils: no data in SHA256 file")
+	ErrNoSha256sFound         = errors.New("pkgmgmtutils: did not find any sha256 data")
+	ErrNoShaDataFound         = errors.New("pkgmgmtutils: no data in SHA256 file")
+	ErrNoShaOutputDirProvided = errors.New("pkgmgmtutils: required sha256 output directory not provided")
 )
 
 type sha256Outputs struct {
@@ -25,14 +26,20 @@ type sha256Outputs struct {
 // Those .sha256 files need to be located in the outputDir directory.
 // It returns the sha256s and any read errors encountered. It will also return ErrNoSha256sFound if any of the platform
 // shas are found.
-func getLocalBinarySha256(outputDir string) (*sha256Outputs, error) {
-	shas := sha256Outputs{}
+func getLocalBinarySha256(outputDir string, reShaFilename string) (*sha256Outputs, error) {
+	if reShaFilename == "" {
+		return nil, nil // special case to indicate that cli sha256s are not needed
+	}
+	if outputDir == "" {
+		return nil, ErrNoShaOutputDirProvided
+	}
 
 	// Scan outputDir directory looking for any files that match the reOS regular expression as targets for extraction
-	reOS := regexp.MustCompile(`(darwin|linux|windows)`)
+	reOS := regexp.MustCompile(reShaFilename)
 
 	files, _ := ioutil.ReadDir(outputDir)
 
+	shas := sha256Outputs{}
 	for _, f := range files {
 		filename := filepath.Join(outputDir, f.Name())
 		s := reOS.FindStringSubmatch(filename)
@@ -54,7 +61,7 @@ func getLocalBinarySha256(outputDir string) (*sha256Outputs, error) {
 			return nil, err
 		}
 	}
-	if shas.darwinSha == nil || shas.linuxSha == nil || shas.windowsSha == nil {
+	if shas.darwinSha == nil && shas.linuxSha == nil && shas.windowsSha == nil {
 		return nil, ErrNoSha256sFound
 	}
 

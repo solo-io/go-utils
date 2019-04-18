@@ -49,7 +49,9 @@ type FormulaStatus struct {
 	Err     error
 }
 
-func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathSha256 string, fOpts []FormulaOptions) ([]FormulaStatus, error) {
+func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathSha256 string, reShaFilenames string,
+	fOpts []FormulaOptions) ([]FormulaStatus, error) {
+
 	versionStr := versionutils.GetReleaseVersionOrExitGracefully().String()
 	version := versionStr[1:]
 
@@ -68,7 +70,7 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 
 	versionSha := *ref.Object.SHA
 
-	shas, err := getLocalBinarySha256(parentPathSha256)
+	shas, err := getLocalBinarySha256(parentPathSha256, reShaFilenames)
 	if err != nil {
 		return nil, err
 	}
@@ -138,12 +140,21 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 }
 
 var (
-	ErrAlreadyUpdated = errors.New("pkgmgmtutils: formula already updated")
+	ErrAlreadyUpdated               = errors.New("pkgmgmtutils: formula already updated")
+	ErrMissingRequiredVersion       = errors.New("pkgmgmtutils: missing required version")
+	ErrMissingRequiredVersionTagSha = errors.New("pkgmgmtutils: missing required version tag sha")
+	ErrMissingRequiredDarwinSha     = errors.New("pkgmgmtutils: missing required sha for darwin binary")
+	ErrMissingRequiredLinuxSha      = errors.New("pkgmgmtutils: missing required sha for linux binary")
+	ErrMissingRequiredWindowsSha    = errors.New("pkgmgmtutils: missing required sha for windows binary")
 )
 
 func updateFormula(byt []byte, version string, versionSha string, shas *sha256Outputs, fOpt *FormulaOptions) ([]byte, error) {
 	// Update Version
 	if fOpt.VersionRegex != "" {
+		if version == "" {
+			return nil, ErrMissingRequiredVersion
+		}
+
 		re := regexp.MustCompile(fOpt.VersionRegex)
 
 		// Check if formula has already been updated
@@ -156,21 +167,37 @@ func updateFormula(byt []byte, version string, versionSha string, shas *sha256Ou
 
 	// Update Version SHA (git tag sha)
 	if fOpt.VersionShaRegex != "" {
+		if versionSha == "" {
+			return nil, ErrMissingRequiredVersionTagSha
+		}
+
 		byt = replaceSubmatch(byt, []byte(versionSha), regexp.MustCompile(fOpt.VersionShaRegex))
 	}
 
 	// Update Mac SHA256
 	if fOpt.DarwinShaRegex != "" {
+		if len(shas.darwinSha) == 0 {
+			return nil, ErrMissingRequiredDarwinSha
+		}
+
 		byt = replaceSubmatch(byt, shas.darwinSha, regexp.MustCompile(fOpt.DarwinShaRegex))
 	}
 
 	// Update Linux SHA256
 	if fOpt.LinuxShaRegex != "" {
+		if len(shas.linuxSha) == 0 {
+			return nil, ErrMissingRequiredLinuxSha
+		}
+
 		byt = replaceSubmatch(byt, shas.linuxSha, regexp.MustCompile(fOpt.LinuxShaRegex))
 	}
 
 	// Update Windows SHA256
 	if fOpt.WindowsShaRegex != "" {
+		if len(shas.windowsSha) == 0 {
+			return nil, ErrMissingRequiredWindowsSha
+		}
+
 		byt = replaceSubmatch(byt, shas.windowsSha, regexp.MustCompile(fOpt.WindowsShaRegex))
 	}
 
