@@ -6,86 +6,324 @@ import (
 )
 
 var _ = Describe("package management utils", func() {
-	// Keeping this example code till we integrate into individual projects like solo-io/gloo
-	/*	It("can get latest release version", func() {
+	// Keeping this example end-2-end tests as we do not want CI tests that mess with GitHub
+	/*	Context("using full GitHub APIs", func() {
+		It("glooctl can get latest release version", func() {
+			// Create test sha256 files
+			testData := map[string]struct {
+				filename   string
+				sha        string
+				binaryName string
+			}{
+				"darwin": {
+					filename:   "glooctl-darwin-amd64.sha256",
+					sha:        "5b741927c40f4a430bcf42905901e204e955a5a5a3a3bbb9e67680df3a188f99",
+					binaryName: "glooctl-darwin-amd64",
+				},
+				"linux": {
+					filename:   "glooctl-linux-amd64.sha256",
+					sha:        "9e173748ca85c5505909c4c7abe0cb03a58aef3b56dc134ece62d2306433347f",
+					binaryName: "glooctl-linux-amd64",
+				},
+				"windows": {
+					filename:   "glooctl-windows-amd64.exe.sha256",
+					sha:        "031434d831a394af2b7882b6f1a220e34efc91c4e4ef807a530fc8ec7990d2ca",
+					binaryName: "glooctl-windows-amd64.exe",
+				},
+			}
 
-		fopts := []FormulaOptions{
-			{
-				Name:           "homebrew-tap/glooctl",
-				FormulaName:    "glooctl",
-				Path:           "Formula/glooctl.rb",
-				RepoOwner:      "solo-io",      // Make change in this repo
-				RepoName:       "homebrew-tap", // assumes this repo is forked from PRRepo
-				PRRepoOwner:    "solo-io",      // Make PR to this repo
-				PRRepoName:     "homebrew-tap",
-				PRBranch:       "solo-io",
-				PRDescription:  "",
-				PRCommitName:   "Solo-io Bot",
-				PRCommitEmail:  "bot@solo.io",
-				VersionRegex:   `version\s*"([0-9.]+)"`,
-				DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
-				LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
+			dirTmp, err := ioutil.TempDir("", "_output")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(dirTmp)
 
-				dryRun: true, // do NOT create a PR
-			},
-			{
-				Name:            "fish-food/glooctl",
-				FormulaName:     "glooctl",
-				Path:            "Food/glooctl.lua",
-				RepoOwner:       "solo-io",
-				RepoName:        "fish-food",
-				PRRepoOwner:     "fishworks",
-				PRRepoName:      "fish-food",
-				PRBranch:        "master",
-				PRDescription:   "",
-				PRCommitName:    "Solo-io Bot",
-				PRCommitEmail:   "bot@solo.io",
-				VersionRegex:    `version\s*=\s*"([0-9.]+)"`,
-				DarwinShaRegex:  `os\s*=\s*"darwin",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
-				LinuxShaRegex:   `os\s*=\s*"linux",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
-				WindowsShaRegex: `os\s*=\s*"windows",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
+			for _, v := range testData {
+				data := fmt.Sprintf("%s %s", v.sha, v.binaryName)
+				err = ioutil.WriteFile(filepath.Join(dirTmp, v.filename), []byte(data), 0644)
+				Expect(err).To(BeNil())
+			}
 
-				dryRun: true, // do NOT create a PR
-			},
-			{
-				Name:            "homebrew-core/glooctl",
-				FormulaName:     "glooctl",
-				Path:            "Formula/glooctl.rb",
-				RepoOwner:       "solo-io",
-				RepoName:        "homebrew-core",
-				PRRepoOwner:     "homebrew",
-				PRRepoName:      "homebrew-core",
-				PRBranch:        "master",
-				PRDescription:   "",
-				PRCommitName:    "Solo-io Bot",
-				PRCommitEmail:   "bot@solo.io",
-				VersionRegex:    `:tag\s*=>\s*"v([0-9.]+)",`,
-				VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
+			// https://regex101.com/ is a helpful tool to validating golang regex
 
-				dryRun: true, // do NOT create a PR
-			},
-		}
+			fOpts := []FormulaOptions{
+				{
+					Name:           "homebrew-tap/glooctl",
+					FormulaName:    "glooctl",
+					Path:           "Formula/glooctl.rb",
+					RepoOwner:      "solo-io",           // Make change in this repo
+					RepoName:       "test-homebrew-tap", // Assumes this repo is forked from PRRepo if PRRepoOwner != RepoOwner
+					PRRepoOwner:    "solo-io",           // Make PR to this repo
+					PRRepoName:     "test-homebrew-tap",
+					PRBranch:       "master",
+					PRDescription:  "/wip",
+					PRCommitName:   "Solo-io Bot",
+					PRCommitEmail:  "bot@solo.io",
+					VersionRegex:   `version\s*"([0-9.]+)"`,
+					DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
+					LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
 
-		status, err := UpdateFormulas("solo-io", "gloo", "_output", fopts)
-		Expect(err).NotTo(HaveOccurred())
-		if err != nil {
-			fmt.Println(err)
-		}
+					dryRun: true, // do NOT create a PR
+				},
+				{
+					Name:            "fish-food/glooctl",
+					FormulaName:     "glooctl",
+					Path:            "Food/glooctl.lua",
+					RepoOwner:       "solo-io",
+					RepoName:        "test-fish-food",
+					PRRepoOwner:     "solo-io",
+					PRRepoName:      "test-fish-food",
+					PRBranch:        "master",
+					PRDescription:   "/wip",
+					PRCommitName:    "Solo-io Bot",
+					PRCommitEmail:   "bot@solo.io",
+					VersionRegex:    `version\s*=\s*"([0-9.]+)"`,
+					DarwinShaRegex:  `os\s*=\s*"darwin",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
+					LinuxShaRegex:   `os\s*=\s*"linux",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
+					WindowsShaRegex: `os\s*=\s*"windows",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
 
-		for _, s := range status {
-			fmt.Printf("Name: %s; Updated: %t", s.Name, s.Updated)
-			if s.Err != nil {
+					dryRun: true, // do NOT create a PR
+				},
+				{
+					Name:            "homebrew-core/glooctl",
+					FormulaName:     "glooctl",
+					Path:            "Formula/glooctl.rb",
+					RepoOwner:       "solo-io",
+					RepoName:        "test-homebrew-core",
+					PRRepoOwner:     "solo-io",
+					PRRepoName:      "test-homebrew-core",
+					PRBranch:        "master",
+					PRDescription:   "/wip",
+					PRCommitName:    "Solo-io Bot",
+					PRCommitEmail:   "bot@solo.io",
+					VersionRegex:    `:tag\s*=>\s*"v([0-9.]+)",`,
+					VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
+
+					dryRun: true, // do NOT create a PR
+				},
+			}
+
+			status, err := UpdateFormulas("solo-io", "gloo", dirTmp, `glooctl-(darwin|linux|windows).*\.sha256`, fOpts)
+			Expect(err).NotTo(HaveOccurred())
+			if err != nil {
 				fmt.Println(err)
 			}
-			Expect(s.Updated).To(BeTrue())
-			Expect(s.Err).To(SatisfyAny(
-				BeNil(),
-				Equal(ErrAlreadyUpdated)))
-		}
+
+			for _, s := range status {
+				fmt.Printf("Name: %s; Updated: %t", s.Name, s.Updated)
+				if s.Err != nil {
+					fmt.Println(err)
+				}
+				Expect(s.Updated).To(BeTrue())
+				Expect(s.Err).To(SatisfyAny(
+					BeNil(),
+					Equal(ErrAlreadyUpdated)))
+			}
+
+			// Cleanup
+			ctx := context.Background()
+			client, err := githubutils.GetClient(ctx)
+			if err != nil {
+				return
+			}
+
+			version := versionutils.GetReleaseVersionOrExitGracefully().String()[1:]
+			for _, fOpt := range fOpts {
+				branchName := "refs/heads/" + fOpt.FormulaName + "-" + version
+				_, err = client.Git.DeleteRef(ctx, fOpt.RepoOwner, fOpt.RepoName, branchName)
+				if err != nil {
+					fmt.Printf("Error: failed to delete branch %s from repo %s:%s; Error was: %s", branchName,
+						fOpt.RepoOwner, fOpt.RepoName, err.Error())
+				}
+			}
+		})
+
+		It("squashctl can get latest release version", func() {
+			// Create test sha256 files
+			testData := map[string]struct {
+				filename   string
+				sha        string
+				binaryName string
+			}{
+				"darwin": {
+					filename:   "squashctl-darwin.sha256",
+					sha:        "5b741927c40f4a430bcf42905901e204e955a5a5a3a3bbb9e67680df3a188f99",
+					binaryName: "squashctl-darwin",
+				},
+				"linux": {
+					filename:   "squashctl-linux.sha256",
+					sha:        "9e173748ca85c5505909c4c7abe0cb03a58aef3b56dc134ece62d2306433347f",
+					binaryName: "squashctl-linux",
+				},
+				"windows": {
+					filename:   "squashctl-windows.exe.sha256",
+					sha:        "031434d831a394af2b7882b6f1a220e34efc91c4e4ef807a530fc8ec7990d2ca",
+					binaryName: "squashctl-windows.exe",
+				},
+			}
+
+			dirTmp, err := ioutil.TempDir("", "_output")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(dirTmp)
+
+			for _, v := range testData {
+				data := fmt.Sprintf("%s %s", v.sha, v.binaryName)
+				err = ioutil.WriteFile(filepath.Join(dirTmp, v.filename), []byte(data), 0644)
+				Expect(err).To(BeNil())
+			}
+
+			// https://regex101.com/ is a helpful tool to validating golang regex
+
+			fOpts := []FormulaOptions{
+				{
+					Name:           "homebrew-tap/squashctl",
+					FormulaName:    "squashctl",
+					Path:           "Formula/squashctl.rb",
+					RepoOwner:      "solo-io",            // Make change in this repo
+					RepoName:       "test-homebrew-tap", // Assumes this repo is forked from PRRepo if PRRepoOwner != RepoOwner
+					PRRepoOwner:    "solo-io",            // Make PR to this repo
+					PRRepoName:     "test-homebrew-tap",
+					PRBranch:       "master",
+					PRDescription:  "/wip",
+					PRCommitName:   "Solo-io Bot",
+					PRCommitEmail:  "bot@solo.io",
+					VersionRegex:   `version\s*"([0-9.]+)"`,
+					DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
+					LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
+
+					dryRun: true, // do NOT create a PR
+				},
+			}
+
+			status, err := UpdateFormulas("solo-io", "gloo", dirTmp, `squashctl-(darwin|linux|windows).*\.sha256`, fOpts)
+			Expect(err).NotTo(HaveOccurred())
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			for _, s := range status {
+				fmt.Printf("Name: %s; Updated: %t", s.Name, s.Updated)
+				if s.Err != nil {
+					fmt.Println(err)
+				}
+				Expect(s.Updated).To(BeTrue())
+				Expect(s.Err).To(SatisfyAny(
+					BeNil(),
+					Equal(ErrAlreadyUpdated)))
+			}
+
+			// Cleanup
+			ctx := context.Background()
+			client, err := githubutils.GetClient(ctx)
+			if err != nil {
+				return
+			}
+
+			version := versionutils.GetReleaseVersionOrExitGracefully().String()[1:]
+			for _, fOpt := range fOpts {
+				branchName := "refs/heads/" + fOpt.FormulaName + "-" + version
+				_, err = client.Git.DeleteRef(ctx, fOpt.RepoOwner, fOpt.RepoName, branchName)
+				if err != nil {
+					fmt.Printf("Error: failed to delete branch %s from repo %s:%s; Error was: %s", branchName,
+						fOpt.RepoOwner, fOpt.RepoName, err.Error())
+				}
+			}
+		})
+
+		It("supergloo can get latest release version", func() {
+			// Create test sha256 files
+			testData := map[string]struct {
+				filename   string
+				sha        string
+				binaryName string
+			}{
+				"darwin": {
+					filename:   "supergloo-cli-darwin-amd64.sha256",
+					sha:        "5b741927c40f4a430bcf42905901e204e955a5a5a3a3bbb9e67680df3a188f99",
+					binaryName: "supergloo-cli-darwin-amd64",
+				},
+				"linux": {
+					filename:   "supergloo-cli-linux-amd64.sha256",
+					sha:        "9e173748ca85c5505909c4c7abe0cb03a58aef3b56dc134ece62d2306433347f",
+					binaryName: "supergloo-cli-linux-amd64",
+				},
+				"windows": {
+					filename:   "supergloo-cli-windows-amd64.exe.sha256",
+					sha:        "031434d831a394af2b7882b6f1a220e34efc91c4e4ef807a530fc8ec7990d2ca",
+					binaryName: "supergloo-cli-windows-amd64.exe",
+				},
+			}
+
+			dirTmp, err := ioutil.TempDir("", "_output")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(dirTmp)
+
+			for _, v := range testData {
+				data := fmt.Sprintf("%s %s", v.sha, v.binaryName)
+				err = ioutil.WriteFile(filepath.Join(dirTmp, v.filename), []byte(data), 0644)
+				Expect(err).To(BeNil())
+			}
+
+			// https://regex101.com/ is a helpful tool to validating golang regex
+
+			fOpts := []FormulaOptions{
+				{
+					Name:           "homebrew-tap/supergloo",
+					FormulaName:    "supergloo",
+					Path:           "Formula/supergloo.rb",
+					RepoOwner:      "solo-io",            // Make change in this repo
+					RepoName:       "test-homebrew-tap", // Assumes this repo is forked from PRRepo if PRRepoOwner != RepoOwner
+					PRRepoOwner:    "solo-io",            // Make PR to this repo
+					PRRepoName:     "test-homebrew-tap",
+					PRBranch:       "master",
+					PRDescription:  "/wip",
+					PRCommitName:   "Solo-io Bot",
+					PRCommitEmail:  "bot@solo.io",
+					VersionRegex:   `version\s*"([0-9.]+)"`,
+					DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
+					LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
+
+					dryRun: true, // do NOT create a PR
+				},
+			}
+
+			status, err := UpdateFormulas("solo-io", "gloo", dirTmp, `supergloo-cli-(darwin|linux|windows).*\.sha256`, fOpts)
+			Expect(err).NotTo(HaveOccurred())
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			for _, s := range status {
+				fmt.Printf("Name: %s; Updated: %t", s.Name, s.Updated)
+				if s.Err != nil {
+					fmt.Println(err)
+				}
+				Expect(s.Updated).To(BeTrue())
+				Expect(s.Err).To(SatisfyAny(
+					BeNil(),
+					Equal(ErrAlreadyUpdated)))
+			}
+
+			// Cleanup
+			ctx := context.Background()
+			client, err := githubutils.GetClient(ctx)
+			if err != nil {
+				return
+			}
+
+			version := versionutils.GetReleaseVersionOrExitGracefully().String()[1:]
+			for _, fOpt := range fOpts {
+				branchName := "refs/heads/" + fOpt.FormulaName + "-" + version
+				_, err = client.Git.DeleteRef(ctx, fOpt.RepoOwner, fOpt.RepoName, branchName)
+				if err != nil {
+					fmt.Printf("Error: failed to delete branch %s from repo %s:%s; Error was: %s", branchName,
+						fOpt.RepoOwner, fOpt.RepoName, err.Error())
+				}
+			}
+		})
 	})*/
 
-	It("can update homebrew-tap style formula", func() {
-		src := []byte(`class Glooctl < Formula
+	Context("happy path updates for each formula type", func() {
+		It("can update homebrew-tap style formula", func() {
+			src := []byte(`class Glooctl < Formula
   desc "Envoy-Powered API Gateway"
   homepage "https://gloo.solo.io"
   version "0.13.14"
@@ -118,21 +356,21 @@ var _ = Describe("package management utils", func() {
     prefix.install_metafiles
   end
 end`)
-		fopt := FormulaOptions{
-			VersionRegex:   `version\s*"([0-9.]+)"`,
-			DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
-			LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
-		}
+			fopt := FormulaOptions{
+				VersionRegex:   `version\s*"([0-9.]+)"`,
+				DarwinShaRegex: `url\s*".*-darwin.*\W*sha256\s*"(.*)"`,
+				LinuxShaRegex:  `url\s*".*-linux.*\W*sha256\s*"(.*)"`,
+			}
 
-		shas := sha256Outputs{
-			darwinSha:  []byte("1234"),
-			linuxSha:   []byte("9876"),
-			windowsSha: []byte("abcd"),
-		}
+			shas := sha256Outputs{
+				darwinSha:  []byte("1234"),
+				linuxSha:   []byte("9876"),
+				windowsSha: []byte("abcd"),
+			}
 
-		byt, err := updateFormula(src, "0.13.15", "12345", &shas, &fopt)
-		Expect(err).To(BeNil())
-		Expect(byt).To(Equal([]byte(`class Glooctl < Formula
+			byt, err := updateFormula(src, "0.13.15", "12345", &shas, &fopt)
+			Expect(err).To(BeNil())
+			Expect(byt).To(Equal([]byte(`class Glooctl < Formula
   desc "Envoy-Powered API Gateway"
   homepage "https://gloo.solo.io"
   version "0.13.15"
@@ -165,10 +403,10 @@ end`)
     prefix.install_metafiles
   end
 end`)))
-	})
+		})
 
-	It("can update homebrew-core style formula", func() {
-		src := []byte(`class Glooctl < Formula
+		It("can update homebrew-core style formula", func() {
+			src := []byte(`class Glooctl < Formula
   desc "Envoy-Powered API Gateway"
   homepage "https://gloo.solo.io"
   url "https://github.com/solo-io/gloo.git",
@@ -211,20 +449,20 @@ end`)))
   end
 end
 `)
-		fopt := FormulaOptions{
-			VersionRegex:    `:tag\s*=>\s*"v([0-9.]+)",`,
-			VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
-		}
+			fopt := FormulaOptions{
+				VersionRegex:    `:tag\s*=>\s*"v([0-9.]+)",`,
+				VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
+			}
 
-		shas := sha256Outputs{
-			darwinSha:  []byte("1234"),
-			linuxSha:   []byte("9876"),
-			windowsSha: []byte("abcd"),
-		}
+			shas := sha256Outputs{
+				darwinSha:  []byte("1234"),
+				linuxSha:   []byte("9876"),
+				windowsSha: []byte("abcd"),
+			}
 
-		byt, err := updateFormula(src, "0.13.15", "12345", &shas, &fopt)
-		Expect(err).To(BeNil())
-		Expect(byt).To(Equal([]byte(`class Glooctl < Formula
+			byt, err := updateFormula(src, "0.13.15", "12345", &shas, &fopt)
+			Expect(err).To(BeNil())
+			Expect(byt).To(Equal([]byte(`class Glooctl < Formula
   desc "Envoy-Powered API Gateway"
   homepage "https://gloo.solo.io"
   url "https://github.com/solo-io/gloo.git",
@@ -267,10 +505,10 @@ end
   end
 end
 `)))
-	})
+		})
 
-	It("can update fish-food style formula", func() {
-		src := []byte(`local name = "glooctl"
+		It("can update fish-food style formula", func() {
+			src := []byte(`local name = "glooctl"
 local version = "0.12.0"
 
 food = {
@@ -322,22 +560,22 @@ food = {
         }
     }
 }`)
-		fopt := FormulaOptions{
-			VersionRegex:    `version\s*=\s*"([0-9.]+)"`,
-			DarwinShaRegex:  `os\s*=\s*"darwin",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
-			LinuxShaRegex:   `os\s*=\s*"linux",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
-			WindowsShaRegex: `os\s*=\s*"windows",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
-		}
+			fopt := FormulaOptions{
+				VersionRegex:    `version\s*=\s*"([0-9.]+)"`,
+				DarwinShaRegex:  `os\s*=\s*"darwin",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
+				LinuxShaRegex:   `os\s*=\s*"linux",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
+				WindowsShaRegex: `os\s*=\s*"windows",\W*.*\W*.*\W*.*\W*sha256\s*=\s*"(.*)",`,
+			}
 
-		shas := sha256Outputs{
-			darwinSha:  []byte("1234"),
-			linuxSha:   []byte("9876"),
-			windowsSha: []byte("abcd"),
-		}
+			shas := sha256Outputs{
+				darwinSha:  []byte("1234"),
+				linuxSha:   []byte("9876"),
+				windowsSha: []byte("abcd"),
+			}
 
-		byt, err := updateFormula(src, "0.13.15", "12345", &shas, &fopt)
-		Expect(err).To(BeNil())
-		Expect(byt).To(Equal([]byte(`local name = "glooctl"
+			byt, err := updateFormula(src, "0.13.15", "12345", &shas, &fopt)
+			Expect(err).To(BeNil())
+			Expect(byt).To(Equal([]byte(`local name = "glooctl"
 local version = "0.13.15"
 
 food = {
@@ -389,10 +627,12 @@ food = {
         }
     }
 }`)))
+		})
 	})
 
-	It("can update homebrew-core style formula", func() {
-		src := []byte(`class Glooctl < Formula
+	When("formula already updated", func() {
+		It("can detect duplicate update of homebrew-core style formula", func() {
+			src := []byte(`class Glooctl < Formula
   desc "Envoy-Powered API Gateway"
   homepage "https://gloo.solo.io"
   url "https://github.com/solo-io/gloo.git",
@@ -435,19 +675,20 @@ food = {
   end
 end
 `)
-		fopt := FormulaOptions{
-			VersionRegex:    `:tag\s*=>\s*"v([0-9.]+)",`,
-			VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
-		}
+			fopt := FormulaOptions{
+				VersionRegex:    `:tag\s*=>\s*"v([0-9.]+)",`,
+				VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
+			}
 
-		shas := sha256Outputs{
-			darwinSha:  []byte("1234"),
-			linuxSha:   []byte("9876"),
-			windowsSha: []byte("abcd"),
-		}
+			shas := sha256Outputs{
+				darwinSha:  []byte("1234"),
+				linuxSha:   []byte("9876"),
+				windowsSha: []byte("abcd"),
+			}
 
-		byt, err := updateFormula(src, "0.13.14", "f2fdf602bd6c96b0ebbc0d75bc8ac48c66f83db9", &shas, &fopt)
-		Expect(err).To(Equal(ErrAlreadyUpdated))
-		Expect(byt).To(Equal(src))
+			byt, err := updateFormula(src, "0.13.14", "f2fdf602bd6c96b0ebbc0d75bc8ac48c66f83db9", &shas, &fopt)
+			Expect(err).To(Equal(ErrAlreadyUpdated))
+			Expect(byt).To(Equal(src))
+		})
 	})
 })

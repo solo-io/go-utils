@@ -29,7 +29,7 @@ var _ = Describe("package management utils", func() {
 				binaryName: "glooctl-linux-amd64",
 			},
 			"windows": {
-				filename:   "glooctl-windows-amd64.sha256",
+				filename:   "glooctl-windows-amd64.exe.sha256",
 				sha:        "031434d831a394af2b7882b6f1a220e34efc91c4e4ef807a530fc8ec7990d2ca",
 				binaryName: "glooctl-windows-amd64.exe",
 			},
@@ -45,7 +45,7 @@ var _ = Describe("package management utils", func() {
 			Expect(err).To(BeNil())
 		}
 
-		shas, err := getLocalBinarySha256(dirTmp)
+		shas, err := getLocalBinarySha256(dirTmp, `glooctl-(darwin|linux|windows).*\.sha256`)
 		Expect(err).To(BeNil())
 
 		Expect(shas.darwinSha).To(Equal([]byte(testData["darwin"].sha)))
@@ -60,7 +60,7 @@ var _ = Describe("package management utils", func() {
 			binaryName string
 		}{
 			"vms": {
-				filename:   "glooctl-vax-vax.sha256",
+				filename:   "glooctl-vms-vax.sha256",
 				sha:        "5b741927c40f4a430bcf42905901e204e955a5a5a3a3bbb9e67680df3a188f99",
 				binaryName: "glooctl-vms-vax",
 			},
@@ -70,9 +70,9 @@ var _ = Describe("package management utils", func() {
 				binaryName: "glooctl-as400-i570",
 			},
 			"hpux": {
-				filename:   "glooctl-windows-sx1000.sha256",
+				filename:   "glooctl-hpux-sx1000.sha256",
 				sha:        "031434d831a394af2b7882b6f1a220e34efc91c4e4ef807a530fc8ec7990d2ca",
-				binaryName: "glooctl-windows-sx1000.exe",
+				binaryName: "glooctl-hpux-sx1000",
 			},
 		}
 
@@ -86,7 +86,7 @@ var _ = Describe("package management utils", func() {
 			Expect(err).To(BeNil())
 		}
 
-		shas, err := getLocalBinarySha256(dirTmp)
+		shas, err := getLocalBinarySha256(dirTmp, `glooctl-(darwin|linux|windows).*\.sha256`)
 		Expect(err).To(Equal(ErrNoSha256sFound))
 		Expect(shas).To(BeNil())
 	})
