@@ -4,3 +4,4 @@ changelog:
       Added parameter to help more finely narrow down to just the sha256 files in the build path that
       pkgmgmtutils.UpdateFormulas really need.
     issueLink: https://github.com/solo-io/go-utils/issues/132
+
