@@ -243,7 +243,7 @@ func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstruc
 	if err := json.Unmarshal([]byte(installedConfiguration), &installedObject); err != nil {
 		return nil, err
 	}
-	res.Object = installedObject
+	res.SetAPIVersion(fmt.Sprintf("%v", installedObject["apiVersion"]))
 	annotations := res.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
