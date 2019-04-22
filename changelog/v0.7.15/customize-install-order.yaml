@@ -1,0 +1,6 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >
+      Add MutatingWebhookConfiguration to the install order list. Required by our custom installer as some deployments
+      may require a preexisting MutatingWebhookConfiguration 
+
