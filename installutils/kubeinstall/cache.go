@@ -33,6 +33,16 @@ Initialize the cache with the snapshot of the current cluster
 func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
 	// unlock cache after sync is complete
 	defer c.access.Unlock()
+	return c.refreshUnsafe(ctx, cfg, filterFuncs...)
+}
+
+func (c *Cache) Refresh(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
+	c.access.Lock()
+	defer c.access.Unlock()
+	return c.refreshUnsafe(ctx, cfg, filterFuncs...)
+}
+
+func (c *Cache) refreshUnsafe(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
 	currentResources, err := kuberesource.GetClusterResources(ctx, cfg, filterFuncs...)
 	if err != nil {
 		return err

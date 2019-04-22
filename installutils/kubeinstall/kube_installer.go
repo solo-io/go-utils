@@ -201,7 +201,7 @@ func (r *KubeInstaller) ReconcileResources(ctx context.Context, installNamespace
 	return nil
 }
 
-const installerAnnotationKey = "installer.solo.io/last-applied-configuration"
+const InstallerAnnotationKey = "installer.solo.io/last-applied-configuration"
 
 // sets the installation annotation so we can do proper comparison on our objects
 func setInstallationAnnotation(res *unstructured.Unstructured) error {
@@ -215,7 +215,7 @@ func setInstallationAnnotation(res *unstructured.Unstructured) error {
 		annotations = make(map[string]string)
 	}
 
-	annotations[installerAnnotationKey] = string(jsn)
+	annotations[InstallerAnnotationKey] = string(jsn)
 	res.SetAnnotations(annotations)
 	return nil
 }
@@ -234,17 +234,10 @@ func getInstalledResources(resources kuberesource.UnstructuredResources) (kubere
 	return installed, nil
 }
 
-func GetInstalledResource(res *unstructured.Unstructured) *unstructured.Unstructured {
-	if installed, err := getInstalledResource(res); err == nil {
-		return installed
-	}
-	return res
-}
-
 func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-	installedConfiguration, ok := res.GetAnnotations()[installerAnnotationKey]
+	installedConfiguration, ok := res.GetAnnotations()[InstallerAnnotationKey]
 	if !ok {
-		return nil, errors.Errorf("resource %v missing installer annotation %v", kuberesource.Key(res), installerAnnotationKey)
+		return nil, errors.Errorf("resource %v missing installer annotation %v", kuberesource.Key(res), InstallerAnnotationKey)
 	}
 	var installedObject map[string]interface{}
 	if err := json.Unmarshal([]byte(installedConfiguration), &installedObject); err != nil {
@@ -256,7 +249,7 @@ func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstruc
 		annotations = make(map[string]string)
 	}
 
-	annotations[installerAnnotationKey] = installedConfiguration
+	annotations[InstallerAnnotationKey] = installedConfiguration
 	res.SetAnnotations(annotations)
 	return res, nil
 }
