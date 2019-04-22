@@ -3,18 +3,15 @@ package clicore
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/cobra"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/contextutils"
+	"github.com/spf13/cobra"
 )
 
-var _ = Describe("Glooshot CLI", func() {
+var _ = Describe("Clicore", func() {
 
 	var standardCobraHelpBlockMatcher = MatchRegexp("Available Commands:")
-
-	BeforeEach(func() {
-	})
 
 	Context("basic args and flags", func() {
 		It("should return help messages without error", func() {
@@ -40,7 +37,7 @@ var _ = Describe("Glooshot CLI", func() {
 
 	Context("expect human-friendly logs", func() {
 		It("should return human-friendly errors on bad input", func() {
-			cliOut := appWithLoggerOutput("--temp")
+			cliOut := appWithLoggerOutput("--flag1")
 			Expect(cliOut.CobraStdout).
 				To(Equal("cobra says 'hisssss' - but he should leave the console logs to the CliLog* utils."))
 			Expect(cliOut.CobraStderr).
@@ -61,7 +58,7 @@ this errorw log should go to file and console
 			Expect(cliOut.LoggerFileContent).To(MatchRegexp("ts"))
 			Expect(cliOut.LoggerFileContent).To(MatchRegexp("warn"))
 			Expect(cliOut.LoggerFileContent).To(MatchRegexp("error"))
-			Expect(cliOut.LoggerFileContent).To(MatchRegexp("dev"))
+			Expect(cliOut.LoggerFileContent).To(MatchRegexp(appVersion))
 			Expect(cliOut.LoggerFileContent).To(MatchRegexp("msg"))
 			Expect(cliOut.LoggerFileContent).To(MatchRegexp("logger"))
 			// match (or not) the fragments that we get in the console. Using regex since timestamp is random
@@ -100,11 +97,51 @@ var (
 	errorMessagePreamble = "error running cli"
 )
 
-func SampleCobraCli(ctx context.Context, version string) *cobra.Command {
-	cmd := &cobra.Command{}
-	return cmd
+type TopOptions struct {
+	Flag1 bool
 }
 
+func SampleCobraCli(ctx context.Context, version string) *cobra.Command {
+	o := TopOptions{}
+	app := &cobra.Command{
+		Use:     "samplecli",
+		Short:   "sample CLI for testing",
+		Version: version,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if o.Flag1 {
+				// Trigger some warnings, this will be removed
+				contextutils.CliLogInfow(ctx, "this info log should go to file and console")
+				contextutils.CliLogWarnw(ctx, "this warn log should go to file and console")
+				contextutils.CliLogErrorw(ctx, "this error log should go to file and console")
+				contextutils.CliLogInfow(ctx, "this infow log should go to file and console", "extrakey1", "val1")
+				contextutils.CliLogWarnw(ctx, "this warnw log should go to file and console", "extrakey2", "val2")
+				contextutils.CliLogErrorw(ctx, "this errorw log should go to file and console", "extrakey3", "val3")
+				fmt.Println("cobra says 'hisssss' - but he should leave the console logs to the CliLog* utils.")
+				return fmt.Errorf("cobra says 'hisssss' again - it's ok because this is a passed error")
+			}
+			return nil
+		},
+	}
+
+	app.AddCommand(
+		sampleSubCommand(o),
+		)
+
+	pflags := app.PersistentFlags()
+	pflags.BoolVar(&o.Flag1, "flag1", false, "this is a dummy flag to trigger logging")
+	return app
+}
+
+func sampleSubCommand(o TopOptions) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "subcmd1",
+		Short: "just a sample sub command",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	return cmd
+}
 var sampleAppConfig = CommandConfig{
 	Command:             SampleCobraCli,
 	Version:             appVersion,

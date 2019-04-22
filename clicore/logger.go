@@ -2,6 +2,7 @@ package clicore
 
 import (
 	"fmt"
+	"github.com/solo-io/go-utils/clicore/constants"
 	"os"
 	"path/filepath"
 
@@ -9,10 +10,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-// CliLoggerKey is the key passed through zap logs that indicates that its value should be written to the console,
-// in addition to the full log file.
-const CliLoggerKey = "cli"
 
 // BuildCliLogger creates a set of loggers for use in CLI applications.
 // - A json-formatted file logger that writes all log messages to the specified filename
@@ -144,7 +141,7 @@ func buildCliZapCoreConsoles(verboseMode bool, mockTargets *MockTargets) []zapco
 		consoleLoggerEncoderConfig.LevelKey = ""
 		consoleLoggerEncoderConfig.NameKey = ""
 	}
-	consoleEncoder := NewCliEncoder(CliLoggerKey)
+	consoleEncoder := NewCliEncoder(constants.CliLoggerKey)
 
 	consoleStdoutCore := zapcore.NewCore(consoleEncoder, consoleInfo, stdOutMessages)
 	if verboseMode {
