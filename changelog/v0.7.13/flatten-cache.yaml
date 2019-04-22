@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Keep the cache flattened always, so that you can reinstall purged applications.
+    issueLink: https://github.com/solo-io/go-utils/issues/138
