@@ -16,10 +16,8 @@ Starts with a snapshot of everytihng in cluster
 Warning: takes about 30-45s (in testing) to initialize this cache
 */
 type Cache struct {
-	access      sync.RWMutex
-	resources   kuberesource.UnstructuredResourcesByKey
-	filterFuncs []kuberesource.FilterResource
-	cfg         *rest.Config
+	access    sync.RWMutex
+	resources kuberesource.UnstructuredResourcesByKey
 }
 
 // starts locked, requires Init() to be unlocked
@@ -35,18 +33,6 @@ Initialize the cache with the snapshot of the current cluster
 func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
 	// unlock cache after sync is complete
 	defer c.access.Unlock()
-	c.cfg = cfg
-	c.filterFuncs = filterFuncs
-	return c.refreshUnsafe(ctx, cfg, filterFuncs...)
-}
-
-func (c *Cache) Refresh(ctx context.Context) error {
-	c.access.Lock()
-	defer c.access.Unlock()
-	return c.refreshUnsafe(ctx, c.cfg, c.filterFuncs...)
-}
-
-func (c *Cache) refreshUnsafe(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
 	currentResources, err := kuberesource.GetClusterResources(ctx, cfg, filterFuncs...)
 	if err != nil {
 		return err

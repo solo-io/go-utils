@@ -53,18 +53,18 @@ func (urs UnstructuredResources) Sort() UnstructuredResources {
 }
 
 func getInstalledResourceIfExists(res *unstructured.Unstructured) *unstructured.Unstructured {
-	if installed, err := getInstalledResource(res); err == nil {
+	if installed, err := GetInstalledResource(res); err == nil {
 		return installed
 	}
 	return res
 }
 
-var installerAnnotationKey = "installer.solo.io/last-applied-configuration"
+var InstallerAnnotationKey = "installer.solo.io/last-applied-configuration"
 
-func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-	installedConfiguration, ok := res.GetAnnotations()[installerAnnotationKey]
+func GetInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+	installedConfiguration, ok := res.GetAnnotations()[InstallerAnnotationKey]
 	if !ok {
-		return nil, errors.Errorf("resource %v missing installer annotation %v", res, installerAnnotationKey)
+		return nil, errors.Errorf("resource %v missing installer annotation %v", res, InstallerAnnotationKey)
 	}
 	var installedObject map[string]interface{}
 	if err := json.Unmarshal([]byte(installedConfiguration), &installedObject); err != nil {
@@ -76,7 +76,7 @@ func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstruc
 		annotations = make(map[string]string)
 	}
 
-	annotations[installerAnnotationKey] = installedConfiguration
+	annotations[InstallerAnnotationKey] = installedConfiguration
 	res.SetAnnotations(annotations)
 	return res, nil
 }

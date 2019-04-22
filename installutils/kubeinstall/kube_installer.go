@@ -38,7 +38,6 @@ type Installer interface {
 	ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error
 	PurgeResources(ctx context.Context, withLabels map[string]string) error
 	ListAllResources(ctx context.Context) kuberesource.UnstructuredResources
-	RefreshCache(ctx context.Context) error
 }
 
 type KubeInstaller struct {
@@ -202,8 +201,6 @@ func (r *KubeInstaller) ReconcileResources(ctx context.Context, installNamespace
 	return nil
 }
 
-const InstallerAnnotationKey = "installer.solo.io/last-applied-configuration"
-
 // sets the installation annotation so we can do proper comparison on our objects
 func setInstallationAnnotation(res *unstructured.Unstructured) error {
 	jsn, err := json.Marshal(res)
@@ -216,7 +213,7 @@ func setInstallationAnnotation(res *unstructured.Unstructured) error {
 		annotations = make(map[string]string)
 	}
 
-	annotations[InstallerAnnotationKey] = string(jsn)
+	annotations[kuberesource.InstallerAnnotationKey] = string(jsn)
 	res.SetAnnotations(annotations)
 	return nil
 }
@@ -226,33 +223,13 @@ func setInstallationAnnotation(res *unstructured.Unstructured) error {
 func getInstalledResources(resources kuberesource.UnstructuredResources) (kuberesource.UnstructuredResources, error) {
 	var installed kuberesource.UnstructuredResources
 	for _, res := range resources {
-		res, err := getInstalledResource(res)
+		res, err := kuberesource.GetInstalledResource(res)
 		if err != nil {
 			return nil, err
 		}
 		installed = append(installed, res)
 	}
 	return installed, nil
-}
-
-func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-	installedConfiguration, ok := res.GetAnnotations()[InstallerAnnotationKey]
-	if !ok {
-		return nil, errors.Errorf("resource %v missing installer annotation %v", kuberesource.Key(res), InstallerAnnotationKey)
-	}
-	var installedObject map[string]interface{}
-	if err := json.Unmarshal([]byte(installedConfiguration), &installedObject); err != nil {
-		return nil, err
-	}
-	res.Object = installedObject
-	annotations := res.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
-
-	annotations[InstallerAnnotationKey] = installedConfiguration
-	res.SetAnnotations(annotations)
-	return res, nil
 }
 
 func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace string, desiredResources kuberesource.UnstructuredResources, ownerLabels map[string]string) error {
@@ -519,10 +496,6 @@ func ListAllCachedValues(ctx context.Context, labelKey string, installer Install
 		}
 	}
 	return values
-}
-
-func (r *KubeInstaller) RefreshCache(ctx context.Context) error {
-	return r.cache.Refresh(ctx)
 }
 
 func (r *KubeInstaller) waitForResourceReady(ctx context.Context, res *unstructured.Unstructured) error {
