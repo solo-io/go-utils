@@ -38,6 +38,7 @@ type Installer interface {
 	ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error
 	PurgeResources(ctx context.Context, withLabels map[string]string) error
 	ListAllResources(ctx context.Context) kuberesource.UnstructuredResources
+	RefreshCache(ctx context.Context) error
 }
 
 type KubeInstaller struct {
@@ -518,6 +519,10 @@ func ListAllCachedValues(ctx context.Context, labelKey string, installer Install
 		}
 	}
 	return values
+}
+
+func (r *KubeInstaller) RefreshCache(ctx context.Context) error {
+	return r.cache.Refresh(ctx)
 }
 
 func (r *KubeInstaller) waitForResourceReady(ctx context.Context, res *unstructured.Unstructured) error {
