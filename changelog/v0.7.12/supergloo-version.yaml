@@ -1,0 +1,5 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Add supergloo repo to versionutils
+    issueLink: https://github.com/solo-io/go-utils/issues/136
+
