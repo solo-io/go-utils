@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/solo-io/go-utils/installutils/kubeinstall"
-
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/solo-io/go-utils/contextutils"
 
@@ -52,6 +50,35 @@ func (urs UnstructuredResources) Sort() UnstructuredResources {
 	copy(sorted, urs)
 	sortUnstructured(sorted)
 	return sorted
+}
+
+func getInstalledResourceIfExists(res *unstructured.Unstructured) *unstructured.Unstructured {
+	if installed, err := getInstalledResource(res); err == nil {
+		return installed
+	}
+	return res
+}
+
+var installerAnnotationKey = "installer.solo.io/last-applied-configuration"
+
+func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+	installedConfiguration, ok := res.GetAnnotations()[installerAnnotationKey]
+	if !ok {
+		return nil, errors.Errorf("resource %v missing installer annotation %v", res, installerAnnotationKey)
+	}
+	var installedObject map[string]interface{}
+	if err := json.Unmarshal([]byte(installedConfiguration), &installedObject); err != nil {
+		return nil, err
+	}
+	res.Object = installedObject
+	annotations := res.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	annotations[installerAnnotationKey] = installedConfiguration
+	res.SetAnnotations(annotations)
+	return res, nil
 }
 
 func (urs UnstructuredResources) ByKey() UnstructuredResourcesByKey {
@@ -109,7 +136,7 @@ type ResourceKey struct {
 }
 
 func Key(obj *unstructured.Unstructured) ResourceKey {
-	installed := kubeinstall.GetInstalledResource(obj)
+	installed := getInstalledResourceIfExists(obj)
 	if installed != nil {
 		return ResourceKey{
 			Gvk:       installed.GroupVersionKind(),
