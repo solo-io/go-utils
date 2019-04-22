@@ -234,6 +234,13 @@ func getInstalledResources(resources kuberesource.UnstructuredResources) (kubere
 	return installed, nil
 }
 
+func GetInstalledResource(res *unstructured.Unstructured) *unstructured.Unstructured {
+	if installed, err := getInstalledResource(res); err == nil {
+		return installed
+	}
+	return res
+}
+
 func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 	installedConfiguration, ok := res.GetAnnotations()[installerAnnotationKey]
 	if !ok {

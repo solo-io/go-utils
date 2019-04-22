@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/solo-io/go-utils/installutils/kubeinstall"
+
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/solo-io/go-utils/contextutils"
 
@@ -107,6 +109,14 @@ type ResourceKey struct {
 }
 
 func Key(obj *unstructured.Unstructured) ResourceKey {
+	installed := kubeinstall.GetInstalledResource(obj)
+	if installed != nil {
+		return ResourceKey{
+			Gvk:       installed.GroupVersionKind(),
+			Namespace: installed.GetNamespace(),
+			Name:      installed.GetName(),
+		}
+	}
 	return ResourceKey{
 		Gvk:       obj.GroupVersionKind(),
 		Namespace: obj.GetNamespace(),
