@@ -13,6 +13,7 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30 // indirect
 	github.com/avast/retry-go v2.2.0+incompatible
+	github.com/bxcodec/faker v2.0.1+incompatible // indirect
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
@@ -55,6 +56,7 @@ require (
 	github.com/k0kubun/pp v2.3.0+incompatible
 	github.com/kr/pty v1.1.3 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
+	github.com/mitchellh/go-homedir v1.0.0
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -70,16 +72,16 @@ require (
 	github.com/prometheus/common v0.0.0-20190104105734-b1c43a6df3ae // indirect
 	github.com/prometheus/procfs v0.0.0-20190104112138-b1a0a9a36d74 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
+	github.com/solo-io/solo-kit v0.6.3 // indirect
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/technosophos/moniker v0.0.0-20180509230615-a5dbd03a2245 // indirect
 	go.opencensus.io v0.18.0
 	go.uber.org/zap v1.9.1
-	golang.org/x/net v0.0.0-20181220203305-927f97764cc3 // indirect
+	golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd // indirect
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f
-	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20181221175505-bd9b4fb69e2f // indirect
