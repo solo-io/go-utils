@@ -18,8 +18,9 @@ const (
 	nameConst    = "name"
 	versionConst = "version"
 
-	GlooPkg    = "github.com/solo-io/gloo"
-	SoloKitPkg = "github.com/solo-io/solo-kit"
+	GlooPkg      = "github.com/solo-io/gloo"
+	SoloKitPkg   = "github.com/solo-io/solo-kit"
+	SuperglooPkg = "github.com/solo-io/supergloo"
 )
 
 func PinGitVersion(relativeRepoDir string, version string) error {
