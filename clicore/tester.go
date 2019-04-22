@@ -33,10 +33,6 @@ type CliOutput struct {
 }
 
 // ExecuteCliOutErr is a helper for calling a cobra command within a test
-// handleCommandError is an optional parameter that can be used for replicating the error handler that you use
-// when calling the command from your main file. This overcomes the chicken-and-egg problem of calling os.Exit on
-// CLI errors. Suggestion: duplicate the error handling used when calling command.Execute(), but replace fatal logging
-// with a non-fatal equivalent
 func ExecuteCliOutErr(ct *CliTestConfig) (string, string, error) {
 	stdOut := os.Stdout
 	stdErr := os.Stderr
@@ -54,8 +50,6 @@ func ExecuteCliOutErr(ct *CliTestConfig) (string, string, error) {
 	ct.preparedCmd.SetArgs(strings.Split(ct.TestArgs, " "))
 	commandErr := ct.preparedCmd.Execute()
 	if commandErr != nil {
-		// This error handler has been specified to match the Fatalw handler used in the binary.
-		// With the important difference that it does not call os.Exit.
 		contextutils.LoggerFrom(ct.ctx).Errorw(ct.CommandConfig.RootErrorMessage, zap.Error(commandErr))
 	}
 

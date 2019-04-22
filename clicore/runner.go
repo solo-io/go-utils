@@ -8,9 +8,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type RootCommandFunc func(ctx context.Context, version string) (rootCmd *cobra.Command)
 type CommandConfig struct {
 	Args                string
-	Command             func(context.Context, string) *cobra.Command
+	Command             RootCommandFunc
 	CommandErrorHandler func(error)
 	RootErrorMessage    string
 	OutputModeEnvVar    string

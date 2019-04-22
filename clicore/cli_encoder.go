@@ -1,10 +1,10 @@
-package clicore
+package clilog
 
 import (
 	"sync"
 	"time"
 
-	"github.com/solo-io/go-utils/clicore/internal/clibufferpool"
+	"github.com/solo-io/glooshot/pkg/pregoutils-clilog/internal/clibufferpool"
 
 	"go.uber.org/zap/zapcore"
 
@@ -81,29 +81,11 @@ func (c *cliEncoder) clone() *cliEncoder {
 func (c cliEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	final := c.clone()
 	for _, f := range fields {
-		if f.Key == c.printedKey {
-			final.buf.AppendString(f.String)
+		if f.Key == c.printedKey && f.String != "" {
+			final.buf.AppendString(f.String + "\n")
 		}
 	}
 	ret := final.buf
 	putCliEncoder(final)
 	return ret, nil
 }
-
-//EncodeEntry *Simpler* version:
-// This sufficient for the cli logger.
-// It is unclear if the sync.Pool used above is worth its complexity .
-// Consider swapping out with the simpler form.
-// Keeping as is for now, since it mimics the design of zapcore's built-in encoders
-// and will be a better foundation for future enhancements
-/*
-func (c cliEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
-	buf := &buffer.Buffer{}
-	for _, f := range fields {
-		if f.Key == c.printedKey {
-			buf.AppendString(f.String)
-		}
-	}
-	return buf, nil
-}
-*/

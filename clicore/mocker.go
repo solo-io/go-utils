@@ -20,7 +20,7 @@ func (m *MockWriteSyncer) Sync() error {
 	return nil
 }
 func (m *MockWriteSyncer) Summarize() (string, uint, uint) {
-	return strings.Join(m.inputs, "\n"), m.inputCount, m.syncCount
+	return strings.Join(m.inputs, ""), m.inputCount, m.syncCount
 }
 
 type MockTargets struct {
