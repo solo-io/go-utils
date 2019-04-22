@@ -37,6 +37,14 @@ func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuber
 	if err != nil {
 		return err
 	}
+	currentResources = currentResources.Filter(func(resource *unstructured.Unstructured) bool {
+		installedResource, err := getInstalledResource(resource)
+		if err != nil {
+			return true
+		}
+		*resource = *installedResource
+		return false
+	})
 	c.resources = currentResources.ByKey()
 	return nil
 }
