@@ -1,10 +1,10 @@
-package clilog
+package clicore
 
 import (
 	"sync"
 	"time"
 
-	"github.com/solo-io/glooshot/pkg/pregoutils-clilog/internal/clibufferpool"
+	"github.com/solo-io/go-utils/clicore/internal/clibufferpool"
 
 	"go.uber.org/zap/zapcore"
 
