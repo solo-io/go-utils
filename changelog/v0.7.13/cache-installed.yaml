@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Only cache flattened, installed resources. 
+    issueLink: https://github.com/solo-io/go-utils/issues/138
