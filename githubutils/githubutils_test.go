@@ -13,13 +13,13 @@ import (
 
 var _ = Describe("github utils", func() {
 	var (
-		client   *github.Client
-		ctx      = context.Background()
-		owner    = "solo-io"
-		reponame = "testrepo"
+		client                  *github.Client
+		ctx                     = context.Background()
+		owner                   = "solo-io"
+		reponame                = "testrepo"
 		repoWithoutReleasesName = "testrepo-noreleases"
-		version  = "v0.0.16"
-		ref      = "v0.0.17"
+		version                 = "v0.0.16"
+		ref                     = "v0.0.17"
 	)
 
 	var _ = BeforeEach(func() {
@@ -40,7 +40,7 @@ var _ = Describe("github utils", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(version).To(Equal(versionutils.SemverNilVersionValue))
 		_, err = versionutils.ParseVersion(version)
-		Expect(err).To(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("can get all changelog files", func() {
@@ -68,7 +68,6 @@ var _ = Describe("github utils", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(info.Size()).To(BeNumerically(">", 0))
 	})
-
 
 })
 
