@@ -3,7 +3,7 @@ package githubutils
 import (
 	"context"
 	"fmt"
-	"github.com/solo-io/go-utils/changelogutils"
+	"github.com/solo-io/go-utils/versionutils"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -129,7 +129,7 @@ func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.
 		return release.GetTagName(), nil
 	}
 	// no release tags have been found, so the latest is "version zero"
-	return changelogutils.SemverLowerBound, nil
+	return versionutils.SemverLowerBound, nil
 }
 
 func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
