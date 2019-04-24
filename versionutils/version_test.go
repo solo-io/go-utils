@@ -36,6 +36,7 @@ var _ = Describe("Version", func() {
 		}
 
 		It("works", func() {
+			Expect(matches("v0.0.0", 0, 0, 0)).To(BeTrue())
 			Expect(matches("v0.1.2", 0, 1, 2)).To(BeTrue())
 			Expect(matches("v0.1.2", 0, 1, 3)).To(BeFalse())
 		})
@@ -44,13 +45,6 @@ var _ = Describe("Version", func() {
 			parsed, err := versionutils.ParseVersion("0.1.2")
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(BeEquivalentTo("Tag 0.1.2 is not a valid semver version, must be of the form vX.Y.Z"))
-			Expect(parsed).To(BeNil())
-		})
-
-		It("errors when zero version provided", func() {
-			parsed, err := versionutils.ParseVersion("v0.0.0")
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(BeEquivalentTo("Version v0.0.0 is not greater than v0.0.0"))
 			Expect(parsed).To(BeNil())
 		})
 
@@ -71,7 +65,7 @@ var _ = Describe("Version", func() {
 		It("works", func() {
 			expectResult("v0.1.2", "v0.0.1", true, "")
 			expectResult("v0.0.1", "v0.1.2", false, "")
-			expectResult("v0.0.1", "v0.0.0", false, "Version v0.0.0 is not greater than v0.0.0")
+			expectResult("v0.0.1", "v0.0.0", true, "")
 			expectResult("0.0.2", "v0.0.1", false, "Tag 0.0.2 is not a valid semver version, must be of the form vX.Y.Z")
 			expectResult("v0.0.2", "0.0.1", false, "Tag 0.0.1 is not a valid semver version, must be of the form vX.Y.Z")
 		})
