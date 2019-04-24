@@ -71,6 +71,14 @@ var _ = Describe("Version", func() {
 		})
 	})
 
+	var _ = Context("GetVersionFromTag", func() {
+
+		It("works", func() {
+			Expect(versionutils.GetVersionFromTag("v0.1.2")).To(Equal("0.1.2"))
+			Expect(versionutils.GetVersionFromTag("0.1.2")).To(Equal("0.1.2"))
+		})
+	})
+
 	var _ = Context("IncrementVersion", func() {
 
 		expectResult := func(start *versionutils.Version, breakingChange bool, expected *versionutils.Version) {
