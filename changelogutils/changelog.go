@@ -63,6 +63,9 @@ const (
 	ChangelogDirectory = "changelog"
 	SummaryFile        = "summary.md"
 	ClosingFile        = "closing.md"
+	// SemverLowerBound is the "nil" value for changelog versions
+	// It is not itself a valid version but it allows us to use our semver validation on the v0.0.1 edge case
+	SemverLowerBound = "v0.0.0"
 )
 
 type errorNoVersionFound struct {
