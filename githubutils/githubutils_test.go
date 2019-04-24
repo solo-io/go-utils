@@ -17,6 +17,7 @@ var _ = Describe("github utils", func() {
 		ctx      = context.Background()
 		owner    = "solo-io"
 		reponame = "testrepo"
+		repoWithoutReleasesName = "testrepo-noreleases"
 		version  = "v0.0.16"
 		ref      = "v0.0.17"
 	)
@@ -32,6 +33,14 @@ var _ = Describe("github utils", func() {
 		Expect(err).NotTo(HaveOccurred())
 		_, err = versionutils.ParseVersion(version)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("can get 'latest release version' for repo with no prior releases", func() {
+		version, err := FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repoWithoutReleasesName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(version).To(Equal(versionutils.SemverLowerBound))
+		_, err = versionutils.ParseVersion(version)
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("can get all changelog files", func() {
@@ -59,6 +68,7 @@ var _ = Describe("github utils", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(info.Size()).To(BeNumerically(">", 0))
 	})
+
 
 })
 

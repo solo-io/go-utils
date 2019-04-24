@@ -9,6 +9,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SemverLowerBound is the "nil" value for changelog versions
+// It is not itself a valid version but it allows us to use our semver validation on the v0.0.1 edge case
+const SemverLowerBound = "v0.0.0"
+
 type Version struct {
 	Major int
 	Minor int
