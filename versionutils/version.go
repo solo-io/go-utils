@@ -13,7 +13,7 @@ import (
 // It is not itself a valid version but it allows us to use our semver validation on the v0.0.1 edge case
 const (
 	SemverNilVersionValue = "v0.0.0"
- SemverMinimumVersion = "v0.0.1"
+	SemverMinimumVersion  = "v0.0.1"
 )
 
 type Version struct {
@@ -34,11 +34,17 @@ func (v *Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
-func (greaterEqual *Version) IsGreaterThanOrEqualTo(lesser *Version) bool {
-	if greaterEqual.Patch == lesser.Patch && greaterEqual.Minor == lesser.Minor  && greaterEqual.Major == lesser.Major {
-		return true
+func (greaterEqual *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
+	if greaterEqual == nil {
+		return false, errors.Errorf("cannot compare versions, greater version is nil")
 	}
-	return greaterEqual.IsGreaterThan(lesser)
+	if lesser == nil {
+		return false, errors.Errorf("cannot compare versions, lesser version is nil")
+	}
+	if greaterEqual.Patch == lesser.Patch && greaterEqual.Minor == lesser.Minor && greaterEqual.Major == lesser.Major {
+		return true, nil
+	}
+	return greaterEqual.IsGreaterThan(lesser), nil
 }
 
 func (greater *Version) IsGreaterThan(lesser *Version) bool {
@@ -150,7 +156,11 @@ func ParseVersion(tag string) (*Version, error) {
 		Minor: minor,
 		Patch: patch,
 	}
-	if !version.IsGreaterThanOrEqualTo(&Zero) {
+	isGtEq, err := version.IsGreaterThanOrEqualTo(&Zero)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not compare versions")
+	}
+	if !isGtEq {
 		return nil, errors.Errorf("Version %s is not greater than or equal to v0.0.0", tag)
 	}
 	return version, nil

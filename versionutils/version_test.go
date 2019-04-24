@@ -55,10 +55,26 @@ var _ = Describe("Version", func() {
 		expectResult := func(greater, lesser string, worked bool, err string) {
 			actualWorked, actualErr := versionutils.IsGreaterThanTag(greater, lesser)
 			Expect(actualWorked).To(BeEquivalentTo(worked))
+			greaterVersion, parseGreaterErr := versionutils.ParseVersion(greater)
+			lesserVersion, parseLesserErr := versionutils.ParseVersion(lesser)
+			gteResult, gteError := greaterVersion.IsGreaterThanOrEqualTo(lesserVersion)
 			if err == "" {
 				Expect(actualErr).To(BeNil())
+				Expect(gteResult).To(BeEquivalentTo(worked))
+				Expect(gteError).To(BeNil())
 			} else {
 				Expect(actualErr.Error()).To(BeEquivalentTo(err))
+			}
+			if parseGreaterErr == nil && parseLesserErr == nil {
+				Expect(greaterVersion.IsGreaterThanOrEqualTo(lesserVersion)).To(BeEquivalentTo(worked))
+			}
+			if parseGreaterErr != nil {
+				Expect(parseGreaterErr.Error()).To(BeEquivalentTo(err))
+				Expect(gteError.Error()).To(BeEquivalentTo("cannot compare versions, greater version is nil"))
+			}
+			if parseLesserErr != nil {
+				Expect(parseLesserErr.Error()).To(BeEquivalentTo(err))
+				Expect(gteError.Error()).To(BeEquivalentTo("cannot compare versions, lesser version is nil"))
 			}
 		}
 
