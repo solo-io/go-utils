@@ -38,7 +38,7 @@ var _ = Describe("github utils", func() {
 	It("can get 'latest release version' for repo with no prior releases", func() {
 		version, err := FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repoWithoutReleasesName)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(version).To(Equal(versionutils.SemverLowerBound))
+		Expect(version).To(Equal(versionutils.SemverNilVersionValue))
 		_, err = versionutils.ParseVersion(version)
 		Expect(err).To(HaveOccurred())
 	})
