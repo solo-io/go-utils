@@ -129,7 +129,7 @@ func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.
 		return release.GetTagName(), nil
 	}
 	// no release tags have been found, so the latest is "version zero"
-	return versionutils.SemverLowerBound, nil
+	return versionutils.SemverNilVersionValue, nil
 }
 
 func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, repo string) (string, error) {

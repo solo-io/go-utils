@@ -32,7 +32,8 @@ var _ = Describe("ChangelogTest", func() {
 			defer os.RemoveAll(tmpDir)
 			changelogDir := filepath.Join(tmpDir, changelogutils.ChangelogDirectory)
 			Expect(os.Mkdir(changelogDir, 0700)).To(BeNil())
-			Expect(createSubdirs(changelogDir, "v0.0.1", "v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
+			Expect(getProposedTag("v0.0.0", tmpDir, "v0.0.1")).To(BeNil())
+			Expect(createSubdirs(changelogDir, "v0.0.1","v0.0.2", "v0.0.3", "v0.0.4")).To(BeNil())
 			Expect(getProposedTag("v0.0.3", tmpDir, "v0.0.4")).To(BeNil())
 			Expect(changelogutils.IsMultipleVersionsFoundError(getProposedTag("v0.0.2", tmpDir, ""))).To(BeTrue())
 			Expect(changelogutils.IsNoVersionFoundError(getProposedTag("v0.0.4", tmpDir, ""))).To(BeTrue())
@@ -178,8 +179,9 @@ var _ = Describe("ChangelogTest", func() {
 		})
 
 		It("can compute changelog", func() {
-			tag := "v0.0.2"
-			changelog := getChangelog(tag, "blah", "closing",
+			latestTag := "v0.0.1"
+			newTag := "v0.0.2"
+			changelog := getChangelog(newTag, "blah", "closing",
 				getChangelogFile(
 					getEntry(changelogutils.FIX, "fixes foo", "foo"),
 					getEntry(changelogutils.FIX, "fixes bar", "bar"),
@@ -187,7 +189,23 @@ var _ = Describe("ChangelogTest", func() {
 				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")),
 				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo3", "foo3")))
 			writeChangelog(changelog)
-			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, latestTag, newTag, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
+		})
+		
+		It("can compute changelog for first release", func() {
+			latestTag := "v0.0.0"
+			newTag := "v0.0.1"
+			changelog := getChangelog(newTag, "blah", "closing",
+				getChangelogFile(
+					getEntry(changelogutils.FIX, "fixes foo", "foo"),
+					getEntry(changelogutils.FIX, "fixes bar", "bar"),
+					getEntry(changelogutils.NEW_FEATURE, "adds baz", "baz")),
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo2", "foo2")),
+				getChangelogFile(getEntry(changelogutils.NON_USER_FACING, "fixes foo3", "foo3")))
+			writeChangelog(changelog)
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, latestTag, newTag, "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
 		})

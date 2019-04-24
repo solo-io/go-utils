@@ -11,7 +11,10 @@ import (
 
 // SemverLowerBound is the "nil" value for changelog versions
 // It is not itself a valid version but it allows us to use our semver validation on the v0.0.1 edge case
-const SemverLowerBound = "v0.0.0"
+const (
+	SemverNilVersionValue = "v0.0.0"
+ SemverMinimumVersion = "v0.0.1"
+)
 
 type Version struct {
 	Major int
@@ -29,6 +32,13 @@ func NewVersion(major, minor, patch int) *Version {
 
 func (v *Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
+}
+
+func (greaterEqual *Version) IsGreaterThanOrEqualTo(lesser *Version) bool {
+	if greaterEqual.Patch == lesser.Patch && greaterEqual.Minor == lesser.Minor  && greaterEqual.Major == lesser.Major {
+		return true
+	}
+	return greaterEqual.IsGreaterThan(lesser)
 }
 
 func (greater *Version) IsGreaterThan(lesser *Version) bool {
@@ -140,8 +150,8 @@ func ParseVersion(tag string) (*Version, error) {
 		Minor: minor,
 		Patch: patch,
 	}
-	if !version.IsGreaterThan(&Zero) {
-		return nil, errors.Errorf("Version %s is not greater than v0.0.0", tag)
+	if !version.IsGreaterThanOrEqualTo(&Zero) {
+		return nil, errors.Errorf("Version %s is not greater than or equal to v0.0.0", tag)
 	}
 	return version, nil
 }
