@@ -54,6 +54,16 @@ func GetTag(version string) string {
 	return "v" + version
 }
 
+func GetVersionFromTag(shouldBeAVersion string) (string, error) {
+	definiteTag := GetTag(shouldBeAVersion)
+	version, err := ParseVersion(definiteTag)
+	if err != nil {
+		return "", err
+	}
+	versionString := version.String()
+	return versionString[1:], nil
+}
+
 func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 	for _, v := range tomlTree {
 		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
