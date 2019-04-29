@@ -1,0 +1,253 @@
+---
+# Source: sm-marketplace/templates/0-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sm-marketplace
+  labels:
+    app: sm-marketplace
+  annotations:
+    "helm.sh/hook": pre-install
+---
+# Source: sm-marketplace/templates/11-operator-configmap.yaml
+# configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operator-config
+  namespace: sm-marketplace
+  labels:
+    app: sm-marketplace
+    sm-marketplace: operator
+data:
+  refreshRate: 1s
+---
+# Source: sm-marketplace/templates/5-apiserver-configmap.yaml
+# configmap
+# File must end with newline
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apiserver-config
+  namespace: sm-marketplace
+  labels:
+    app: sm-marketplace
+    sm-marketplace: apiserver
+data:
+  config.yaml: |
+    registries:
+    - name: default
+      remoteYaml:
+        url: https://storage.googleapis.com/sm-marketplace-registry/specs.yaml
+
+---
+# Source: sm-marketplace/templates/1-serviceaccount.yaml
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: mesh-discovery
+  labels:
+    app: sm-marketplace
+    sm-marketplace: mesh-discovery
+  namespace: sm-marketplace
+---
+# Source: sm-marketplace/templates/100-sm-marketplace-crds.yaml
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: applicationstates.marketplace.solo.io
+  annotations:
+    "helm.sh/hook": crd-install
+  labels:
+    app: sm-marketplace
+spec:
+  group: marketplace.solo.io
+  names:
+    kind: ApplicationState
+    listKind: ApplicationStateList
+    plural: applicationstates
+    shortNames:
+      - appstate
+  scope: Namespaced
+  version: v1
+---
+# Source: sm-marketplace/templates/17-mesh-discovery-clusterrole.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: mesh-discovery
+  labels:
+    app: sm-marketplace
+    sm-marketplace: mesh-discovery
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "pods", "services", "secrets", "endpoints", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["authentication.istio.io"]
+    resources: ["meshpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "create"]
+
+---
+# Source: sm-marketplace/templates/23-clusterrolebinding-sm-marketplace.yaml
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: smm-default-role-binding
+  labels:
+    app: sm-marketplace
+    sm-marketplace: rbac
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: sm-marketplace
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: mesh-discovery-role-binding
+  labels:
+    app: sm-marketplace
+    sm-marketplace: mesh-discovery
+subjects:
+  - kind: ServiceAccount
+    name: mesh-discovery
+    namespace: sm-marketplace
+roleRef:
+  kind: ClusterRole
+  name: mesh-discovery
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: sm-marketplace/templates/4-apiserver-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: sm-marketplace
+    sm-marketplace: apiserver
+  name: smm-apiserver
+  namespace: sm-marketplace
+spec:
+  ports:
+  - name: static
+    port: 8080
+    protocol: TCP
+  selector:
+    app: sm-marketplace
+    sm-marketplace: apiserver
+  type: NodePort
+
+---
+# Source: sm-marketplace/templates/10-operator-deployment.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: sm-marketplace
+    sm-marketplace: operator
+  name: smm-operator
+  namespace: sm-marketplace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sm-marketplace
+      sm-marketplace: operator
+  template:
+    metadata:
+      labels:
+        app: sm-marketplace
+        sm-marketplace: operator
+    spec:
+      containers:
+      - image: "quay.io/solo-io/smm-operator:dev"
+        imagePullPolicy: IfNotPresent
+        name: smm-operator
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+---
+# Source: sm-marketplace/templates/15-mesh-discovery-deployment.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: sm-marketplace
+    sm-marketplace: mesh-discovery
+  name: mesh-discovery
+  namespace: sm-marketplace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sm-marketplace
+      sm-marketplace: mesh-discovery
+  template:
+    metadata:
+      labels:
+        app: sm-marketplace
+        sm-marketplace: mesh-discovery
+    spec:
+      containers:
+        - image: "quay.io/solo-io/mesh-discovery:0.3.13"
+          imagePullPolicy: IfNotPresent
+          name: mesh-discovery
+          args: ["--disable-config"]
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+---
+# Source: sm-marketplace/templates/3-apiserver-deployment.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: sm-marketplace
+    sm-marketplace: apiserver
+  name: smm-apiserver
+  namespace: sm-marketplace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sm-marketplace
+      sm-marketplace: apiserver
+  template:
+    metadata:
+      labels:
+        app: sm-marketplace
+        sm-marketplace: apiserver
+    spec:
+      containers:
+      - image: "quay.io/solo-io/smm-apiserver:dev"
+        imagePullPolicy: IfNotPresent
+        name: smm-apiserver
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: GRPC_PORT
+            value: "10101"
+      - image: "quay.io/solo-io/smm-ui:dev"
+        imagePullPolicy: IfNotPresent
+        name: smm-ui
+      - image: "quay.io/solo-io/smm-envoy:dev"
+        imagePullPolicy: IfNotPresent
+        name: smm-envoy
+
+

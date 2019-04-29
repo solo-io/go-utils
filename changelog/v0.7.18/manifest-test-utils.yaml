@@ -1,0 +1,8 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Distribute a library for testing installation manifests generated from Helm charts.
+    issueLink: https://github.com/solo-io/go-utils/issues/146
+  - type: NON_USER_FACING
+    description: Some readme cleanup.
+    issueLink: https://github.com/solo-io/go-utils/issues/64
+    resolvesIssue: false

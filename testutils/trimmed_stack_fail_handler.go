@@ -44,15 +44,19 @@ func trimVendorStack(stack []byte) string {
 var (
 	funcRuntimeDebugRegex = &regexp.Regexp{}
 	fileVendorRegex       = &regexp.Regexp{}
+	fileGoModRegex       = &regexp.Regexp{}
 	fileSuiteRegex        = &regexp.Regexp{}
 	fileGoTestLibRegex    = &regexp.Regexp{}
+	fileSelfDescription    = &regexp.Regexp{}
 )
 
 func init() {
 	funcRuntimeDebugRegex = regexp.MustCompile("runtime/debug")
 	fileVendorRegex = regexp.MustCompile("vendor")
+	fileGoModRegex = regexp.MustCompile("/go/pkg/mod/")
 	fileSuiteRegex = regexp.MustCompile("suite_test.go")
 	fileGoTestLibRegex = regexp.MustCompile("src/testing/testing.go")
+	fileSelfDescription = regexp.MustCompile("solo-io/go-utils/testutils")
 }
 
 func evaluateStackPair(functionLine, fileLine string, output *string, skipCount *int) {
@@ -61,8 +65,10 @@ func evaluateStackPair(functionLine, fileLine string, output *string, skipCount 
 		skip = true
 	}
 	if fileVendorRegex.MatchString(fileLine) ||
+		fileGoModRegex.MatchString(fileLine) ||
 		fileSuiteRegex.MatchString(fileLine) ||
-		fileGoTestLibRegex.MatchString(fileLine) {
+		fileGoTestLibRegex.MatchString(fileLine) ||
+		fileSelfDescription.MatchString(fileLine) {
 		skip = true
 	}
 	if skip {

@@ -1,17 +1,22 @@
 package kuberesource
 
 import (
+	"k8s.io/helm/pkg/tiller"
 	"sort"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/helm/pkg/tiller"
 )
+
+var customInstallOrder = func() []string{
+	// insert MutatingWebhookConfiguration after Namespace
+	return append(tiller.InstallOrder[:1], append([]string{"MutatingWebhookConfiguration"}, tiller.InstallOrder[1:]...)...)
+}()
 
 // set the install order based on
 // Helm's list
 var installOrder = func() map[string]int {
 	installOrderMapping := make(map[string]int)
-	for installValue, kind := range tiller.InstallOrder {
+	for installValue, kind := range customInstallOrder {
 		installOrderMapping[kind] = installValue + 1 // add 1, the 0 value is unknown type
 	}
 	return installOrderMapping

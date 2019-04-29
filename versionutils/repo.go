@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/pelletier/go-toml"
@@ -54,6 +55,16 @@ func GetTag(version string) string {
 	return "v" + version
 }
 
+func GetVersionFromTag(shouldBeAVersion string) (string, error) {
+	definiteTag := GetTag(shouldBeAVersion)
+	version, err := ParseVersion(definiteTag)
+	if err != nil {
+		return "", err
+	}
+	versionString := version.String()
+	return versionString[1:], nil
+}
+
 func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 	for _, v := range tomlTree {
 		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
@@ -64,7 +75,11 @@ func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 }
 
 func ParseToml() ([]*toml.Tree, error) {
-	config, err := toml.LoadFile(gopkgToml)
+	return ParseTomlFromDir("")
+}
+
+func ParseTomlFromDir(relativeDir string) ([]*toml.Tree, error) {
+	config, err := toml.LoadFile(filepath.Join(relativeDir, gopkgToml))
 	if err != nil {
 		return nil, err
 	}

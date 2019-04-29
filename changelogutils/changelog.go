@@ -165,6 +165,10 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 // Will return an error if there is no version, or multiple versions, larger than the latest tag,
 // according to semver
 func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string, error) {
+	// handle special case where this is the first release
+	if latestTag == versionutils.SemverNilVersionValue {
+		return versionutils.SemverMinimumVersion, nil
+	}
 	changelogPath := filepath.Join(changelogParentPath, ChangelogDirectory)
 	subDirs, err := afero.ReadDir(fs, changelogPath)
 	if err != nil {

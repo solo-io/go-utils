@@ -13,12 +13,13 @@ import (
 
 var _ = Describe("github utils", func() {
 	var (
-		client   *github.Client
-		ctx      = context.Background()
-		owner    = "solo-io"
-		reponame = "testrepo"
-		version  = "v0.0.16"
-		ref      = "v0.0.17"
+		client                  *github.Client
+		ctx                     = context.Background()
+		owner                   = "solo-io"
+		reponame                = "testrepo"
+		repoWithoutReleasesName = "testrepo-noreleases"
+		version                 = "v0.0.16"
+		ref                     = "v0.0.17"
 	)
 
 	var _ = BeforeEach(func() {
@@ -30,6 +31,14 @@ var _ = Describe("github utils", func() {
 	It("can get latest release version", func() {
 		version, err := FindLatestReleaseTag(ctx, client, owner, reponame)
 		Expect(err).NotTo(HaveOccurred())
+		_, err = versionutils.ParseVersion(version)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("can get 'latest release version' for repo with no prior releases", func() {
+		version, err := FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repoWithoutReleasesName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(version).To(Equal(versionutils.SemverNilVersionValue))
 		_, err = versionutils.ParseVersion(version)
 		Expect(err).NotTo(HaveOccurred())
 	})
