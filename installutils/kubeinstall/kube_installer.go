@@ -338,10 +338,10 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 				}); err != nil && !kubeerrs.IsNotFound(err) {
 					return errors.Wrapf(err, "deleting  %v", resKey)
 				}
+				r.cache.Delete(res)
 				if err := r.postDelete(res); err != nil {
 					return err
 				}
-				r.cache.Delete(res)
 				return nil
 			})
 		}
@@ -374,13 +374,13 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 				if err := retry.Do(func() error { return r.client.Create(ctx, res.DeepCopy()) }); err != nil {
 					return errors.Wrapf(err, "creating %v", resKey)
 				}
+				r.cache.Set(res)
 				if err := r.postCreate(res); err != nil {
 					return err
 				}
 				if err := r.waitForResourceReady(ctx, res); err != nil {
 					return errors.Wrapf(err, "waiting for resource to become ready %v", resKey)
 				}
-				r.cache.Set(res)
 				return nil
 			})
 		}
