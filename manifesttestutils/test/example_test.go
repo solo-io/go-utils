@@ -143,6 +143,7 @@ var _ = Describe("Helm Test", func() {
 
 		It("has a deployment", func() {
 			operatorContainer := GetQuayContainerSpec(image, version, GetPodNamespaceEnvVar())
+			operatorContainer.PullPolicy = v1.PullAlways
 			rb := ResourceBuilder{
 				Name:       image,
 				Namespace:  namespace,

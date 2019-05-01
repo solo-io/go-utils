@@ -417,10 +417,10 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 				if err := retry.Do(func() error { return r.client.Update(ctx, patchedServerResource) }); err != nil {
 					return errors.Wrapf(err, "updating %v", resKey)
 				}
+				r.cache.Set(desired)
 				if err := r.waitForResourceReady(ctx, desired); err != nil {
 					return errors.Wrapf(err, "waiting for resource to become ready %v", resKey)
 				}
-				r.cache.Set(desired)
 				return nil
 			})
 		}
