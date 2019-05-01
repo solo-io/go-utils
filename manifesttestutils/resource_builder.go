@@ -24,10 +24,11 @@ type ResourceBuilder struct {
 }
 
 type ContainerSpec struct {
-	Image   string
-	Name    string
-	Args    []string
-	EnvVars []v1.EnvVar
+	Image      string
+	PullPolicy v1.PullPolicy
+	Name       string
+	Args       []string
+	EnvVars    []v1.EnvVar
 }
 
 type ServiceSpec struct {
@@ -189,9 +190,12 @@ func (b *ResourceBuilder) getContainer(spec ContainerSpec) v1.Container {
 	if spec.Name == "" {
 		spec.Name = b.Name
 	}
+	if spec.PullPolicy == "" {
+		spec.PullPolicy = v1.PullIfNotPresent
+	}
 	return v1.Container{
 		Image:           spec.Image,
-		ImagePullPolicy: v1.PullIfNotPresent,
+		ImagePullPolicy: spec.PullPolicy,
 		Name:            spec.Name,
 		Args:            spec.Args,
 		Env:             spec.EnvVars,
