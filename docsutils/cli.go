@@ -3,6 +3,13 @@ package docsutils
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/google/go-github/github"
 	"github.com/onsi/ginkgo"
 	"github.com/solo-io/go-utils/changelogutils"
@@ -11,13 +18,6 @@ import (
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
-	"log"
-	"math/rand"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const (
