@@ -75,9 +75,9 @@ var _ = Describe("KubeInstaller", func() {
 		kube.WaitForNamespaceTeardown(ns)
 		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
 	})
-	// TODO(EItanya): rewrite this test so that it uses a non-
+
 	Context("updating resource from cache", func() {
-		It("does nothing if the resource hasnt changed", func() {
+		It("does nothing if the resource hasn't changed", func() {
 			unique := "unique"
 			randomLabel := testutils.RandString(8)
 			ownerLabels := map[string]string{
