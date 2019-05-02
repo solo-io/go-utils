@@ -170,7 +170,7 @@ spec:
     spec:
       containers:
       - image: "quay.io/solo-io/smm-operator:dev"
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: smm-operator
         env:
           - name: POD_NAMESPACE

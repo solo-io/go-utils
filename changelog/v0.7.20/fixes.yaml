@@ -1,0 +1,9 @@
+changelog:
+  - type: FIX
+    description: Install cache now tracks resources even if they fail to become ready.
+    issueLink: https://github.com/solo-io/go-utils/issues/152
+  - type: NON_USER_FACING
+    description: The `testutils.MustMake` utility now prints make output if the command fails.
+  - type: NEW_FEATURE
+    description: Allow customizing pull policy when testing containers.
+    issueLink: https://github.com/solo-io/go-utils/issues/151
