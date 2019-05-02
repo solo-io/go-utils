@@ -8,7 +8,7 @@ import (
 	"github.com/solo-io/go-utils/kubeinstallutils"
 	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/solo-io/go-utils/testutils"
-	kube2 "github.com/solo-io/go-utils/testutils/kube"
+	"github.com/solo-io/go-utils/testutils/kube"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -18,19 +18,19 @@ import (
 var _ = Describe("InstallKubeManifest", func() {
 	var (
 		namespace string
-		kube kubernetes.Interface
+		kubeClient kubernetes.Interface
 		)
 	BeforeEach(func() {
 		if os.Getenv("RUN_KUBE_TESTS") != "1" {
 			Skip("use RUN_KUBE_TESTS to run this test")
 		}
 		namespace = "install-kube-manifest-" + testutils.RandString(8)
-		kube = kube2.MustKubeClient()
-		err := kubeutils.CreateNamespacesInParallel(kube, namespace)
+		kubeClient = kube.MustKubeClient()
+		err := kubeutils.CreateNamespacesInParallel(kubeClient, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 	AfterEach(func() {
-		err := kubeutils.DeleteNamespacesInParallelBlocking(kube, namespace)
+		err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 	It("installs arbitrary kube manifests", func() {
