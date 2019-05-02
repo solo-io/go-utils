@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Simplify proto equivalence checks and provide enhanced error message on failure.
+    issueLink: https://github.com/solo-io/go-utils/issues/148
