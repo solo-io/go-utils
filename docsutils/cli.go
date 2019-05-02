@@ -3,21 +3,21 @@ package docsutils
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/github"
-	"github.com/onsi/ginkgo"
-	"github.com/solo-io/go-utils/changelogutils"
-	"github.com/solo-io/go-utils/errors"
-	"github.com/solo-io/go-utils/githubutils"
-	"github.com/solo-io/go-utils/logger"
-	"github.com/solo-io/go-utils/versionutils"
-	"github.com/spf13/afero"
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/google/go-github/github"
+	"github.com/onsi/ginkgo"
+	"github.com/solo-io/go-utils/changelogutils"
+	"github.com/solo-io/go-utils/errors"
+	"github.com/solo-io/go-utils/githubutils"
+	"github.com/solo-io/go-utils/log"
+	"github.com/solo-io/go-utils/versionutils"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -342,7 +342,7 @@ func gitPush(branch string) error {
 
 func prepareGitCmd(dir string, args ...string) *exec.Cmd {
 	cmd := exec.Command("git", args...)
-	logger.Debugf("git %v", cmd.Args)
+	log.Debugf("git %v", cmd.Args)
 	cmd.Env = os.Environ()
 	// disable DEBUG=1 from getting through to kube
 	cmd.Stdout = ginkgo.GinkgoWriter
@@ -398,7 +398,7 @@ func replaceApiDirectories(product, docsParentPath string, paths ...string) erro
 
 func copyRecursive(from, to string) error {
 	cmd := exec.Command("cp", "-r", from, to)
-	logger.Debugf("cp %v", cmd.Args)
+	log.Debugf("cp %v", cmd.Args)
 	cmd.Env = os.Environ()
 	// disable DEBUG=1 from getting through to kube
 	cmd.Stdout = ginkgo.GinkgoWriter

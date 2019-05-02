@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/solo-io/go-utils/errors"
-	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/testutils/exec"
 	"k8s.io/helm/pkg/repo"
 )
@@ -109,7 +109,7 @@ func (h *SoloTestHelper) ChartVersion() string {
 
 // Installs Gloo (and, optionally, the test runner)
 func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration) error {
-	logger.Printf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
+	log.Printf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
 		"install", deploymentType,
@@ -133,14 +133,14 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 
 func (h *SoloTestHelper) UninstallGloo() error {
 	if h.TestRunner != nil {
-		logger.Debugf("terminating %s...", testrunnerName)
+		log.Debugf("terminating %s...", testrunnerName)
 		if err := h.TestRunner.Terminate(); err != nil {
 			// Just log a warning, we don't want to fail
-			logger.Warnf("error terminating %s", testrunnerName)
+			log.Warnf("error terminating %s", testrunnerName)
 		}
 	}
 
-	logger.Printf("uninstalling gloo...")
+	log.Printf("uninstalling gloo...")
 	return exec.RunCommand(h.RootDir, true,
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace, "--delete-namespace",
 	)
@@ -155,7 +155,7 @@ func getChartVersion(config TestConfig) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "parsing Helm index file")
 	}
-	logger.Printf("found Helm index file at: %s", helmIndexFile)
+	log.Printf("found Helm index file at: %s", helmIndexFile)
 
 	// Read and return version from helm index file
 	if chartVersions, ok := helmIndex.Entries[config.HelmChartName]; !ok {
@@ -164,7 +164,7 @@ func getChartVersion(config TestConfig) (string, error) {
 		return "", errors.Errorf("expected a single entry with name [%s], found: %v", config.HelmChartName, len(chartVersions))
 	} else {
 		version := chartVersions[0].Version
-		logger.Printf("version of [%s] Helm chart is: %s", config.HelmChartName, version)
+		log.Printf("version of [%s] Helm chart is: %s", config.HelmChartName, version)
 		return version, nil
 	}
 }

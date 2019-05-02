@@ -1,0 +1,4 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: Finishes moving utils into go-utils. Renames logger to log to keep parity with solo-kit.
+    issueLink: https://github.com/solo-io/go-utils/issues/155

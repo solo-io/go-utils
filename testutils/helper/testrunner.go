@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/log"
 
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/kubeutils"
@@ -115,16 +115,16 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 	if err := testutils.WaitPodsRunning(ctx, time.Second, t.namespace, "gloo="+testrunnerName); err != nil {
 		return err
 	}
-	logger.Printf("deployed %s", testrunnerName)
+	log.Printf("deployed %s", testrunnerName)
 
 	go func() {
 		start := time.Now()
-		logger.Debugf("starting http server listening on port %v", TestRunnerPort)
+		log.Debugf("starting http server listening on port %v", TestRunnerPort)
 		// This command start an http SimpleHttpServer and blocks until the server terminates
 		if _, err := t.Exec("python", "-m", "SimpleHTTPServer", fmt.Sprintf("%v", TestRunnerPort)); err != nil {
 			// if an error happened after 5 seconds, it's probably not an error.. just the pod terminating.
 			if time.Now().Sub(start).Seconds() < 5.0 {
-				logger.Warnf("failed to start HTTP Server in Test Runner: %v", err)
+				log.Warnf("failed to start HTTP Server in Test Runner: %v", err)
 			}
 		}
 	}()
