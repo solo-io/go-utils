@@ -3,7 +3,7 @@ package protoutils
 import (
 	"testing"
 
-	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/log"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,6 +11,6 @@ import (
 
 func TestProtoutil(t *testing.T) {
 	RegisterFailHandler(Fail)
-	logger.DefaultOut = GinkgoWriter
+	log.DefaultOut = GinkgoWriter
 	RunSpecs(t, "Protoutil Suite")
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/log"
 )
 
 type CurlOpts struct {
@@ -45,10 +45,10 @@ func (t *TestRunner) CurlEventuallyShouldRespond(opts CurlOpts, substr string, g
 		default:
 			break
 		case <-tick:
-			logger.GreyPrintf("running: %v\nwant %v\nhave: %s", opts, substr, res)
+			log.GreyPrintf("running: %v\nwant %v\nhave: %s", opts, substr, res)
 		}
 		if strings.Contains(res, substr) {
-			logger.GreyPrintf("success: %v", res)
+			log.GreyPrintf("success: %v", res)
 		}
 		return res
 	}, timeout, "5s").Should(gomega.ContainSubstring(substr))
@@ -99,6 +99,6 @@ func (t *TestRunner) Curl(opts CurlOpts) (string, error) {
 		service = "test-ingress"
 	}
 	args = append(args, fmt.Sprintf("%v://%s:%v%s", protocol, service, port, opts.Path))
-	logger.Printf("running: %v", strings.Join(args, " "))
+	log.Printf("running: %v", strings.Join(args, " "))
 	return t.Exec(args...)
 }

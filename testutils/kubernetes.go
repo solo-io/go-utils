@@ -9,12 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/solo-io/go-utils/logger"
+	"github.com/solo-io/go-utils/log"
 
 	"github.com/onsi/ginkgo"
 	"github.com/pkg/errors"
 )
 
+// Deprecated: this function is incredibly slow, use CreateNamespacesInParallel instead
 func SetupKubeForTest(namespace string) error {
 	context := os.Getenv("KUBECTL_CONTEXT")
 	if context == "" {
@@ -32,6 +33,8 @@ func SetupKubeForTest(namespace string) error {
 	return Kubectl("create", "namespace", namespace)
 }
 
+
+// Deprecated: this function is incredibly slow, use DeleteNamespacesInParallelBlocking instead
 func TeardownKube(namespace string) error {
 	return Kubectl("delete", "namespace", namespace)
 }
@@ -52,7 +55,7 @@ func Kubectl(args ...string) error {
 	}
 	cmd.Stdout = ginkgo.GinkgoWriter
 	cmd.Stderr = ginkgo.GinkgoWriter
-	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
+	log.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	return cmd.Run()
 }
 
@@ -66,7 +69,7 @@ func KubectlOut(args ...string) (string, error) {
 			break
 		}
 	}
-	logger.Debugf("running: %s", strings.Join(cmd.Args, " "))
+	log.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("%s (%v)", out, err)
@@ -87,7 +90,7 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
-	logger.Debugf("async running: %s", strings.Join(cmd.Args, " "))
+	log.Debugf("async running: %s", strings.Join(cmd.Args, " "))
 	err := cmd.Start()
 	if err != nil {
 		err = fmt.Errorf("%s (%v)", buf.Bytes(), err)
@@ -126,7 +129,7 @@ func WaitPodsRunning(ctx context.Context, interval time.Duration, namespace stri
 func WaitPodStatus(ctx context.Context, interval time.Duration, namespace, label, status string, finished func(output string) bool) error {
 	tick := time.Tick(interval)
 	deadline, _ := ctx.Deadline()
-	logger.Debugf("waiting till %v for pod %v to be %v...", deadline, label, status)
+	log.Debugf("waiting till %v for pod %v to be %v...", deadline, label, status)
 	for {
 		select {
 		case <-ctx.Done():

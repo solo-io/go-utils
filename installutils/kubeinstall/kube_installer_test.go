@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/onsi/ginkgo/config"
+	"github.com/solo-io/go-utils/testutils/clusterlock"
 	kubev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -43,6 +46,7 @@ var (
 var _ = Describe("KubeInstaller", func() {
 	var (
 		ns string
+		lock *clusterlock.TestClusterLocker
 	)
 	BeforeEach(func() {
 		kubeClient = kube.MustKubeClient()
@@ -52,17 +56,31 @@ var _ = Describe("KubeInstaller", func() {
 			kube.WaitForNamespaceTeardown(ns)
 		}
 		ns = "test" + testutils.RandString(5)
-		testutils.SetupKubeForTest(ns)
+		err := kubeutils.CreateNamespacesInParallel(kubeClient, ns)
+		Expect(err).NotTo(HaveOccurred())
+
+		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
+		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
+			IdPrefix: idPrefix,
+		})
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
 	})
 	AfterEach(func() {
-		testutils.TeardownKube(ns)
+		err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, ns)
+		Expect(err).NotTo(HaveOccurred())
 		kube.TeardownClusterResourcesWithPrefix(kubeClient, "istio")
 		kube.TeardownClusterResourcesWithPrefix(kubeClient, "prometheus")
 		kube.WaitForNamespaceTeardown(ns)
+		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
 	})
+	// TODO(EItanya): rewrite this test so that it uses a non-
 	Context("updating resource from cache", func() {
 		It("does nothing if the resource hasnt changed", func() {
-
+			ownerLabels := map[string]string{
+				"unique": "label",
+			}
 			// cache a resource
 			cache := NewCache()
 			cache.access.Unlock()
@@ -70,11 +88,16 @@ var _ = Describe("KubeInstaller", func() {
 				grafanaCfg := &unstructured.Unstructured{}
 				err := json.Unmarshal([]byte(fmt.Sprintf(`{"apiVersion":"v1","data":{"dashboardproviders.yaml":"apiVersion:1\nproviders:\n- disableDeletion: false\n  folder: istio\n  name: istio\n  options:\n    path:/var/lib/grafana/dashboards/istio\n  orgId: 1\n  type: file\n","datasources.yaml":"apiVersion:1\ndatasources:\n- access: proxy\n  editable: true\n  isDefault: true\n  jsonData:\n    timeInterval:5s\n  name: Prometheus\n  orgId: 1\n  type: prometheus\n  url: http://prometheus:9090\n"},"kind":"ConfigMap","metadata":{"labels":{"app":"istio-grafana","chart":"grafana-1.0.6","heritage":"Tiller","istio":"grafana","release":"istio","v1-install":"supergloo-system.istio"},"name":"istio-grafana","namespace":"%v"}}`, ns)), &grafanaCfg.Object)
 				Expect(err).NotTo(HaveOccurred())
+
+				labels := grafanaCfg.GetLabels()
+				labels["unique"] = "label"
+				grafanaCfg.SetLabels(labels)
 				err = setInstallationAnnotation(grafanaCfg)
 				Expect(err).NotTo(HaveOccurred())
 				return grafanaCfg
 			}()
 			cache.resources = make(kuberesource.UnstructuredResourcesByKey)
+
 			cache.Set(resource.DeepCopy())
 
 			resource.SetAnnotations(nil)
@@ -92,7 +115,7 @@ var _ = Describe("KubeInstaller", func() {
 			inst, err := NewKubeInstaller(restCfg, cache, nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = inst.ReconcileResources(context.TODO(), ns, kuberesource.UnstructuredResources{resource}, nil)
+			err = inst.ReconcileResources(context.TODO(), ns, kuberesource.UnstructuredResources{resource}, ownerLabels)
 			Expect(err).NotTo(HaveOccurred())
 
 			afterReconcile := resource.DeepCopy()
@@ -106,7 +129,7 @@ var _ = Describe("KubeInstaller", func() {
 			an["hi"] = "bye"
 			resource.SetAnnotations(an)
 
-			err = inst.ReconcileResources(context.TODO(), ns, kuberesource.UnstructuredResources{resource}, nil)
+			err = inst.ReconcileResources(context.TODO(), ns, kuberesource.UnstructuredResources{resource}, ownerLabels)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = dynamicClient.Get(context.TODO(), client.ObjectKey{Name: afterReconcile.GetName(), Namespace: afterReconcile.GetNamespace()}, afterReconcile)
