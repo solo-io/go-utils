@@ -22,7 +22,7 @@ steps:
     env:
       - 'RUN_KUBE_TESTS=1'
     secretEnv: ['GITHUB_TOKEN']
-    args: ['-r', '-p', '-v']
+    args: ['-r', '-p']
 
 
 secrets:
