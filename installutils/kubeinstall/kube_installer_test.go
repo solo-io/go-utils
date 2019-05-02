@@ -59,7 +59,7 @@ var _ = Describe("KubeInstaller", func() {
 		err := kubeutils.CreateNamespacesInParallel(kubeClient, ns)
 		Expect(err).NotTo(HaveOccurred())
 
-		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
+		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
 		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
 			IdPrefix: idPrefix,
 		})
@@ -78,8 +78,10 @@ var _ = Describe("KubeInstaller", func() {
 	// TODO(EItanya): rewrite this test so that it uses a non-
 	Context("updating resource from cache", func() {
 		It("does nothing if the resource hasnt changed", func() {
+			unique := "unique"
+			randomLabel := testutils.RandString(8)
 			ownerLabels := map[string]string{
-				"unique": "label",
+				unique: randomLabel,
 			}
 			// cache a resource
 			cache := NewCache()
@@ -90,7 +92,7 @@ var _ = Describe("KubeInstaller", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				labels := grafanaCfg.GetLabels()
-				labels["unique"] = "label"
+				labels[unique] = randomLabel
 				grafanaCfg.SetLabels(labels)
 				err = setInstallationAnnotation(grafanaCfg)
 				Expect(err).NotTo(HaveOccurred())
