@@ -3,13 +3,11 @@ package helper
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"time"
-
-	"github.com/solo-io/go-utils/log"
 
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/kubeutils"
+	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/testutils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -18,8 +16,12 @@ import (
 )
 
 const (
+	defaultHttpEchoImage = "kennship/http-echo:latest"
+	HttpEchoName         = "http-echo"
+	HttpEchoPort         = 3000
+
 	defaultTestRunnerImage = "soloio/testrunner:latest"
-	testrunnerName         = "testrunner"
+	TestrunnerName         = "testrunner"
 	TestRunnerPort         = 1234
 
 	// This response is given by the testrunner when the SimpleServer is started
@@ -40,7 +42,15 @@ const (
 </html>`
 )
 
-func NewTestRunner(namespace string) (*TestRunner, error) {
+func NewTestRunner(namespace string) (*TestContainer, error) {
+	return newTestContainer(namespace, defaultTestRunnerImage, TestrunnerName, TestRunnerPort)
+}
+
+func NewEchoHttp(namespace string) (*TestContainer, error) {
+	return newTestContainer(namespace, defaultHttpEchoImage, HttpEchoName, HttpEchoPort)
+}
+
+func newTestContainer(namespace, imageTag, echoName string, port int32) (*TestContainer, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		return nil, err
@@ -50,41 +60,49 @@ func NewTestRunner(namespace string) (*TestRunner, error) {
 		return nil, err
 	}
 
-	return &TestRunner{
+	return &TestContainer{
 		namespace: namespace,
 		kube:      kube,
+
+		echoName: echoName,
+		port:     port,
+		imageTag: imageTag,
 	}, nil
 }
 
 // This object represents a container that gets deployed to the cluster to support testing.
-type TestRunner struct {
+type TestContainer struct {
 	containerImageName string
 	containerPort      uint
 	namespace          string
 	kube               *kubernetes.Clientset
+
+	imageTag string
+	echoName string
+	port     int32
 }
 
-// Deploys the test runner to the kubernetes cluster the kubeconfig is pointing to and waits for the given time for the
-// testrunner pod to be running.
-func (t *TestRunner) Deploy(timeout time.Duration) error {
+// Deploys the http echo to the kubernetes cluster the kubeconfig is pointing to and waits for the given time for the
+// http-echo pod to be running.
+func (t *TestContainer) Deploy(timeout time.Duration) error {
 	zero := int64(0)
-	labels := map[string]string{"gloo": testrunnerName}
+	labels := map[string]string{"gloo": t.echoName}
 	metadata := metav1.ObjectMeta{
-		Name:      testrunnerName,
+		Name:      t.echoName,
 		Namespace: t.namespace,
 		Labels:    labels,
 	}
 
-	// Create test runner pod
+	// Create http echo pod
 	if _, err := t.kube.CoreV1().Pods(t.namespace).Create(&corev1.Pod{
 		ObjectMeta: metadata,
 		Spec: corev1.PodSpec{
 			TerminationGracePeriodSeconds: &zero,
 			Containers: []corev1.Container{
 				{
-					Image:           defaultTestRunnerImage,
+					Image:           t.imageTag,
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Name:            testrunnerName,
+					Name:            t.echoName,
 				},
 			},
 		},
@@ -92,7 +110,7 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 		return err
 	}
 
-	// Create test runner service
+	// Create http echo service
 	if _, err := t.kube.CoreV1().Services(t.namespace).Create(&corev1.Service{
 		ObjectMeta: metadata,
 		Spec: corev1.ServiceSpec{
@@ -100,7 +118,7 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 				{
 					Name:     "http",
 					Protocol: corev1.ProtocolTCP,
-					Port:     TestRunnerPort,
+					Port:     t.port,
 				},
 			},
 			Selector: labels,
@@ -109,45 +127,33 @@ func (t *TestRunner) Deploy(timeout time.Duration) error {
 		return err
 	}
 
-	// Wait until the test runner pod is running
+	// Wait until the http echo pod is running
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	if err := testutils.WaitPodsRunning(ctx, time.Second, t.namespace, "gloo="+testrunnerName); err != nil {
+	if err := testutils.WaitPodsRunning(ctx, time.Second, t.namespace, "gloo="+t.echoName); err != nil {
 		return err
 	}
-	log.Printf("deployed %s", testrunnerName)
-
-	go func() {
-		start := time.Now()
-		log.Debugf("starting http server listening on port %v", TestRunnerPort)
-		// This command start an http SimpleHttpServer and blocks until the server terminates
-		if _, err := t.Exec("python", "-m", "SimpleHTTPServer", fmt.Sprintf("%v", TestRunnerPort)); err != nil {
-			// if an error happened after 5 seconds, it's probably not an error.. just the pod terminating.
-			if time.Now().Sub(start).Seconds() < 5.0 {
-				log.Warnf("failed to start HTTP Server in Test Runner: %v", err)
-			}
-		}
-	}()
+	log.Printf("deployed %s", t.echoName)
 	return nil
 }
 
-func (t *TestRunner) Terminate() error {
-	if err := testutils.Kubectl("delete", "pod", "-n", t.namespace, testrunnerName, "--grace-period=0"); err != nil {
-		return errors.Wrapf(err, "deleting %s pod", testrunnerName)
+func (t *TestContainer) Terminate() error {
+	if err := testutils.Kubectl("delete", "pod", "-n", t.namespace, t.echoName, "--grace-period=0"); err != nil {
+		return errors.Wrapf(err, "deleting %s pod", t.echoName)
 	}
 	return nil
 
 }
 
-// TestRunner executes a command inside the TestRunner container
-func (t *TestRunner) Exec(command ...string) (string, error) {
-	args := append([]string{"exec", "-i", testrunnerName, "-n", t.namespace, "--"}, command...)
+// TestContainer executes a command inside the TestContainer container
+func (t *TestContainer) Exec(command ...string) (string, error) {
+	args := append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, command...)
 	return testutils.KubectlOut(args...)
 }
 
-// TestRunnerAsync executes a command inside the TestRunner container
+// TestRunnerAsync executes a command inside the TestContainer container
 // returning a buffer that can be read from as it executes
-func (t *TestRunner) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
-	args = append([]string{"exec", "-i", testrunnerName, "-n", t.namespace, "--"}, args...)
+func (t *TestContainer) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
+	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
 	return testutils.KubectlOutAsync(args...)
 }
