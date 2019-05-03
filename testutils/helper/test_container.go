@@ -1,0 +1,111 @@
+package helper
+
+import (
+	"context"
+	"time"
+
+	"github.com/solo-io/go-utils/log"
+
+	"github.com/solo-io/go-utils/errors"
+	"github.com/solo-io/go-utils/kubeutils"
+	"github.com/solo-io/go-utils/testutils"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+)
+
+func newTestContainer(namespace, imageTag, echoName string, port int32) (*TestContainer, error) {
+	cfg, err := kubeutils.GetConfig("", "")
+	if err != nil {
+		return nil, err
+	}
+	kube, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TestContainer{
+		namespace: namespace,
+		kube:      kube,
+
+		echoName: echoName,
+		port:     port,
+		imageTag: imageTag,
+	}, nil
+}
+
+// This object represents a container that gets deployed to the cluster to support testing.
+type TestContainer struct {
+	containerImageName string
+	containerPort      uint
+	namespace          string
+	kube               *kubernetes.Clientset
+
+	imageTag string
+	echoName string
+	port     int32
+}
+
+// Deploys the http echo to the kubernetes cluster the kubeconfig is pointing to and waits for the given time for the
+// http-echo pod to be running.
+func (t *TestContainer) Deploy(timeout time.Duration) error {
+	zero := int64(0)
+	labels := map[string]string{"gloo": t.echoName}
+	metadata := metav1.ObjectMeta{
+		Name:      t.echoName,
+		Namespace: t.namespace,
+		Labels:    labels,
+	}
+
+	// Create http echo pod
+	if _, err := t.kube.CoreV1().Pods(t.namespace).Create(&corev1.Pod{
+		ObjectMeta: metadata,
+		Spec: corev1.PodSpec{
+			TerminationGracePeriodSeconds: &zero,
+			Containers: []corev1.Container{
+				{
+					Image:           t.imageTag,
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Name:            t.echoName,
+				},
+			},
+		},
+	}); err != nil {
+		return err
+	}
+
+	// Create http echo service
+	if _, err := t.kube.CoreV1().Services(t.namespace).Create(&corev1.Service{
+		ObjectMeta: metadata,
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "http",
+					Protocol: corev1.ProtocolTCP,
+					Port:     t.port,
+				},
+			},
+			Selector: labels,
+		},
+	}); err != nil {
+		return err
+	}
+
+	// Wait until the http echo pod is running
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if err := testutils.WaitPodsRunning(ctx, time.Second, t.namespace, "gloo="+t.echoName); err != nil {
+		return err
+	}
+	log.Printf("deployed %s", t.echoName)
+	return nil
+}
+
+func (t *TestContainer) Terminate() error {
+	if err := testutils.Kubectl("delete", "pod", "-n", t.namespace, t.echoName, "--grace-period=0"); err != nil {
+		return errors.Wrapf(err, "deleting %s pod", t.echoName)
+	}
+	return nil
+
+}
