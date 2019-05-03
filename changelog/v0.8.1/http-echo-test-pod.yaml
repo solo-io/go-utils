@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add test pod which can output all request metadata.
+    issueLink: https://github.com/solo-io/go-utils/issues/157
