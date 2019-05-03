@@ -24,7 +24,7 @@ func MountCode(fs afero.Fs, ctx context.Context, client *github.Client, owner, r
 	if err := tarutils.Untar(codeDir, tarFile.Name(), fs); err != nil {
 		return "", err
 	}
-	repoFolderName, err := getRepoFolder(fs, dir)
+	repoFolderName, err := getRepoFolder(fs, codeDir)
 	if err != nil {
 		return "", err
 	}
