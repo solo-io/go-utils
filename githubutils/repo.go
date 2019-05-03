@@ -3,11 +3,12 @@ package githubutils
 import (
 	"context"
 	"fmt"
-	"github.com/solo-io/go-utils/versionutils"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/solo-io/go-utils/versionutils"
 
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/errors"
@@ -187,7 +188,7 @@ func DownloadRepoArchive(ctx context.Context, client *github.Client, w io.Writer
 		return err
 	}
 
-	err = downloadFile(archiveURL.String(), w)
+	err = DownloadFile(archiveURL.String(), w)
 	if err != nil {
 		logger.Errorw("can't download file", zap.Error(err))
 		return err
@@ -195,7 +196,7 @@ func DownloadRepoArchive(ctx context.Context, client *github.Client, w io.Writer
 	return nil
 }
 
-func downloadFile(url string, w io.Writer) error {
+func DownloadFile(url string, w io.Writer) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
