@@ -41,7 +41,7 @@ type TestContainer struct {
 	containerImageName string
 	containerPort      uint
 	namespace          string
-	kube               *kubernetes.Clientset
+	kube               kubernetes.Interface
 
 	imageTag string
 	echoName string
@@ -99,7 +99,6 @@ func (t *TestContainer) deploy(timeout time.Duration) error {
 	if err := testutils.WaitPodsRunning(ctx, time.Second, t.namespace, "gloo="+t.echoName); err != nil {
 		return err
 	}
-
 
 	log.Printf("deployed %s", t.echoName)
 

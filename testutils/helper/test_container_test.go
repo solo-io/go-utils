@@ -91,6 +91,18 @@ var _ = Describe("test container tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("can install and uninstall the http echo pod", func() {
+			responseString := fmt.Sprintf(`"host":"%s.%s.svc.cluster.local:%v"`,
+				HttpEchoName, namespace, HttpEchoPort)
+			host := fmt.Sprintf("%s.%s.svc.cluster.local:%v", HttpEchoName, namespace, HttpEchoPort)
+			httpEcho.CurlEventuallyShouldRespond(CurlOpts{
+				Protocol:          "http",
+				Path:              "/",
+				Method:            "GET",
+				Host:              host,
+				Service:           HttpEchoName,
+				Port:              HttpEchoPort,
+				ConnectionTimeout: 10,
+			}, responseString, 1, 120*time.Second)
 		})
 	})
 })
