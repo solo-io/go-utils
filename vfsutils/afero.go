@@ -21,16 +21,30 @@ func MountCode(fs afero.Fs, ctx context.Context, client *github.Client, owner, r
 	if err := githubutils.DownloadRepoArchive(ctx, client, tarFile, owner, repo, ref); err != nil {
 		return "", err
 	}
-
 	if err := tarutils.Untar(codeDir, tarFile.Name(), fs); err != nil {
 		return "", err
 	}
-
 	repoFolderName, err := getRepoFolder(fs, codeDir)
 	if err != nil {
 		return "", err
 	}
 	return repoFolderName, nil
+}
+
+func MountTar(fs afero.Fs, tarUrl string) (dir string, err error) {
+	tarFile, untarDir, err := setupTemporaryFiles(fs)
+	if err != nil {
+		return "", err
+	}
+	defer fs.Remove(tarFile.Name())
+
+	if err := githubutils.DownloadFile(tarUrl, tarFile); err != nil {
+		return "", err
+	}
+	if err := tarutils.Untar(untarDir, tarFile.Name(), fs); err != nil {
+		return "", err
+	}
+	return untarDir, nil
 }
 
 func setupTemporaryFiles(fs afero.Fs) (file afero.File, dir string, err error) {
