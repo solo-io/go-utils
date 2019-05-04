@@ -46,7 +46,7 @@ var _ = Describe("KubeInstaller", func() {
 		kubeClient kubernetes.Interface
 	)
 
-	SynchronizedBeforeSuite(func() []byte {return nil},func(data []byte) {
+	BeforeSuite(func() {
 		var err error
 		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
 		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
@@ -56,9 +56,9 @@ var _ = Describe("KubeInstaller", func() {
 		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
 	})
 
-	SynchronizedAfterSuite(func() {
+	AfterSuite(func() {
 		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
-	}, func() {})
+	})
 
 	BeforeEach(func() {
 		kubeClient = kube.MustKubeClient()
