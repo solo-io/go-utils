@@ -12,20 +12,20 @@ const (
 )
 
 
-func NewEchoHttp(namespace string) (*HttpEcho, error) {
+func NewEchoHttp(namespace string) (*httpEcho, error) {
 	container, err := newTestContainer(namespace, defaultHttpEchoImage, HttpEchoName, HttpEchoPort)
 	if err != nil {
 		return nil, err
 	}
-	return &HttpEcho{
-		TestContainer: container,
+	return &httpEcho{
+		testContainer: container,
 	}, nil
 }
 
-type HttpEcho struct {
-	*TestContainer
+type httpEcho struct {
+	*testContainer
 }
 
-func (t *HttpEcho) Deploy(timeout time.Duration) error {
+func (t *httpEcho) Deploy(timeout time.Duration) error {
 	return t.deploy(timeout)
 }

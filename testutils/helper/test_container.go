@@ -16,7 +16,16 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func newTestContainer(namespace, imageTag, echoName string, port int32) (*TestContainer, error) {
+type TestRunner interface {
+	Deploy(timeout time.Duration) error
+	Terminate() error
+	Exec(command ...string) (string, error)
+	TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error)
+	CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout time.Duration)
+	Curl(opts CurlOpts) (string, error)
+}
+
+func newTestContainer(namespace, imageTag, echoName string, port int32) (*testContainer, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		return nil, err
@@ -26,7 +35,7 @@ func newTestContainer(namespace, imageTag, echoName string, port int32) (*TestCo
 		return nil, err
 	}
 
-	return &TestContainer{
+	return &testContainer{
 		namespace: namespace,
 		kube:      kube,
 
@@ -37,7 +46,7 @@ func newTestContainer(namespace, imageTag, echoName string, port int32) (*TestCo
 }
 
 // This object represents a container that gets deployed to the cluster to support testing.
-type TestContainer struct {
+type testContainer struct {
 	containerImageName string
 	containerPort      uint
 	namespace          string
@@ -50,7 +59,7 @@ type TestContainer struct {
 
 // Deploys the http echo to the kubernetes cluster the kubeconfig is pointing to and waits for the given time for the
 // http-echo pod to be running.
-func (t *TestContainer) deploy(timeout time.Duration) error {
+func (t *testContainer) deploy(timeout time.Duration) error {
 	zero := int64(0)
 	labels := map[string]string{"gloo": t.echoName}
 	metadata := metav1.ObjectMeta{
@@ -105,7 +114,7 @@ func (t *TestContainer) deploy(timeout time.Duration) error {
 	return nil
 }
 
-func (t *TestContainer) Terminate() error {
+func (t *testContainer) Terminate() error {
 	if err := testutils.Kubectl("delete", "pod", "-n", t.namespace, t.echoName, "--grace-period=0"); err != nil {
 		return errors.Wrapf(err, "deleting %s pod", t.echoName)
 	}
@@ -113,15 +122,15 @@ func (t *TestContainer) Terminate() error {
 
 }
 
-// TestContainer executes a command inside the TestContainer container
-func (t *TestContainer) Exec(command ...string) (string, error) {
+// testContainer executes a command inside the testContainer container
+func (t *testContainer) Exec(command ...string) (string, error) {
 	args := append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, command...)
 	return testutils.KubectlOut(args...)
 }
 
-// TestContainerAsync executes a command inside the TestContainer container
+// TestContainerAsync executes a command inside the testContainer container
 // returning a buffer that can be read from as it executes
-func (t *TestContainer) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
+func (t *testContainer) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
 	return testutils.KubectlOutAsync(args...)
 }

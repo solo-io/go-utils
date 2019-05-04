@@ -26,7 +26,7 @@ type CurlOpts struct {
 	WithoutStats bool
 }
 
-func (t *TestContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout time.Duration) {
+func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout time.Duration) {
 	defaultTimeout := time.Second * 20
 	if timeout == 0 {
 		timeout = defaultTimeout
@@ -54,7 +54,7 @@ func (t *TestContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string
 	}, timeout, "5s").Should(gomega.ContainSubstring(substr))
 }
 
-func (t *TestContainer) Curl(opts CurlOpts) (string, error) {
+func (t *testContainer) Curl(opts CurlOpts) (string, error) {
 	args := []string{"curl"}
 	if opts.Verbose {
 		args = append(args, "-v")
