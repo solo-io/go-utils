@@ -31,7 +31,7 @@ steps:
     volumes: *vol
     env:
       - 'RUN_KUBE_TESTS=1'
-    args: ['-r', '-p', '-failFast', './installutils/kubeinstall']
+    args: ['-r', '-failFast', './installutils/kubeinstall']
     waitFor: ['build']
     id: 'kubeinstall-tests'
 

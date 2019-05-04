@@ -40,7 +40,7 @@ var _ = Describe("test container tests", func() {
 	Context("test runner", func() {
 
 		var (
-			testRunner *TestRunner
+			testRunner *testRunner
 		)
 		BeforeEach(func() {
 			var err error
@@ -76,7 +76,7 @@ var _ = Describe("test container tests", func() {
 	Context("http ehco", func() {
 
 		var (
-			httpEcho *HttpEcho
+			httpEcho *httpEcho
 		)
 		BeforeEach(func() {
 			var err error

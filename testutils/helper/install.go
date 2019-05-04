@@ -60,7 +60,7 @@ type TestConfig struct {
 // It also assumes that a kubectl executable is on the PATH.
 type SoloTestHelper struct {
 	*TestConfig
-	*TestRunner
+	TestRunner
 }
 
 func NewSoloTestHelper(configFunc TestConfigFunc) (*SoloTestHelper, error) {
@@ -88,7 +88,7 @@ func NewSoloTestHelper(configFunc TestConfigFunc) (*SoloTestHelper, error) {
 	}
 
 	// Optionally, initialize a test runner
-	var testRunner *TestRunner
+	var testRunner *testRunner
 	if testConfig.DeployTestRunner {
 		testRunner, err = NewTestRunner(testConfig.InstallNamespace)
 		if err != nil {
@@ -124,7 +124,7 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	}
 
 	if h.TestRunner != nil {
-		if err := h.TestRunner.deploy(timeout); err != nil {
+		if err := h.TestRunner.Deploy(timeout); err != nil {
 			return errors.Wrapf(err, "deploying testrunner")
 		}
 	}

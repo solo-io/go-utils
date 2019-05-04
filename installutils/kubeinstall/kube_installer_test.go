@@ -39,15 +39,27 @@ import (
 
 var istioCrd = apiextensions.CustomResourceDefinition{}
 
-var (
-	kubeClient kubernetes.Interface
-)
-
 var _ = Describe("KubeInstaller", func() {
 	var (
 		ns string
 		lock *clusterlock.TestClusterLocker
+		kubeClient kubernetes.Interface
 	)
+
+	BeforeSuite(func() {
+		var err error
+		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
+		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
+			IdPrefix: idPrefix,
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
+	})
+
+	AfterSuite(func() {
+		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
+	})
+
 	BeforeEach(func() {
 		kubeClient = kube.MustKubeClient()
 		// wait for all services in the previous namespace to be torn down
@@ -59,13 +71,7 @@ var _ = Describe("KubeInstaller", func() {
 		err := kubeutils.CreateNamespacesInParallel(kubeClient, ns)
 		Expect(err).NotTo(HaveOccurred())
 
-		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
-		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
-			IdPrefix: idPrefix,
-		})
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
 	})
 	AfterEach(func() {
 		err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, ns)
@@ -73,7 +79,6 @@ var _ = Describe("KubeInstaller", func() {
 		kube.TeardownClusterResourcesWithPrefix(kubeClient, "istio")
 		kube.TeardownClusterResourcesWithPrefix(kubeClient, "prometheus")
 		kube.WaitForNamespaceTeardown(ns)
-		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
 	})
 
 	Context("updating resource from cache", func() {

@@ -30,23 +30,23 @@ const (
 </html>`
 )
 
-func NewTestRunner(namespace string) (*TestRunner, error) {
+func NewTestRunner(namespace string) (*testRunner, error) {
 	testContainer, err := newTestContainer(namespace, defaultTestRunnerImage, TestrunnerName, TestRunnerPort)
 	if err != nil {
 		return nil, err
 	}
 
-	return &TestRunner{
-		TestContainer: testContainer,
+	return &testRunner{
+		testContainer: testContainer,
 	}, nil
 }
 
 // This object represents a container that gets deployed to the cluster to support testing.
-type TestRunner struct {
-	*TestContainer
+type testRunner struct {
+	*testContainer
 }
 
-func (t *TestRunner) Deploy(timeout time.Duration) error {
+func (t *testRunner) Deploy(timeout time.Duration) error {
 	err := t.deploy(timeout)
 	if err != nil {
 		return err
