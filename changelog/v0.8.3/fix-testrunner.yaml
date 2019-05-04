@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix testrunner pod regression from last release.
+    issueLink: https://github.com/solo-io/go-utils/issues/161

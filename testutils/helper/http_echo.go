@@ -1,5 +1,9 @@
 package helper
 
+import (
+	"time"
+)
+
 const (
 	defaultHttpEchoImage = "kennship/http-echo:latest"
 	HttpEchoName         = "http-echo"
@@ -8,6 +12,20 @@ const (
 )
 
 
-func NewEchoHttp(namespace string) (*TestContainer, error) {
-	return newTestContainer(namespace, defaultHttpEchoImage, HttpEchoName, HttpEchoPort)
+func NewEchoHttp(namespace string) (*HttpEcho, error) {
+	container, err := newTestContainer(namespace, defaultHttpEchoImage, HttpEchoName, HttpEchoPort)
+	if err != nil {
+		return nil, err
+	}
+	return &HttpEcho{
+		TestContainer: container,
+	}, nil
+}
+
+type HttpEcho struct {
+	*TestContainer
+}
+
+func (t *HttpEcho) Deploy(timeout time.Duration) error {
+	return t.deploy(timeout)
 }
