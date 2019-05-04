@@ -1,14 +1,15 @@
 package helper
 
 import (
-	"bytes"
+	"fmt"
+	"time"
 
-	"github.com/solo-io/go-utils/testutils"
+	"github.com/solo-io/go-utils/log"
 )
 
 const (
 	defaultTestRunnerImage = "soloio/testrunner:latest"
-	testrunnerName         = "testrunner"
+	TestrunnerName         = "testrunner"
 	TestRunnerPort         = 1234
 
 	// This response is given by the testrunner when the SimpleServer is started
@@ -30,10 +31,11 @@ const (
 )
 
 func NewTestRunner(namespace string) (*TestRunner, error) {
-	testContainer, err := newTestContainer(namespace, defaultTestRunnerImage, testrunnerName, TestRunnerPort)
+	testContainer, err := newTestContainer(namespace, defaultTestRunnerImage, TestrunnerName, TestRunnerPort)
 	if err != nil {
 		return nil, err
 	}
+
 	return &TestRunner{
 		TestContainer: testContainer,
 	}, nil
@@ -44,15 +46,21 @@ type TestRunner struct {
 	*TestContainer
 }
 
-// TestContainer executes a command inside the TestContainer container
-func (t *TestRunner) Exec(command ...string) (string, error) {
-	args := append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, command...)
-	return testutils.KubectlOut(args...)
-}
-
-// TestRunnerAsync executes a command inside the TestContainer container
-// returning a buffer that can be read from as it executes
-func (t *TestRunner) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
-	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
-	return testutils.KubectlOutAsync(args...)
+func (t *TestRunner) Deploy(timeout time.Duration) error {
+	err := t.deploy(timeout)
+	if err != nil {
+		return err
+	}
+	go func() {
+		start := time.Now()
+		log.Debugf("starting http server listening on port %v", TestRunnerPort)
+		// This command start an http SimpleHttpServer and blocks until the server terminates
+		if _, err := t.Exec("python", "-m", "SimpleHTTPServer", fmt.Sprintf("%v", TestRunnerPort)); err != nil {
+			// if an error happened after 5 seconds, it's probably not an error.. just the pod terminating.
+			if time.Now().Sub(start).Seconds() < 5.0 {
+				log.Warnf("failed to start HTTP Server in Test Runner: %v", err)
+			}
+		}
+	}()
+	return nil
 }

@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"bytes"
 	"context"
 	"time"
 
@@ -49,7 +50,7 @@ type TestContainer struct {
 
 // Deploys the http echo to the kubernetes cluster the kubeconfig is pointing to and waits for the given time for the
 // http-echo pod to be running.
-func (t *TestContainer) Deploy(timeout time.Duration) error {
+func (t *TestContainer) deploy(timeout time.Duration) error {
 	zero := int64(0)
 	labels := map[string]string{"gloo": t.echoName}
 	metadata := metav1.ObjectMeta{
@@ -98,7 +99,10 @@ func (t *TestContainer) Deploy(timeout time.Duration) error {
 	if err := testutils.WaitPodsRunning(ctx, time.Second, t.namespace, "gloo="+t.echoName); err != nil {
 		return err
 	}
+
+
 	log.Printf("deployed %s", t.echoName)
+
 	return nil
 }
 
@@ -108,4 +112,17 @@ func (t *TestContainer) Terminate() error {
 	}
 	return nil
 
+}
+
+// TestContainer executes a command inside the TestContainer container
+func (t *TestContainer) Exec(command ...string) (string, error) {
+	args := append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, command...)
+	return testutils.KubectlOut(args...)
+}
+
+// TestContainerAsync executes a command inside the TestContainer container
+// returning a buffer that can be read from as it executes
+func (t *TestContainer) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
+	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
+	return testutils.KubectlOutAsync(args...)
 }

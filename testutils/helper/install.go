@@ -124,7 +124,7 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	}
 
 	if h.TestRunner != nil {
-		if err := h.TestRunner.Deploy(timeout); err != nil {
+		if err := h.TestRunner.deploy(timeout); err != nil {
 			return errors.Wrapf(err, "deploying testrunner")
 		}
 	}
@@ -133,10 +133,10 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 
 func (h *SoloTestHelper) UninstallGloo() error {
 	if h.TestRunner != nil {
-		log.Debugf("terminating %s...", testrunnerName)
+		log.Debugf("terminating %s...", TestrunnerName)
 		if err := h.TestRunner.Terminate(); err != nil {
 			// Just log a warning, we don't want to fail
-			log.Warnf("error terminating %s", testrunnerName)
+			log.Warnf("error terminating %s", TestrunnerName)
 		}
 	}
 
