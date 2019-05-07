@@ -32,19 +32,13 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 	defer tw.Close()
 	// walk path
 	return afero.Walk(fs, src, func(file string, fi os.FileInfo, err error) error {
-		var relativePath string
-		if relativeRoot != "" {
-			splitPath := strings.Split(filepath.Dir(file),  fmt.Sprintf("%s/", relativeRoot))
-			if len(splitPath) == 2 {
-				relativePath = splitPath[1]
-			}
-		}
+		filePrefix := getFilePrefix(relativeRoot, file)
 		header, err := tar.FileInfoHeader(fi, fi.Name())
 		if err != nil {
 			return err
 		}
 
-		header.Name = filepath.Join(relativePath, header.Name)
+		header.Name = filepath.Join(filePrefix, header.Name)
 
 		if err := tw.WriteHeader(header); err != nil {
 			return err
@@ -67,6 +61,17 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 		f.Close()
 		return nil
 	})
+}
+
+func getFilePrefix(relativeRoot, file string) string {
+	var relativePath string
+	if relativeRoot != "" {
+		splitPath := strings.Split(filepath.Dir(file),  fmt.Sprintf("%s/", relativeRoot))
+		if len(splitPath) == 2 {
+			relativePath = splitPath[1]
+		}
+	}
+	return relativePath
 }
 
 func Untar(dst, src string, fs afero.Fs) error {
