@@ -39,7 +39,7 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 				relativePath = splitPath[1]
 			}
 		}
-		header, err := tar.FileInfoHeader(fi, relativePath)
+		header, err := tar.FileInfoHeader(fi, fi.Name())
 		if err != nil {
 			return err
 		}
