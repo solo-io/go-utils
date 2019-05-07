@@ -44,6 +44,8 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 			return err
 		}
 
+		header.Name = filepath.Join(relativePath, header.Name)
+
 		if err := tw.WriteHeader(header); err != nil {
 			return err
 		}
