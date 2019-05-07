@@ -7,13 +7,20 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 )
 
 func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
-	if _, err := fs.Stat(src); err != nil {
+	srcInfo, err := fs.Stat(src)
+	if err != nil {
 		return fmt.Errorf("Unable to tar files - %v", err.Error())
+	}
+
+	var relativeRoot string
+	if srcInfo.IsDir() {
+		relativeRoot = srcInfo.Name()
 	}
 
 	mw := io.MultiWriter(writers...)
@@ -25,7 +32,14 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 	defer tw.Close()
 	// walk path
 	return afero.Walk(fs, src, func(file string, fi os.FileInfo, err error) error {
-		header, err := tar.FileInfoHeader(fi, fi.Name())
+		var relativePath string
+		if relativeRoot != "" {
+			splitPath := strings.Split(filepath.Dir(file),  fmt.Sprintf("%s/", relativeRoot))
+			if len(splitPath) == 2 {
+				relativePath = splitPath[1]
+			}
+		}
+		header, err := tar.FileInfoHeader(fi, relativePath)
 		if err != nil {
 			return err
 		}
