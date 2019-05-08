@@ -1,3 +1,4 @@
 changelog:
-  - type: NON_USER_FACING
-    description: fix error in tarutils Tar function.
+  - type: FIX
+    description: Add interface to testrunner to avoid accessing underlying functionality.
+    issueLink: https://github.com/solo-io/go-utils/issues/161 
