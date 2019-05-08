@@ -1,3 +1,4 @@
 changelog:
-  - type: NON_USER_FACING
+  - type: FIX
     description: fix error in tarutils Tar function.
+    issueLink: https://github.com/solo-io/go-utils/issues/167

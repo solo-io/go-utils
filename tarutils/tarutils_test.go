@@ -1,6 +1,8 @@
 package tarutils_test
 
 import (
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/tarutils"
@@ -52,6 +54,8 @@ func mustFindOriginalFiles(newTmpDir string, fs afero.Fs) {
 		if !v.IsDir() {
 			_, err := afero.ReadFile(fs, newTmpDir+"/"+v.Name())
 			Expect(err).NotTo(HaveOccurred())
+		} else {
+			mustFindOriginalFiles(filepath.Join(newTmpDir, v.Name()), fs)
 		}
 	}
 }
@@ -63,11 +67,13 @@ func mustWriteTestDir(fs afero.Fs) string {
 }
 
 func mustAddTestFiles(tmpdir string, fs afero.Fs) {
+	dir, err := afero.TempDir(fs, tmpdir, "tar-test-nested-folder")
+	Expect(err).NotTo(HaveOccurred())
 	file, err := afero.TempFile(fs, tmpdir, "tar-test-file-")
 	Expect(err).NotTo(HaveOccurred())
 	err = afero.WriteFile(fs, file.Name(), []byte("first file"), 0777)
 	Expect(err).NotTo(HaveOccurred())
-	file, err = afero.TempFile(fs, tmpdir, "tar-test-file-")
+	file, err = afero.TempFile(fs, dir, "tar-test-file-")
 	Expect(err).NotTo(HaveOccurred())
 	err = afero.WriteFile(fs, file.Name(), []byte("second file"), 0777)
 	Expect(err).NotTo(HaveOccurred())
