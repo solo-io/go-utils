@@ -18,11 +18,6 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 		return fmt.Errorf("Unable to tar files - %v", err.Error())
 	}
 
-	var relativeRoot string
-	if srcInfo.IsDir() {
-		relativeRoot = srcInfo.Name()
-	}
-
 	mw := io.MultiWriter(writers...)
 
 	gzw := gzip.NewWriter(mw)
@@ -32,7 +27,7 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 	defer tw.Close()
 	// walk path
 	return afero.Walk(fs, src, func(file string, fi os.FileInfo, err error) error {
-		filePrefix := getFilePrefix(relativeRoot, file)
+		filePrefix := getFilePrefix(srcInfo.IsDir(), src, file)
 		header, err := tar.FileInfoHeader(fi, fi.Name())
 		if err != nil {
 			return err
@@ -63,13 +58,10 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 	})
 }
 
-func getFilePrefix(relativeRoot, file string) string {
+func getFilePrefix(srcDir bool, absoluteRoot, file string) string {
 	var relativePath string
-	if relativeRoot != "" {
-		splitPath := strings.Split(filepath.Dir(file),  fmt.Sprintf("%s/", relativeRoot))
-		if len(splitPath) == 2 {
-			relativePath = splitPath[1]
-		}
+	if srcDir {
+		relativePath = strings.Replace(file, fmt.Sprintf("%s/", absoluteRoot), "", 1)
 	}
 	return relativePath
 }

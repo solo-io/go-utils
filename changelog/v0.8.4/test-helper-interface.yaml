@@ -1,4 +1,4 @@
 changelog:
   - type: FIX
     description: Add interface to testrunner to avoid accessing underlying functionality.
-    issueLink: https://github.com/solo-io/go-utils/issues/161 
+    issueLink: https://github.com/solo-io/go-utils/issues/161
