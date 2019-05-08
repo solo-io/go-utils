@@ -7,12 +7,14 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 )
 
 func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
-	if _, err := fs.Stat(src); err != nil {
+	srcInfo, err := fs.Stat(src)
+	if err != nil {
 		return fmt.Errorf("Unable to tar files - %v", err.Error())
 	}
 
@@ -25,10 +27,17 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 	defer tw.Close()
 	// walk path
 	return afero.Walk(fs, src, func(file string, fi os.FileInfo, err error) error {
+		if file == src {
+			return nil
+		}
+
+		filePrefix := getFilePrefix(srcInfo.IsDir(), src, file)
 		header, err := tar.FileInfoHeader(fi, fi.Name())
 		if err != nil {
 			return err
 		}
+
+		header.Name = filepath.Join(filePrefix, header.Name)
 
 		if err := tw.WriteHeader(header); err != nil {
 			return err
@@ -51,6 +60,15 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 		f.Close()
 		return nil
 	})
+}
+
+func getFilePrefix(srcDir bool, absoluteRoot, file string) string {
+	var relativePath string
+	if srcDir && file != absoluteRoot {
+		pathToSrc := filepath.Dir(file)
+		relativePath = strings.Replace(pathToSrc, absoluteRoot, "", 1)
+	}
+	return relativePath
 }
 
 func Untar(dst, src string, fs afero.Fs) error {
