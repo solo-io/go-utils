@@ -38,10 +38,10 @@ data:
     registries:
     - name: default
       github:
-        org: solo-io
         repo: service-mesh-hub
-        ref: master
+        org: solo-io
         directory: extensions/v1
+        ref: master
 
 ---
 # Source: sm-marketplace/templates/1-serviceaccount.yaml
