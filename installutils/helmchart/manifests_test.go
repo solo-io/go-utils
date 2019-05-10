@@ -10,7 +10,7 @@ import (
 	"github.com/solo-io/go-utils/installutils/test/inputs"
 )
 
-var _ = Describe("Manifests", func() {
+var _ =FDescribe("Manifests", func() {
 	ns := "anything"
 	It("converts resources from a manifest without erroring", func() {
 		manifests := inputs.InputIstioManifests("myns")

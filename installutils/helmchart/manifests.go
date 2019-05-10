@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/google/go-github/github"
+	"github.com/solo-io/go-utils/tarutils"
 	"github.com/solo-io/go-utils/vfsutils"
 	"github.com/spf13/afero"
 	"k8s.io/helm/pkg/ignore"
@@ -114,31 +113,12 @@ func IsEmptyManifest(manifest string) bool {
 var defaultKubeVersion = fmt.Sprintf("%s.%s", chartutil.DefaultKubeVersion.Major, chartutil.DefaultKubeVersion.Minor)
 
 func RenderManifests(ctx context.Context, chartUri, values, releaseName, namespace, kubeVersion string) (Manifests, error) {
-	var file io.Reader
-	if strings.HasPrefix(chartUri, "http://") || strings.HasPrefix(chartUri, "https://") {
-		resp, err := http.Get(chartUri)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
 
-		if resp.StatusCode != http.StatusOK {
-			return nil, errors.Errorf("http GET returned status %d", resp.StatusCode)
-		}
-
-		file = resp.Body
-	} else {
-		path, err := filepath.Abs(chartUri)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting absolute path for %v", chartUri)
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return nil, errors.Wrapf(err, "opening file %v", path)
-		}
-		file = f
+	file, err := tarutils.RetrieveArchive(afero.NewOsFs(), chartUri)
+	if err != nil {
+		return nil, err
 	}
+	defer file.Close()
 
 	// Check chart requirements to make sure all dependencies are present in /charts
 	chart, err := chartutil.LoadArchive(file)
