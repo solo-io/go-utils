@@ -119,8 +119,8 @@ var _ = Describe("Helm Test", func() {
 			testManifest.ExpectService(rb.GetService())
 		})
 
-		It("has the default config", func() {
-			configString := "registries:\n- name: default\n  remoteYaml:\n    url: https://storage.googleapis.com/sm-marketplace-registry/specs.yaml\n"
+		It("has a config with yaml data", func() {
+			configString := "registries:\n- name: default\n  github:\n    org: solo-io\n    repo: service-mesh-hub\n    ref: master\n    directory: extensions/v1\n"
 			configString = MustCanonicalizeYaml(configString)
 			data := map[string]string{
 				"config.yaml": configString,
@@ -131,7 +131,7 @@ var _ = Describe("Helm Test", func() {
 				Labels:    labels,
 				Data:      data,
 			}
-			testManifest.ExpectConfigMap(rb.GetConfigMap())
+			testManifest.ExpectConfigMapWithYamlData(rb.GetConfigMap())
 		})
 	})
 
