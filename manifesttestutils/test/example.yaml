@@ -37,8 +37,11 @@ data:
   config.yaml: |
     registries:
     - name: default
-      remoteYaml:
-        url: https://storage.googleapis.com/sm-marketplace-registry/specs.yaml
+      github:
+        repo: service-mesh-hub
+        org: solo-io
+        directory: extensions/v1
+        ref: master
 
 ---
 # Source: sm-marketplace/templates/1-serviceaccount.yaml

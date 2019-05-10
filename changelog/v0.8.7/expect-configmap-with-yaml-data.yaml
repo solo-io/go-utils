@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add ExpectConfigMapWithYamlData to handle assertions on configmaps with yaml Data values.
+    issueLink: https://github.com/solo-io/go-utils/issues/171

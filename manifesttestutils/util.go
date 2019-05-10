@@ -27,6 +27,7 @@ type TestManifest interface {
 	ExpectClusterRole(clusterRole *rbacv1.ClusterRole)
 	ExpectClusterRoleBinding(clusterRoleBinding *rbacv1.ClusterRoleBinding)
 	ExpectConfigMap(configMap *corev1.ConfigMap)
+	ExpectConfigMapWithYamlData(configMap *corev1.ConfigMap)
 	ExpectService(service *corev1.Service)
 	ExpectNamespace(namespace *corev1.Namespace)
 	ExpectCrd(crd *extv1beta1.CustomResourceDefinition)
@@ -79,6 +80,19 @@ func (t *testManifest) ExpectConfigMap(configMap *corev1.ConfigMap) {
 	obj := t.mustFindObject(configMap.Kind, configMap.Namespace, configMap.Name)
 	actual, ok := obj.(*corev1.ConfigMap)
 	Expect(ok).To(BeTrue())
+	Expect(actual).To(BeEquivalentTo(configMap))
+}
+
+func (t *testManifest) ExpectConfigMapWithYamlData(configMap *corev1.ConfigMap) {
+	obj := t.mustFindObject(configMap.Kind, configMap.Namespace, configMap.Name)
+	actual, ok := obj.(*corev1.ConfigMap)
+	Expect(ok).To(BeTrue())
+	for k, v := range actual.Data {
+		actual.Data[k] = MustCanonicalizeYaml(v)
+	}
+	for k, v := range configMap.Data {
+		configMap.Data[k] = MustCanonicalizeYaml(v)
+	}
 	Expect(actual).To(BeEquivalentTo(configMap))
 }
 
