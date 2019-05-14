@@ -16,6 +16,7 @@ import (
 const (
 	gopkgToml    = "Gopkg.toml"
 	constraint   = "constraint"
+	override     = "override"
 	nameConst    = "name"
 	versionConst = "version"
 
@@ -79,12 +80,24 @@ func ParseToml() ([]*toml.Tree, error) {
 }
 
 func ParseTomlFromDir(relativeDir string) ([]*toml.Tree, error) {
+	return parseTomlFromDir(relativeDir, constraint)
+}
+
+func ParseTomlOverrides() ([]*toml.Tree, error) {
+	return ParseTomlOverridesFromDir("")
+}
+
+func ParseTomlOverridesFromDir(relativeDir string) ([]*toml.Tree, error) {
+	return parseTomlFromDir(relativeDir, override)
+}
+
+func parseTomlFromDir(relativeDir, configType string) ([]*toml.Tree, error) {
 	config, err := toml.LoadFile(filepath.Join(relativeDir, gopkgToml))
 	if err != nil {
 		return nil, err
 	}
 
-	tomlTree := config.Get(constraint)
+	tomlTree := config.Get(configType)
 
 	switch typedTree := tomlTree.(type) {
 	case []*toml.Tree:

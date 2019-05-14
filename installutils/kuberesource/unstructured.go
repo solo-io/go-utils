@@ -164,6 +164,8 @@ func ConvertUnstructured(res *unstructured.Unstructured) (runtime.Object, error)
 		obj = &core.ConfigMap{TypeMeta: typeMeta}
 	case "Service":
 		obj = &core.Service{TypeMeta: typeMeta}
+	case "Secret":
+		obj = &core.Secret{TypeMeta: typeMeta}
 	case "Pod":
 		obj = &core.Pod{TypeMeta: typeMeta}
 	case "Deployment":

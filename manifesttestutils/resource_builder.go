@@ -21,6 +21,7 @@ type ResourceBuilder struct {
 	RoleRef    rbacv1.RoleRef
 	Containers []ContainerSpec
 	Service    ServiceSpec
+	SecretType v1.SecretType
 }
 
 type ContainerSpec struct {
@@ -141,6 +142,30 @@ func (b *ResourceBuilder) GetConfigMap() *v1.ConfigMap {
 			Namespace: b.Namespace,
 			Labels:    b.Labels,
 		},
+	}
+}
+
+func (b *ResourceBuilder) GetSecret() *v1.Secret {
+	byteMap := make(map[string][]byte)
+	for k, v := range b.Data {
+		byteMap[k] = []byte(v)
+	}
+	secretType := b.SecretType
+	if secretType == "" {
+		secretType = v1.SecretTypeOpaque
+	}
+	return &v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      b.Name,
+			Namespace: b.Namespace,
+			Labels:    b.Labels,
+		},
+		Data: byteMap,
+		Type: secretType,
 	}
 }
 

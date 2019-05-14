@@ -74,7 +74,7 @@ func GetClusterResources(ctx context.Context, cfg *rest.Config, filterFuncs ...F
 
 			for i := range resources.Items {
 				res := &resources.Items[i]
-				contextutils.LoggerFrom(ctx).Infof("appending %s: %v.%v", res.GroupVersionKind(), res.GetNamespace(), res.GetName())
+				contextutils.LoggerFrom(ctx).Debugf("appending %s: %v.%v", res.GroupVersionKind(), res.GetNamespace(), res.GetName())
 				writeAccess.Lock()
 				allResources = append(allResources, res)
 				writeAccess.Unlock()
