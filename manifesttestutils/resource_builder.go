@@ -21,6 +21,7 @@ type ResourceBuilder struct {
 	RoleRef    rbacv1.RoleRef
 	Containers []ContainerSpec
 	Service    ServiceSpec
+	SecretType v1.SecretType
 }
 
 type ContainerSpec struct {
@@ -149,6 +150,10 @@ func (b *ResourceBuilder) GetSecret() *v1.Secret {
 	for k, v := range b.Data {
 		byteMap[k] = []byte(v)
 	}
+	secretType := b.SecretType
+	if secretType == "" {
+		secretType = v1.SecretTypeOpaque
+	}
 	return &v1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -160,6 +165,7 @@ func (b *ResourceBuilder) GetSecret() *v1.Secret {
 			Labels:    b.Labels,
 		},
 		Data: byteMap,
+		Type: secretType,
 	}
 }
 
