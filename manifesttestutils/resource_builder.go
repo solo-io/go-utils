@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,15 +21,15 @@ type ResourceBuilder struct {
 	RoleRef    rbacv1.RoleRef
 	Containers []ContainerSpec
 	Service    ServiceSpec
-	SecretType v1.SecretType
+	SecretType corev1.SecretType
 }
 
 type ContainerSpec struct {
 	Image      string
-	PullPolicy v1.PullPolicy
+	PullPolicy corev1.PullPolicy
 	Name       string
 	Args       []string
-	EnvVars    []v1.EnvVar
+	EnvVars    []corev1.EnvVar
 }
 
 type ServiceSpec struct {
@@ -41,8 +41,8 @@ type PortSpec struct {
 	Port int
 }
 
-func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
-	return &v1beta1.Deployment{
+func (b *ResourceBuilder) GetDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "extensions/v1beta1",
@@ -52,16 +52,16 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 			Namespace: b.Namespace,
 			Labels:    b.Labels,
 		},
-		Spec: v1beta1.DeploymentSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: getReplicas(),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: b.Labels,
 			},
-			Template: v1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: b.Labels,
 				},
-				Spec: v1.PodSpec{
+				Spec: corev1.PodSpec{
 					Containers: b.getContainers(),
 				},
 			},
@@ -69,8 +69,8 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 	}
 }
 
-func (b *ResourceBuilder) GetServiceAccount() *v1.ServiceAccount {
-	return &v1.ServiceAccount{
+func (b *ResourceBuilder) GetServiceAccount() *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
@@ -83,8 +83,8 @@ func (b *ResourceBuilder) GetServiceAccount() *v1.ServiceAccount {
 	}
 }
 
-func (b *ResourceBuilder) GetNamespace() *v1.Namespace {
-	return &v1.Namespace{
+func (b *ResourceBuilder) GetNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Namespace",
 			APIVersion: "v1",
@@ -130,8 +130,8 @@ func (b *ResourceBuilder) GetClusterRoleBinding() *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func (b *ResourceBuilder) GetConfigMap() *v1.ConfigMap {
-	return &v1.ConfigMap{
+func (b *ResourceBuilder) GetConfigMap() *corev1.ConfigMap {
+	return &corev1.ConfigMap{
 		Data: b.Data,
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -145,16 +145,16 @@ func (b *ResourceBuilder) GetConfigMap() *v1.ConfigMap {
 	}
 }
 
-func (b *ResourceBuilder) GetSecret() *v1.Secret {
+func (b *ResourceBuilder) GetSecret() *corev1.Secret {
 	byteMap := make(map[string][]byte)
 	for k, v := range b.Data {
 		byteMap[k] = []byte(v)
 	}
 	secretType := b.SecretType
 	if secretType == "" {
-		secretType = v1.SecretTypeOpaque
+		secretType = corev1.SecretTypeOpaque
 	}
-	return &v1.Secret{
+	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: "v1",
@@ -169,12 +169,12 @@ func (b *ResourceBuilder) GetSecret() *v1.Secret {
 	}
 }
 
-func (b *ResourceBuilder) GetService() *v1.Service {
-	var ports []v1.ServicePort
+func (b *ResourceBuilder) GetService() *corev1.Service {
+	var ports []corev1.ServicePort
 	for _, spec := range b.Service.Ports {
 		ports = append(ports, b.getPort(spec))
 	}
-	return &v1.Service{
+	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
@@ -184,41 +184,41 @@ func (b *ResourceBuilder) GetService() *v1.Service {
 			Namespace: b.Namespace,
 			Labels:    b.Labels,
 		},
-		Spec: v1.ServiceSpec{
+		Spec: corev1.ServiceSpec{
 			Selector: b.Labels,
-			Type:     v1.ServiceTypeNodePort,
+			Type:     corev1.ServiceTypeNodePort,
 			Ports:    ports,
 		},
 	}
 }
 
-func (b *ResourceBuilder) getPort(spec PortSpec) v1.ServicePort {
+func (b *ResourceBuilder) getPort(spec PortSpec) corev1.ServicePort {
 	if spec.Name == "" {
 		spec.Name = "static"
 	}
-	return v1.ServicePort{
-		Protocol: v1.ProtocolTCP,
+	return corev1.ServicePort{
+		Protocol: corev1.ProtocolTCP,
 		Name:     spec.Name,
 		Port:     int32(spec.Port),
 	}
 }
 
-func (b *ResourceBuilder) getContainers() []v1.Container {
-	var containers []v1.Container
+func (b *ResourceBuilder) getContainers() []corev1.Container {
+	var containers []corev1.Container
 	for _, spec := range b.Containers {
 		containers = append(containers, b.getContainer(spec))
 	}
 	return containers
 }
 
-func (b *ResourceBuilder) getContainer(spec ContainerSpec) v1.Container {
+func (b *ResourceBuilder) getContainer(spec ContainerSpec) corev1.Container {
 	if spec.Name == "" {
 		spec.Name = b.Name
 	}
 	if spec.PullPolicy == "" {
-		spec.PullPolicy = v1.PullIfNotPresent
+		spec.PullPolicy = corev1.PullIfNotPresent
 	}
-	return v1.Container{
+	return corev1.Container{
 		Image:           spec.Image,
 		ImagePullPolicy: spec.PullPolicy,
 		Name:            spec.Name,
@@ -227,11 +227,11 @@ func (b *ResourceBuilder) getContainer(spec ContainerSpec) v1.Container {
 	}
 }
 
-func GetPodNamespaceEnvVar() v1.EnvVar {
-	return v1.EnvVar{
+func GetPodNamespaceEnvVar() corev1.EnvVar {
+	return corev1.EnvVar{
 		Name: "POD_NAMESPACE",
-		ValueFrom: &v1.EnvVarSource{
-			FieldRef: &v1.ObjectFieldSelector{
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.namespace",
 			},
 		},
@@ -317,7 +317,7 @@ func GetAppLabels(appName, category string) map[string]string {
 	}
 }
 
-func GetContainerSpec(registry, name, tag string, envVars ...v1.EnvVar) ContainerSpec {
+func GetContainerSpec(registry, name, tag string, envVars ...corev1.EnvVar) ContainerSpec {
 	return ContainerSpec{
 		Name:    name,
 		Image:   fmt.Sprintf("%s:%s", filepath.Join(registry, name), tag),
@@ -325,6 +325,6 @@ func GetContainerSpec(registry, name, tag string, envVars ...v1.EnvVar) Containe
 	}
 }
 
-func GetQuayContainerSpec(image, tag string, envVars ...v1.EnvVar) ContainerSpec {
+func GetQuayContainerSpec(image, tag string, envVars ...corev1.EnvVar) ContainerSpec {
 	return GetContainerSpec("quay.io/solo-io", image, tag, envVars...)
 }
