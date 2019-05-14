@@ -80,19 +80,7 @@ func ParseToml() ([]*toml.Tree, error) {
 }
 
 func ParseTomlFromDir(relativeDir string) ([]*toml.Tree, error) {
-	config, err := toml.LoadFile(filepath.Join(relativeDir, gopkgToml))
-	if err != nil {
-		return nil, err
-	}
-
-	tomlTree := config.Get(constraint)
-
-	switch typedTree := tomlTree.(type) {
-	case []*toml.Tree:
-		return typedTree, nil
-	default:
-		return nil, fmt.Errorf("unable to parse toml tree")
-	}
+	return parseTomlFromDir(relativeDir, constraint)
 }
 
 func ParseTomlOverrides() ([]*toml.Tree, error) {
@@ -100,12 +88,16 @@ func ParseTomlOverrides() ([]*toml.Tree, error) {
 }
 
 func ParseTomlOverridesFromDir(relativeDir string) ([]*toml.Tree, error) {
+	return parseTomlFromDir(relativeDir, override)
+}
+
+func parseTomlFromDir(relativeDir, configType string) ([]*toml.Tree, error) {
 	config, err := toml.LoadFile(filepath.Join(relativeDir, gopkgToml))
 	if err != nil {
 		return nil, err
 	}
 
-	tomlTree := config.Get(override)
+	tomlTree := config.Get(configType)
 
 	switch typedTree := tomlTree.(type) {
 	case []*toml.Tree:
