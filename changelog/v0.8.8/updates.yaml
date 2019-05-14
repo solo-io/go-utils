@@ -1,0 +1,10 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add support for overrides in toml parser.
+    issueLink: https://github.com/solo-io/go-utils/issues/175
+  - type: NEW_FEATURE
+    description: Add support for secrets to manifesttestutils.
+    issueLink: https://github.com/solo-io/go-utils/issues/174
+  - type: FIX
+    description: Reduce logging in get_cluster_resources to DEBUG level.
+    issueLink: https://github.com/solo-io/go-utils/issues/165
