@@ -45,6 +45,12 @@ func NewTestManifest(relativePathToManifest string) TestManifest {
 	}
 }
 
+func NewTestManifestWithResources(resources kuberesource.UnstructuredResources) TestManifest {
+	return &testManifest{
+		resources: resources,
+	}
+}
+
 func (t *testManifest) NumResources() int {
 	return len(t.resources)
 }
