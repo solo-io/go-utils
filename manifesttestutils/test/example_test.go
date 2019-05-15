@@ -19,7 +19,7 @@ var _ = Describe("Helm Test", func() {
 	version := "dev"
 
 	It("has the right number of resources", func() {
-		Expect(testManifest.NumResources()).To(Equal(12))
+		Expect(testManifest.NumResources()).To(Equal(13))
 	})
 
 	Describe("namespace and crds", func() {
@@ -85,6 +85,9 @@ var _ = Describe("Helm Test", func() {
 		name := "apiserver"
 		image := "smm-" + name
 		labels := GetAppLabels(appName, name)
+		annotations := map[string]string{
+			"demo": "annotation",
+		}
 
 		It("has a deployment", func() {
 			grpcPort := v1.EnvVar{
@@ -97,6 +100,7 @@ var _ = Describe("Helm Test", func() {
 			rb := ResourceBuilder{
 				Name:       image,
 				Namespace:  namespace,
+				Annotations: annotations,
 				Labels:     labels,
 				Containers: []ContainerSpec{apiserverContainer, uiContainer, envoyContainer},
 			}
@@ -109,9 +113,10 @@ var _ = Describe("Helm Test", func() {
 				Port: 8080,
 			}
 			rb := ResourceBuilder{
-				Name:      image,
-				Namespace: namespace,
-				Labels:    labels,
+				Name:        image,
+				Namespace:   namespace,
+				Labels:      labels,
+				Annotations: annotations,
 				Service: ServiceSpec{
 					Ports: []PortSpec{port},
 				},
@@ -216,5 +221,18 @@ var _ = Describe("Helm Test", func() {
 			}
 			testManifest.ExpectClusterRoleBinding(rb.GetClusterRoleBinding())
 		})
+	})
+	Describe("custom resource", func() {
+
+		var (
+			gvk = "MeshIngress"
+			name = "gloo"
+			namespace = "supergloo-system"
+		)
+
+		It("has a crd with the given params", func() {
+			testManifest.ExpectCustomResource(gvk, namespace, name)
+		})
+
 	})
 })
