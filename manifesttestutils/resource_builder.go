@@ -11,17 +11,18 @@ import (
 )
 
 type ResourceBuilder struct {
-	Namespace  string
-	Name       string
-	Args       []string
-	Labels     map[string]string
-	Rules      []rbacv1.PolicyRule
-	Data       map[string]string
-	Subjects   []rbacv1.Subject
-	RoleRef    rbacv1.RoleRef
-	Containers []ContainerSpec
-	Service    ServiceSpec
-	SecretType v1.SecretType
+	Namespace   string
+	Name        string
+	Args        []string
+	Labels      map[string]string
+	Annotations map[string]string
+	Rules       []rbacv1.PolicyRule
+	Data        map[string]string
+	Subjects    []rbacv1.Subject
+	RoleRef     rbacv1.RoleRef
+	Containers  []ContainerSpec
+	Service     ServiceSpec
+	SecretType  v1.SecretType
 }
 
 type ContainerSpec struct {
@@ -48,9 +49,9 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 			APIVersion: "extensions/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.Name,
-			Namespace: b.Namespace,
-			Labels:    b.Labels,
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
 		},
 		Spec: v1beta1.DeploymentSpec{
 			Replicas: getReplicas(),
@@ -60,6 +61,7 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: b.Labels,
+					Annotations: b.Annotations,
 				},
 				Spec: v1.PodSpec{
 					Containers: b.getContainers(),
@@ -76,25 +78,29 @@ func (b *ResourceBuilder) GetServiceAccount() *v1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.Name,
-			Namespace: b.Namespace,
-			Labels:    b.Labels,
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
 		},
 	}
 }
 
 func (b *ResourceBuilder) GetNamespace() *v1.Namespace {
+	annotations := b.Annotations
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations["helm.sh/hook"] = "pre-install"
 	return &v1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Namespace",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   b.Name,
-			Labels: b.Labels,
-			Annotations: map[string]string{
-				"helm.sh/hook": "pre-install",
-			},
+			Name:        b.Name,
+			Labels:      b.Labels,
+			Annotations: annotations,
 		},
 	}
 }
@@ -106,9 +112,10 @@ func (b *ResourceBuilder) GetClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.Name,
-			Namespace: b.Namespace,
-			Labels:    b.Labels,
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
 		},
 		Rules: b.Rules,
 	}
@@ -121,9 +128,10 @@ func (b *ResourceBuilder) GetClusterRoleBinding() *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.Name,
-			Namespace: b.Namespace,
-			Labels:    b.Labels,
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
 		},
 		Subjects: b.Subjects,
 		RoleRef:  b.RoleRef,
@@ -138,9 +146,10 @@ func (b *ResourceBuilder) GetConfigMap() *v1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.Name,
-			Namespace: b.Namespace,
-			Labels:    b.Labels,
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
 		},
 	}
 }
@@ -160,9 +169,10 @@ func (b *ResourceBuilder) GetSecret() *v1.Secret {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.Name,
-			Namespace: b.Namespace,
-			Labels:    b.Labels,
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
 		},
 		Data: byteMap,
 		Type: secretType,
@@ -180,9 +190,10 @@ func (b *ResourceBuilder) GetService() *v1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.Name,
-			Namespace: b.Namespace,
-			Labels:    b.Labels,
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
 		},
 		Spec: v1.ServiceSpec{
 			Selector: b.Labels,

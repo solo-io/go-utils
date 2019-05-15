@@ -137,6 +137,8 @@ metadata:
   labels:
     app: sm-marketplace
     sm-marketplace: apiserver
+  annotations:
+    demo: annotation
   name: smm-apiserver
   namespace: sm-marketplace
 spec:
@@ -234,6 +236,8 @@ spec:
       labels:
         app: sm-marketplace
         sm-marketplace: apiserver
+      annotations:
+        demo: annotation
     spec:
       containers:
       - image: "quay.io/solo-io/smm-apiserver:dev"
@@ -252,5 +256,20 @@ spec:
       - image: "quay.io/solo-io/smm-envoy:dev"
         imagePullPolicy: IfNotPresent
         name: smm-envoy
+
+---
+
+apiVersion: supergloo.solo.io/v1
+kind: MeshIngress
+metadata:
+  name: gloo
+  namespace: supergloo-system
+spec:
+  gloo: {}
+  installationNamespace: gloo-system
+  meshes:
+  - name: name1
+    namespace: ns
+
 
 

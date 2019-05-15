@@ -32,6 +32,7 @@ type TestManifest interface {
 	ExpectService(service *corev1.Service)
 	ExpectNamespace(namespace *corev1.Namespace)
 	ExpectCrd(crd *extv1beta1.CustomResourceDefinition)
+	ExpectCustomResource(gvk, namespace, name string)
 	NumResources() int
 }
 
@@ -129,6 +130,16 @@ func (t *testManifest) ExpectCrd(crd *extv1beta1.CustomResourceDefinition) {
 	actual, ok := obj.(*extv1beta1.CustomResourceDefinition)
 	Expect(ok).To(BeTrue())
 	Expect(actual).To(BeEquivalentTo(crd))
+}
+
+func (t *testManifest) ExpectCustomResource(kind, namespace, name string) {
+	found := false
+	for _, resource := range t.resources {
+		if resource.GetKind() == kind && resource.GetNamespace() == namespace && resource.GetName() == name {
+			found = true
+		}
+	}
+	Expect(found).To(BeTrue())
 }
 
 func (t *testManifest) mustFindObject(kind, namespace, name string) runtime.Object {
