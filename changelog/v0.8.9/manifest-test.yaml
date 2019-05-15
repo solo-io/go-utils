@@ -1,4 +1,4 @@
 changelog:
 - type: NEW_FEATURE
   description: Add support for testing crds in manifest tester.
-  issueLink: https://github.com/solo-io/go-utils
+  issueLink: https://github.com/solo-io/go-utils/issues/178
