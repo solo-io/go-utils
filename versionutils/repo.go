@@ -25,6 +25,12 @@ const (
 	SuperglooPkg = "github.com/solo-io/supergloo"
 )
 
+var (
+	UnableToFindVersionInTomlError = func(pkgName string) error {
+		return fmt.Errorf("unable to find version for %s in toml", pkgName)
+	}
+)
+
 func PinGitVersion(relativeRepoDir string, version string) error {
 	tag := GetTag(version)
 	cmd := exec.Command("git", "checkout", tag)
@@ -66,15 +72,31 @@ func GetVersionFromTag(shouldBeAVersion string) (string, error) {
 	return versionString[1:], nil
 }
 
+// Deprecated: Use GetTomlVersion instead
 func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 	for _, v := range tomlTree {
 		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
 			return v.Get(versionConst).(string), nil
 		}
 	}
-	return "", fmt.Errorf("unable to find version for %s in toml", pkgName)
+	return "", UnableToFindVersionInTomlError(pkgName)
 }
 
+func GetTomlVersion(pkgName string, toml *TomlWrapper) (string, error) {
+	for _, v := range toml.Overrides {
+		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
+			return v.Get(versionConst).(string), nil
+		}
+	}
+	for _, v := range toml.Constraints {
+		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
+			return v.Get(versionConst).(string), nil
+		}
+	}
+	return "", UnableToFindVersionInTomlError(pkgName)
+}
+
+// Deprecated: Use ParseFullToml instead
 func ParseToml() ([]*toml.Tree, error) {
 	return ParseTomlFromDir("")
 }
@@ -83,6 +105,7 @@ func ParseTomlFromDir(relativeDir string) ([]*toml.Tree, error) {
 	return parseTomlFromDir(relativeDir, constraint)
 }
 
+// Deprecated: Use ParseFullToml instead
 func ParseTomlOverrides() ([]*toml.Tree, error) {
 	return ParseTomlOverridesFromDir("")
 }
@@ -105,4 +128,28 @@ func parseTomlFromDir(relativeDir, configType string) ([]*toml.Tree, error) {
 	default:
 		return nil, fmt.Errorf("unable to parse toml tree")
 	}
+}
+
+type TomlWrapper struct {
+	Overrides   []*toml.Tree
+	Constraints []*toml.Tree
+}
+
+func ParseFullTomlFromDir(relativeDir string) (*TomlWrapper, error) {
+	overrides, err := ParseTomlOverridesFromDir(relativeDir)
+	if err != nil {
+		return nil, err
+	}
+	constraints, err := ParseTomlFromDir(relativeDir)
+	if err != nil {
+		return nil, err
+	}
+	return &TomlWrapper{
+		Constraints: constraints,
+		Overrides:   overrides,
+	}, nil
+}
+
+func ParseFullToml() (*TomlWrapper, error) {
+	return ParseFullTomlFromDir("")
 }

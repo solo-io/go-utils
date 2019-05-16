@@ -80,3 +80,7 @@ func fromContext(ctx context.Context) *zap.SugaredLogger {
 func SetLogLevel(l zapcore.Level) {
 	level.SetLevel(l)
 }
+
+func GetLogLevel() zapcore.Level {
+	return level.Level()
+}
