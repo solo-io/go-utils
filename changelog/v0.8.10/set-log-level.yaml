@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: You can now set the log level dynamically on loggers constructed via contextutils. 
+    issueLink: https://github.com/solo-io/go-utils/issues/164

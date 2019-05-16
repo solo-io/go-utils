@@ -26,15 +26,21 @@ import (
 
 type loggerKey struct{}
 
-// This logger is used when there is no logger attached to the context.
-// Rather than returning nil and causing a panic, we will use the fallback
-// logger. Fallback logger is tagged with logger=fallback to make sure
-// that code that doesn't set the logger correctly can be caught at runtime.
-var fallbackLogger *zap.SugaredLogger
+var (
+	// This logger is used when there is no logger attached to the context.
+	// Rather than returning nil and causing a panic, we will use the fallback
+	// logger.
+	fallbackLogger *zap.SugaredLogger
+	// The atomic level set for any logger built here. Accessing this atomic level
+	// and calling set level will change the log output dynamically.
+	level zap.AtomicLevel
+)
 
 func buildLogger() (*zap.Logger, error) {
 	config := zap.NewProductionConfig()
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	level = zap.NewAtomicLevel()
+	config.Level = level
 	return config.Build()
 }
 
@@ -69,4 +75,8 @@ func fromContext(ctx context.Context) *zap.SugaredLogger {
 		}
 	}
 	return fallbackLogger
+}
+
+func SetLogLevel(l zapcore.Level) {
+	level.SetLevel(l)
 }
