@@ -1,0 +1,6 @@
+changelog:
+- type: NEW_FEATURE
+  description: Add xerrors support to go-utils for error comparison.
+  issueLink: https://github.com/solo-io/go-utils/issues/184
+
+
