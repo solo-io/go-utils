@@ -101,6 +101,7 @@ func ParseToml() ([]*toml.Tree, error) {
 	return ParseTomlFromDir("")
 }
 
+// Deprecated: Use ParseFullTomlFromDir instead
 func ParseTomlFromDir(relativeDir string) ([]*toml.Tree, error) {
 	return parseTomlFromDir(relativeDir, constraint)
 }
@@ -110,6 +111,7 @@ func ParseTomlOverrides() ([]*toml.Tree, error) {
 	return ParseTomlOverridesFromDir("")
 }
 
+// Deprecated: Use ParseFullTomlFromDir instead
 func ParseTomlOverridesFromDir(relativeDir string) ([]*toml.Tree, error) {
 	return parseTomlFromDir(relativeDir, override)
 }
