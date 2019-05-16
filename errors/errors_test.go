@@ -14,6 +14,7 @@ var _ = Describe("new golang errors", func() {
 
 	It("can compare underlyin error values", func() {
 		Expect(Is(wrapperError1, baseError)).To(BeTrue())
+		Expect(Is(wrapperError2, baseError)).To(BeTrue())
 		Expect(Is(wrapperError2, wrapperError1)).To(BeTrue())
 	})
 })
