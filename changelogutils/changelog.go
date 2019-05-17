@@ -207,7 +207,8 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	}
 
 	if err := yaml.Unmarshal(bytes, &changelog); err != nil {
-		return nil, errors.Errorf("File %s is not a valid changelog file. Error: %v", path, err)
+		return nil, errors.Errorf("File %s is not a valid changelog file. Error: %v",
+			filepath.Join(filepath.Base(filepath.Dir(path)), filepath.Base(path)), err)
 	}
 
 	for _, entry := range changelog.Entries {
