@@ -2,6 +2,10 @@ changelog:
 - type: NEW_FEATURE
   description: Add termination error function for kube containers.
   issueLink:  https://github.com/solo-io/go-utils/issues/185
+- type: FIX
+  description: Shorten error message around changelog files.
+  issueLink: https://github.com/solo-io/solobot/issues/100
+
 
 
 
