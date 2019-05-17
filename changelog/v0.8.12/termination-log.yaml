@@ -1,2 +1,7 @@
+changelog:
+- type: NEW_FEATURE
+  description: Add termination error function for kube containers.
+  issueLink:  https://github.com/solo-io/go-utils/issues/185
 
-https://github.com/solo-io/go-utils/issues/185
+
+
