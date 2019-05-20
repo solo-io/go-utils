@@ -65,6 +65,16 @@ func UnmarshalYaml(data []byte, into proto.Message) error {
 	return jsonpb.Unmarshal(bytes.NewBuffer(jsn), into)
 }
 
+func UnmarshalYamlAllowUnknown(data []byte, into proto.Message) error {
+	jsn, err := yaml.YAMLToJSON([]byte(data))
+	if err != nil {
+		return err
+	}
+
+	unmarshaler := &jsonpb.Unmarshaler{AllowUnknownFields: true}
+	return unmarshaler.Unmarshal(bytes.NewBuffer(jsn), into)
+}
+
 func MarshalBytes(pb proto.Message) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	err := jsonpbMarshaler.Marshal(buf, pb)
