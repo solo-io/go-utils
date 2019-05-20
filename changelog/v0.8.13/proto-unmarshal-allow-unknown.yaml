@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add proto unmarshal function that allows unknown fields rather than fail on them.
+    issueLink: https://github.com/solo-io/go-utils/issues/188
