@@ -275,6 +275,12 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 		return errors.Wrapf(err, "creating discovery rest mapper")
 	}
 
+	// refresh the client to get the new rest mappings for any crds created in the background (i.e. by a Job) since the client was last refreshed
+	r.client, err = client.New(r.cfg, client.Options{})
+	if err != nil {
+		return err
+	}
+
 	// set labels for writing
 	for _, res := range desiredResources {
 		labels := res.GetLabels()

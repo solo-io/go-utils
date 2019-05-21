@@ -1,0 +1,5 @@
+changelog:
+  - type: FIX
+    description: At the start of reconcile, reset Kube client so it's discovery cache is updated to reflect any newly-created CRDs (i.e. from a background Job) since it was last refreshed.
+    issueLink: https://github.com/solo-io/sm-marketplace/issues/452
+    
