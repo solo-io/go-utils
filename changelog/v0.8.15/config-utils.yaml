@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Added utils for interacting with config maps and structs, pulled upstream from the service mesh hub. 
+    issueLink: https://github.com/solo-io/go-utils/issues/192
