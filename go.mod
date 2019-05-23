@@ -72,7 +72,7 @@ require (
 	github.com/prometheus/common v0.0.0-20190104105734-b1c43a6df3ae // indirect
 	github.com/prometheus/procfs v0.0.0-20190104112138-b1a0a9a36d74 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
-	github.com/solo-io/solo-kit v0.6.3 // indirect
+	github.com/solo-io/solo-kit v0.6.3
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect

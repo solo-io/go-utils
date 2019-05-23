@@ -113,6 +113,7 @@ func (c *configClient) GetConfig(ctx context.Context, config proto.Message) erro
 		if setDefaultErr != nil {
 			return ErrorSettingDefaultConfig(setDefaultErr)
 		}
+		loaded = defaultConfigMap
 	}
 	return ReadConfig(ctx, loaded.Data[c.configKey], config)
 }
