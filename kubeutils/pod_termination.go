@@ -20,10 +20,12 @@ the pod spec for debugging. https://kubernetes.io/docs/tasks/debug-application-c
 func LogFailureState(failureErr error) {
 	file, err := os.Open(TERMINATION_LOG, os.O_RDWR, 0)
 	if err != nil {
-		log.Fatalf(err.Error())
+		// termination log file does not exist - this can happen in non-kube environments so it is a no-op
+		return
 	}
 	_, err = file.Write([]byte(failureErr.Error()))
 	if err != nil {
-		log.Fatalf(err.Error())
+		// we failed to write to termination log, this should never happen
+		log.Fatalf("failed to write error %s due to %s", failureErr.Error(), err.Error())
 	}
 }
