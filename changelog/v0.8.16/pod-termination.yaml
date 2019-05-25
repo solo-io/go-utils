@@ -1,0 +1,3 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Change the behavior of LogFailureState so it doesn't create /dev/termination-log
