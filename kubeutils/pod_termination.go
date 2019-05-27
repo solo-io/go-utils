@@ -18,7 +18,7 @@ the pod spec for debugging. https://kubernetes.io/docs/tasks/debug-application-c
 */
 
 func LogFailureState(failureErr error) {
-	file, err := os.Open(TERMINATION_LOG, os.O_RDWR, 0)
+	file, err := os.OpenFile(TERMINATION_LOG, os.O_RDWR, 0)
 	if err != nil {
 		// termination log file does not exist - this can happen in non-kube environments so it is a no-op
 		return
