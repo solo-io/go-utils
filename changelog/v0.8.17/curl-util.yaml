@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add a simple go function that functions like curl.
+    issueLink: https://github.com/solo-io/glooshot/issues/16
