@@ -15,6 +15,5 @@ func TestGoImpl(t *testing.T) {
 			testutils.PrintTrimmedStack()
 		})
 	testutils.RegisterCommonFailHandlers()
-	testutils.SetupLog()
 	RunSpecs(t, "Go Impl Suite")
 }
