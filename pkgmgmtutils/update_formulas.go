@@ -82,7 +82,7 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 		status[i].Updated = false
 
 		branchName := fOpt.FormulaName + "-" + version
-		commitString := fOpt.FormulaName + ": update " + version
+		commitString := fOpt.FormulaName + " " + version
 
 		if fOpt.PRRepoName == fOpt.RepoName && fOpt.PRRepoOwner == fOpt.RepoOwner {
 			err = updateAndPushAllRemote(client, ctx, version, versionSha, branchName, commitString, shas, &fOpt)

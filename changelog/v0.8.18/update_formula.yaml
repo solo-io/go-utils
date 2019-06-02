@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Updated commit string format
+    issueLink: https://github.com/solo-io/gloo/issues/719
