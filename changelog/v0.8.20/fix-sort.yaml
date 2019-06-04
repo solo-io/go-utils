@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: fix manifest sorting
+    issueLink: https://github.com/solo-io/go-utils/issues/198

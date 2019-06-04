@@ -28,6 +28,8 @@ var _ = Describe("Manifests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(recombined).To(HaveLen(1))
 
+		recombined.CombinedString() // test for panic
+
 		// need to compare resources as comments get removed
 		// map ordering is not preserved
 		recombinedResources, err := recombined.ResourceList()

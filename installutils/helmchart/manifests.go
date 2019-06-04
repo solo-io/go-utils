@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"k8s.io/helm/pkg/releaseutil"
 	"sigs.k8s.io/yaml"
 
 	"github.com/google/go-github/github"
@@ -116,7 +117,7 @@ func ManifestsFromResources(resources kuberesource.UnstructuredResources) (Manif
 		resourceYamls = append(resourceYamls, string(yam))
 	}
 
-	return Manifests{{Content: strings.Join(resourceYamls, "\n---\n")}}, nil
+	return Manifests{{Head: &releaseutil.SimpleHead{}, Content: strings.Join(resourceYamls, "\n---\n")}}, nil
 }
 
 var commentRegex = regexp.MustCompile("#.*")
