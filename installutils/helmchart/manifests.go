@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"sigs.k8s.io/yaml"
+
 	"github.com/google/go-github/github"
 	"github.com/solo-io/go-utils/tarutils"
 	"github.com/solo-io/go-utils/vfsutils"
@@ -98,6 +100,23 @@ func (m Manifests) ResourceList() (kuberesource.UnstructuredResources, error) {
 	}
 
 	return resources, nil
+}
+
+func ManifestsFromResources(resources kuberesource.UnstructuredResources) (Manifests, error) {
+	var resourceYamls []string
+	for _, res := range resources {
+		rawJson, err := runtime.Encode(unstructured.UnstructuredJSONScheme, res)
+		if err != nil {
+			return nil, err
+		}
+		yam, err := yaml.JSONToYAML(rawJson)
+		if err != nil {
+			return nil, err
+		}
+		resourceYamls = append(resourceYamls, string(yam))
+	}
+
+	return Manifests{{Content: strings.Join(resourceYamls, "\n---\n")}}, nil
 }
 
 var commentRegex = regexp.MustCompile("#.*")

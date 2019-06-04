@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add util function to convert resources to manifest
+    issueLink: https://github.com/solo-io/go-utils/196

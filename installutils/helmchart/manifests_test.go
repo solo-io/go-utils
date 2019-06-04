@@ -18,6 +18,23 @@ var _ = Describe("Manifests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resources).To(HaveLen(135))
 	})
+	It("converts resources to a manifest without erroring", func() {
+		manifests := inputs.InputIstioManifests("myns")
+		resources, err := manifests.ResourceList()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resources).To(HaveLen(135))
+
+		recombined, err := ManifestsFromResources(resources)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(recombined).To(HaveLen(1))
+
+		// need to compare resources as comments get removed
+		// map ordering is not preserved
+		recombinedResources, err := recombined.ResourceList()
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(recombinedResources).To(Equal(resources))
+	})
 
 	It("handles value overrides correctly", func() {
 		values := `
