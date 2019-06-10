@@ -31,9 +31,14 @@ func NewCache() *Cache {
 Initialize the cache with the snapshot of the current cluster
 */
 func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
+	fetcher := kuberesource.NewClusterResourceFetcher(cfg, nil, filterFuncs...)
+	return c.InitWithFetcher(ctx, fetcher)
+}
+
+func (c *Cache) InitWithFetcher(ctx context.Context, fetcher kuberesource.ClusterResourceFetcher) error {
 	// unlock cache after sync is complete
 	defer c.access.Unlock()
-	currentResources, err := kuberesource.GetClusterResources(ctx, cfg, filterFuncs...)
+	currentResources, err := fetcher.GetClusterResources(ctx)
 	if err != nil {
 		return err
 	}
