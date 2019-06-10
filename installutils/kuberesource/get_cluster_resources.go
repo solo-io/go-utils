@@ -91,7 +91,7 @@ func (c *clusterResourceFetcher) GetClusterResources(ctx context.Context) (Unstr
 				for _, ns := range c.namespaces {
 					resources, err := client.Resource(gvr).Namespace(ns).List(metav1.ListOptions{})
 					if err != nil {
-						contextutils.LoggerFrom(ctx).Errorw("Error getting resources", zap.Error(err), zap.String("ns", ns))
+						contextutils.LoggerFrom(ctx).Errorw("Error getting resources", zap.Error(err), zap.String("ns", ns), zap.Any("gvr", gvr))
 						return emperror.With(err, "group_version_resource", gvr)
 					}
 					for i := range resources.Items {
