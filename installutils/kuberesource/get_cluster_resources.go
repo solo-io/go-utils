@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/goph/emperror"
 	"github.com/solo-io/go-utils/contextutils"
 	"golang.org/x/sync/errgroup"
@@ -106,6 +108,7 @@ func (c *clusterResourceFetcher) GetClusterResources(ctx context.Context) (Unstr
 	}
 
 	if err := g.Wait(); err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error waiting for cache init", zap.Error(err))
 		return nil, err
 	}
 
