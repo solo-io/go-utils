@@ -54,7 +54,18 @@ func (c *clusterResourceFetcher) GetClusterResources(ctx context.Context) (Unstr
 	if err != nil {
 		return nil, err
 	}
-	crudableResources := discovery.FilteredBy(discovery.SupportsAllVerbs{Verbs: []string{"create", "list", "watch", "delete"}}, serverResources)
+
+	var crudableResources []*metav1.APIResourceList
+
+	if c.namespaces != nil {
+		namespaced := discovery.ResourcePredicateFunc(func(groupVersion string, r *metav1.APIResource) bool {
+			return r.Namespaced
+		})
+		namespacedResources := discovery.FilteredBy(&namespaced, serverResources)
+		crudableResources = discovery.FilteredBy(discovery.SupportsAllVerbs{Verbs: []string{"create", "list", "watch", "delete"}}, namespacedResources)
+	} else {
+		crudableResources = discovery.FilteredBy(discovery.SupportsAllVerbs{Verbs: []string{"create", "list", "watch", "delete"}}, serverResources)
+	}
 
 	gv, err := discovery.GroupVersionResources(crudableResources)
 	if err != nil {
@@ -89,6 +100,7 @@ func (c *clusterResourceFetcher) GetClusterResources(ctx context.Context) (Unstr
 				}
 			} else {
 				for _, ns := range c.namespaces {
+
 					resources, err := client.Resource(gvr).Namespace(ns).List(metav1.ListOptions{})
 					if err != nil {
 						contextutils.LoggerFrom(ctx).Errorw("Error getting resources", zap.Error(err), zap.String("ns", ns), zap.Any("gvr", gvr))
