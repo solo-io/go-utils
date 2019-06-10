@@ -4,6 +4,9 @@ import (
 	"context"
 	"sync"
 
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
+
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -40,6 +43,7 @@ func (c *Cache) InitWithFetcher(ctx context.Context, fetcher kuberesource.Cluste
 	defer c.access.Unlock()
 	currentResources, err := fetcher.GetClusterResources(ctx)
 	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error fetching cache resources", zap.Error(err))
 		return err
 	}
 	currentResources = currentResources.Filter(func(resource *unstructured.Unstructured) bool {
