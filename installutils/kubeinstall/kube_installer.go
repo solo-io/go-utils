@@ -49,6 +49,7 @@ type KubeInstaller struct {
 	apiExtensions apiexts.Interface
 	callbacks     []CallbackOptions
 	retryOptions  []retry.Option
+	namespaces    []string
 }
 
 var _ Installer = &KubeInstaller{}
@@ -56,12 +57,18 @@ var _ Installer = &KubeInstaller{}
 type KubeInstallerOptions struct {
 	Callbacks    []CallbackOptions
 	RetryOptions []retry.Option
+	Namespaces   []string
 }
 
 var defaultRetryOptions = []retry.Option{
 	retry.Delay(time.Millisecond * 250),
 	retry.DelayType(retry.FixedDelay),
 	retry.Attempts(500), // give a considerable amount of time for pulling images
+}
+
+var InsufficientClusterResourcePermissionsError = errors.Errorf("Insufficient permissions for installing cluster-wide resources.")
+var InsufficientNamespacePermissionsError = func(namespace string, namespaces []string) error {
+	return errors.Errorf("Insufficient permissions for installing resources into namespace %s. Installer only has access to namespaces: %v", namespace, namespaces)
 }
 
 /*
@@ -255,6 +262,9 @@ func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstruc
 }
 
 func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace string, desiredResources kuberesource.UnstructuredResources, ownerLabels map[string]string) error {
+	if len(r.namespaces) > 0 && stringutils.ContainsString(installNamespace, r.namespaces) {
+		return InsufficientNamespacePermissionsError(installNamespace, r.namespaces)
+	}
 	cachedResourceList, err := getInstalledResources(r.cache.List().WithLabels(ownerLabels))
 	if err != nil {
 		return err
@@ -299,6 +309,9 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 		if isNamespaced {
 			res.SetNamespace(installNamespace)
 		} else {
+			if len(r.namespaces) > 0 {
+				return InsufficientClusterResourcePermissionsError
+			}
 			res.SetNamespace("")
 		}
 	}
@@ -359,10 +372,16 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 	// create
 	// ensure ns exists before performing a create
 	if len(resourcesToCreate) > 0 {
-		if _, err := r.core.CoreV1().Namespaces().Create(&kubev1.Namespace{
-			ObjectMeta: v1.ObjectMeta{Name: installNamespace},
-		}); err != nil && !kubeerrs.IsAlreadyExists(err) {
-			return errors.Wrapf(err, "creating installation namespace")
+		if len(r.namespaces) > 0 {
+			if _, err := r.core.CoreV1().Namespaces().Get(installNamespace, v1.GetOptions{}); err != nil {
+				return err
+			}
+		} else {
+			if _, err := r.core.CoreV1().Namespaces().Create(&kubev1.Namespace{
+				ObjectMeta: v1.ObjectMeta{Name: installNamespace},
+			}); err != nil && !kubeerrs.IsAlreadyExists(err) {
+				return errors.Wrapf(err, "creating installation namespace")
+			}
 		}
 	}
 	for _, group := range resourcesToCreate.GroupedByGVK() {
