@@ -11,3 +11,7 @@ func TestDebugutils(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Debugutils Suite")
 }
+
+var (
+
+)
