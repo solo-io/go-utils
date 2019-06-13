@@ -27,6 +27,11 @@ var (
 	}
 )
 
+type ResourceCollector interface {
+	ResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
+	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
+}
+
 type resourceCollector struct {
 	client        kubernetes.Interface
 	dynamicClient dynamic.Interface
@@ -205,22 +210,5 @@ func (cc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 	if err != nil {
 		return schema.GroupVersionResource{}, err
 	}
-	return result, nil
-}
-
-
-func filterCrds(resources kuberesource.UnstructuredResources) ([]*apiextensions.CustomResourceDefinition, error) {
-	var result []*apiextensions.CustomResourceDefinition
-	for _, resource := range resources {
-		runtimeObj, err := kuberesource.ConvertUnstructured(resource)
-		if err != nil {
-			return nil, err
-		}
-		crd, ok := runtimeObj.(*apiextensions.CustomResourceDefinition)
-		if ok {
-			result = append(result, crd)
-		}
-	}
-
 	return result, nil
 }
