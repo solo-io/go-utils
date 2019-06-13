@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  description: Add resource/log gathering capability.
+  issueLink: https://github.com/solo-io/go-utils/issues/202
