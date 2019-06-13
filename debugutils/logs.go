@@ -32,10 +32,14 @@ func NewApiLogAggregator() (*ApiLogAggregator, error) {
 	}, nil
 }
 
-func (la *ApiLogAggregator) LogsFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
-	panic("implement me")
-}
-
-func (la *ApiLogAggregator) RetrieveLogs(pods corev1.PodList, options corev1.PodLogOptions) ([]kuberesource.VersionedResources, error) {
-	panic("implement me")
-}
+// func (la *ApiLogAggregator) LogsFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
+// 	resources, err := manifests.ResourceList()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// }
+//
+// func (la *ApiLogAggregator) RetrieveLogs(pods corev1.PodList, options corev1.PodLogOptions) ([]kuberesource.VersionedResources, error) {
+// 	panic("implement me")
+// }

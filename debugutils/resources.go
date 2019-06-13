@@ -8,22 +8,23 @@ import (
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
-	"github.com/solo-io/go-utils/stringutils"
 	"golang.org/x/sync/errgroup"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
+const (
+	resourceCollectorStr = "resourceCollector"
+)
+
 var (
-	initializationError = func(err error) error {
-		return errors.Wrapf(err, "unable to initialize resourceCollector")
+	initializationError = func(err error, obj string) error {
+		return errors.Wrapf(err, "unable to initialize %s", obj)
 	}
 )
 
@@ -33,36 +34,34 @@ type ResourceCollector interface {
 }
 
 type resourceCollector struct {
-	client        kubernetes.Interface
 	dynamicClient dynamic.Interface
 	restMapper    meta.RESTMapper
+	podFinder     PodFinder
 }
 
 func NewResourceCollector() (*resourceCollector, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
-		return nil, initializationError(err)
+		return nil, initializationError(err, resourceCollectorStr)
 	}
 	dynamicClient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
-		return nil, initializationError(err)
+		return nil, initializationError(err, resourceCollectorStr)
 	}
 	restMapper, err := apiutil.NewDiscoveryRESTMapper(cfg)
 	if err != nil {
-		return nil, initializationError(err)
+		return nil, initializationError(err, resourceCollectorStr)
 	}
-	client, err := kubernetes.NewForConfig(cfg)
+	podFinder, err := NewLabelPodFinder()
 	if err != nil {
-		return nil, initializationError(err)
+		return nil, initializationError(err, resourceCollectorStr)
 	}
 	return &resourceCollector{
 		dynamicClient: dynamicClient,
 		restMapper:    restMapper,
-		client:        client,
+		podFinder:     podFinder,
 	}, nil
 }
-
-
 
 func (cc *resourceCollector) ResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
 	resources, err := manifests.ResourceList()
@@ -93,57 +92,29 @@ func (cc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
+	pods, err := cc.podFinder.GetPods(resources)
+	if err != nil {
+		return nil, err
+	}
+	convertedPods, err := convertPodListsToUnstructured(pods)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, convertedPods...)
 	return result.GroupedByGVK(), nil
 }
 
 var ownerResources = []string{"Deployment", "DaemonSet", "Job", "CronJob"}
 
 func (cc *resourceCollector) handleUnstructuredResource(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
-	switch  {
+	switch {
 	case resource.GetKind() == "CustomResourceDefinition":
 		return cc.listAllFromNamespace(resource, namespace, opts)
-	case stringutils.ContainsString(resource.GetKind(), ownerResources):
-		var result kuberesource.UnstructuredResources
-		res, err := cc.getResource(resource)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, res...)
-		matchLabels, err := handleOwnerResource(resource)
-		if err != nil {
-			return nil, err
-		}
-		res, err = cc.getPodsForMatchLabels(matchLabels, namespace)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, res...)
-		return result, nil
 	default:
 		return cc.getResource(resource)
 	}
 }
 
-func (cc *resourceCollector) getPodsForMatchLabels(matchLabels map[string]string, namespace string) (kuberesource.UnstructuredResources, error) {
-	var set labels.Set = matchLabels
-	pods, err := cc.client.CoreV1().Pods(namespace).List(metav1.ListOptions{
-		LabelSelector: set.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	result := make(kuberesource.UnstructuredResources, len(pods.Items))
-	for idx, val := range pods.Items {
-		resource, err := kuberesource.ConvertToUnstructured(&val)
-		if err != nil {
-			return nil, err
-		}
-		resource.SetKind("Pod")
-		resource.SetAPIVersion("v1")
-		result[idx] = resource
-	}
-	return result, nil
-}
 
 func (cc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
 	kind, err := cc.gvrFromUnstructured(*resource)
