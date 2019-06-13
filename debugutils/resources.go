@@ -33,7 +33,7 @@ type resourceCollector struct {
 	restMapper    meta.RESTMapper
 }
 
-func NewCrdCollector() (*resourceCollector, error) {
+func NewResourceCollector() (*resourceCollector, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		return nil, initializationError(err)
@@ -98,11 +98,22 @@ func (cc *resourceCollector) handleUnstructuredResource(resource *unstructured.U
 	case resource.GetKind() == "CustomResourceDefinition":
 		return cc.listAllFromNamespace(resource, namespace, opts)
 	case stringutils.ContainsString(resource.GetKind(), ownerResources):
+		var result kuberesource.UnstructuredResources
+		res, err := cc.getResource(resource)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, res...)
 		matchLabels, err := handleOwnerResource(resource)
 		if err != nil {
 			return nil, err
 		}
-		return cc.getPodsForMatchLabels(matchLabels, namespace)
+		res, err = cc.getPodsForMatchLabels(matchLabels, namespace)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, res...)
+		return result, nil
 	default:
 		return cc.getResource(resource)
 	}
@@ -134,7 +145,13 @@ func (cc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstruc
 	if err != nil {
 		return nil, err
 	}
-	list, err := cc.dynamicClient.Resource(kind).Namespace(namespace).List(opts)
+	var list *unstructured.UnstructuredList
+	if namespace == "" {
+		list, err = cc.dynamicClient.Resource(kind).List(opts)
+	} else {
+		list, err = cc.dynamicClient.Resource(kind).Namespace(namespace).List(opts)
+	}
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to retrieve resources for kind %v", kind)
 	}
