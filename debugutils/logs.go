@@ -22,7 +22,7 @@ type LogsRequest struct {
 }
 
 func (lr *LogsRequest) BuildFileName(dir string) string {
-	return filepath.Join(dir, fmt.Sprintf("%s.%s.%s"), lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName)
+	return filepath.Join(dir, fmt.Sprintf("%s.%s.%s", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName))
 }
 
 func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *rest.Request) *LogsRequest {
