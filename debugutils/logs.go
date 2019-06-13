@@ -118,7 +118,7 @@ func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod) []*LogsRequest {
 		request := lrb.clientset.Pods(pod.Namespace).GetLogs(pod.Name, opts)
 		result = append(result, NewLogsRequest(pod.ObjectMeta, v.Name, request))
 	}
-	for _, v := range pod.Spec.Containers {
+	for _, v := range pod.Spec.InitContainers {
 		opts := &corev1.PodLogOptions{
 			Container: v.Name,
 		}

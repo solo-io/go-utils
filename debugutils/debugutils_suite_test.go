@@ -59,7 +59,8 @@ var (
 		Expect(err).NotTo(HaveOccurred())
 		resources, err = manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-
+		err = installer.ReconcileResources(context.TODO(), "gloo-system", resources, ownerLabels)
+		Expect(err).NotTo(HaveOccurred())
 		idPrefix := fmt.Sprintf("resource-collector-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
 		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
 			IdPrefix: idPrefix,

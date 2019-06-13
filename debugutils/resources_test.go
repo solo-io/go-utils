@@ -1,7 +1,6 @@
 package debugutils
 
 import (
-	"context"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -27,8 +26,7 @@ var _ = Describe("resource collector e2e", func() {
 
 	Context("e2e", func() {
 		BeforeEach(func() {
-			err := installer.ReconcileResources(context.TODO(), "gloo-system", resources, ownerLabels)
-			Expect(err).NotTo(HaveOccurred())
+			var err error
 			collector, err = NewResourceCollector()
 			Expect(err).NotTo(HaveOccurred())
 		})
