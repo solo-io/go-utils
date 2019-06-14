@@ -190,13 +190,13 @@ func (cc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 
 func (cc *resourceCollector) SaveResources(versionedResources []kuberesource.VersionedResources, fs afero.Fs, dir string) error {
 	resourceDir := filepath.Join(dir, "resources")
-	err := fs.Mkdir(resourceDir, os.ModeDir)
+	err := fs.Mkdir(resourceDir, 0777)
 	if err != nil {
 		return err
 	}
 	for _, versionedResource := range versionedResources {
-		fileName := fmt.Sprintf("%s.%s_%s.yaml", versionedResource.GVK.Kind, versionedResource.GVK.Group, versionedResource.GVK.Version)
-		_, err := fs.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, os.ModeAppend)
+		fileName := filepath.Join(resourceDir, fmt.Sprintf("%s_%s.yaml", versionedResource.GVK.Kind, versionedResource.GVK.Version))
+		_, err := fs.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0777)
 		if err != nil {
 			return err
 		}

@@ -24,10 +24,11 @@ func NewLocalZipStorageClient(fs afero.Fs) *LocalZipStorageClient {
 }
 
 func (lsc *LocalZipStorageClient) Save(fileName string, data io.Reader) error {
-	file, err := lsc.fs.OpenFile(fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.ModeAppend)
+	file, err := lsc.fs.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 	_, err = io.Copy(file, data)
 	if err != nil {
 		return err
@@ -115,6 +116,10 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 		return err
 	}
 	if err := tarutils.Tar(a.dir, a.fs, tarball); err != nil {
+		return err
+	}
+	_, err = tarball.Seek(0, io.SeekStart)
+	if err != nil {
 		return err
 	}
 	if err := a.zsc.Save(filename, tarball); err != nil {
