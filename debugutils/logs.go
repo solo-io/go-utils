@@ -2,7 +2,7 @@ package debugutils
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 
 	"github.com/solo-io/go-utils/installutils/helmchart"
@@ -22,7 +22,7 @@ type LogsRequest struct {
 }
 
 func (lr *LogsRequest) BuildFileName(dir string) string {
-	return filepath.Join(dir, fmt.Sprintf("%s.%s.%s", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName))
+	return filepath.Join(dir, fmt.Sprintf("%s_%s_%s.log", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName))
 }
 
 func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *rest.Request) *LogsRequest {
@@ -47,15 +47,17 @@ func (lfs *logFileStorage) SaveLogs(requests []*LogsRequest) error {
 	for _, request := range requests {
 		request := request
 		eg.Go(func() error {
-			respbyt, err := request.request.DoRaw()
+			reader, err := request.request.Stream()
 			if err != nil {
 				return err
 			}
+			defer reader.Close()
 			file, err := lfs.fs.Create(request.BuildFileName(lfs.dir))
 			if err != nil {
 				return err
 			}
-			return ioutil.WriteFile(file.Name(), respbyt, 0777)
+			_, err = io.Copy(file, reader)
+			return err
 		})
 	}
 	return eg.Wait()
