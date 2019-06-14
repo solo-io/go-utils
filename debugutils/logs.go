@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/solo-io/go-utils/installutils/helmchart"
+	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/spf13/afero"
 	"golang.org/x/sync/errgroup"
@@ -21,7 +22,13 @@ type LogsRequest struct {
 	request       *rest.Request
 }
 
-func (lr *LogsRequest) BuildFileName(dir string) string {
+type LogsResponse struct {
+	podMeta       metav1.ObjectMeta
+	containerName string
+	reader        io.ReadCloser
+}
+
+func (lr *LogsRequest) BuildId(dir string) string {
 	return filepath.Join(dir, fmt.Sprintf("%s_%s_%s.log", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName))
 }
 
@@ -29,21 +36,23 @@ func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *re
 	return &LogsRequest{podMeta: podMeta, containerName: containerName, request: request}
 }
 
-type LogStorage interface {
-	SaveLogs(requests []*LogsRequest) error
-}
-
-type logFileStorage struct {
+type LogStorageClient struct {
 	fs  afero.Fs
 	dir string
 }
 
-func NewLogFileStorage(fs afero.Fs, dir string) *logFileStorage {
-	return &logFileStorage{fs: fs, dir: dir}
+func NewLogFileStorage(fs afero.Fs, dir string) *LogStorageClient {
+	return &LogStorageClient{fs: fs, dir: dir}
 }
 
-func (lfs *logFileStorage) SaveLogs(requests []*LogsRequest) error {
+func (lfs *LogStorageClient) FetchLogs(requests []*LogsRequest) error {
 	eg := errgroup.Group{}
+	logsDir := filepath.Join(lfs.dir, "logs")
+	err := lfs.fs.Mkdir(logsDir, 0777)
+	if err != nil {
+		return err
+	}
+	lfs.dir = logsDir
 	for _, request := range requests {
 		request := request
 		eg.Go(func() error {
@@ -52,7 +61,7 @@ func (lfs *logFileStorage) SaveLogs(requests []*LogsRequest) error {
 				return err
 			}
 			defer reader.Close()
-			file, err := lfs.fs.Create(request.BuildFileName(lfs.dir))
+			file, err := lfs.fs.Create(request.BuildId(lfs.dir))
 			if err != nil {
 				return err
 			}
@@ -61,6 +70,14 @@ func (lfs *logFileStorage) SaveLogs(requests []*LogsRequest) error {
 		})
 	}
 	return eg.Wait()
+}
+
+func (lfs *LogStorageClient) Dir() string {
+	return lfs.dir
+}
+
+func (lfs *LogStorageClient) Clean() error {
+	return lfs.fs.Remove(lfs.dir)
 }
 
 type LogRequestBuilder struct {
@@ -88,11 +105,15 @@ func NewLogRequestBuilder() (*LogRequestBuilder, error) {
 }
 
 func (lrb *LogRequestBuilder) LogsFromManifest(manifests helmchart.Manifests) ([]*LogsRequest, error) {
-	var result []*LogsRequest
 	resources, err := manifests.ResourceList()
 	if err != nil {
 		return nil, err
 	}
+	return lrb.LogsFromUnstructured(resources)
+}
+
+func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
+	var result []*LogsRequest
 	pods, err := lrb.podFinder.GetPods(resources)
 	if err != nil {
 		return nil, err

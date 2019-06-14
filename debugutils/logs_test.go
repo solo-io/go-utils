@@ -73,9 +73,9 @@ var _ = Describe("logs", func() {
 		})
 	})
 
-	FContext("log file storage", func() {
+	Context("log file storage", func() {
 		var (
-			lfs    *logFileStorage
+			lfs    *LogStorageClient
 			tmpDir string
 		)
 
@@ -89,9 +89,9 @@ var _ = Describe("logs", func() {
 		It("can properly store all logs from gloo manifest to files", func() {
 			requests, err := requestBuilder.LogsFromManifest(manifests)
 			Expect(err).NotTo(HaveOccurred())
-			err = lfs.SaveLogs(requests)
+			err = lfs.FetchLogs(requests)
 			Expect(err).NotTo(HaveOccurred())
-			files, err := afero.ReadDir(fs, tmpDir)
+			files, err := afero.ReadDir(fs, lfs.Dir())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(files).To(HaveLen(4))
 			for _, deployedPod := range deployedPods {
@@ -107,6 +107,9 @@ var _ = Describe("logs", func() {
 				}
 				Expect(found).To(BeTrue())
 			}
+		})
+		AfterEach(func() {
+			fs.Remove(tmpDir)
 		})
 	})
 })

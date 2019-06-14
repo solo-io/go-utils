@@ -2,12 +2,16 @@ package debugutils
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
+	"github.com/spf13/afero"
 	"golang.org/x/sync/errgroup"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -31,6 +35,7 @@ var (
 type ResourceCollector interface {
 	ResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
 	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
+	SaveResources(versionedResources []kuberesource.VersionedResources, fs afero.Fs, dir string) error
 }
 
 type resourceCollector struct {
@@ -115,7 +120,6 @@ func (cc *resourceCollector) handleUnstructuredResource(resource *unstructured.U
 	}
 }
 
-
 func (cc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
 	kind, err := cc.gvrFromUnstructured(*resource)
 	if err != nil {
@@ -182,4 +186,28 @@ func (cc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 		return schema.GroupVersionResource{}, err
 	}
 	return result, nil
+}
+
+func (cc *resourceCollector) SaveResources(versionedResources []kuberesource.VersionedResources, fs afero.Fs, dir string) error {
+	resourceDir := filepath.Join(dir, "resources")
+	err := fs.Mkdir(resourceDir, os.ModeDir)
+	if err != nil {
+		return err
+	}
+	for _, versionedResource := range versionedResources {
+		fileName := fmt.Sprintf("%s.%s_%s.yaml", versionedResource.GVK.Kind, versionedResource.GVK.Group, versionedResource.GVK.Version)
+		_, err := fs.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, os.ModeAppend)
+		if err != nil {
+			return err
+		}
+		tmpManifests, err := helmchart.ManifestsFromResources(versionedResource.Resources)
+		if err != nil {
+			return err
+		}
+		err = afero.WriteFile(fs, fileName, []byte(tmpManifests.CombinedString()), 0777)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
