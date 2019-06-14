@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/solo-io/go-utils/installutils/helmchart"
+	"github.com/solo-io/go-utils/tarutils"
 	"github.com/spf13/afero"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,7 +36,7 @@ func (lsc *LocalZipStorageClient) Save(fileName string, data io.Reader) error {
 }
 
 func (lsc *LocalZipStorageClient) Read(file string) (io.ReadCloser, error) {
-	return lsc.fs.OpenFile(file, os.O_RDWR, os.ModeAppend)
+	return lsc.fs.OpenFile(file, os.O_RDWR, 0777)
 }
 
 const (
@@ -89,30 +90,35 @@ func NewDefaultAggregator() (*Aggregator, error) {
 
 }
 
-func (a *Aggregator) RawFromManifest(manifest helmchart.Manifests) ([]byte, error) {
-	return nil, nil
-}
-
-func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace string) (io.ReadCloser, error) {
+func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace, filename string) error {
 	unstructuredResources, err := manifest.ResourceList()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	kubeResources, err := a.col.RetrieveResources(unstructuredResources, namespace, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := a.col.SaveResources(kubeResources, a.fs, a.dir); err != nil {
-		return nil, err
+		return err
 	}
 	logRequests, err := a.lrb.LogsFromUnstructured(unstructuredResources)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err = a.lsc.FetchLogs(logRequests); err != nil {
-		return nil, err
+		return err
 	}
-
-
-	return nil, nil
+	tarball, err := afero.TempFile(a.fs, "", "")
+	defer a.fs.Remove(tarball.Name())
+	if err != nil {
+		return err
+	}
+	if err := tarutils.Tar(a.dir, a.fs, tarball); err != nil {
+		return err
+	}
+	if err := a.zsc.Save(filename, tarball); err != nil {
+		return err
+	}
+	return nil
 }
