@@ -12,7 +12,6 @@ import (
 
 var _ = Describe("logs", func() {
 	var (
-		requestBuilder *LogRequestBuilder
 		fs             afero.Fs
 
 		deployedPods = []*LogsRequest{
@@ -45,17 +44,18 @@ var _ = Describe("logs", func() {
 				containerName: "discovery",
 			},
 		}
-	)
 
-	BeforeEach(func() {
-		var err error
-		requestBuilder, err = NewLogRequestBuilder()
-		Expect(err).NotTo(HaveOccurred())
-	})
+		mustRequestBuilder = func() *LogRequestBuilder {
+			requestBuilder, err := NewLogRequestBuilder()
+			Expect(err).NotTo(HaveOccurred())
+			return requestBuilder
+		}
+	)
 
 	Context("request builder", func() {
 
 		It("can properly build the requests from the gloo manifest", func() {
+			requestBuilder := mustRequestBuilder()
 			requests, err := requestBuilder.LogsFromManifest(manifests)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requests).To(HaveLen(4))
@@ -79,15 +79,15 @@ var _ = Describe("logs", func() {
 			tmpDir string
 		)
 
-		BeforeEach(func() {
+		It("can properly store all logs from gloo manifest to files", func() {
 			var err error
 			fs = afero.NewOsFs()
 			tmpDir, err = afero.TempDir(fs, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			lfs = NewLogFileStorage(fs, tmpDir)
-		})
-		It("can properly store all logs from gloo manifest to files", func() {
+			requestBuilder := mustRequestBuilder()
 			requests, err := requestBuilder.LogsFromManifest(manifests)
+			Expect(requests).To(HaveLen(4))
 			Expect(err).NotTo(HaveOccurred())
 			err = lfs.FetchLogs(requests)
 			Expect(err).NotTo(HaveOccurred())

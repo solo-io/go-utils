@@ -23,7 +23,7 @@ steps:
     env:
       - 'RUN_KUBE_TESTS=1'
     secretEnv: ['GITHUB_TOKEN']
-    args: ['-r', '-p', '-failFast', '-randomizeSuites', '-randomizeAllSpecs', '-skipPackage=./installutils/kubeinstall']
+    args: ['-r', '-p', '-failFast', '-randomizeSuites', '-randomizeAllSpecs', '-skipPackage=./installutils/kubeinstall,./debugutils']
     waitFor: ['build']
     id: 'run-tests'
 
@@ -34,6 +34,14 @@ steps:
     args: ['-r', '-failFast', './installutils/kubeinstall']
     waitFor: ['build']
     id: 'kubeinstall-tests'
+
+  - name: 'gcr.io/$PROJECT_ID/go-mod-ginkgo:0.1.5'
+    volumes: *vol
+    env:
+    - 'RUN_KUBE_TESTS=1'
+    args: ['-r', '-failFast', './debugutils']
+    waitFor: ['build']
+    id: 'debugutils-tests'
 
 
 secrets:
