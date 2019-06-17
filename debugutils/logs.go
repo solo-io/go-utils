@@ -18,6 +18,13 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+//go:generate mockgen -destination=./mocks/logs.go -source logs.go -package mocks
+
+type LogCollector interface {
+	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
+	SaveLogs(location string, requests []*LogsRequest) error
+}
+
 type LogsRequest struct {
 	podMeta       metav1.ObjectMeta
 	containerName string
@@ -38,29 +45,29 @@ func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *re
 	return &LogsRequest{podMeta: podMeta, containerName: containerName, request: request}
 }
 
-type LogCollector struct {
+type logCollector struct {
 	logRequestBuilder *LogRequestBuilder
 	storageClient     StorageClient
 }
 
-func NewLogCollector(logRequestBuilder *LogRequestBuilder, storageClient StorageClient) *LogCollector {
-	return &LogCollector{logRequestBuilder: logRequestBuilder, storageClient: storageClient}
+func NewLogCollector(logRequestBuilder *LogRequestBuilder, storageClient StorageClient) *logCollector {
+	return &logCollector{logRequestBuilder: logRequestBuilder, storageClient: storageClient}
 
 }
 
-func DefaultLogCollector() (*LogCollector, error) {
+func DefaultLogCollector() (*logCollector, error) {
 	logRequestBuilder, err := DefaultLogRequestBuilder()
 	if err != nil {
 		return nil, err
 	}
 	storageClient := NewFileStorageClient(afero.NewOsFs())
-	return &LogCollector{
+	return &logCollector{
 		storageClient: storageClient,
 		logRequestBuilder: logRequestBuilder,
 	}, nil
 }
 
-func (lc *LogCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests) ([]*LogsRequest, error) {
+func (lc *logCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests) ([]*LogsRequest, error) {
 	resources, err := manifests.ResourceList()
 	if err != nil {
 		return nil, err
@@ -69,11 +76,11 @@ func (lc *LogCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests
 }
 
 
-func (lc *LogCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
+func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
 	return lc.logRequestBuilder.LogsFromUnstructured(resources)
 }
 
-func (lc *LogCollector) SaveLogs(location string, requests []*LogsRequest) error {
+func (lc *logCollector) SaveLogs(location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
 	lock := sync.Mutex{}
 	var storageObjects []*StorageObject

@@ -17,24 +17,21 @@ const (
 
 type Aggregator struct {
 	resourceCollector ResourceCollector
-	logCollector      *LogCollector
+	logCollector      LogCollector
 	storageClient     StorageClient
 	fs                afero.Fs
 
 	dir string
 }
 
-func NewAggregator(collector ResourceCollector, logCollector *LogCollector) *Aggregator {
-	return &Aggregator{resourceCollector: collector, logCollector: logCollector}
+func NewAggregator(resourceCollector ResourceCollector, logCollector LogCollector, storageClient StorageClient, fs afero.Fs, dir string) *Aggregator {
+	return &Aggregator{resourceCollector: resourceCollector, logCollector: logCollector, storageClient: storageClient, fs: fs, dir: dir}
 }
+
 
 func DefaultAggregator() (*Aggregator, error) {
 	fs := afero.NewOsFs()
 	storageClient := NewFileStorageClient(fs)
-	podFinder, err := NewLabelPodFinder()
-	if err != nil {
-		return nil, errors.InitializationError(err, aggregatorName)
-	}
 	resourceCollector, err := DefaultResourceCollector()
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)

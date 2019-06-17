@@ -1,10 +1,13 @@
 package debugutils
 
 import (
+	"sync"
+
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/solo-io/go-utils/stringutils"
+	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +18,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/apis/batch"
 )
+
+//go:generate mockgen -destination mocks_test.go -self_package github.com/solo-io/go-utils/debugutils -package debugutils github.com/solo-io/go-utils/debugutils PodFinder,LogCollector,ResourceCollector,StorageClient
 
 type PodFinder interface {
 	GetPods(resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error)
@@ -43,28 +48,38 @@ func NewLabelPodFinder() (*LabelPodFinder, error) {
 }
 
 func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error) {
+	eg := errgroup.Group{}
+	lock := sync.Mutex{}
 	var result []*corev1.PodList
 	for _, resource := range  resources {
-		var matchLabels map[string]string
-		var err error
-		switch {
-		case resource.GetKind() == "Pod":
-			matchLabels = resource.GetLabels()
-		case stringutils.ContainsString(resource.GetKind(), ownerResources):
-			matchLabels, err = handleOwnerResource(resource)
-			if err != nil {
-				return nil, err
+		resource := resource
+		eg.Go(func() error {
+			var matchLabels map[string]string
+			var err error
+			switch {
+			case resource.GetKind() == "Pod":
+				matchLabels = resource.GetLabels()
+			case stringutils.ContainsString(resource.GetKind(), ownerResources):
+				matchLabels, err = handleOwnerResource(resource)
+				if err != nil {
+					return err
+				}
+			default:
+				return nil
 			}
-		default:
-			continue
-		}
-		res, err := lpf.getPodsForMatchLabels(matchLabels, resource.GetNamespace())
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, res)
+			res, err := lpf.getPodsForMatchLabels(matchLabels, resource.GetNamespace())
+			if err != nil {
+				return err
+			}
+			lock.Lock()
+			defer lock.Unlock()
+			result = append(result, res)
+			return nil
+		})
 	}
-
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 

@@ -77,7 +77,7 @@ var _ = Describe("logs", func() {
 
 	Context("log file storage", func() {
 		var (
-			lc    *LogCollector
+			lc    *logCollector
 			tmpDir string
 		)
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -20,14 +21,16 @@ import (
 )
 
 func TestDebugutils(t *testing.T) {
+	T = t
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Debugutils Suite")
 }
 
 var (
+	T    *testing.T
 	ns   string
 	lock *clusterlock.TestClusterLocker
-
+	ctrl *gomock.Controller
 
 	restCfg     *rest.Config
 	installer   kubeinstall.Installer

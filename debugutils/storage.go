@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+//go:generate mockgen -destination=./mocks/storage.go -source storage.go -package mocks
+
 type StorageObject struct {
 	resource io.Reader
 	name string

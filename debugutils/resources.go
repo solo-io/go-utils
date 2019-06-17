@@ -25,8 +25,10 @@ const (
 	resourceCollectorStr = "resourceCollector"
 )
 
+//go:generate mockgen -destination=./mocks/resources.go -source resources.go -package mocks
+
+
 type ResourceCollector interface {
-	RetrieveResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
 	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
 	SaveResources(location string, versionedResources []kuberesource.VersionedResources) error
 }
