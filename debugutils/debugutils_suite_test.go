@@ -37,6 +37,12 @@ var (
 
 	_ = SynchronizedBeforeSuite(func() []byte {
 		var err error
+		idPrefix := fmt.Sprintf("resource-collector-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
+		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
+			IdPrefix: idPrefix,
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
 		unique := "unique"
 		randomLabel := testutils.RandString(8)
 		ownerLabels = map[string]string{
@@ -61,12 +67,6 @@ var (
 		Expect(err).NotTo(HaveOccurred())
 		err = installer.ReconcileResources(context.TODO(), "gloo-system", resources, ownerLabels)
 		Expect(err).NotTo(HaveOccurred())
-		idPrefix := fmt.Sprintf("resource-collector-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
-		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
-			IdPrefix: idPrefix,
-		})
-		Expect(err).NotTo(HaveOccurred())
-		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
 		return nil
 	}, func(data []byte) {})
 

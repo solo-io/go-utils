@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
 
 	"github.com/avast/retry-go"
 	coreV1 "k8s.io/api/core/v1"
@@ -108,6 +110,7 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 					return
 				case <-time.After(DefaultHeartbeatTime):
 					if err := t.reacquireLock(); err != nil {
+						contextutils.LoggerFrom(ctx).Errorw("could not reacquire lock", zap.Error(err))
 						return
 					}
 				}

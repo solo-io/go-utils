@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/solo-io/go-utils/testutils/clusterlock"
 	kubev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -48,7 +47,7 @@ var _ = Describe("KubeInstaller", func() {
 
 	BeforeSuite(func() {
 		var err error
-		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
+		idPrefix := fmt.Sprintf("kube-installer-%s-", os.Getenv("BUILD_ID"))
 		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
 			IdPrefix: idPrefix,
 		})
