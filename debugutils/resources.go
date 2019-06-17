@@ -199,5 +199,5 @@ func (rc *resourceCollector) SaveResources(location string, versionedResources [
 
 		})
 	}
-	return nil
+	return rc.storageClient.Save(location, storageObjects...)
 }

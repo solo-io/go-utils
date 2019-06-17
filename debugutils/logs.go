@@ -88,6 +88,7 @@ func (lc *LogCollector) SaveLogs(location string, requests []*LogsRequest) error
 			defer reader.Close()
 			lock.Lock()
 			defer lock.Unlock()
+			// Might be able to lessen the memory burden here
 			buf := &bytes.Buffer{}
 			_, err = io.Copy(buf, reader)
 			if err != nil {

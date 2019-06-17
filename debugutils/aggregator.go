@@ -102,7 +102,7 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 	if err != nil {
 		return err
 	}
-	if err := a.resourceCollector.SaveResources(a.dir, kubeResources); err != nil {
+	if err := a.resourceCollector.SaveResources(filepath.Join(a.dir, "resources"), kubeResources); err != nil {
 		return err
 	}
 	logRequests, err := a.logCollector.GetLogRequests(unstructuredResources)

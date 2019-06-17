@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = FDescribe("logs", func() {
+var _ = Describe("logs", func() {
 	var (
 		fs             afero.Fs
 
