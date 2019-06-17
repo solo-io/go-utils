@@ -27,7 +27,7 @@ var _ = Describe("resource collector e2e", func() {
 	Context("e2e", func() {
 		BeforeEach(func() {
 			var err error
-			collector, err = NewResourceCollector()
+			collector, err = DefaultResourceCollector()
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("can retrieve all gloo resources", func() {

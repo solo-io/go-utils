@@ -38,7 +38,7 @@ type resourceCollector struct {
 	storageClient StorageClient
 }
 
-func NewResourceCollector() (*resourceCollector, error) {
+func DefaultResourceCollector() (*resourceCollector, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		return nil, errors.InitializationError(err, resourceCollectorStr)

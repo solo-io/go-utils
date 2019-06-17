@@ -2,7 +2,6 @@ package debugutils
 
 import (
 	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/solo-io/go-utils/errors"
@@ -12,36 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ZipStorageClient interface {
-	Save(fileName string, data io.Reader) error
-	Read(fileName string) (io.ReadCloser, error)
-}
-
-type LocalZipStorageClient struct {
-	fs afero.Fs
-}
-
-func NewLocalZipStorageClient(fs afero.Fs) *LocalZipStorageClient {
-	return &LocalZipStorageClient{fs: fs}
-}
-
-func (lsc *LocalZipStorageClient) Save(fileName string, data io.Reader) error {
-	file, err := lsc.fs.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0777)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = io.Copy(file, data)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (lsc *LocalZipStorageClient) Read(file string) (io.ReadCloser, error) {
-	return lsc.fs.OpenFile(file, os.O_RDWR, 0777)
-}
-
 const (
 	aggregatorName = "aggregator"
 )
@@ -50,7 +19,7 @@ type Aggregator struct {
 	resourceCollector ResourceCollector
 	podFinder         PodFinder
 	logCollector      *LogCollector
-	zipStorageClient  ZipStorageClient
+	storageClient     StorageClient
 	fs                afero.Fs
 
 	dir string
@@ -61,31 +30,33 @@ func NewAggregator(collector ResourceCollector, podFinder PodFinder, logCollecto
 }
 
 func DefaultAggregator() (*Aggregator, error) {
+	fs := afero.NewOsFs()
+	storageClient := NewFileStorageClient(fs)
 	podFinder, err := NewLabelPodFinder()
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
 	}
-	collector, err := NewResourceCollector()
+	resourceCollector, err := DefaultResourceCollector()
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
 	}
+	resourceCollector.storageClient = storageClient
 	logCollector, err := DefaultLogCollector()
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
 	}
-	fs := afero.NewOsFs()
+	logCollector.storageClient = storageClient
 	tmpd, err := afero.TempDir(fs, "", "")
 	if err != nil {
 		return nil, err
 	}
-	storageClient := NewLocalZipStorageClient(fs)
 	return &Aggregator{
 		logCollector:      logCollector,
 		podFinder:         podFinder,
-		resourceCollector: collector,
+		resourceCollector: resourceCollector,
 		fs:                fs,
 		dir:               tmpd,
-		zipStorageClient:  storageClient,
+		storageClient:     storageClient,
 	}, nil
 
 }
@@ -124,7 +95,10 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 	if err != nil {
 		return err
 	}
-	if err := a.zipStorageClient.Save(filename, tarball); err != nil {
+	if err := a.storageClient.Save(filepath.Dir(filename), &StorageObject{
+		name: filepath.Base(filename),
+		resource: tarball,
+	}); err != nil {
 		return err
 	}
 	return nil
