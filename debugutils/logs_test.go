@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("logs", func() {
+var _ = FDescribe("logs", func() {
 	var (
 		fs             afero.Fs
 
@@ -46,7 +46,7 @@ var _ = Describe("logs", func() {
 		}
 
 		mustRequestBuilder = func() *LogRequestBuilder {
-			requestBuilder, err := NewLogRequestBuilder()
+			requestBuilder, err := DefaultLogRequestBuilder()
 			Expect(err).NotTo(HaveOccurred())
 			return requestBuilder
 		}
@@ -56,7 +56,9 @@ var _ = Describe("logs", func() {
 
 		It("can properly build the requests from the gloo manifest", func() {
 			requestBuilder := mustRequestBuilder()
-			requests, err := requestBuilder.LogsFromManifest(manifests)
+			resources, err := manifests.ResourceList()
+			Expect(err).NotTo(HaveOccurred())
+			requests, err := requestBuilder.LogsFromUnstructured(resources)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requests).To(HaveLen(4))
 			for _, deployedPod := range deployedPods {
@@ -75,7 +77,7 @@ var _ = Describe("logs", func() {
 
 	Context("log file storage", func() {
 		var (
-			lfs    *LogStorageClient
+			lc    *LogCollector
 			tmpDir string
 		)
 
@@ -84,14 +86,14 @@ var _ = Describe("logs", func() {
 			fs = afero.NewOsFs()
 			tmpDir, err = afero.TempDir(fs, "", "")
 			Expect(err).NotTo(HaveOccurred())
-			lfs = NewLogFileStorage(fs, tmpDir)
-			requestBuilder := mustRequestBuilder()
-			requests, err := requestBuilder.LogsFromManifest(manifests)
+			lc, err = DefaultLogCollector()
+			Expect(err).NotTo(HaveOccurred())
+			requests, err := lc.GetLogRequestsFromManifest(manifests)
 			Expect(requests).To(HaveLen(4))
 			Expect(err).NotTo(HaveOccurred())
-			err = lfs.FetchLogs(requests)
+			err = lc.SaveLogs(tmpDir, requests)
 			Expect(err).NotTo(HaveOccurred())
-			files, err := afero.ReadDir(fs, lfs.Dir())
+			files, err := afero.ReadDir(fs, tmpDir)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(files).To(HaveLen(4))
 			for _, deployedPod := range deployedPods {

@@ -3,7 +3,9 @@ package debugutils
 import (
 	"io"
 	"os"
+	"path/filepath"
 
+	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/tarutils"
 	"github.com/spf13/afero"
@@ -45,69 +47,69 @@ const (
 )
 
 type Aggregator struct {
-	col ResourceCollector
-	pf  PodFinder
-	lsc *LogStorageClient
-	zsc ZipStorageClient
-	fs  afero.Fs
+	resourceCollector ResourceCollector
+	podFinder         PodFinder
+	logCollector      *LogCollector
+	zipStorageClient  ZipStorageClient
+	fs                afero.Fs
 
 	dir string
-	lrb *LogRequestBuilder
 }
 
-func NewAggregator(collector ResourceCollector, podFinder PodFinder, logStorage *LogStorageClient) *Aggregator {
-	return &Aggregator{col: collector, pf: podFinder, lsc: logStorage}
+func NewAggregator(collector ResourceCollector, podFinder PodFinder, logCollector *LogCollector) *Aggregator {
+	return &Aggregator{resourceCollector: collector, podFinder: podFinder, logCollector: logCollector}
 }
 
-func NewDefaultAggregator() (*Aggregator, error) {
+func DefaultAggregator() (*Aggregator, error) {
 	podFinder, err := NewLabelPodFinder()
 	if err != nil {
-		return nil, initializationError(err, aggregatorName)
+		return nil, errors.InitializationError(err, aggregatorName)
 	}
 	collector, err := NewResourceCollector()
 	if err != nil {
-		return nil, initializationError(err, aggregatorName)
+		return nil, errors.InitializationError(err, aggregatorName)
 	}
-	lrb, err := NewLogRequestBuilder()
+	logCollector, err := DefaultLogCollector()
 	if err != nil {
-		return nil, initializationError(err, aggregatorName)
+		return nil, errors.InitializationError(err, aggregatorName)
 	}
 	fs := afero.NewOsFs()
 	tmpd, err := afero.TempDir(fs, "", "")
 	if err != nil {
 		return nil, err
 	}
-	logStorage := NewLogFileStorage(fs, tmpd)
 	storageClient := NewLocalZipStorageClient(fs)
 	return &Aggregator{
-		pf:  podFinder,
-		col: collector,
-		fs:  fs,
-		dir: tmpd,
-		lsc: logStorage,
-		lrb: lrb,
-		zsc: storageClient,
+		logCollector:      logCollector,
+		podFinder:         podFinder,
+		resourceCollector: collector,
+		fs:                fs,
+		dir:               tmpd,
+		zipStorageClient:  storageClient,
 	}, nil
 
 }
 
 func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace, filename string) error {
+	if err := a.createSubResourceDirectories(); err != nil {
+		return err
+	}
 	unstructuredResources, err := manifest.ResourceList()
 	if err != nil {
 		return err
 	}
-	kubeResources, err := a.col.RetrieveResources(unstructuredResources, namespace, metav1.ListOptions{})
+	kubeResources, err := a.resourceCollector.RetrieveResources(unstructuredResources, namespace, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	if err := a.col.SaveResources(kubeResources, a.fs, a.dir); err != nil {
+	if err := a.resourceCollector.SaveResources(a.dir, kubeResources); err != nil {
 		return err
 	}
-	logRequests, err := a.lrb.LogsFromUnstructured(unstructuredResources)
+	logRequests, err := a.logCollector.GetLogRequests(unstructuredResources)
 	if err != nil {
 		return err
 	}
-	if err = a.lsc.FetchLogs(logRequests); err != nil {
+	if err = a.logCollector.SaveLogs(filepath.Join(a.dir, "logs"), logRequests); err != nil {
 		return err
 	}
 	tarball, err := afero.TempFile(a.fs, "", "")
@@ -122,8 +124,20 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 	if err != nil {
 		return err
 	}
-	if err := a.zsc.Save(filename, tarball); err != nil {
+	if err := a.zipStorageClient.Save(filename, tarball); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (a *Aggregator) createSubResourceDirectories() error {
+	directories := []string{"resources", "logs"}
+	for _, v := range directories {
+		resourceDir := filepath.Join(a.dir, v)
+		err := a.fs.Mkdir(resourceDir, 0777)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

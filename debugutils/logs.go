@@ -1,9 +1,11 @@
 package debugutils
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"path/filepath"
+	"sync"
 
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
@@ -22,62 +24,86 @@ type LogsRequest struct {
 	request       *rest.Request
 }
 
-type LogsResponse struct {
-	podMeta       metav1.ObjectMeta
-	containerName string
-	reader        io.ReadCloser
+func (lr *LogsRequest) ResourcePath(dir string) string {
+	return filepath.Join(dir, lr.ResourceId())
 }
 
-func (lr *LogsRequest) BuildId(dir string) string {
-	return filepath.Join(dir, fmt.Sprintf("%s_%s_%s.log", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName))
+func (lr *LogsRequest) ResourceId() string {
+	return fmt.Sprintf("%s_%s_%s.log", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName)
 }
+
+
 
 func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *rest.Request) *LogsRequest {
 	return &LogsRequest{podMeta: podMeta, containerName: containerName, request: request}
 }
 
-type LogStorageClient struct {
-	fs  afero.Fs
-	dir string
+type LogCollector struct {
+	logRequestBuilder *LogRequestBuilder
+	storageClient     StorageClient
 }
 
-func NewLogFileStorage(fs afero.Fs, dir string) *LogStorageClient {
-	return &LogStorageClient{fs: fs, dir: dir}
+func NewLogCollector(logRequestBuilder *LogRequestBuilder, storageClient StorageClient) *LogCollector {
+	return &LogCollector{logRequestBuilder: logRequestBuilder, storageClient: storageClient}
+
 }
 
-func (lfs *LogStorageClient) FetchLogs(requests []*LogsRequest) error {
-	eg := errgroup.Group{}
-	logsDir := filepath.Join(lfs.dir, "logs")
-	err := lfs.fs.Mkdir(logsDir, 0777)
+func DefaultLogCollector() (*LogCollector, error) {
+	logRequestBuilder, err := DefaultLogRequestBuilder()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	lfs.dir = logsDir
+	storageClient := NewFileStorageClient(afero.NewOsFs())
+	return &LogCollector{
+		storageClient: storageClient,
+		logRequestBuilder: logRequestBuilder,
+	}, nil
+}
+
+func (lc *LogCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests) ([]*LogsRequest, error) {
+	resources, err := manifests.ResourceList()
+	if err != nil {
+		return nil, err
+	}
+	return lc.logRequestBuilder.LogsFromUnstructured(resources)
+}
+
+
+func (lc *LogCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
+	return lc.logRequestBuilder.LogsFromUnstructured(resources)
+}
+
+func (lc *LogCollector) SaveLogs(location string, requests []*LogsRequest) error {
+	eg := errgroup.Group{}
+	lock := sync.Mutex{}
+	var storageObjects []*StorageObject
 	for _, request := range requests {
-		request := request
+		// necessary to shadow this variable so that it is unique within the goroutine
+		restRequest := request
 		eg.Go(func() error {
-			reader, err := request.request.Stream()
+			reader, err := restRequest.request.Stream()
 			if err != nil {
 				return err
 			}
 			defer reader.Close()
-			file, err := lfs.fs.Create(request.BuildId(lfs.dir))
+			lock.Lock()
+			defer lock.Unlock()
+			buf := &bytes.Buffer{}
+			_, err = io.Copy(buf, reader)
 			if err != nil {
 				return err
 			}
-			_, err = io.Copy(file, reader)
-			return err
+			storageObjects = append(storageObjects, &StorageObject{
+				resource: buf,
+				name: restRequest.ResourceId(),
+			})
+			return nil
 		})
 	}
-	return eg.Wait()
-}
-
-func (lfs *LogStorageClient) Dir() string {
-	return lfs.dir
-}
-
-func (lfs *LogStorageClient) Clean() error {
-	return lfs.fs.Remove(lfs.dir)
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return lc.storageClient.Save(location, storageObjects...)
 }
 
 type LogRequestBuilder struct {
@@ -85,7 +111,11 @@ type LogRequestBuilder struct {
 	podFinder PodFinder
 }
 
-func NewLogRequestBuilder() (*LogRequestBuilder, error) {
+func NewLogRequestBuilder(clientset corev1client.CoreV1Interface, podFinder PodFinder) *LogRequestBuilder {
+	return &LogRequestBuilder{clientset: clientset, podFinder: podFinder}
+}
+
+func DefaultLogRequestBuilder() (*LogRequestBuilder, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		return nil, err
@@ -102,14 +132,6 @@ func NewLogRequestBuilder() (*LogRequestBuilder, error) {
 		clientset: clientset,
 		podFinder: podFinder,
 	}, nil
-}
-
-func (lrb *LogRequestBuilder) LogsFromManifest(manifests helmchart.Manifests) ([]*LogsRequest, error) {
-	resources, err := manifests.ResourceList()
-	if err != nil {
-		return nil, err
-	}
-	return lrb.LogsFromUnstructured(resources)
 }
 
 func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {

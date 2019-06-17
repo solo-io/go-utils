@@ -31,7 +31,7 @@ var _ = Describe("resource collector e2e", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("can retrieve all gloo resources", func() {
-			collectedResources, err := collector.ResourcesFromManifest(manifests, v1.ListOptions{})
+			collectedResources, err := collector.RetrieveResourcesFromManifest(manifests, v1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			for _, resource := range collectedResources {
 				switch resource.GVK.Kind {

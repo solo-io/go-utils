@@ -3,8 +3,7 @@ package debugutils
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/solo-io/go-utils/errors"
@@ -26,57 +25,54 @@ const (
 	resourceCollectorStr = "resourceCollector"
 )
 
-var (
-	initializationError = func(err error, obj string) error {
-		return errors.Wrapf(err, "unable to initialize %s", obj)
-	}
-)
-
 type ResourceCollector interface {
-	ResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
+	RetrieveResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
 	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
-	SaveResources(versionedResources []kuberesource.VersionedResources, fs afero.Fs, dir string) error
+	SaveResources(location string, versionedResources []kuberesource.VersionedResources) error
 }
 
 type resourceCollector struct {
 	dynamicClient dynamic.Interface
 	restMapper    meta.RESTMapper
 	podFinder     PodFinder
+	storageClient StorageClient
 }
 
 func NewResourceCollector() (*resourceCollector, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
-		return nil, initializationError(err, resourceCollectorStr)
+		return nil, errors.InitializationError(err, resourceCollectorStr)
 	}
 	dynamicClient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
-		return nil, initializationError(err, resourceCollectorStr)
+		return nil, errors.InitializationError(err, resourceCollectorStr)
 	}
 	restMapper, err := apiutil.NewDiscoveryRESTMapper(cfg)
 	if err != nil {
-		return nil, initializationError(err, resourceCollectorStr)
+		return nil, errors.InitializationError(err, resourceCollectorStr)
 	}
 	podFinder, err := NewLabelPodFinder()
 	if err != nil {
-		return nil, initializationError(err, resourceCollectorStr)
+		return nil, errors.InitializationError(err, resourceCollectorStr)
 	}
+	storageClient := NewFileStorageClient(afero.NewOsFs())
 	return &resourceCollector{
 		dynamicClient: dynamicClient,
 		restMapper:    restMapper,
 		podFinder:     podFinder,
+		storageClient: storageClient,
 	}, nil
 }
 
-func (cc *resourceCollector) ResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
+func (rc *resourceCollector) RetrieveResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
 	resources, err := manifests.ResourceList()
 	if err != nil {
 		return nil, err
 	}
-	return cc.RetrieveResources(resources, "", opts)
+	return rc.RetrieveResources(resources, "", opts)
 }
 
-func (cc *resourceCollector) RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
+func (rc *resourceCollector) RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
 	var result kuberesource.UnstructuredResources
 	eg := errgroup.Group{}
 	lock := sync.RWMutex{}
@@ -84,7 +80,7 @@ func (cc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 	for _, kind := range resources {
 		kind := kind
 		eg.Go(func() error {
-			resources, err := cc.handleUnstructuredResource(kind, namespace, opts)
+			resources, err := rc.handleUnstructuredResource(kind, namespace, opts)
 			if err != nil {
 				return err
 			}
@@ -97,7 +93,7 @@ func (cc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-	pods, err := cc.podFinder.GetPods(resources)
+	pods, err := rc.podFinder.GetPods(resources)
 	if err != nil {
 		return nil, err
 	}
@@ -111,25 +107,25 @@ func (cc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 
 var ownerResources = []string{"Deployment", "DaemonSet", "Job", "CronJob"}
 
-func (cc *resourceCollector) handleUnstructuredResource(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
+func (rc *resourceCollector) handleUnstructuredResource(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
 	switch {
 	case resource.GetKind() == "CustomResourceDefinition":
-		return cc.listAllFromNamespace(resource, namespace, opts)
+		return rc.listAllFromNamespace(resource, namespace, opts)
 	default:
-		return cc.getResource(resource)
+		return rc.getResource(resource)
 	}
 }
 
-func (cc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
-	kind, err := cc.gvrFromUnstructured(*resource)
+func (rc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
+	kind, err := rc.gvrFromUnstructured(*resource)
 	if err != nil {
 		return nil, err
 	}
 	var list *unstructured.UnstructuredList
 	if namespace == "" {
-		list, err = cc.dynamicClient.Resource(kind).List(opts)
+		list, err = rc.dynamicClient.Resource(kind).List(opts)
 	} else {
-		list, err = cc.dynamicClient.Resource(kind).Namespace(namespace).List(opts)
+		list, err = rc.dynamicClient.Resource(kind).Namespace(namespace).List(opts)
 	}
 
 	if err != nil {
@@ -142,16 +138,16 @@ func (cc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstruc
 	return result, nil
 }
 
-func (cc *resourceCollector) getResource(resource *unstructured.Unstructured) (kuberesource.UnstructuredResources, error) {
-	kind, err := cc.gvrFromUnstructured(*resource)
+func (rc *resourceCollector) getResource(resource *unstructured.Unstructured) (kuberesource.UnstructuredResources, error) {
+	kind, err := rc.gvrFromUnstructured(*resource)
 	if err != nil {
 		return nil, err
 	}
 	var res *unstructured.Unstructured
 	if resource.GetNamespace() != "" {
-		res, err = cc.dynamicClient.Resource(kind).Namespace(resource.GetNamespace()).Get(resource.GetName(), metav1.GetOptions{})
+		res, err = rc.dynamicClient.Resource(kind).Namespace(resource.GetNamespace()).Get(resource.GetName(), metav1.GetOptions{})
 	} else {
-		res, err = cc.dynamicClient.Resource(kind).Get(resource.GetName(), metav1.GetOptions{})
+		res, err = rc.dynamicClient.Resource(kind).Get(resource.GetName(), metav1.GetOptions{})
 
 	}
 	if err != nil {
@@ -160,7 +156,7 @@ func (cc *resourceCollector) getResource(resource *unstructured.Unstructured) (k
 	return kuberesource.UnstructuredResources{res}, nil
 }
 
-func (cc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructured) (schema.GroupVersionResource, error) {
+func (rc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructured) (schema.GroupVersionResource, error) {
 	gvr := schema.GroupVersionResource{
 		Group:    resource.GetObjectKind().GroupVersionKind().Group,
 		Version:  resource.GetObjectKind().GroupVersionKind().Version,
@@ -181,33 +177,27 @@ func (cc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 			Resource: cdr.Spec.Names.Plural,
 		}
 	}
-	result, err := cc.restMapper.ResourceFor(gvr)
+	result, err := rc.restMapper.ResourceFor(gvr)
 	if err != nil {
 		return schema.GroupVersionResource{}, err
 	}
 	return result, nil
 }
 
-func (cc *resourceCollector) SaveResources(versionedResources []kuberesource.VersionedResources, fs afero.Fs, dir string) error {
-	resourceDir := filepath.Join(dir, "resources")
-	err := fs.Mkdir(resourceDir, 0777)
-	if err != nil {
-		return err
-	}
+func (rc *resourceCollector) SaveResources(location string, versionedResources []kuberesource.VersionedResources) error {
+	var storageObjects []*StorageObject
 	for _, versionedResource := range versionedResources {
-		fileName := filepath.Join(resourceDir, fmt.Sprintf("%s_%s.yaml", versionedResource.GVK.Kind, versionedResource.GVK.Version))
-		_, err := fs.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0777)
-		if err != nil {
-			return err
-		}
 		tmpManifests, err := helmchart.ManifestsFromResources(versionedResource.Resources)
 		if err != nil {
 			return err
 		}
-		err = afero.WriteFile(fs, fileName, []byte(tmpManifests.CombinedString()), 0777)
-		if err != nil {
-			return err
-		}
+		reader := strings.NewReader(tmpManifests.CombinedString())
+		resourceName := fmt.Sprintf("%s_%s.yaml", versionedResource.GVK.Kind, versionedResource.GVK.Version)
+		storageObjects = append(storageObjects, &StorageObject{
+			resource: reader,
+			name: resourceName,
+
+		})
 	}
 	return nil
 }

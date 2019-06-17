@@ -15,7 +15,7 @@ var _ = Describe("aggregator test", func() {
 	Context("e2e", func() {
 		BeforeEach(func() {
 			var err error
-			aggregator, err = NewDefaultAggregator()
+			aggregator, err = DefaultAggregator()
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("can properly tar up all resources", func() {

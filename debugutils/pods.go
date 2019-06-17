@@ -31,18 +31,18 @@ type LabelPodFinder struct {
 func NewLabelPodFinder() (*LabelPodFinder, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
-		return nil, initializationError(err, labelPodFinderStr)
+		return nil, errors.InitializationError(err, labelPodFinderStr)
 	}
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return nil, initializationError(err, labelPodFinderStr)
+		return nil, errors.InitializationError(err, labelPodFinderStr)
 	}
 	return &LabelPodFinder{
 		client: client,
 	}, nil
 }
 
-func (mpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error) {
+func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error) {
 	var result []*corev1.PodList
 	for _, resource := range  resources {
 		var matchLabels map[string]string
@@ -58,7 +58,7 @@ func (mpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 		default:
 			continue
 		}
-		res, err := mpf.getPodsForMatchLabels(matchLabels, resource.GetNamespace())
+		res, err := lpf.getPodsForMatchLabels(matchLabels, resource.GetNamespace())
 		if err != nil {
 			return nil, err
 		}
@@ -68,9 +68,9 @@ func (mpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 	return result, nil
 }
 
-func (mpf *LabelPodFinder) getPodsForMatchLabels(matchLabels map[string]string, namespace string) (*corev1.PodList, error) {
+func (lpf *LabelPodFinder) getPodsForMatchLabels(matchLabels map[string]string, namespace string) (*corev1.PodList, error) {
 	var set labels.Set = matchLabels
-	return mpf.client.CoreV1().Pods(namespace).List(metav1.ListOptions{
+	return lpf.client.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: set.String(),
 	})
 }
