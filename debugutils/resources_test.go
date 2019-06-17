@@ -41,7 +41,7 @@ var _ = Describe("resource collector e2e", func() {
 				case "Pod":
 					Expect(resource.Resources).To(HaveLen(4))
 					var deploymentNames []string
-					for _, v := range resources {
+					for _, v := range unstructuredResources {
 						if v.GetKind() == "Deployment" {
 							deploymentNames = append(deploymentNames, v.GetName())
 						}

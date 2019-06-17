@@ -13,6 +13,9 @@ import (
 
 const (
 	aggregatorName = "aggregator"
+	logsStr = "logs"
+	resourcesStr = "resources"
+
 )
 
 type Aggregator struct {
@@ -21,6 +24,7 @@ type Aggregator struct {
 	storageClient     StorageClient
 	fs                afero.Fs
 
+	// root directory of the aggregated files
 	dir string
 }
 
@@ -35,10 +39,12 @@ func DefaultAggregator() (*Aggregator, error) {
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
 	}
+	resourceCollector.storageClient = storageClient
 	logCollector, err := DefaultLogCollector()
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
 	}
+	logCollector.storageClient = storageClient
 	tmpd, err := afero.TempDir(fs, "", "")
 	if err != nil {
 		return nil, err
@@ -65,14 +71,14 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 	if err != nil {
 		return err
 	}
-	if err := a.resourceCollector.SaveResources(filepath.Join(a.dir, "resources"), kubeResources); err != nil {
+	if err := a.resourceCollector.SaveResources(filepath.Join(a.dir, resourcesStr), kubeResources); err != nil {
 		return err
 	}
 	logRequests, err := a.logCollector.GetLogRequests(unstructuredResources)
 	if err != nil {
 		return err
 	}
-	if err = a.logCollector.SaveLogs(filepath.Join(a.dir, "logs"), logRequests); err != nil {
+	if err = a.logCollector.SaveLogs(filepath.Join(a.dir, logsStr), logRequests); err != nil {
 		return err
 	}
 	tarball, err := afero.TempFile(a.fs, "", "")
@@ -97,7 +103,7 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 }
 
 func (a *Aggregator) createSubResourceDirectories() error {
-	directories := []string{"resources", "logs"}
+	directories := []string{resourcesStr, logsStr}
 	for _, v := range directories {
 		resourceDir := filepath.Join(a.dir, v)
 		err := a.fs.Mkdir(resourceDir, 0777)

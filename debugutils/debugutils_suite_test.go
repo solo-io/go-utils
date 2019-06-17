@@ -32,11 +32,11 @@ var (
 	lock *clusterlock.TestClusterLocker
 	ctrl *gomock.Controller
 
-	restCfg     *rest.Config
-	installer   kubeinstall.Installer
-	manifests   helmchart.Manifests
-	resources   kuberesource.UnstructuredResources
-	ownerLabels map[string]string
+	restCfg               *rest.Config
+	installer             kubeinstall.Installer
+	manifests             helmchart.Manifests
+	unstructuredResources kuberesource.UnstructuredResources
+	ownerLabels           map[string]string
 
 	_ = SynchronizedBeforeSuite(func() []byte {
 		var err error
@@ -66,9 +66,9 @@ var (
 		Expect(cache.Init(context.TODO(), restCfg)).NotTo(HaveOccurred())
 		installer, err = kubeinstall.NewKubeInstaller(restCfg, cache, nil)
 		Expect(err).NotTo(HaveOccurred())
-		resources, err = manifests.ResourceList()
+		unstructuredResources, err = manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-		err = installer.ReconcileResources(context.TODO(), "gloo-system", resources, ownerLabels)
+		err = installer.ReconcileResources(context.TODO(), "gloo-system", unstructuredResources, ownerLabels)
 		Expect(err).NotTo(HaveOccurred())
 		return nil
 	}, func(data []byte) {})
