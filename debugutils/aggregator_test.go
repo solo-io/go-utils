@@ -37,7 +37,7 @@ var _ = Describe("aggregator test", func() {
 		})
 	})
 
-	FContext("unit", func() {
+	Context("unit", func() {
 		var (
 			resourceCollector *MockResourceCollector
 			logCollector      *MockLogCollector

@@ -1,11 +1,14 @@
 package debugutils
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
 
+	"cloud.google.com/go/storage"
 	"github.com/spf13/afero"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:generate mockgen -destination=./mocks/storage.go -source storage.go -package mocks
@@ -40,4 +43,36 @@ func (fsc *FileStorageClient) Save(location string, resources ...*StorageObject)
 		}
 	}
 	return nil
+}
+
+type GcsStorageClient struct {
+	client *storage.Client
+	ctx context.Context
+}
+
+func NewGcsStorageClient(ctx context.Context) (*GcsStorageClient, error) {
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &GcsStorageClient{client: client, ctx: ctx}, nil
+}
+
+
+func (gsc *GcsStorageClient) Save(location string, resources ...*StorageObject) error {
+	bucket := gsc.client.Bucket("location")
+	eg := errgroup.Group{}
+	for _, resource := range resources {
+		resource := resource
+		eg.Go(func() error {
+			obj := bucket.Object(resource.name)
+			w := obj.NewWriter(gsc.ctx)
+			_, err := io.Copy(w, resource.resource)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+	return eg.Wait()
 }
