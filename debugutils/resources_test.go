@@ -10,7 +10,7 @@ import (
 
 var _ = Describe("resource collector e2e", func() {
 	var (
-		collector   *resourceCollector
+		collector *resourceCollector
 	)
 
 	var (

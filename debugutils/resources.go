@@ -27,7 +27,6 @@ const (
 
 //go:generate mockgen -destination=./mocks/resources.go -source resources.go -package mocks
 
-
 type ResourceCollector interface {
 	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
 	SaveResources(location string, versionedResources []kuberesource.VersionedResources) error
@@ -197,8 +196,7 @@ func (rc *resourceCollector) SaveResources(location string, versionedResources [
 		resourceName := fmt.Sprintf("%s_%s.yaml", versionedResource.GVK.Kind, versionedResource.GVK.Version)
 		storageObjects = append(storageObjects, &StorageObject{
 			resource: reader,
-			name: resourceName,
-
+			name:     resourceName,
 		})
 	}
 	return rc.storageClient.Save(location, storageObjects...)

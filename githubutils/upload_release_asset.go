@@ -4,15 +4,16 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/avast/retry-go"
-	"github.com/google/go-github/github"
-	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/versionutils"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/avast/retry-go"
+	"github.com/google/go-github/github"
+	"github.com/solo-io/go-utils/contextutils"
+	"github.com/solo-io/go-utils/versionutils"
 )
 
 type ReleaseAssetSpec struct {

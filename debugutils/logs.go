@@ -39,8 +39,6 @@ func (lr *LogsRequest) ResourceId() string {
 	return fmt.Sprintf("%s_%s_%s.log", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName)
 }
 
-
-
 func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *rest.Request) *LogsRequest {
 	return &LogsRequest{podMeta: podMeta, containerName: containerName, request: request}
 }
@@ -62,7 +60,7 @@ func DefaultLogCollector() (*logCollector, error) {
 	}
 	storageClient := NewFileStorageClient(afero.NewOsFs())
 	return &logCollector{
-		storageClient: storageClient,
+		storageClient:     storageClient,
 		logRequestBuilder: logRequestBuilder,
 	}, nil
 }
@@ -74,7 +72,6 @@ func (lc *logCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests
 	}
 	return lc.logRequestBuilder.LogsFromUnstructured(resources)
 }
-
 
 func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
 	return lc.logRequestBuilder.LogsFromUnstructured(resources)
@@ -103,7 +100,7 @@ func (lc *logCollector) SaveLogs(location string, requests []*LogsRequest) error
 			}
 			storageObjects = append(storageObjects, &StorageObject{
 				resource: buf,
-				name: restRequest.ResourceId(),
+				name:     restRequest.ResourceId(),
 			})
 			return nil
 		})

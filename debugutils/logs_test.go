@@ -12,33 +12,33 @@ import (
 
 var _ = Describe("logs", func() {
 	var (
-		fs             afero.Fs
+		fs afero.Fs
 
 		deployedPods = []*LogsRequest{
 			{
 				podMeta: metav1.ObjectMeta{
-					Name: "gateway",
+					Name:      "gateway",
 					Namespace: "gloo-system",
 				},
 				containerName: "gateway",
 			},
 			{
 				podMeta: metav1.ObjectMeta{
-					Name: "gateway-proxy",
+					Name:      "gateway-proxy",
 					Namespace: "gloo-system",
 				},
 				containerName: "gateway-proxy",
 			},
 			{
 				podMeta: metav1.ObjectMeta{
-					Name: "gloo",
+					Name:      "gloo",
 					Namespace: "gloo-system",
 				},
 				containerName: "gloo",
 			},
 			{
 				podMeta: metav1.ObjectMeta{
-					Name: "discovery",
+					Name:      "discovery",
 					Namespace: "gloo-system",
 				},
 				containerName: "discovery",
@@ -77,7 +77,7 @@ var _ = Describe("logs", func() {
 
 	Context("log file storage", func() {
 		var (
-			lc    *logCollector
+			lc     *logCollector
 			tmpDir string
 		)
 
@@ -102,7 +102,7 @@ var _ = Describe("logs", func() {
 					fileName := file.Name()
 					prefix := fmt.Sprintf("%s_%s", deployedPod.podMeta.Namespace, deployedPod.podMeta.Name)
 					suffix := fmt.Sprintf("%s.log", deployedPod.containerName)
-					if strings.HasPrefix(fileName, prefix) && strings.HasSuffix(fileName, suffix){
+					if strings.HasPrefix(fileName, prefix) && strings.HasSuffix(fileName, suffix) {
 						found = true
 						continue
 					}

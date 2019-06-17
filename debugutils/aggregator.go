@@ -28,7 +28,6 @@ func NewAggregator(resourceCollector ResourceCollector, logCollector LogCollecto
 	return &Aggregator{resourceCollector: resourceCollector, logCollector: logCollector, storageClient: storageClient, fs: fs, dir: dir}
 }
 
-
 func DefaultAggregator() (*Aggregator, error) {
 	fs := afero.NewOsFs()
 	storageClient := NewFileStorageClient(fs)
@@ -89,7 +88,7 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 		return err
 	}
 	if err := a.storageClient.Save(filepath.Dir(filename), &StorageObject{
-		name: filepath.Base(filename),
+		name:     filepath.Base(filename),
 		resource: tarball,
 	}); err != nil {
 		return err

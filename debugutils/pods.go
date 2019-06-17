@@ -51,7 +51,7 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 	eg := errgroup.Group{}
 	lock := sync.Mutex{}
 	var result []*corev1.PodList
-	for _, resource := range  resources {
+	for _, resource := range resources {
 		resource := resource
 		eg.Go(func() error {
 			var matchLabels map[string]string

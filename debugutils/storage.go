@@ -12,7 +12,7 @@ import (
 
 type StorageObject struct {
 	resource io.Reader
-	name string
+	name     string
 }
 
 type StorageClient interface {
@@ -41,4 +41,3 @@ func (fsc *FileStorageClient) Save(location string, resources ...*StorageObject)
 	}
 	return nil
 }
-

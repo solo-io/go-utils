@@ -40,8 +40,8 @@ var istioCrd = apiextensions.CustomResourceDefinition{}
 
 var _ = Describe("KubeInstaller", func() {
 	var (
-		ns string
-		lock *clusterlock.TestClusterLocker
+		ns         string
+		lock       *clusterlock.TestClusterLocker
 		kubeClient kubernetes.Interface
 	)
 
@@ -69,7 +69,6 @@ var _ = Describe("KubeInstaller", func() {
 		ns = "test" + testutils.RandString(5)
 		err := kubeutils.CreateNamespacesInParallel(kubeClient, ns)
 		Expect(err).NotTo(HaveOccurred())
-
 
 	})
 	AfterEach(func() {

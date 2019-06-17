@@ -17,9 +17,9 @@ import (
 
 var _ = Describe("InstallKubeManifest", func() {
 	var (
-		namespace string
+		namespace  string
 		kubeClient kubernetes.Interface
-		)
+	)
 	BeforeEach(func() {
 		if os.Getenv("RUN_KUBE_TESTS") != "1" {
 			Skip("use RUN_KUBE_TESTS to run this test")

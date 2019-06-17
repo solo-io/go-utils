@@ -82,9 +82,6 @@ var _ = Describe("aggregator test", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-
-
-
 		AfterEach(func() {
 			ctrl.Finish()
 		})
