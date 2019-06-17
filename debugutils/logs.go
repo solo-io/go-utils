@@ -1,11 +1,8 @@
 package debugutils
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"path/filepath"
-	"sync"
 
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
@@ -79,8 +76,6 @@ func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResour
 
 func (lc *logCollector) SaveLogs(location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
-	lock := sync.Mutex{}
-	var storageObjects []*StorageObject
 	for _, request := range requests {
 		// necessary to shadow this variable so that it is unique within the goroutine
 		restRequest := request
@@ -90,25 +85,13 @@ func (lc *logCollector) SaveLogs(location string, requests []*LogsRequest) error
 				return err
 			}
 			defer reader.Close()
-			lock.Lock()
-			defer lock.Unlock()
-			// Might be able to lessen the memory burden here
-			buf := &bytes.Buffer{}
-			_, err = io.Copy(buf, reader)
-			if err != nil {
-				return err
-			}
-			storageObjects = append(storageObjects, &StorageObject{
-				resource: buf,
-				name:     restRequest.ResourceId(),
+			return lc.storageClient.Save(location, &StorageObject{
+				resource: reader,
+				name: restRequest.ResourceId(),
 			})
-			return nil
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return lc.storageClient.Save(location, storageObjects...)
+	return eg.Wait()
 }
 
 type LogRequestBuilder struct {
