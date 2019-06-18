@@ -67,6 +67,8 @@ require (
 	github.com/onsi/gomega v1.5.0
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/openzipkin/zipkin-go v0.1.1 // indirect
+	github.com/palantir/go-baseapp v0.0.0-20181120182528-91001a7c54f3
+	github.com/palantir/go-githubapp v0.0.0-20181023164003-a3a32b23c2f7
 	github.com/pelletier/go-toml v1.2.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1
