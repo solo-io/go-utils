@@ -22,6 +22,7 @@ steps:
     volumes: *vol
     env:
       - 'RUN_KUBE_TESTS=1'
+      - 'BUILD_ID=$BUILD_ID'
     secretEnv: ['GITHUB_TOKEN']
     args: ['-r', '-p', '-failFast', '-randomizeSuites', '-randomizeAllSpecs', '-skipPackage=./installutils/kubeinstall,./debugutils/test']
     waitFor: ['build']
@@ -39,7 +40,6 @@ steps:
     volumes: *vol
     env:
     - 'RUN_KUBE_TESTS=1'
-    - 'BUILD_ID=$BUILD_ID'
     args: ['-r', '-failFast', './debugutils/test']
     waitFor: ['run-tests']
     id: 'debugutils-tests'
