@@ -7,8 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/debugutils/common"
-	"github.com/solo-io/go-utils/debugutils/mocks"
 	"github.com/solo-io/go-utils/errors"
 	corev1 "k8s.io/api/core/v1"
 	fakecorev1 "k8s.io/client-go/kubernetes/typed/core/v1/fake"
@@ -17,14 +15,14 @@ import (
 
 var _ = Describe("logs unit tests", func() {
 	var (
-		podFinder      *mocks.MockPodFinder
+		podFinder      *MockPodFinder
 		requestBuilder *LogRequestBuilder
 		podList        *corev1.PodList
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(T)
-		podFinder = mocks.NewMockPodFinder(ctrl)
+		podFinder = NewMockPodFinder(ctrl)
 		var err error
 		podList, err = generatePodList()
 		Expect(err).NotTo(HaveOccurred())
@@ -86,21 +84,21 @@ var _ = Describe("logs unit tests", func() {
 	Context("Log collector", func() {
 		var (
 			lc *logCollector
-			sc *mocks.MockStorageClient
+			sc *MockStorageClient
 		)
 
 		BeforeEach(func() {
 			lc = NewLogCollector(requestBuilder)
-			sc = mocks.NewMockStorageClient(ctrl)
+			sc = NewMockStorageClient(ctrl)
 		})
 
 		It("fails to save logs if a single request fails", func() {
 			fakeErr := errors.New("this is a fake error")
-			sucessfulRequest, failingRequest := mocks.NewMockResponseWrapper(ctrl), mocks.NewMockResponseWrapper(ctrl)
+			sucessfulRequest, failingRequest := NewMockResponseWrapper(ctrl), NewMockResponseWrapper(ctrl)
 			sucessfulRequest.EXPECT().Stream().Times(2).Return(&os.File{}, nil)
 			failingRequest.EXPECT().Stream().Times(1).Return(nil, fakeErr)
 			sc.EXPECT().Save(gomock.Any(), gomock.Any()).AnyTimes()
-			logRequests := []*common.LogsRequest{
+			logRequests := []*LogsRequest{
 				{Request: sucessfulRequest},
 				{Request: failingRequest},
 				{Request: sucessfulRequest},
@@ -113,17 +111,17 @@ var _ = Describe("logs unit tests", func() {
 		It("succeeds and calls storage client for all requests", func() {
 			fakeLocation := "location"
 			fakeReaderCloser := &os.File{}
-			sucessfulRequest := mocks.NewMockResponseWrapper(ctrl)
+			sucessfulRequest := NewMockResponseWrapper(ctrl)
 			sucessfulRequest.EXPECT().Stream().Times(1).Return(fakeReaderCloser, nil)
-			logRequests := []*common.LogsRequest{
+			logRequests := []*LogsRequest{
 				{
-					Request: sucessfulRequest,
+					Request:       sucessfulRequest,
 					ContainerName: "request1",
 				},
 			}
-			sc.EXPECT().Save(fakeLocation, &common.StorageObject{
+			sc.EXPECT().Save(fakeLocation, &StorageObject{
 				Resource: fakeReaderCloser,
-				Name: logRequests[0].ResourceId(),
+				Name:     logRequests[0].ResourceId(),
 			}).Return(nil).Times(1)
 			err := lc.SaveLogs(sc, fakeLocation, logRequests)
 			Expect(err).NotTo(HaveOccurred())

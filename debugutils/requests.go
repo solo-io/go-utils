@@ -1,4 +1,4 @@
-package common
+package debugutils
 
 import (
 	"fmt"

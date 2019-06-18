@@ -113,7 +113,7 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 						retry.RetryIf(func(e error) bool {
 							return errors.IsNotFound(e)
 						}),
-						); err != nil {
+					); err != nil {
 
 						contextutils.LoggerFrom(ctx).Errorw("could not reacquire lock", zap.Error(err))
 						return

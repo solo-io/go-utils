@@ -1,7 +1,6 @@
 package debugutils
 
 import (
-	"github.com/solo-io/go-utils/debugutils/common"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
@@ -11,10 +10,9 @@ import (
 )
 
 type LogCollector interface {
-	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*common.LogsRequest, error)
-	SaveLogs(client common.StorageClient, location string, requests []*common.LogsRequest) error
+	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
+	SaveLogs(client StorageClient, location string, requests []*LogsRequest) error
 }
-
 
 type logCollector struct {
 	logRequestBuilder *LogRequestBuilder
@@ -35,7 +33,7 @@ func DefaultLogCollector() (*logCollector, error) {
 	}, nil
 }
 
-func (lc *logCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests) ([]*common.LogsRequest, error) {
+func (lc *logCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests) ([]*LogsRequest, error) {
 	resources, err := manifests.ResourceList()
 	if err != nil {
 		return nil, err
@@ -43,11 +41,11 @@ func (lc *logCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests
 	return lc.logRequestBuilder.LogsFromUnstructured(resources)
 }
 
-func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*common.LogsRequest, error) {
+func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
 	return lc.logRequestBuilder.LogsFromUnstructured(resources)
 }
 
-func (lc *logCollector) SaveLogs(storageClient common.StorageClient, location string, requests []*common.LogsRequest) error {
+func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
 	for _, request := range requests {
 		// necessary to shadow this variable so that it is unique within the goroutine
@@ -58,9 +56,9 @@ func (lc *logCollector) SaveLogs(storageClient common.StorageClient, location st
 				return err
 			}
 			defer reader.Close()
-			return storageClient.Save(location, &common.StorageObject{
+			return storageClient.Save(location, &StorageObject{
 				Resource: reader,
-				Name: restRequest.ResourceId(),
+				Name:     restRequest.ResourceId(),
 			})
 		})
 	}
@@ -95,8 +93,8 @@ func DefaultLogRequestBuilder() (*LogRequestBuilder, error) {
 	}, nil
 }
 
-func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.UnstructuredResources) ([]*common.LogsRequest, error) {
-	var result []*common.LogsRequest
+func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
+	var result []*LogsRequest
 	pods, err := lrb.podFinder.GetPods(resources)
 	if err != nil {
 		return nil, err
@@ -107,29 +105,29 @@ func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.Unstru
 	return result, nil
 }
 
-func (lrb *LogRequestBuilder) RetrieveLogs(pods *corev1.PodList) []*common.LogsRequest {
-	var result []*common.LogsRequest
+func (lrb *LogRequestBuilder) RetrieveLogs(pods *corev1.PodList) []*LogsRequest {
+	var result []*LogsRequest
 	for _, v := range pods.Items {
 		result = append(result, lrb.buildLogsRequest(v)...)
 	}
 	return result
 }
 
-func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod) []*common.LogsRequest {
-	var result []*common.LogsRequest
+func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod) []*LogsRequest {
+	var result []*LogsRequest
 	for _, v := range pod.Spec.Containers {
 		opts := &corev1.PodLogOptions{
 			Container: v.Name,
 		}
 		request := lrb.clientset.Pods(pod.Namespace).GetLogs(pod.Name, opts)
-		result = append(result, common.NewLogsRequest(pod.ObjectMeta, v.Name, request))
+		result = append(result, NewLogsRequest(pod.ObjectMeta, v.Name, request))
 	}
 	for _, v := range pod.Spec.InitContainers {
 		opts := &corev1.PodLogOptions{
 			Container: v.Name,
 		}
 		request := lrb.clientset.Pods(pod.Namespace).GetLogs(pod.Name, opts)
-		result = append(result, common.NewLogsRequest(pod.ObjectMeta, v.Name, request))
+		result = append(result, NewLogsRequest(pod.ObjectMeta, v.Name, request))
 	}
 	return result
 }

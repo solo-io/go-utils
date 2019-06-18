@@ -1,4 +1,4 @@
-package common
+package debugutils
 
 import (
 	. "github.com/onsi/ginkgo"

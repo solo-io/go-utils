@@ -6,7 +6,6 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/debugutils/mocks"
 	"github.com/solo-io/go-utils/stringutils"
 	"github.com/spf13/afero"
 )
@@ -18,18 +17,18 @@ var _ = Describe("aggregator test", func() {
 
 	Context("unit", func() {
 		var (
-			resourceCollector *mocks.MockResourceCollector
-			logCollector      *mocks.MockLogCollector
-			storageClient     *mocks.MockStorageClient
+			resourceCollector *MockResourceCollector
+			logCollector      *MockLogCollector
+			storageClient     *MockStorageClient
 			fs                afero.Fs
 			tmpd              string
 		)
 		BeforeEach(func() {
 			var err error
 			ctrl = gomock.NewController(T)
-			logCollector = mocks.NewMockLogCollector(ctrl)
-			resourceCollector = mocks.NewMockResourceCollector(ctrl)
-			storageClient = mocks.NewMockStorageClient(ctrl)
+			logCollector = NewMockLogCollector(ctrl)
+			resourceCollector = NewMockResourceCollector(ctrl)
+			storageClient = NewMockStorageClient(ctrl)
 			fs = afero.NewMemMapFs()
 			tmpd, err = afero.TempDir(fs, "", "")
 			Expect(err).NotTo(HaveOccurred())

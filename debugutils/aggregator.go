@@ -4,7 +4,6 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/solo-io/go-utils/debugutils/common"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/tarutils"
@@ -14,28 +13,27 @@ import (
 
 const (
 	aggregatorName = "aggregator"
-	logsStr = "logs"
-	resourcesStr = "resources"
-
+	logsStr        = "logs"
+	resourcesStr   = "resources"
 )
 
 type Aggregator struct {
 	resourceCollector ResourceCollector
 	logCollector      LogCollector
-	storageClient     common.StorageClient
+	storageClient     StorageClient
 	fs                afero.Fs
 
 	// root directory of the aggregated files
 	dir string
 }
 
-func NewAggregator(resourceCollector ResourceCollector, logCollector LogCollector, storageClient common.StorageClient, fs afero.Fs, dir string) *Aggregator {
+func NewAggregator(resourceCollector ResourceCollector, logCollector LogCollector, storageClient StorageClient, fs afero.Fs, dir string) *Aggregator {
 	return &Aggregator{resourceCollector: resourceCollector, logCollector: logCollector, storageClient: storageClient, fs: fs, dir: dir}
 }
 
 func DefaultAggregator() (*Aggregator, error) {
 	fs := afero.NewOsFs()
-	storageClient := common.NewFileStorageClient(fs)
+	storageClient := NewFileStorageClient(fs)
 	resourceCollector, err := DefaultResourceCollector()
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
@@ -92,7 +90,7 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 	if err != nil {
 		return err
 	}
-	if err := a.storageClient.Save(filepath.Dir(filename), &common.StorageObject{
+	if err := a.storageClient.Save(filepath.Dir(filename), &StorageObject{
 		Name:     filepath.Base(filename),
 		Resource: tarball,
 	}); err != nil {

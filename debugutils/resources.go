@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/solo-io/go-utils/debugutils/common"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
@@ -27,7 +26,7 @@ const (
 
 type ResourceCollector interface {
 	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
-	SaveResources(client common.StorageClient, location string, versionedResources []kuberesource.VersionedResources) error
+	SaveResources(client StorageClient, location string, versionedResources []kuberesource.VersionedResources) error
 }
 
 type resourceCollector struct {
@@ -180,8 +179,8 @@ func (rc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 	return result, nil
 }
 
-func (rc *resourceCollector) SaveResources(storageClient common.StorageClient, location string, versionedResources []kuberesource.VersionedResources) error {
-	var storageObjects []*common.StorageObject
+func (rc *resourceCollector) SaveResources(storageClient StorageClient, location string, versionedResources []kuberesource.VersionedResources) error {
+	var storageObjects []*StorageObject
 	for _, versionedResource := range versionedResources {
 		tmpManifests, err := helmchart.ManifestsFromResources(versionedResource.Resources)
 		if err != nil {
@@ -189,7 +188,7 @@ func (rc *resourceCollector) SaveResources(storageClient common.StorageClient, l
 		}
 		reader := strings.NewReader(tmpManifests.CombinedString())
 		resourceName := fmt.Sprintf("%s_%s.yaml", versionedResource.GVK.Kind, versionedResource.GVK.Version)
-		storageObjects = append(storageObjects, &common.StorageObject{
+		storageObjects = append(storageObjects, &StorageObject{
 			Resource: reader,
 			Name:     resourceName,
 		})

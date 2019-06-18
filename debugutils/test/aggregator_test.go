@@ -11,7 +11,7 @@ import (
 var _ = Describe("aggregator test", func() {
 	var (
 		aggregator *debugutils.Aggregator
-		fs afero.Fs
+		fs         afero.Fs
 	)
 
 	Context("e2e", func() {

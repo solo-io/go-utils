@@ -1,4 +1,4 @@
-package common
+package debugutils
 
 import (
 	"context"
@@ -10,8 +10,6 @@ import (
 	"github.com/spf13/afero"
 	"golang.org/x/sync/errgroup"
 )
-
-//go:generate mockgen -destination ../mocks/common_mocks.go -package mocks github.com/solo-io/go-utils/debugutils/common StorageClient
 
 type StorageObject struct {
 	Resource io.Reader
@@ -47,7 +45,7 @@ func (fsc *FileStorageClient) Save(location string, resources ...*StorageObject)
 
 type GcsStorageClient struct {
 	client *storage.Client
-	ctx context.Context
+	ctx    context.Context
 }
 
 func NewGcsStorageClient(ctx context.Context) (*GcsStorageClient, error) {
@@ -57,7 +55,6 @@ func NewGcsStorageClient(ctx context.Context) (*GcsStorageClient, error) {
 	}
 	return &GcsStorageClient{client: client, ctx: ctx}, nil
 }
-
 
 func (gsc *GcsStorageClient) Save(location string, resources ...*StorageObject) error {
 	bucket := gsc.client.Bucket(location)
