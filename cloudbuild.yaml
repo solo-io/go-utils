@@ -2,7 +2,7 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     args: ['config', 'set', 'compute/zone', 'us-central1-b']
   - name: gcr.io/cloud-builders/gcloud
-    args: ['container', 'clusters', 'get-credentials', 'solo-kit-test']
+    args: ['container', 'clusters', 'get-credentials', 'go-utils-test']
 
   - name: gcr.io/cloud-builders/gsutil
     entrypoint: 'bash'
