@@ -28,6 +28,10 @@ func NewFileStorageClient(fs afero.Fs) *FileStorageClient {
 	return &FileStorageClient{fs: fs}
 }
 
+func DefaultFileStorageClient() *FileStorageClient {
+	return &FileStorageClient{fs: afero.NewOsFs()}
+}
+
 func (fsc *FileStorageClient) Save(location string, resources ...*StorageObject) error {
 	for _, resource := range resources {
 		fileName := filepath.Join(location, resource.Name)
@@ -39,6 +43,7 @@ func (fsc *FileStorageClient) Save(location string, resources ...*StorageObject)
 		if err != nil {
 			return err
 		}
+		file.Close()
 	}
 	return nil
 }
@@ -48,7 +53,11 @@ type GcsStorageClient struct {
 	ctx    context.Context
 }
 
-func NewGcsStorageClient(ctx context.Context) (*GcsStorageClient, error) {
+func NewGcsStorageClient(client *storage.Client, ctx context.Context) *GcsStorageClient {
+	return &GcsStorageClient{client: client, ctx: ctx}
+}
+
+func DefaultGcsStorageClient(ctx context.Context) (*GcsStorageClient, error) {
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, err
@@ -64,6 +73,7 @@ func (gsc *GcsStorageClient) Save(location string, resources ...*StorageObject) 
 		eg.Go(func() error {
 			obj := bucket.Object(resource.Name)
 			w := obj.NewWriter(gsc.ctx)
+			defer w.Close()
 			_, err := io.Copy(w, resource.Resource)
 			if err != nil {
 				return err

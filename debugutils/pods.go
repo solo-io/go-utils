@@ -68,7 +68,7 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 				}
 				list = &corev1.PodList{
 					TypeMeta: metav1.TypeMeta{
-						Kind: "List",
+						Kind:       "List",
 						APIVersion: "v1",
 					},
 					Items: []corev1.Pod{*pod},

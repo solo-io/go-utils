@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-var _ = FDescribe("pod unit tests", func() {
+var _ = Describe("pod unit tests", func() {
 	var (
 		podFinder *LabelPodFinder
 		clientset *fake.Clientset
