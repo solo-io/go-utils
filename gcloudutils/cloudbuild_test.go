@@ -3,7 +3,8 @@ package gcloudutils_test
 import (
 	"encoding/json"
 
-	"github.com/solo-io/post-release-bot/pkg/gcloudutils"
+	"github.com/solo-io/go-utils/gcloudutils"
+
 	"google.golang.org/api/cloudbuild/v1"
 
 	. "github.com/onsi/ginkgo"
@@ -17,8 +18,8 @@ var (
 )
 
 const (
-	devDeploy = "dev-deploy"
-	tag_name  = "v0.1.0"
+	repoName = "repo-name"
+	tagName  = "v0.1.0"
 )
 
 var _ = BeforeSuite(func() {
@@ -35,7 +36,7 @@ var _ = Describe("github test", func() {
 
 	Context("repo name", func() {
 		It("can find the repo name from repo source", func() {
-			Expect(gcloudutils.GetRepoName(&bfr)).To(Equal(devDeploy))
+			Expect(gcloudutils.GetRepoName(&bfr)).To(Equal(repoName))
 		})
 	})
 
@@ -43,7 +44,7 @@ var _ = Describe("github test", func() {
 
 		It("can find tag name from source", func() {
 			tag := gcloudutils.GetReleaseVersionTag(&bfrt)
-			Expect(tag).To(Equal(tag_name))
+			Expect(tag).To(Equal(tagName))
 		})
 
 		It("returns empty string if no tag exists", func() {
@@ -55,7 +56,7 @@ var _ = Describe("github test", func() {
 	Context("tags", func() {
 		It("can find release tag from tags", func() {
 			tag := gcloudutils.GetReleaseVersionTag(&bfs)
-			Expect(tag).To(Equal(tag_name))
+			Expect(tag).To(Equal(tagName))
 		})
 
 		It("can find sha from tags", func() {
@@ -65,7 +66,7 @@ var _ = Describe("github test", func() {
 
 		It("can find repo name from tags", func() {
 			tag := gcloudutils.GetRepoName(&bfs)
-			Expect(tag).To(Equal(devDeploy))
+			Expect(tag).To(Equal(repoName))
 
 		})
 	})
@@ -79,7 +80,7 @@ const buildFromSource = `
       "source": {
         "storageSource": {
           "bucket": "solo-corp_cloudbuild",
-          "object": "source/solobot/1550549389.83-14f20ad743af4b7c942726aadfd12c33.tgz",
+          "object": "foo.tgz",
           "generation": "1550549390047482"
         }
       },
@@ -87,7 +88,7 @@ const buildFromSource = `
       	"ref_hello",
       	"tag_v0.1.0",
       	"sha_world",
-      	"repo_dev-deploy"
+      	"repo_repo-name"
       ],
       "createTime": "2019-02-19T04:09:50.309127374Z",
       "startTime": "2019-02-19T04:09:51.269815120Z",
@@ -123,8 +124,8 @@ const buildFromRepo = `
       "status": "SUCCESS",
       "source": {
         "repoSource": {
-          "projectId": "solo-corp",
-          "repoName": "github_solo-io_dev-deploy",
+          "projectId": "project-name",
+          "repoName": "github_solo-io_repo-name",
           "branchName": "master"
         }
       },
@@ -134,12 +135,12 @@ const buildFromRepo = `
       "results": {},
       "steps": [],
       "timeout": "600s",
-      "projectId": "solo-corp",
-      "logsBucket": "gs://726673624965.cloudbuild-logs.googleusercontent.com",
+      "projectId": "project-name",
+      "logsBucket": "",
       "sourceProvenance": {
         "resolvedRepoSource": {
-          "projectId": "solo-corp",
-          "repoName": "github_solo-io_dev-deploy",
+          "projectId": "project-name",
+          "repoName": "github_solo-io_repo-name",
           "commitSha": "c345645ddbee9c6f930b7d930631956a3553df09"
         }
       },
@@ -148,7 +149,7 @@ const buildFromRepo = `
         "substitutionOption": "ALLOW_LOOSE",
         "logging": "LEGACY"
       },
-      "logUrl": "https://console.cloud.google.com/gcr/builds/27ca4d2d-312e-4794-a6c2-5f7aeb2166fc?project=726673624965",
+      "logUrl": "",
       "tags": [
         "event-4dcba763-5140-4250-a580-4f75cc83454a",
         "trigger-9e1ab0e5-1cc4-4857-9635-a819565c7c5b"
@@ -162,7 +163,7 @@ const buildFromRepoTag = `
   "status": "SUCCESS",
   "source": {
     "repoSource": {
-      "projectId": "solo-corp",
+      "projectId": "project-name",
       "repoName": "github_solo-io_licensing",
       "tagName": "v0.1.0"
     }
@@ -173,15 +174,15 @@ const buildFromRepoTag = `
 
   "timeout": "900s",
   "images": [
-    "gcr.io/solo-corp/licensing"
+    "gcr.io/project-name/licensing"
   ],
-  "projectId": "solo-corp",
+  "projectId": "project-name",
   "buildTriggerId": "726293f4-2716-4906-91c7-d8aa48d4e6a5",
   "options": {
     "substitutionOption": "ALLOW_LOOSE",
     "logging": "LEGACY"
   },
-  "logUrl": "https://console.cloud.google.com/gcr/builds/64aba1ff-28fb-450a-9549-a78fbbd4fe8d?project=726673624965",
+  "logUrl": "",
   "tags": [
     "event-b9c277ee-162e-4ab7-aa45-e3ae65344609",
     "trigger-726293f4-2716-4906-91c7-d8aa48d4e6a5"
