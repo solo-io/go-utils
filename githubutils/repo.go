@@ -55,7 +55,7 @@ func GetClient(ctx context.Context) (*github.Client, error) {
 	return client, nil
 }
 
-func MustGetClient(ctx context.Context) *github.Client {
+func GetClientWithOrWithoutToken(ctx context.Context) *github.Client {
 	token, err := GetGithubToken()
 	if err != nil {
 		logMsg := fmt.Sprintf("%v Private repositories will be unavailable and a strict rate limit will be enforced.", err.Error())
