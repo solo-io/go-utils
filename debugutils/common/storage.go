@@ -1,4 +1,4 @@
-package debugutils
+package common
 
 import (
 	"context"
@@ -11,11 +11,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//go:generate mockgen -destination=./mocks/storage.go -source storage.go -package mocks
+//go:generate mockgen -destination ../mocks/common_mocks.go -package mocks github.com/solo-io/go-utils/debugutils/common StorageClient
 
 type StorageObject struct {
-	resource io.Reader
-	name     string
+	Resource io.Reader
+	Name     string
 }
 
 type StorageClient interface {
@@ -32,12 +32,12 @@ func NewFileStorageClient(fs afero.Fs) *FileStorageClient {
 
 func (fsc *FileStorageClient) Save(location string, resources ...*StorageObject) error {
 	for _, resource := range resources {
-		fileName := filepath.Join(location, resource.name)
+		fileName := filepath.Join(location, resource.Name)
 		file, err := fsc.fs.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0777)
 		if err != nil {
 			return err
 		}
-		_, err = io.Copy(file, resource.resource)
+		_, err = io.Copy(file, resource.Resource)
 		if err != nil {
 			return err
 		}
@@ -65,9 +65,9 @@ func (gsc *GcsStorageClient) Save(location string, resources ...*StorageObject) 
 	for _, resource := range resources {
 		resource := resource
 		eg.Go(func() error {
-			obj := bucket.Object(resource.name)
+			obj := bucket.Object(resource.Name)
 			w := obj.NewWriter(gsc.ctx)
-			_, err := io.Copy(w, resource.resource)
+			_, err := io.Copy(w, resource.Resource)
 			if err != nil {
 				return err
 			}

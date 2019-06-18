@@ -41,6 +41,6 @@ var (
 		return nil
 	}, func(data []byte) {})
 
-	_ = SynchronizedAfterSuite(func() {}, func() {
-	})
+	// _ = SynchronizedAfterSuite(func() {}, func() {
+	// })
 )

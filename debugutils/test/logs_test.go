@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/debugutils"
+	"github.com/solo-io/go-utils/debugutils/common"
 	"github.com/spf13/afero"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -15,7 +16,7 @@ var _ = Describe("logs", func() {
 	var (
 		fs afero.Fs
 
-		deployedPods = []*debugutils.LogsRequest{
+		deployedPods = []*common.LogsRequest{
 			{
 				PodMeta: metav1.ObjectMeta{
 					Name:      "gateway",
@@ -79,14 +80,14 @@ var _ = Describe("logs", func() {
 	Context("log file storage", func() {
 		var (
 			lc     debugutils.LogCollector
-			sc     debugutils.StorageClient
+			sc     common.StorageClient
 			tmpDir string
 		)
 
 		It("can properly store all logs from gloo manifest to files", func() {
 			var err error
 			fs = afero.NewOsFs()
-			sc = debugutils.NewFileStorageClient(fs)
+			sc = common.NewFileStorageClient(fs)
 			tmpDir, err = afero.TempDir(fs, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			lc, err = debugutils.DefaultLogCollector()

@@ -19,7 +19,8 @@ import (
 	"k8s.io/kubernetes/pkg/apis/batch"
 )
 
-//go:generate mockgen -destination mocks_test.go -self_package github.com/solo-io/go-utils/debugutils -package debugutils github.com/solo-io/go-utils/debugutils PodFinder,LogCollector,ResourceCollector,StorageClient
+//go:generate mockgen -destination ./mocks/mocks.go -package mocks github.com/solo-io/go-utils/debugutils PodFinder,LogCollector,ResourceCollector
+//go:generate mockgen -destination ./mocks/mocks_kube.go  -package mocks k8s.io/client-go/rest ResponseWrapper
 
 type PodFinder interface {
 	GetPods(resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error)
@@ -33,7 +34,11 @@ type LabelPodFinder struct {
 	client kubernetes.Interface
 }
 
-func NewLabelPodFinder() (*LabelPodFinder, error) {
+func NewLabelPodFinder(client kubernetes.Interface) *LabelPodFinder {
+	return &LabelPodFinder{client: client}
+}
+
+func DefaultLabelPodFinder() (*LabelPodFinder, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		return nil, errors.InitializationError(err, labelPodFinderStr)

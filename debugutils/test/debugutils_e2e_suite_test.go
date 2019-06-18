@@ -74,6 +74,9 @@ var (
 	}, func(data []byte) {})
 
 	_ = SynchronizedAfterSuite(func() {}, func() {
+		if os.Getenv("RUN_KUBE_TESTS") != "1" {
+			return
+		}
 		err := installer.PurgeResources(context.TODO(), ownerLabels)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
