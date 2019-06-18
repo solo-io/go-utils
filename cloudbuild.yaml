@@ -39,6 +39,7 @@ steps:
     volumes: *vol
     env:
     - 'RUN_KUBE_TESTS=1'
+    - 'BUILD_ID=$BUILD_ID'
     args: ['-r', '-failFast', './debugutils/test']
     waitFor: ['run-tests']
     id: 'debugutils-tests'

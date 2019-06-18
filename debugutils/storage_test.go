@@ -12,7 +12,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"google.golang.org/api/iterator"
 )
 
 var _ = Describe("storage client tests", func() {
@@ -106,18 +105,18 @@ var _ = Describe("storage client tests", func() {
 		})
 
 		AfterEach(func() {
-			obj := os.ExpandEnv("$BUILD_ID")
-			it := bucket.Objects(ctx, &storage.Query{
-				Prefix: obj,
-			})
-			for {
-				objAttrs, err := it.Next()
-				if err != nil && err == iterator.Done {
-					break
-				}
-				Expect(err).NotTo(HaveOccurred())
-				Expect(bucket.Object(objAttrs.Name).Delete(ctx)).NotTo(HaveOccurred())
-			}
+			// obj := os.ExpandEnv("$BUILD_ID")
+			// it := bucket.Objects(ctx, &storage.Query{
+			// 	Prefix: obj,
+			// })
+			// for {
+			// 	objAttrs, err := it.Next()
+			// 	if err != nil && err == iterator.Done {
+			// 		break
+			// 	}
+			// 	Expect(err).NotTo(HaveOccurred())
+			// 	Expect(bucket.Object(objAttrs.Name).Delete(ctx)).NotTo(HaveOccurred())
+			// }
 		})
 
 		It("can store a single file", func() {

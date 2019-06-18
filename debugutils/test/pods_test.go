@@ -1,9 +1,10 @@
-package debugutils
+package test
 
 import (
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/debugutils"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -12,18 +13,17 @@ import (
 )
 
 var _ = Describe("pod unit tests", func() {
-	var (
-		podFinder *LabelPodFinder
-		clientset *fake.Clientset
-	)
-
-	BeforeEach(func() {
-		// clientset = fake.NewSimpleClientset()
-		clientset = fake.NewSimpleClientset(podsAsObjects(generatePodList())...)
-		podFinder = NewLabelPodFinder(clientset)
-	})
-
 	Context("Label Pod Finder", func() {
+		var (
+			podFinder *debugutils.LabelPodFinder
+			clientset *fake.Clientset
+		)
+
+		BeforeEach(func() {
+			clientset = fake.NewSimpleClientset(podsAsObjects(GeneratePodList())...)
+			podFinder = debugutils.NewLabelPodFinder(clientset)
+		})
+
 		It("can handle full use case", func() {
 			resources, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
@@ -37,7 +37,7 @@ var _ = Describe("pod unit tests", func() {
 
 		It("can work with an individual pod", func() {
 			var unstructuredPod unstructured.Unstructured
-			err := yaml.Unmarshal([]byte(glooPodYaml), &unstructuredPod)
+			err := yaml.Unmarshal([]byte(GlooPodYaml), &unstructuredPod)
 			Expect(err).NotTo(HaveOccurred())
 			list, err := podFinder.GetPods(kuberesource.UnstructuredResources{&unstructuredPod})
 			Expect(err).NotTo(HaveOccurred())
