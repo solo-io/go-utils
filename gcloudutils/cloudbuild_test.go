@@ -79,7 +79,7 @@ const buildFromSource = `
       "status": "SUCCESS",
       "source": {
         "storageSource": {
-          "bucket": "solo-corp_cloudbuild",
+          "bucket": "project-name_cloudbuild",
           "object": "foo.tgz",
           "generation": "1550549390047482"
         }
@@ -96,16 +96,16 @@ const buildFromSource = `
       "results": {},
       "steps": [],
       "timeout": "600s",
-      "projectId": "solo-corp",
-      "logsBucket": "gs://726673624965.cloudbuild-logs.googleusercontent.com",
+      "projectId": "project-name",
+      "logsBucket": "",
       "sourceProvenance": {
         "resolvedStorageSource": {
-          "bucket": "solo-corp_cloudbuild",
-          "object": "source/solobot/1550549389.83-14f20ad743af4b7c942726aadfd12c33.tgz",
+          "bucket": "project-name_cloudbuild",
+          "object": "",
           "generation": "1550549390047482"
         },
         "fileHashes": {
-          "gs://solo-corp_cloudbuild/source/solobot/1550549389.83-14f20ad743af4b7c942726aadfd12c33.tgz#1550549390047482": {}
+          "": {}
         }
       },
       "options": {
@@ -114,7 +114,7 @@ const buildFromSource = `
       "substitutions": {
         "TAG_NAME": "v0.1.0"
       },
-      "logUrl": "https://console.cloud.google.com/gcr/builds/6c114a53-872a-4b3b-aabb-ea547c9e9406?project=726673624965"
+      "logUrl": ""
     }
 `
 
@@ -164,7 +164,7 @@ const buildFromRepoTag = `
   "source": {
     "repoSource": {
       "projectId": "project-name",
-      "repoName": "github_solo-io_licensing",
+      "repoName": "github_solo-io_repo-name",
       "tagName": "v0.1.0"
     }
   },
@@ -174,7 +174,7 @@ const buildFromRepoTag = `
 
   "timeout": "900s",
   "images": [
-    "gcr.io/project-name/licensing"
+    "gcr.io/project-name/repo-name"
   ],
   "projectId": "project-name",
   "buildTriggerId": "726293f4-2716-4906-91c7-d8aa48d4e6a5",
