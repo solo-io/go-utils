@@ -1,4 +1,4 @@
-package config
+package botutils
 
 import (
 	"io/ioutil"
