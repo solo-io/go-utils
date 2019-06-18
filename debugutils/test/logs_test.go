@@ -79,14 +79,14 @@ var _ = Describe("logs", func() {
 	Context("log file storage", func() {
 		var (
 			lc     debugutils.LogCollector
-			sc     StorageClient
+			sc     debugutils.StorageClient
 			tmpDir string
 		)
 
 		It("can properly store all logs from gloo manifest to files", func() {
 			var err error
 			fs = afero.NewOsFs()
-			sc = NewFileStorageClient(fs)
+			sc = debugutils.NewFileStorageClient(fs)
 			tmpDir, err = afero.TempDir(fs, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			lc, err = debugutils.DefaultLogCollector()
