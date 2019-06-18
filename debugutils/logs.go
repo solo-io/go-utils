@@ -7,7 +7,6 @@ import (
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
-	"github.com/spf13/afero"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +18,7 @@ import (
 
 type LogCollector interface {
 	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
-	SaveLogs(location string, requests []*LogsRequest) error
+	SaveLogs(client StorageClient, location string, requests []*LogsRequest) error
 }
 
 type LogsRequest struct {
@@ -42,11 +41,10 @@ func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *re
 
 type logCollector struct {
 	logRequestBuilder *LogRequestBuilder
-	storageClient     StorageClient
 }
 
-func NewLogCollector(logRequestBuilder *LogRequestBuilder, storageClient StorageClient) *logCollector {
-	return &logCollector{logRequestBuilder: logRequestBuilder, storageClient: storageClient}
+func NewLogCollector(logRequestBuilder *LogRequestBuilder) *logCollector {
+	return &logCollector{logRequestBuilder: logRequestBuilder}
 
 }
 
@@ -55,9 +53,7 @@ func DefaultLogCollector() (*logCollector, error) {
 	if err != nil {
 		return nil, err
 	}
-	storageClient := NewFileStorageClient(afero.NewOsFs())
 	return &logCollector{
-		storageClient:     storageClient,
 		logRequestBuilder: logRequestBuilder,
 	}, nil
 }
@@ -74,7 +70,7 @@ func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResour
 	return lc.logRequestBuilder.LogsFromUnstructured(resources)
 }
 
-func (lc *logCollector) SaveLogs(location string, requests []*LogsRequest) error {
+func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
 	for _, request := range requests {
 		// necessary to shadow this variable so that it is unique within the goroutine
@@ -85,7 +81,7 @@ func (lc *logCollector) SaveLogs(location string, requests []*LogsRequest) error
 				return err
 			}
 			defer reader.Close()
-			return lc.storageClient.Save(location, &StorageObject{
+			return storageClient.Save(location, &StorageObject{
 				resource: reader,
 				name: restRequest.ResourceId(),
 			})

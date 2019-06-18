@@ -78,12 +78,14 @@ var _ = Describe("logs", func() {
 	Context("log file storage", func() {
 		var (
 			lc     *logCollector
+			sc     StorageClient
 			tmpDir string
 		)
 
 		It("can properly store all logs from gloo manifest to files", func() {
 			var err error
 			fs = afero.NewOsFs()
+			sc = NewFileStorageClient(fs)
 			tmpDir, err = afero.TempDir(fs, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			lc, err = DefaultLogCollector()
@@ -91,7 +93,7 @@ var _ = Describe("logs", func() {
 			requests, err := lc.GetLogRequestsFromManifest(manifests)
 			Expect(requests).To(HaveLen(4))
 			Expect(err).NotTo(HaveOccurred())
-			err = lc.SaveLogs(tmpDir, requests)
+			err = lc.SaveLogs(sc, tmpDir, requests)
 			Expect(err).NotTo(HaveOccurred())
 			files, err := afero.ReadDir(fs, tmpDir)
 			Expect(err).NotTo(HaveOccurred())

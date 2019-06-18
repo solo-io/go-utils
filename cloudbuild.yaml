@@ -32,7 +32,7 @@ steps:
     env:
       - 'RUN_KUBE_TESTS=1'
     args: ['-r', '-failFast', './installutils/kubeinstall']
-    waitFor: ['build']
+    waitFor: ['run-tests']
     id: 'kubeinstall-tests'
 
   - name: 'gcr.io/$PROJECT_ID/go-mod-ginkgo:0.1.5'
@@ -40,7 +40,7 @@ steps:
     env:
     - 'RUN_KUBE_TESTS=1'
     args: ['-r', '-failFast', './debugutils']
-    waitFor: ['build']
+    waitFor: ['run-tests']
     id: 'debugutils-tests'
 
 

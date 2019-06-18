@@ -39,12 +39,10 @@ func DefaultAggregator() (*Aggregator, error) {
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
 	}
-	resourceCollector.storageClient = storageClient
 	logCollector, err := DefaultLogCollector()
 	if err != nil {
 		return nil, errors.InitializationError(err, aggregatorName)
 	}
-	logCollector.storageClient = storageClient
 	tmpd, err := afero.TempDir(fs, "", "")
 	if err != nil {
 		return nil, err
@@ -71,14 +69,14 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 	if err != nil {
 		return err
 	}
-	if err := a.resourceCollector.SaveResources(filepath.Join(a.dir, resourcesStr), kubeResources); err != nil {
+	if err := a.resourceCollector.SaveResources(a.storageClient, filepath.Join(a.dir, resourcesStr), kubeResources); err != nil {
 		return err
 	}
 	logRequests, err := a.logCollector.GetLogRequests(unstructuredResources)
 	if err != nil {
 		return err
 	}
-	if err = a.logCollector.SaveLogs(filepath.Join(a.dir, logsStr), logRequests); err != nil {
+	if err = a.logCollector.SaveLogs(a.storageClient, filepath.Join(a.dir, logsStr), logRequests); err != nil {
 		return err
 	}
 	tarball, err := afero.TempFile(a.fs, "", "")

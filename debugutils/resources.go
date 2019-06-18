@@ -10,7 +10,6 @@ import (
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
-	"github.com/spf13/afero"
 	"golang.org/x/sync/errgroup"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -29,14 +28,13 @@ const (
 
 type ResourceCollector interface {
 	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
-	SaveResources(location string, versionedResources []kuberesource.VersionedResources) error
+	SaveResources(client StorageClient, location string, versionedResources []kuberesource.VersionedResources) error
 }
 
 type resourceCollector struct {
 	dynamicClient dynamic.Interface
 	restMapper    meta.RESTMapper
 	podFinder     PodFinder
-	storageClient StorageClient
 }
 
 func DefaultResourceCollector() (*resourceCollector, error) {
@@ -56,12 +54,10 @@ func DefaultResourceCollector() (*resourceCollector, error) {
 	if err != nil {
 		return nil, errors.InitializationError(err, resourceCollectorStr)
 	}
-	storageClient := NewFileStorageClient(afero.NewOsFs())
 	return &resourceCollector{
 		dynamicClient: dynamicClient,
 		restMapper:    restMapper,
 		podFinder:     podFinder,
-		storageClient: storageClient,
 	}, nil
 }
 
@@ -185,7 +181,7 @@ func (rc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 	return result, nil
 }
 
-func (rc *resourceCollector) SaveResources(location string, versionedResources []kuberesource.VersionedResources) error {
+func (rc *resourceCollector) SaveResources(storageClient StorageClient, location string, versionedResources []kuberesource.VersionedResources) error {
 	var storageObjects []*StorageObject
 	for _, versionedResource := range versionedResources {
 		tmpManifests, err := helmchart.ManifestsFromResources(versionedResource.Resources)
@@ -199,5 +195,5 @@ func (rc *resourceCollector) SaveResources(location string, versionedResources [
 			name:     resourceName,
 		})
 	}
-	return rc.storageClient.Save(location, storageObjects...)
+	return storageClient.Save(location, storageObjects...)
 }

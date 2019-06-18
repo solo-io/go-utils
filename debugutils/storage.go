@@ -60,7 +60,7 @@ func NewGcsStorageClient(ctx context.Context) (*GcsStorageClient, error) {
 
 
 func (gsc *GcsStorageClient) Save(location string, resources ...*StorageObject) error {
-	bucket := gsc.client.Bucket("location")
+	bucket := gsc.client.Bucket(location)
 	eg := errgroup.Group{}
 	for _, resource := range resources {
 		resource := resource

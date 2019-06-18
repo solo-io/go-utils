@@ -31,7 +31,7 @@ const (
 	DefaultTimeFormat  = time.RFC3339Nano
 
 	// heartbeat settings
-	DefaultHeartbeatTime = time.Second * 15
+	DefaultHeartbeatTime = time.Second * 10
 )
 
 var defaultConfigMap = &coreV1.ConfigMap{
@@ -106,7 +106,15 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 				case <-ctx.Done():
 					return
 				case <-time.After(DefaultHeartbeatTime):
-					if err := t.reacquireLock(); err != nil {
+					if err := retry.Do(t.reacquireLock,
+						retry.DelayType(retry.FixedDelay),
+						retry.Attempts(3),
+						retry.Delay(1*time.Second),
+						retry.RetryIf(func(e error) bool {
+							return errors.IsNotFound(e)
+						}),
+						); err != nil {
+
 						contextutils.LoggerFrom(ctx).Errorw("could not reacquire lock", zap.Error(err))
 						return
 					}
