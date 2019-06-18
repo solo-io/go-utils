@@ -23,9 +23,7 @@ var _ = Describe("logs unit tests", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(T)
 		podFinder = NewMockPodFinder(ctrl)
-		var err error
-		podList, err = generatePodList()
-		Expect(err).NotTo(HaveOccurred())
+		podList = generatePodList()
 		fakeCoreV1 := &fakecorev1.FakeCoreV1{Fake: &testing.Fake{}}
 		requestBuilder = NewLogRequestBuilder(fakeCoreV1, podFinder)
 	})
@@ -131,11 +129,11 @@ var _ = Describe("logs unit tests", func() {
 
 })
 
-func generatePodList() (*corev1.PodList, error) {
+func generatePodList() *corev1.PodList {
 	podList := &corev1.PodList{
 		Items: []corev1.Pod{*gatewayPod(), *gatewayProxyPod(), *glooPod(), *discoveryPod()},
 	}
-	return podList, nil
+	return podList
 }
 
 var (

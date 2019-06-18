@@ -59,26 +59,35 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 	for _, resource := range resources {
 		resource := resource
 		eg.Go(func() error {
-			var matchLabels map[string]string
-			var err error
+			var list *corev1.PodList
 			switch {
 			case resource.GetKind() == "Pod":
-				matchLabels = resource.GetLabels()
+				pod, err := lpf.client.CoreV1().Pods(resource.GetNamespace()).Get(resource.GetName(), metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				list = &corev1.PodList{
+					TypeMeta: metav1.TypeMeta{
+						Kind: "List",
+						APIVersion: "v1",
+					},
+					Items: []corev1.Pod{*pod},
+				}
 			case stringutils.ContainsString(resource.GetKind(), ownerResources):
-				matchLabels, err = handleOwnerResource(resource)
+				matchLabels, err := handleOwnerResource(resource)
+				if err != nil {
+					return err
+				}
+				list, err = lpf.getPodsForMatchLabels(matchLabels, resource.GetNamespace())
 				if err != nil {
 					return err
 				}
 			default:
 				return nil
 			}
-			res, err := lpf.getPodsForMatchLabels(matchLabels, resource.GetNamespace())
-			if err != nil {
-				return err
-			}
 			lock.Lock()
 			defer lock.Unlock()
-			result = append(result, res)
+			result = append(result, list)
 			return nil
 		})
 	}

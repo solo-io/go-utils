@@ -1,30 +1,59 @@
 package debugutils
 
-//
-// import (
-// 	"github.com/golang/mock/gomock"
-// 	. "github.com/onsi/ginkgo"
-// )
+import (
+	"github.com/ghodss/yaml"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/installutils/kuberesource"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/fake"
+)
 
-// var _ = Describe("logs unit tests", func() {
-// 	var (
-// 		collector         *logCollector
-// 		storageClient     *MockStorageClient
-// 		logRequestBuilder *LogRequestBuilder
-// 		podFinder         *MockPodFinder
-// 	)
-//
-// 	BeforeEach(func() {
-// 		ctrl = gomock.NewController(T)
-// 		storageClient = NewMockStorageClient(ctrl)
-// 		podFinder = NewMockPodFinder(ctrl)
-// 	})
-//
-// 	Context("Log request builder", func() {
-//
-// 	})
-//
-// 	Context("Log collector", func() {
-// 	})
-//
-// })
+var _ = FDescribe("pod unit tests", func() {
+	var (
+		podFinder *LabelPodFinder
+		clientset *fake.Clientset
+	)
+
+	BeforeEach(func() {
+		// clientset = fake.NewSimpleClientset()
+		clientset = fake.NewSimpleClientset(podsAsObjects(generatePodList())...)
+		podFinder = NewLabelPodFinder(clientset)
+	})
+
+	Context("Label Pod Finder", func() {
+		It("can handle full use case", func() {
+			resources, err := manifests.ResourceList()
+			Expect(err).NotTo(HaveOccurred())
+			list, err := podFinder.GetPods(resources)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(list).To(HaveLen(4))
+			for _, v := range list {
+				Expect(v.Items).NotTo(HaveLen(0))
+			}
+		})
+
+		It("can work with an individual pod", func() {
+			var unstructuredPod unstructured.Unstructured
+			err := yaml.Unmarshal([]byte(glooPodYaml), &unstructuredPod)
+			Expect(err).NotTo(HaveOccurred())
+			list, err := podFinder.GetPods(kuberesource.UnstructuredResources{&unstructuredPod})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(list).To(HaveLen(1))
+			Expect(list[0].Items).To(HaveLen(1))
+			pod := list[0].Items[0]
+			Expect(pod.GetName()).To(ContainSubstring("gloo"))
+		})
+	})
+})
+
+func podsAsObjects(list *corev1.PodList) []runtime.Object {
+	result := make([]runtime.Object, len(list.Items))
+	for i, v := range list.Items {
+		v := v
+		result[i] = &v
+	}
+	return result
+}
