@@ -22,9 +22,9 @@ type LogCollector interface {
 }
 
 type LogsRequest struct {
-	podMeta       metav1.ObjectMeta
-	containerName string
-	request       *rest.Request
+	PodMeta       metav1.ObjectMeta
+	ContainerName string
+	Request       *rest.Request
 }
 
 func (lr *LogsRequest) ResourcePath(dir string) string {
@@ -32,11 +32,11 @@ func (lr *LogsRequest) ResourcePath(dir string) string {
 }
 
 func (lr *LogsRequest) ResourceId() string {
-	return fmt.Sprintf("%s_%s_%s.log", lr.podMeta.Namespace, lr.podMeta.Name, lr.containerName)
+	return fmt.Sprintf("%s_%s_%s.log", lr.PodMeta.Namespace, lr.PodMeta.Name, lr.ContainerName)
 }
 
 func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *rest.Request) *LogsRequest {
-	return &LogsRequest{podMeta: podMeta, containerName: containerName, request: request}
+	return &LogsRequest{PodMeta: podMeta, ContainerName: containerName, Request: request}
 }
 
 type logCollector struct {
@@ -76,7 +76,7 @@ func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, r
 		// necessary to shadow this variable so that it is unique within the goroutine
 		restRequest := request
 		eg.Go(func() error {
-			reader, err := restRequest.request.Stream()
+			reader, err := restRequest.Request.Stream()
 			if err != nil {
 				return err
 			}

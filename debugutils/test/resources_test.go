@@ -1,16 +1,17 @@
-package debugutils
+package test
 
 import (
 	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/debugutils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("resource collector e2e", func() {
 	var (
-		collector *resourceCollector
+		collector debugutils.ResourceCollector
 	)
 
 	var (
@@ -27,11 +28,13 @@ var _ = Describe("resource collector e2e", func() {
 	Context("e2e", func() {
 		BeforeEach(func() {
 			var err error
-			collector, err = DefaultResourceCollector()
+			collector, err = debugutils.DefaultResourceCollector()
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("can retrieve all gloo resources", func() {
-			collectedResources, err := collector.RetrieveResourcesFromManifest(manifests, v1.ListOptions{})
+			unstructured, err := manifests.ResourceList()
+			Expect(err).NotTo(HaveOccurred())
+			collectedResources, err := collector.RetrieveResources(unstructured, "", v1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			for _, resource := range collectedResources {
 				switch resource.GVK.Kind {
