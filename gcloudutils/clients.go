@@ -9,7 +9,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
-	v1 "github.com/solo-io/build/pkg/api/v1"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/cloudbuild/v1"
@@ -70,12 +69,4 @@ func NewPubSubClient(ctx context.Context, projectId string) (*pubsub.Client, err
 		return nil, err
 	}
 	return pubsub.NewClient(ctx, projectId, option.WithTokenSource(creds.TokenSource))
-}
-
-func GetProjectIdFromBuildConfig(cfg *v1.BuildConfig, defaultProjectId string) string {
-	gcloudConfig := cfg.GetGcloud()
-	if gcloudConfig == nil {
-		return defaultProjectId
-	}
-	return gcloudConfig.ProjectId
 }

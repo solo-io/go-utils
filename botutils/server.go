@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/solo-io/go-utils/botutils/botconfig"
+
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/rs/zerolog"
@@ -21,7 +23,7 @@ type StaticBotConfig struct {
 }
 
 func Start(ctx context.Context, staticCfg StaticBotConfig, plugins ...Plugin) error {
-	cfg, err := ReadConfig()
+	cfg, err := botconfig.ReadConfig()
 	if err != nil {
 		return err
 	}
@@ -58,7 +60,7 @@ func Start(ctx context.Context, staticCfg StaticBotConfig, plugins ...Plugin) er
 	}
 
 	githubHandler := NewGithubHookHandler(cc,
-		NewConfigFetcher(DefaultRepoCfg, &cfg.AppConfig, &buildCfg))
+		NewConfigFetcher(botconfig.DefaultRepoCfg, &cfg.AppConfig, &buildCfg))
 	for _, p := range plugins {
 		githubHandler.RegisterPlugin(p)
 	}

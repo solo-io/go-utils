@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/solo-io/go-utils/botutils/botconfig"
+
 	"github.com/google/go-github/github"
-	"github.com/solo-io/go-utils/botutils"
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
@@ -27,11 +28,11 @@ type CloudSubscriber struct {
 	buildService        *cloudbuild.Service
 	pubsubClient        *pubsub.Client
 	cloudBuildSub       *pubsub.Subscription
-	cfg                 *botutils.Config
-	registry            *Registry
+	cfg                 *botconfig.Config
+	registry            *CloudBuildRegistry
 }
 
-func NewCloudSubscriber(ctx context.Context, cfg *botutils.Config, githubClientCreator githubapp.ClientCreator, projectId string, subscriptionId string) (*CloudSubscriber, error) {
+func NewCloudSubscriber(ctx context.Context, cfg *botconfig.Config, githubClientCreator githubapp.ClientCreator, projectId string, subscriptionId string) (*CloudSubscriber, error) {
 	buildService, err := NewCloudBuildClient(ctx, projectId)
 	contextutils.LoggerFrom(ctx).Infow("successfully created build service for pubsub", zap.String("projectId", projectId))
 
@@ -56,7 +57,7 @@ func NewCloudSubscriber(ctx context.Context, cfg *botutils.Config, githubClientC
 		pubsubClient:        pubsubClient,
 		cloudBuildSub:       cloudBuildSub,
 		cfg:                 cfg,
-		registry:            &Registry{},
+		registry:            &CloudBuildRegistry{},
 	}
 	cs.pubsubClient = pubsubClient
 	cs.cloudBuildSub = cloudBuildSub
@@ -66,7 +67,7 @@ func NewCloudSubscriber(ctx context.Context, cfg *botutils.Config, githubClientC
 	return cs, nil
 }
 
-func (cs *CloudSubscriber) RegisterHandler(handler EventHandler) {
+func (cs *CloudSubscriber) RegisterHandler(handler CloudBuildEventHandler) {
 	cs.registry.AddEventHandler(handler)
 }
 
@@ -119,7 +120,7 @@ func (cs *CloudSubscriber) handleCloudBuildEvent(ctx context.Context, msg *pubsu
 	HandleCloudBuildEvent(ctx, cs.registry, githubClient, &cbm)
 }
 
-func HandleCloudBuildEvent(ctx context.Context, registry *Registry, client *github.Client, build *cloudbuild.Build) {
+func HandleCloudBuildEvent(ctx context.Context, registry *CloudBuildRegistry, client *github.Client, build *cloudbuild.Build) {
 	ctx = contextutils.WithLoggerValues(ctx, zap.String("trigger", "cloud-build"), zap.String("build_id", build.Id))
 	// If race condition is found do not even call events, can handle at root
 	if err := HandleFailedSourceBuild(ctx, build); err != nil {

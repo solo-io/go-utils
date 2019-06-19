@@ -8,14 +8,14 @@ import (
 	"google.golang.org/api/cloudbuild/v1"
 )
 
-type Registry struct {
-	eventHandlers []EventHandler
+type CloudBuildRegistry struct {
+	eventHandlers []CloudBuildEventHandler
 }
 
-func (r *Registry) AddEventHandler(handler EventHandler) {
+func (r *CloudBuildRegistry) AddEventHandler(handler CloudBuildEventHandler) {
 	r.eventHandlers = append(r.eventHandlers, handler)
 }
 
-type EventHandler interface {
+type CloudBuildEventHandler interface {
 	CloudBuild(ctx context.Context, client *github.Client, build *cloudbuild.Build) error
 }

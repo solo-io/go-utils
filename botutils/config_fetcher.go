@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/solo-io/go-utils/botutils/botconfig"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
 	"github.com/google/go-github/github"
 	v1 "github.com/solo-io/build/pkg/api/v1"
 	"github.com/solo-io/go-utils/errors"
-	"github.com/solo-io/go-utils/gcloudutils"
 	"github.com/solo-io/go-utils/protoutils"
 	"github.com/solo-io/go-utils/stringutils"
 )
@@ -21,7 +22,7 @@ type FetchedConfig struct {
 	Repo               string
 	Ref                string
 	Config             *v1.BuildConfig
-	SlackNotifications *SlackNotifications
+	SlackNotifications *botconfig.SlackNotifications
 	Error              error
 }
 
@@ -43,11 +44,11 @@ func (fc FetchedConfig) String() string {
 
 type ConfigFetcher struct {
 	configPath  string
-	appConfig   *ApplicationConfig
+	appConfig   *botconfig.ApplicationConfig
 	buildConfig *v1.BuildConfig
 }
 
-func NewConfigFetcher(configPath string, appConfig *ApplicationConfig, buildConfig *v1.BuildConfig) *ConfigFetcher {
+func NewConfigFetcher(configPath string, appConfig *botconfig.ApplicationConfig, buildConfig *v1.BuildConfig) *ConfigFetcher {
 	return &ConfigFetcher{configPath: configPath, appConfig: appConfig, buildConfig: buildConfig}
 }
 
@@ -104,7 +105,7 @@ func (cf *ConfigFetcher) ConfigForCommitComment(ctx context.Context, client *git
 }
 
 func (cf *ConfigFetcher) configForCommon(ctx context.Context, client *github.Client, fc *FetchedConfig) (*FetchedConfig, error) {
-	projectId := gcloudutils.GetProjectIdFromBuildConfig(cf.buildConfig)
+	projectId := getProjectIdFromBuildConfig(cf.buildConfig, "")
 	if !stringutils.ContainsString(projectId, cf.appConfig.GcloudProjects) {
 		return nil, InvalidProjectId(projectId)
 	}
@@ -130,6 +131,14 @@ func (cf *ConfigFetcher) configForCommon(ctx context.Context, client *github.Cli
 
 	fc.Error = errors.Errorf("Unable to find valid configuration")
 	return fc, nil
+}
+
+func getProjectIdFromBuildConfig(cfg *v1.BuildConfig, defaultProjectId string) string {
+	gcloudConfig := cfg.GetGcloud()
+	if gcloudConfig == nil {
+		return defaultProjectId
+	}
+	return gcloudConfig.ProjectId
 }
 
 // fetchConfigContents returns a nil slice if there is no configuration file
