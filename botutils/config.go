@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	DefaultCfg = "/etc/solo-github-app/config.yml"
+	DefaultBotCfg  = "/etc/solo-github-app/config.yml"
+	DefaultRepoCfg = "solo-project.yaml"
 )
 
 type Config struct {
@@ -37,7 +38,7 @@ type ApplicationConfig struct {
 func ReadConfig() (*Config, error) {
 	path := os.Getenv("BOT_CONFIG")
 	if path == "" {
-		path = DefaultCfg
+		path = DefaultBotCfg
 	}
 
 	var c Config
