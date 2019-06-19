@@ -17,23 +17,21 @@ import (
 )
 
 const (
-	// TODO rename
-	SUBSCRIPTION = "solobot"
-	TOPIC        = "cloud-builds"
+	TOPIC = "cloud-builds"
 
 	alreadyExistsError = "Resource already exists in the project (resource=solobot)."
 )
 
 type CloudSubscriber struct {
-	GithubClientCreator githubapp.ClientCreator
-	BuildService        *cloudbuild.Service
-	PubSubClient        *pubsub.Client
-	CloudBuildSub       *pubsub.Subscription
+	githubClientCreator githubapp.ClientCreator
+	buildService        *cloudbuild.Service
+	pubsubClient        *pubsub.Client
+	cloudBuildSub       *pubsub.Subscription
 	cfg                 *botutils.Config
 	registry            *Registry
 }
 
-func NewCloudSubscriber(ctx context.Context, cfg *botutils.Config, githubClientCreator githubapp.ClientCreator, projectId string) (*CloudSubscriber, error) {
+func NewCloudSubscriber(ctx context.Context, cfg *botutils.Config, githubClientCreator githubapp.ClientCreator, projectId string, subscriptionId string) (*CloudSubscriber, error) {
 	buildService, err := NewCloudBuildClient(ctx, projectId)
 	contextutils.LoggerFrom(ctx).Infow("successfully created build service for pubsub", zap.String("projectId", projectId))
 
@@ -42,26 +40,26 @@ func NewCloudSubscriber(ctx context.Context, cfg *botutils.Config, githubClientC
 		return nil, err
 	}
 
-	cloudBuildSub, err := pubsubClient.CreateSubscription(ctx, SUBSCRIPTION, pubsub.SubscriptionConfig{
+	cloudBuildSub, err := pubsubClient.CreateSubscription(ctx, subscriptionId, pubsub.SubscriptionConfig{
 		Topic: pubsubClient.Topic(TOPIC),
 	})
 	if err != nil {
 		if grpcErr, ok := status.FromError(err); ok && grpcErr.Message() != alreadyExistsError {
 			return nil, err
 		}
-		cloudBuildSub = pubsubClient.Subscription(SUBSCRIPTION)
+		cloudBuildSub = pubsubClient.Subscription(subscriptionId)
 	}
 
 	cs := &CloudSubscriber{
-		GithubClientCreator: githubClientCreator,
-		BuildService:        buildService,
-		PubSubClient:        pubsubClient,
-		CloudBuildSub:       cloudBuildSub,
+		githubClientCreator: githubClientCreator,
+		buildService:        buildService,
+		pubsubClient:        pubsubClient,
+		cloudBuildSub:       cloudBuildSub,
 		cfg:                 cfg,
 		registry:            &Registry{},
 	}
-	cs.PubSubClient = pubsubClient
-	cs.CloudBuildSub = cloudBuildSub
+	cs.pubsubClient = pubsubClient
+	cs.cloudBuildSub = cloudBuildSub
 
 	contextutils.LoggerFrom(ctx).Infow("successfully setup pubsub")
 
@@ -73,7 +71,7 @@ func (cs *CloudSubscriber) RegisterHandler(handler EventHandler) {
 }
 
 func (cs *CloudSubscriber) Run(ctx context.Context) error {
-	sub := cs.PubSubClient.Subscription(cs.CloudBuildSub.ID())
+	sub := cs.pubsubClient.Subscription(cs.cloudBuildSub.ID())
 
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		msg.Ack()
@@ -111,7 +109,7 @@ func (cs *CloudSubscriber) handleCloudBuildEvent(ctx context.Context, msg *pubsu
 		instId = int64(cs.cfg.AppConfig.InstallationId)
 	}
 
-	githubClient, err := cs.GithubClientCreator.NewInstallationClient(int64(instId))
+	githubClient, err := cs.githubClientCreator.NewInstallationClient(int64(instId))
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Errorw("error getting github client from installation id", zap.Error(err))
 		return
