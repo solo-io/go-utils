@@ -17,6 +17,7 @@ import (
 
 type StaticBotConfig struct {
 	BotName string
+	Version string
 }
 
 func Start(ctx context.Context, staticCfg StaticBotConfig, plugins ...Plugin) error {
@@ -27,7 +28,7 @@ func Start(ctx context.Context, staticCfg StaticBotConfig, plugins ...Plugin) er
 
 	cc, err := githubapp.NewDefaultCachingClientCreator(
 		cfg.Github,
-		githubapp.WithClientUserAgent("changelog-bot/TODO"),
+		githubapp.WithClientUserAgent(fmt.Sprintf("%s/%s", staticCfg.BotName, staticCfg.Version)),
 		githubapp.WithClientMiddleware(
 			githubapp.ClientLogging(zerolog.DebugLevel),
 		),
