@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	BranchMaster = "master"
+	BranchMaster   = "master"
+	CloudbuildFile = "cloudbuild.yaml"
 
 	MissingSourceError = "unable to resolve source"
 )
@@ -28,9 +29,6 @@ const (
 	StatusInternalError             = "INTERNAL_ERROR"
 	StatusTimeout                   = "TIMEOUT"
 	StatusCancelled                 = "CANCELLED"
-
-	GithubBuildStatusLabel       = "bot-build"
-	GithubBuildStatusDescription = "build and test the code"
 )
 
 func BuildIsQueued(bs string) bool {

@@ -2,17 +2,19 @@ package gcloudutils
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 type Tags []string
 
 const (
-	seperator = "_"
-	tagConst  = "tag"
-	shaConst  = "sha"
-	refConst  = "ref"
-	repoConst = "repo"
+	seperator   = "_"
+	tagConst    = "tag"
+	shaConst    = "sha"
+	refConst    = "ref"
+	repoConst   = "repo"
+	instIdConst = "instId"
 )
 
 func InitializeTags(input []string) Tags {
@@ -26,6 +28,10 @@ func createTag(title, item string) string {
 	return fmt.Sprintf("%s%s%s", title, seperator, item)
 }
 
+func createIntegerTag(title string, item int64) string {
+	return fmt.Sprintf("%s%s%d", title, seperator, item)
+}
+
 func (t Tags) AddReleaseTag(tag string) Tags {
 	return append(t, createTag(tagConst, tag))
 }
@@ -36,6 +42,10 @@ func (t Tags) AddShaTag(sha string) Tags {
 
 func (t Tags) AddRepoTag(repo string) Tags {
 	return append(t, createTag(repoConst, repo))
+}
+
+func (t Tags) AddInstallationIdTag(instId int64) Tags {
+	return append(t, createIntegerTag(instIdConst, instId))
 }
 
 func (t Tags) AddRefTag(ref string) Tags {
@@ -64,6 +74,12 @@ func (t Tags) GetRef() string {
 // returns "" for empty
 func (t Tags) GetRepo() string {
 	return t.getByConst(repoConst)
+}
+
+func (t Tags) GetInstallationId() int64 {
+	stringVal := t.getByConst(instIdConst)
+	instId, _ := strconv.ParseInt(stringVal, 10, 64)
+	return instId
 }
 
 func (t Tags) getByConst(item string) string {
