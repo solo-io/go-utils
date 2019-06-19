@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
 
 	"github.com/avast/retry-go"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -25,11 +27,11 @@ const (
 	LockTimeoutAnnotationKey = "test.lock.timeout"
 
 	// Default timeout for lock to be held
-	DefaultLockTimeout = time.Second*30
+	DefaultLockTimeout = time.Second * 30
 	DefaultTimeFormat  = time.RFC3339Nano
 
 	// heartbeat settings
-	DefaultHeartbeatTime = time.Second * 15
+	DefaultHeartbeatTime = time.Second * 10
 )
 
 var defaultConfigMap = &coreV1.ConfigMap{
@@ -58,8 +60,6 @@ var defaultOpts = []retry.Option{
 	}),
 }
 
-
-
 type TestClusterLocker struct {
 	clientset kubernetes.Interface
 	namespace string
@@ -69,12 +69,11 @@ type TestClusterLocker struct {
 
 type Options struct {
 	Namespace string
-	IdPrefix string
-	Context context.Context
+	IdPrefix  string
+	Context   context.Context
 }
 
 func NewTestClusterLocker(clientset kubernetes.Interface, options Options) (*TestClusterLocker, error) {
-
 
 	if options.Namespace == "" {
 		options.Namespace = LockDefaultNamespace
@@ -107,7 +106,16 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 				case <-ctx.Done():
 					return
 				case <-time.After(DefaultHeartbeatTime):
-					if err := t.reacquireLock(); err != nil {
+					if err := retry.Do(t.reacquireLock,
+						retry.DelayType(retry.FixedDelay),
+						retry.Attempts(3),
+						retry.Delay(1*time.Second),
+						retry.RetryIf(func(e error) bool {
+							return errors.IsNotFound(e)
+						}),
+					); err != nil {
+
+						contextutils.LoggerFrom(ctx).Errorw("could not reacquire lock", zap.Error(err))
 						return
 					}
 				}
@@ -214,7 +222,7 @@ var (
 		return e == notLockOwnerError
 	}
 
-	lockInUseError = fmt.Errorf("lock is currently in use")
+	lockInUseError   = fmt.Errorf("lock is currently in use")
 	IsLockIsUseError = func(e error) bool {
 		return e == lockInUseError
 	}

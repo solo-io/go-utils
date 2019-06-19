@@ -2,7 +2,7 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     args: ['config', 'set', 'compute/zone', 'us-central1-b']
   - name: gcr.io/cloud-builders/gcloud
-    args: ['container', 'clusters', 'get-credentials', 'solo-kit-test']
+    args: ['container', 'clusters', 'get-credentials', 'go-utils-test']
 
   - name: gcr.io/cloud-builders/gsutil
     entrypoint: 'bash'
@@ -22,8 +22,9 @@ steps:
     volumes: *vol
     env:
       - 'RUN_KUBE_TESTS=1'
+      - 'BUILD_ID=$BUILD_ID'
     secretEnv: ['GITHUB_TOKEN']
-    args: ['-r', '-p', '-failFast', '-randomizeSuites', '-randomizeAllSpecs', '-skipPackage=./installutils/kubeinstall']
+    args: ['-r', '-p', '-failFast', '-randomizeSuites', '-randomizeAllSpecs', '-skipPackage=./installutils/kubeinstall,./debugutils/test']
     waitFor: ['build']
     id: 'run-tests'
 
@@ -32,8 +33,16 @@ steps:
     env:
       - 'RUN_KUBE_TESTS=1'
     args: ['-r', '-failFast', './installutils/kubeinstall']
-    waitFor: ['build']
+    waitFor: ['run-tests']
     id: 'kubeinstall-tests'
+
+  - name: 'gcr.io/$PROJECT_ID/go-mod-ginkgo:0.1.5'
+    volumes: *vol
+    env:
+    - 'RUN_KUBE_TESTS=1'
+    args: ['-r', '-failFast', './debugutils/test']
+    waitFor: ['run-tests']
+    id: 'debugutils-tests'
 
 
 secrets:

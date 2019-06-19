@@ -2,6 +2,7 @@ package contextutils
 
 import (
 	"context"
+
 	"github.com/solo-io/go-utils/clicore/constants"
 )
 
@@ -54,4 +55,3 @@ func cliLogw(ctx context.Context, level cliLogLevel, message, cliLogKey string, 
 		log.Errorw(message, kvs...)
 	}
 }
-

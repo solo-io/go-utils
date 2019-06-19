@@ -8,9 +8,7 @@ const (
 	defaultHttpEchoImage = "kennship/http-echo:latest"
 	HttpEchoName         = "http-echo"
 	HttpEchoPort         = 3000
-
 )
-
 
 func NewEchoHttp(namespace string) (*httpEcho, error) {
 	container, err := newTestContainer(namespace, defaultHttpEchoImage, HttpEchoName, HttpEchoPort)

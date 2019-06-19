@@ -13,7 +13,7 @@ import (
 	"github.com/avast/retry-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -38,7 +38,7 @@ var _ = Describe("cluster lock test", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	AfterEach(func(){
+	AfterEach(func() {
 		err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})

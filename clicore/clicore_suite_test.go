@@ -1,10 +1,11 @@
 package clicore
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/testutils"
-	"testing"
 )
 
 func TestCliCore(t *testing.T) {
@@ -18,4 +19,3 @@ func TestCliCore(t *testing.T) {
 	testutils.SetupLog()
 	RunSpecs(t, "Clicore Suite")
 }
-
