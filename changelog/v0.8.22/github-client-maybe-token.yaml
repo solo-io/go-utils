@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add github client getter that just logs a warning when no token is found.
+    issueLink: https://github.com/solo-io/go-utils/issues/168
