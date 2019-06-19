@@ -1,0 +1,4 @@
+changelog:
+- type: NON_USER_FACING
+  description: simplify logline in installation that has been seen to panic
+  issueLink: https://github.com/solo-io/go-utils/issues/209
