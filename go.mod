@@ -28,13 +28,15 @@ require (
 	github.com/palantir/go-githubapp v0.0.0-20181023164003-a3a32b23c2f7
 	github.com/pelletier/go-toml v1.2.0
 	github.com/pkg/errors v0.8.1
+	github.com/rs/zerolog v1.14.3 // indirect
 	github.com/solo-io/build v0.0.5 // indirect
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
 	go.opencensus.io v0.22.0
 	go.uber.org/zap v1.9.1
+	goji.io v2.0.2+incompatible // indirect
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
-	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/xerrors v0.0.0-20190513163551-3ee3066db522
 	google.golang.org/api v0.5.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
