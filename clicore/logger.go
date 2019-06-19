@@ -2,9 +2,10 @@ package clicore
 
 import (
 	"fmt"
-	"github.com/solo-io/go-utils/clicore/constants"
 	"os"
 	"path/filepath"
+
+	"github.com/solo-io/go-utils/clicore/constants"
 
 	"github.com/mitchellh/go-homedir"
 	"go.uber.org/zap"

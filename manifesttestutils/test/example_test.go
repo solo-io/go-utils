@@ -98,11 +98,11 @@ var _ = Describe("Helm Test", func() {
 			envoyContainer := GetQuayContainerSpec("smm-envoy", version)
 			uiContainer := GetQuayContainerSpec("smm-ui", version)
 			rb := ResourceBuilder{
-				Name:       image,
-				Namespace:  namespace,
+				Name:        image,
+				Namespace:   namespace,
 				Annotations: annotations,
-				Labels:     labels,
-				Containers: []ContainerSpec{apiserverContainer, uiContainer, envoyContainer},
+				Labels:      labels,
+				Containers:  []ContainerSpec{apiserverContainer, uiContainer, envoyContainer},
 			}
 			testManifest.ExpectDeployment(rb.GetDeployment())
 		})
@@ -225,8 +225,8 @@ var _ = Describe("Helm Test", func() {
 	Describe("custom resource", func() {
 
 		var (
-			gvk = "MeshIngress"
-			name = "gloo"
+			gvk       = "MeshIngress"
+			name      = "gloo"
 			namespace = "supergloo-system"
 		)
 

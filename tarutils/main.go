@@ -128,7 +128,7 @@ func Untar(dst, src string, fs afero.Fs) error {
 // Retrieves the file from the given uri
 // The uri can be a remote url or a file on the local fs
 // This function returns a ReadCloser and it is the responsibility of the caller to close it
-func RetrieveArchive(fs afero.Fs,  uri string) (io.ReadCloser, error) {
+func RetrieveArchive(fs afero.Fs, uri string) (io.ReadCloser, error) {
 	var file io.ReadCloser
 	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
 		resp, err := http.Get(uri)

@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/solo-io/go-utils/testutils/clusterlock"
 	kubev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -41,14 +40,14 @@ var istioCrd = apiextensions.CustomResourceDefinition{}
 
 var _ = Describe("KubeInstaller", func() {
 	var (
-		ns string
-		lock *clusterlock.TestClusterLocker
+		ns         string
+		lock       *clusterlock.TestClusterLocker
 		kubeClient kubernetes.Interface
 	)
 
 	BeforeSuite(func() {
 		var err error
-		idPrefix := fmt.Sprintf("supergloo-helm-%s-%d-", os.Getenv("BUILD_ID"), config.GinkgoConfig.ParallelNode)
+		idPrefix := fmt.Sprintf("kube-installer-%s-", os.Getenv("BUILD_ID"))
 		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
 			IdPrefix: idPrefix,
 		})
@@ -70,7 +69,6 @@ var _ = Describe("KubeInstaller", func() {
 		ns = "test" + testutils.RandString(5)
 		err := kubeutils.CreateNamespacesInParallel(kubeClient, ns)
 		Expect(err).NotTo(HaveOccurred())
-
 
 	})
 	AfterEach(func() {

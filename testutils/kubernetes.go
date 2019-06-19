@@ -33,7 +33,6 @@ func SetupKubeForTest(namespace string) error {
 	return Kubectl("create", "namespace", namespace)
 }
 
-
 // Deprecated: this function is incredibly slow, use DeleteNamespacesInParallelBlocking instead
 func TeardownKube(namespace string) error {
 	return Kubectl("delete", "namespace", namespace)

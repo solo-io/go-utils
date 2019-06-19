@@ -46,7 +46,7 @@ var _ = Describe("test container tests", func() {
 			var err error
 			testRunner, err = NewTestRunner(namespace)
 			Expect(err).NotTo(HaveOccurred())
-			err = testRunner.Deploy(time.Minute*2)
+			err = testRunner.Deploy(time.Minute * 2)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -69,7 +69,6 @@ var _ = Describe("test container tests", func() {
 				ConnectionTimeout: 10,
 			}, SimpleHttpResponse, 1, 120*time.Second)
 		})
-
 
 	})
 

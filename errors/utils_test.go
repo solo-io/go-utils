@@ -7,7 +7,7 @@ import (
 
 var _ = Describe("new golang errors", func() {
 	var (
-		baseError = New("base error")
+		baseError     = New("base error")
 		wrapperError1 = Wrapf(baseError, "wrapper 1")
 		wrapperError2 = Wrapf(wrapperError1, "wrapper 2")
 	)

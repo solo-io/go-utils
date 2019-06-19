@@ -2,11 +2,12 @@ package exec
 
 import (
 	"bytes"
-	"github.com/onsi/ginkgo"
-	"github.com/solo-io/go-utils/errors"
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/onsi/ginkgo"
+	"github.com/solo-io/go-utils/errors"
 )
 
 func RunCommand(workingDir string, verbose bool, args ...string) error {

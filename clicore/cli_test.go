@@ -3,6 +3,7 @@ package clicore
 import (
 	"context"
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/contextutils"
@@ -125,7 +126,7 @@ func SampleCobraCli(ctx context.Context, version string) *cobra.Command {
 
 	app.AddCommand(
 		sampleSubCommand(o),
-		)
+	)
 
 	pflags := app.PersistentFlags()
 	pflags.BoolVar(&o.Flag1, "flag1", false, "this is a dummy flag to trigger logging")
@@ -134,7 +135,7 @@ func SampleCobraCli(ctx context.Context, version string) *cobra.Command {
 
 func sampleSubCommand(o TopOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "subcmd1",
+		Use:   "subcmd1",
 		Short: "just a sample sub command",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return nil
@@ -142,6 +143,7 @@ func sampleSubCommand(o TopOptions) *cobra.Command {
 	}
 	return cmd
 }
+
 var sampleAppConfig = CommandConfig{
 	Command:             SampleCobraCli,
 	Version:             appVersion,
