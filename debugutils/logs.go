@@ -16,6 +16,7 @@ import (
 type LogCollector interface {
 	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
 	SaveLogs(client StorageClient, location string, requests []*LogsRequest) error
+	StreamLogs(requests []*LogsRequest) ([]*LogsResponse, error)
 }
 
 type logCollector struct {
