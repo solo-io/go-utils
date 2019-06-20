@@ -16,7 +16,6 @@ import (
 type LogCollector interface {
 	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
 	SaveLogs(client StorageClient, location string, requests []*LogsRequest) error
-	StreamLogs(requests []*LogsRequest) ([]*LogsResponse, error)
 }
 
 type logCollector struct {
@@ -52,7 +51,7 @@ func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResour
 
 func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
-	responses, err := lc.StreamLogs(requests)
+	responses, err := lc.logRequestBuilder.StreamLogs(requests)
 	if err != nil {
 		return err
 	}
@@ -67,36 +66,6 @@ func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, r
 		})
 	}
 	return eg.Wait()
-}
-
-func (lc *logCollector) StreamLogs(requests []*LogsRequest) ([]*LogsResponse, error) {
-	result := make([]*LogsResponse, 0, len(requests))
-	eg := errgroup.Group{}
-	lock := sync.Mutex{}
-	for _, request := range requests {
-		// necessary to shadow this variable so that it is unique within the goroutine
-		restRequest := request
-		eg.Go(func() error {
-			reader, err := restRequest.Request.Stream()
-			if err != nil {
-				return err
-			}
-			lock.Lock()
-			defer lock.Unlock()
-			result = append(result, &LogsResponse{
-				LogMeta: LogMeta{
-					PodMeta:       restRequest.PodMeta,
-					ContainerName: restRequest.ContainerName,
-				},
-				Response: reader,
-			})
-			return nil
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 type LogRequestBuilder struct {
@@ -183,4 +152,34 @@ func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod, optsFunc ...LogRe
 		result = append(result, NewLogsRequest(pod.ObjectMeta, v.Name, request))
 	}
 	return result
+}
+
+func (lc LogRequestBuilder) StreamLogs(requests []*LogsRequest) ([]*LogsResponse, error) {
+	result := make([]*LogsResponse, 0, len(requests))
+	eg := errgroup.Group{}
+	lock := sync.Mutex{}
+	for _, request := range requests {
+		// necessary to shadow this variable so that it is unique within the goroutine
+		restRequest := request
+		eg.Go(func() error {
+			reader, err := restRequest.Request.Stream()
+			if err != nil {
+				return err
+			}
+			lock.Lock()
+			defer lock.Unlock()
+			result = append(result, &LogsResponse{
+				LogMeta: LogMeta{
+					PodMeta:       restRequest.PodMeta,
+					ContainerName: restRequest.ContainerName,
+				},
+				Response: reader,
+			})
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
