@@ -1,11 +1,14 @@
 package debugutils
 
 import (
+	"time"
+
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -78,6 +81,12 @@ var (
 	}
 	PreviousLogs LogRequestOptions = func(options *corev1.PodLogOptions) {
 		options.Previous = true
+
+	}
+	LogsSince = func(since time.Time) LogRequestOptions {
+		return func(options *corev1.PodLogOptions) {
+			options.SinceTime = &metav1.Time{Time: since,}
+		}
 	}
 )
 
