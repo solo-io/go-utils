@@ -85,7 +85,7 @@ var (
 	}
 	LogsSince = func(since time.Time) LogRequestOptions {
 		return func(options *corev1.PodLogOptions) {
-			options.SinceTime = &metav1.Time{Time: since,}
+			options.SinceTime = &metav1.Time{Time: since}
 		}
 	}
 )
@@ -128,7 +128,7 @@ func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.Unstru
 func (lrb *LogRequestBuilder) RetrieveLogs(pods *corev1.PodList, opts ...LogRequestOptions) []*LogsRequest {
 	var result []*LogsRequest
 	for _, v := range pods.Items {
-		result = append(result, lrb.buildLogsRequest(v)...)
+		result = append(result, lrb.buildLogsRequest(v, opts...)...)
 	}
 	return result
 }
