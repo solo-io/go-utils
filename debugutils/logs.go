@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"sync"
 	"time"
 
 	"github.com/solo-io/go-utils/installutils/helmchart"
@@ -50,6 +51,27 @@ func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResour
 
 func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
+	responses, err := lc.StreamLogs(requests)
+	if err != nil {
+		return err
+	}
+	for _, response := range responses {
+		response := response
+		eg.Go(func() error {
+			defer response.Response.Close()
+			return storageClient.Save(location, &StorageObject{
+				Resource: response.Response,
+				Name:     response.ResourceId(),
+			})
+		})
+	}
+	return eg.Wait()
+}
+
+func (lc *logCollector) StreamLogs(requests []*LogsRequest) ([]*LogsResponse, error) {
+	result := make([]*LogsResponse, 0, len(requests))
+	eg := errgroup.Group{}
+	lock := sync.Mutex{}
 	for _, request := range requests {
 		// necessary to shadow this variable so that it is unique within the goroutine
 		restRequest := request
@@ -58,14 +80,22 @@ func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, r
 			if err != nil {
 				return err
 			}
-			defer reader.Close()
-			return storageClient.Save(location, &StorageObject{
-				Resource: reader,
-				Name:     restRequest.ResourceId(),
+			lock.Lock()
+			defer lock.Unlock()
+			result = append(result, &LogsResponse{
+				LogMeta: LogMeta{
+					PodMeta:       restRequest.PodMeta,
+					ContainerName: restRequest.ContainerName,
+				},
+				Response: reader,
 			})
+			return nil
 		})
 	}
-	return eg.Wait()
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 type LogRequestBuilder struct {
