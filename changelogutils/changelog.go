@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
+
 	"github.com/google/go-github/github"
 
 	"github.com/ghodss/yaml"
@@ -331,7 +334,8 @@ func RefHasChangelog(ctx context.Context, client *github.Client, owner, repo, sh
 	if err == nil && len(branchRepoChangelog) > 0 {
 		return true, nil
 	} else {
-		if branchResponse.StatusCode != 404 {
+		contextutils.LoggerFrom(ctx).Infow("Could not find changelog.", zap.Any("branchResponse", branchResponse), zap.Error(err), zap.Any("branchRepoChangelog", branchRepoChangelog), zap.String("owner", owner), zap.String("repo", repo), zap.String("dir", ChangelogDirectory), zap.String("ref", sha))
+		if branchResponse != nil && branchResponse.StatusCode != 404 {
 			return false, err
 		}
 	}
