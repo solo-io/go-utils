@@ -17,12 +17,6 @@ type Registry struct {
 	releaseplugins []ReleaseHandler
 }
 
-var registry Registry
-
-func GetRegistry() *Registry {
-	return &registry
-}
-
 func (r *Registry) RegisterPlugin(p Plugin) {
 	if plugin, ok := p.(PullRequestHandler); ok {
 		r.prplugins = append(r.prplugins, plugin)

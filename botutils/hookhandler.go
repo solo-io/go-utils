@@ -24,7 +24,7 @@ func NewGithubHookHandler(clientCreator githubapp.ClientCreator, configFetcher *
 }
 
 func (h *githubHookHandler) RegisterPlugin(plugin Plugin) {
-	registry.RegisterPlugin(plugin)
+	h.registry.RegisterPlugin(plugin)
 }
 
 func (h *githubHookHandler) Handles() []string {

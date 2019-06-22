@@ -100,19 +100,11 @@ func (cs *CloudSubscriber) handleCloudBuildEvent(ctx context.Context, msg *pubsu
 	ctx = contextutils.WithLoggerValues(ctx, zap.String("project-id", cbm.ProjectId), zap.String("build-id", cbm.Id))
 	var tags Tags = cbm.Tags
 	instId := tags.GetInstallationId()
-	if instId == 0 {
-		// TODO(yuval-k): once we stop seeing this in the log we can remove the default inst id
-		// from logic from herer and the config
-		contextutils.LoggerFrom(ctx).Infow("Build does not contain installation id")
-
-		// TODO(yuval-k): once we are sure that passing the instid in the cloud build works,
-		// we can remove this
-		instId = int64(cs.cfg.AppConfig.InstallationId)
-	}
-
-	githubClient, err := cs.githubClientCreator.NewInstallationClient(int64(instId))
+	githubClient, err := cs.githubClientCreator.NewInstallationClient(instId)
 	if err != nil {
-		contextutils.LoggerFrom(ctx).Errorw("error getting github client from installation id", zap.Error(err))
+		contextutils.LoggerFrom(ctx).Errorw("error getting github client from installation id",
+			zap.Error(err),
+			zap.Int64("installationId", instId))
 		return
 	}
 
@@ -122,11 +114,6 @@ func (cs *CloudSubscriber) handleCloudBuildEvent(ctx context.Context, msg *pubsu
 
 func HandleCloudBuildEvent(ctx context.Context, registry *CloudBuildRegistry, client *github.Client, build *cloudbuild.Build) {
 	ctx = contextutils.WithLoggerValues(ctx, zap.String("trigger", "cloud-build"), zap.String("build_id", build.Id))
-	// If race condition is found do not even call events, can handle at root
-	if err := HandleFailedSourceBuild(ctx, build); err != nil {
-		return
-	}
-
 	for _, eventHandler := range registry.eventHandlers {
 		eventHandler := eventHandler
 		go func() {
