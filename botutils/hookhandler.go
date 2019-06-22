@@ -56,6 +56,7 @@ func (h *githubHookHandler) getInstallationClient(ctx context.Context, installat
 			zap.Int64("installationId", installationId))
 		return nil, err
 	}
+	contextutils.LoggerFrom(ctx).Infow("Created client", zap.Int64("installationId", installationId))
 	return client, nil
 }
 
