@@ -13,14 +13,19 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.2.1
 	github.com/google/go-github v17.0.0+incompatible
+	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
+	github.com/googleapis/gnostic v0.3.0 // indirect
 	github.com/goph/emperror v0.17.1
+	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.5.0 // indirect
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
+	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/k0kubun/pp v2.3.0+incompatible
 	github.com/mitchellh/go-homedir v1.0.0
 	github.com/mitchellh/hashstructure v1.0.0
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/openzipkin/zipkin-go v0.1.1 // indirect
@@ -47,6 +52,7 @@ require (
 	k8s.io/cli-runtime v0.0.0-20190111035321-c7263d800665+incompatible
 	k8s.io/client-go v10.0.0+incompatible
 	k8s.io/helm v2.13.0+incompatible
+	k8s.io/klog v0.3.3 // indirect
 	sigs.k8s.io/controller-runtime v0.1.10
 	sigs.k8s.io/yaml v1.1.0
 )

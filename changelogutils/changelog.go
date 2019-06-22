@@ -331,13 +331,15 @@ func RefHasChangelog(ctx context.Context, client *github.Client, owner, repo, sh
 	}
 
 	_, branchRepoChangelog, branchResponse, err := client.Repositories.GetContents(ctx, owner, repo, ChangelogDirectory, opts)
-	if err == nil && len(branchRepoChangelog) > 0 {
-		return true, nil
-	} else {
-		contextutils.LoggerFrom(ctx).Infow("Could not find changelog.", zap.Any("branchResponse", branchResponse), zap.Error(err), zap.Any("branchRepoChangelog", branchRepoChangelog), zap.String("owner", owner), zap.String("repo", repo), zap.String("dir", ChangelogDirectory), zap.String("ref", sha))
-		if branchResponse != nil && branchResponse.StatusCode != 404 {
-			return false, err
+	if err != nil {
+		if branchResponse != nil && branchResponse.StatusCode == 404 {
+			contextutils.LoggerFrom(ctx).Infow("404 looking for changelog")
+			return false, nil
 		}
+		contextutils.LoggerFrom(ctx).Errorw("Error looking for changelog", zap.Error(err), zap.String("owner", owner), zap.String("repo", repo), zap.String("dir", ChangelogDirectory), zap.String("ref", sha))
+		return false, err
+	} else if len(branchRepoChangelog) > 0 {
+		return true, nil
 	}
 
 	return false, nil
