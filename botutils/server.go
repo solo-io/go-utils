@@ -63,7 +63,7 @@ func Start(ctx context.Context, staticCfg StaticBotConfig, plugins ...Plugin) er
 		return err
 	}
 
-	githubHandler := NewGithubHookHandler(cc,
+	githubHandler := NewGithubHookHandler(ctx, cc,
 		NewConfigFetcher(botconfig.DefaultRepoCfg, &cfg.AppConfig, &buildCfg))
 	for _, p := range plugins {
 		githubHandler.RegisterPlugin(p)
