@@ -14,13 +14,14 @@ import (
 )
 
 type githubHookHandler struct {
+	ctx           context.Context
 	clientCreator githubapp.ClientCreator
 	configFetcher *ConfigFetcher
 	registry      *Registry
 }
 
-func NewGithubHookHandler(clientCreator githubapp.ClientCreator, configFetcher *ConfigFetcher) *githubHookHandler {
-	return &githubHookHandler{clientCreator: clientCreator, configFetcher: configFetcher, registry: &Registry{}}
+func NewGithubHookHandler(ctx context.Context, clientCreator githubapp.ClientCreator, configFetcher *ConfigFetcher) *githubHookHandler {
+	return &githubHookHandler{ctx: ctx, clientCreator: clientCreator, configFetcher: configFetcher, registry: &Registry{}}
 }
 
 func (h *githubHookHandler) RegisterPlugin(plugin Plugin) {
@@ -32,6 +33,8 @@ func (h *githubHookHandler) Handles() []string {
 }
 
 func (h *githubHookHandler) Handle(ctx context.Context, eventType, deliveryID string, payload []byte) error {
+	// TODO: figure out which context to use
+	ctx = h.ctx
 	switch eventType {
 	case PrType:
 		return h.HandlePR(ctx, eventType, deliveryID, payload)
