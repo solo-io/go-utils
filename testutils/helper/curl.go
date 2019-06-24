@@ -28,16 +28,20 @@ type CurlOpts struct {
 
 func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
 	defaultTimeout := time.Second * 20
+	defaultPollingTimeout := time.Second * 5
 	var currentTimeout time.Duration
 	var pollingInterval time.Duration
 	switch len(timeout) {
 	case 0:
 		currentTimeout = defaultTimeout
-		pollingInterval = 5 * time.Second
+		pollingInterval = defaultPollingTimeout
 	default:
 		fallthrough
 	case 2:
 		pollingInterval = timeout[1]
+		if pollingInterval == 0 {
+			pollingInterval = defaultPollingTimeout
+		}
 		fallthrough
 	case 1:
 		currentTimeout = timeout[0]
