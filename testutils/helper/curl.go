@@ -28,17 +28,25 @@ type CurlOpts struct {
 
 func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
 	defaultTimeout := time.Second * 20
-	currentTimeout := defaultTimeout
-	if len(timeout) > 0 {
+	var currentTimeout time.Duration
+	var pollingInterval time.Duration
+	switch len(timeout) {
+	case 0:
+		currentTimeout = defaultTimeout
+		pollingInterval = 5 * time.Second
+	default:
+		fallthrough
+	case 2:
+		pollingInterval = timeout[1]
+		fallthrough
+	case 1:
 		currentTimeout = timeout[0]
 		if currentTimeout == 0 {
+			// for backwards compatability, leave this zero check
 			currentTimeout = defaultTimeout
 		}
 	}
-	pollingInterval := 5 * time.Second
-	if len(timeout) > 1 {
-		pollingInterval = timeout[1]
-	}
+
 	// for some useful-ish output
 	tick := time.Tick(currentTimeout / 8)
 
