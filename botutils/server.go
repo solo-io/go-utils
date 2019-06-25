@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"go.uber.org/zap"
-
 	"github.com/solo-io/go-utils/botutils/botconfig"
 
 	"github.com/palantir/go-baseapp/baseapp"
@@ -29,8 +27,6 @@ func Start(ctx context.Context, staticCfg StaticBotConfig, plugins ...Plugin) er
 	if err != nil {
 		return err
 	}
-
-	contextutils.LoggerFrom(ctx).Infow("Creating client creator", zap.Any("github", cfg.Github))
 
 	cc, err := githubapp.NewDefaultCachingClientCreator(
 		cfg.Github,
