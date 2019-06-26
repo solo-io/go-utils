@@ -6,14 +6,17 @@ require (
 	cloud.google.com/go v0.40.0
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
+	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/Sirupsen/logrus v1.4.2 // indirect
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/bluekeyes/hatpear v0.0.0-20180714193905-ffb42d5bb417 // indirect
 	github.com/bradleyfalzon/ghinstallation v0.1.2 // indirect
 	github.com/coreos/bbolt v1.3.3 // indirect
+	github.com/coreos/etcd v3.3.13+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
+	github.com/cpuguy83/go-md2man v1.0.10 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
@@ -21,6 +24,7 @@ require (
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-openapi/spec v0.19.2 // indirect
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/mock v1.3.1
 	github.com/google/go-github v17.0.0+incompatible
@@ -33,6 +37,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.5.0 // indirect
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
+	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/k0kubun/pp v2.3.0+incompatible
@@ -48,15 +53,16 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rs/zerolog v1.14.3
+	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20190625031733-ee671ab25ff0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/solo-io/build v0.0.5
 	github.com/solo-io/solo-kit v0.6.3
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
-	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xlab/handysort v0.0.0-20150421192137-fb3537ed64a1 // indirect
 	go.etcd.io/bbolt v1.3.3 // indirect
@@ -71,6 +77,7 @@ require (
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
+	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.10.0
 	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20181221193117-173ce66c1e39+incompatible
@@ -78,7 +85,6 @@ require (
 	k8s.io/apimachinery v0.0.0-20190104073114-849b284f3b75+incompatible
 	k8s.io/client-go v10.0.0+incompatible
 	k8s.io/helm v2.13.0+incompatible
-	k8s.io/klog v0.3.3 // indirect
 	k8s.io/kubernetes v1.13.2
 	sigs.k8s.io/controller-runtime v0.1.10
 	sigs.k8s.io/yaml v1.1.0
