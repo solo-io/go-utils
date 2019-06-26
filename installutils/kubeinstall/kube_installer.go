@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/solo-io/go-utils/stringutils"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -585,7 +587,7 @@ func (r *KubeInstaller) waitForCrd(ctx context.Context, crdName string) error {
 			return err
 		}
 
-		contextutils.LoggerFrom(ctx).Infof("registered crd %v", crd.ObjectMeta)
+		contextutils.LoggerFrom(ctx).Infow("registered crd", zap.Any("name", crd.ObjectMeta.Name))
 
 		return nil
 	},
