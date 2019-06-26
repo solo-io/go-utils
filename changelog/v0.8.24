@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add utilities for working with lazily mounted github repos. 
+    issueLink: https://github.com/solo-io/go-utils/issues/213
