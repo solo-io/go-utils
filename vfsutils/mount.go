@@ -62,7 +62,7 @@ func (r *lazilyMountedRepo) ensureCodeMounted(ctx context.Context) error {
 			zap.String("owner", r.owner),
 			zap.String("repo", r.repo),
 			zap.String("sha", r.sha))
-		dir, err := vfsutils.MountCode(r.fs, ctx, r.client, r.owner, r.repo, r.sha)
+		dir, err := MountCode(r.fs, ctx, r.client, r.owner, r.repo, r.sha)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("Error mounting github code",
 				zap.Error(err),
