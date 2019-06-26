@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add utilities for writing small git bot applications.
+    issueLink: https://github.com/solo-io/go-utils/issues/215
