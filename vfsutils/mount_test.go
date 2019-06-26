@@ -1,11 +1,12 @@
-package githubutils_test
+package vfsutils_test
 
 import (
 	"context"
+	"github.com/solo-io/go-utils/githubutils"
+	"github.com/solo-io/go-utils/vfsutils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/githubutils"
 )
 
 var _ = Describe("mounted repo utils", func() {
@@ -18,13 +19,13 @@ var _ = Describe("mounted repo utils", func() {
 
 	var (
 		ctx         = context.Background()
-		mountedRepo githubutils.MountedRepo
+		mountedRepo vfsutils.MountedRepo
 	)
 
 	BeforeEach(func() {
 		client, err := githubutils.GetClient(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		mountedRepo = githubutils.NewLazilyMountedRepo(client, owner, repo, sha)
+		mountedRepo = vfsutils.NewLazilyMountedRepo(client, owner, repo, sha)
 	})
 
 	It("can get contents", func() {

@@ -1,4 +1,4 @@
-package githubutils
+package vfsutils
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/vfsutils"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 )
