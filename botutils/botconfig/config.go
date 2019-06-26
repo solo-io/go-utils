@@ -29,9 +29,7 @@ type SlackNotifications struct {
 
 type ApplicationConfig struct {
 	InstallationId     int                `yaml:"installation_id" json:"installationId"`
-	GcloudProjects     []string           `yaml:"gcloud_projects" json:"gcloudProjects"`
 	SlackNotifications SlackNotifications `yaml:"slack_notifications" json:"slackNotifications"`
-	BuildConfig        string             `yaml:"build_config" json:"buildConfig"`
 }
 
 func ReadConfig() (*Config, error) {
