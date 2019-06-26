@@ -26,13 +26,33 @@ type CurlOpts struct {
 	WithoutStats bool
 }
 
-func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout time.Duration) {
+func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
 	defaultTimeout := time.Second * 20
-	if timeout == 0 {
-		timeout = defaultTimeout
+	defaultPollingTimeout := time.Second * 5
+	var currentTimeout time.Duration
+	var pollingInterval time.Duration
+	switch len(timeout) {
+	case 0:
+		currentTimeout = defaultTimeout
+		pollingInterval = defaultPollingTimeout
+	default:
+		fallthrough
+	case 2:
+		pollingInterval = timeout[1]
+		if pollingInterval == 0 {
+			pollingInterval = defaultPollingTimeout
+		}
+		fallthrough
+	case 1:
+		currentTimeout = timeout[0]
+		if currentTimeout == 0 {
+			// for backwards compatability, leave this zero check
+			currentTimeout = defaultTimeout
+		}
 	}
+
 	// for some useful-ish output
-	tick := time.Tick(timeout / 8)
+	tick := time.Tick(currentTimeout / 8)
 
 	gomega.EventuallyWithOffset(ginkgoOffset+1, func() string {
 		res, err := t.Curl(opts)
@@ -51,7 +71,7 @@ func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string
 			log.GreyPrintf("success: %v", res)
 		}
 		return res
-	}, timeout, "5s").Should(gomega.ContainSubstring(substr))
+	}, currentTimeout, pollingInterval).Should(gomega.ContainSubstring(substr))
 }
 
 func (t *testContainer) Curl(opts CurlOpts) (string, error) {

@@ -55,6 +55,21 @@ func GetClient(ctx context.Context) (*github.Client, error) {
 	return client, nil
 }
 
+func GetClientWithOrWithoutToken(ctx context.Context) *github.Client {
+	token, err := GetGithubToken()
+	if err != nil {
+		logMsg := fmt.Sprintf("%v Private repositories will be unavailable and a strict rate limit will be enforced.", err.Error())
+		contextutils.LoggerFrom(ctx).Warnw(logMsg, zap.Error(err))
+		return github.NewClient(nil)
+	}
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+	return client
+}
+
 func FindStatus(ctx context.Context, client *github.Client, statusLabel, owner, repo, sha string) (*github.RepoStatus, error) {
 	logger := contextutils.LoggerFrom(ctx)
 	statues, _, err := client.Repositories.ListStatuses(ctx, owner, repo, sha, nil)

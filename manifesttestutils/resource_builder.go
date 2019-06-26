@@ -49,9 +49,9 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 			APIVersion: "extensions/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        b.Name,
-			Namespace:   b.Namespace,
-			Labels:      b.Labels,
+			Name:      b.Name,
+			Namespace: b.Namespace,
+			Labels:    b.Labels,
 		},
 		Spec: v1beta1.DeploymentSpec{
 			Replicas: getReplicas(),
@@ -60,7 +60,7 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: b.Labels,
+					Labels:      b.Labels,
 					Annotations: b.Annotations,
 				},
 				Spec: v1.PodSpec{
