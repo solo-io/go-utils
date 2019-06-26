@@ -1,11 +1,15 @@
 package debugutils
 
 import (
+	"sync"
+	"time"
+
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -47,18 +51,17 @@ func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResour
 
 func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
-	for _, request := range requests {
-		// necessary to shadow this variable so that it is unique within the goroutine
-		restRequest := request
+	responses, err := lc.logRequestBuilder.StreamLogs(requests)
+	if err != nil {
+		return err
+	}
+	for _, response := range responses {
+		response := response
 		eg.Go(func() error {
-			reader, err := restRequest.Request.Stream()
-			if err != nil {
-				return err
-			}
-			defer reader.Close()
+			defer response.Response.Close()
 			return storageClient.Save(location, &StorageObject{
-				Resource: reader,
-				Name:     restRequest.ResourceId(),
+				Resource: response.Response,
+				Name:     response.ResourceId(),
 			})
 		})
 	}
@@ -69,6 +72,23 @@ type LogRequestBuilder struct {
 	clientset corev1client.CoreV1Interface
 	podFinder PodFinder
 }
+
+type LogRequestOptions func(options *corev1.PodLogOptions)
+
+var (
+	FollowLogs LogRequestOptions = func(options *corev1.PodLogOptions) {
+		options.Follow = true
+	}
+	PreviousLogs LogRequestOptions = func(options *corev1.PodLogOptions) {
+		options.Previous = true
+
+	}
+	LogsSince = func(since time.Time) LogRequestOptions {
+		return func(options *corev1.PodLogOptions) {
+			options.SinceTime = &metav1.Time{Time: since}
+		}
+	}
+)
 
 func NewLogRequestBuilder(clientset corev1client.CoreV1Interface, podFinder PodFinder) *LogRequestBuilder {
 	return &LogRequestBuilder{clientset: clientset, podFinder: podFinder}
@@ -93,41 +113,73 @@ func DefaultLogRequestBuilder() (*LogRequestBuilder, error) {
 	}, nil
 }
 
-func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
+func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.UnstructuredResources, opts ...LogRequestOptions) ([]*LogsRequest, error) {
 	var result []*LogsRequest
 	pods, err := lrb.podFinder.GetPods(resources)
 	if err != nil {
 		return nil, err
 	}
 	for _, v := range pods {
-		result = append(result, lrb.RetrieveLogs(v)...)
+		result = append(result, lrb.RetrieveLogs(v, opts...)...)
 	}
 	return result, nil
 }
 
-func (lrb *LogRequestBuilder) RetrieveLogs(pods *corev1.PodList) []*LogsRequest {
+func (lrb *LogRequestBuilder) RetrieveLogs(pods *corev1.PodList, opts ...LogRequestOptions) []*LogsRequest {
 	var result []*LogsRequest
 	for _, v := range pods.Items {
-		result = append(result, lrb.buildLogsRequest(v)...)
+		result = append(result, lrb.buildLogsRequest(v, opts...)...)
 	}
 	return result
 }
 
-func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod) []*LogsRequest {
+func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod, optsFunc ...LogRequestOptions) []*LogsRequest {
 	var result []*LogsRequest
-	for _, v := range pod.Spec.Containers {
-		opts := &corev1.PodLogOptions{
-			Container: v.Name,
+	opts := &corev1.PodLogOptions{}
+	for _, f := range optsFunc {
+		if f != nil {
+			f(opts)
 		}
+	}
+	for _, v := range pod.Spec.Containers {
+		opts.Container = v.Name
 		request := lrb.clientset.Pods(pod.Namespace).GetLogs(pod.Name, opts)
 		result = append(result, NewLogsRequest(pod.ObjectMeta, v.Name, request))
 	}
 	for _, v := range pod.Spec.InitContainers {
-		opts := &corev1.PodLogOptions{
-			Container: v.Name,
-		}
+		opts.Container = v.Name
 		request := lrb.clientset.Pods(pod.Namespace).GetLogs(pod.Name, opts)
 		result = append(result, NewLogsRequest(pod.ObjectMeta, v.Name, request))
 	}
 	return result
+}
+
+func (lc LogRequestBuilder) StreamLogs(requests []*LogsRequest) ([]*LogsResponse, error) {
+	result := make([]*LogsResponse, 0, len(requests))
+	eg := errgroup.Group{}
+	lock := sync.Mutex{}
+	for _, request := range requests {
+		// necessary to shadow this variable so that it is unique within the goroutine
+		restRequest := request
+		eg.Go(func() error {
+			reader, err := restRequest.Request.Stream()
+			if err != nil {
+				return err
+			}
+			lock.Lock()
+			defer lock.Unlock()
+			result = append(result, &LogsResponse{
+				LogMeta: LogMeta{
+					PodMeta:       restRequest.PodMeta,
+					ContainerName: restRequest.ContainerName,
+				},
+				Response: reader,
+			})
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }

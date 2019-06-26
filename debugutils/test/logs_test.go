@@ -17,32 +17,41 @@ var _ = Describe("logs", func() {
 
 		deployedPods = []*debugutils.LogsRequest{
 			{
-				PodMeta: metav1.ObjectMeta{
-					Name:      "gateway",
-					Namespace: "gloo-system",
+				LogMeta: debugutils.LogMeta{
+					ContainerName: "gateway",
+					PodMeta: metav1.ObjectMeta{
+						Name:      "gateway",
+						Namespace: "gloo-system",
+					},
 				},
-				ContainerName: "gateway",
 			},
 			{
-				PodMeta: metav1.ObjectMeta{
-					Name:      "gateway-proxy",
-					Namespace: "gloo-system",
+
+				LogMeta: debugutils.LogMeta{
+					ContainerName: "gateway-proxy",
+					PodMeta: metav1.ObjectMeta{
+						Name:      "gateway-proxy",
+						Namespace: "gloo-system",
+					},
 				},
-				ContainerName: "gateway-proxy",
 			},
 			{
-				PodMeta: metav1.ObjectMeta{
-					Name:      "gloo",
-					Namespace: "gloo-system",
+				LogMeta: debugutils.LogMeta{
+					ContainerName: "gloo",
+					PodMeta: metav1.ObjectMeta{
+						Name:      "gloo",
+						Namespace: "gloo-system",
+					},
 				},
-				ContainerName: "gloo",
 			},
 			{
-				PodMeta: metav1.ObjectMeta{
-					Name:      "discovery",
-					Namespace: "gloo-system",
+				LogMeta: debugutils.LogMeta{
+					ContainerName: "discovery",
+					PodMeta: metav1.ObjectMeta{
+						Name:      "discovery",
+						Namespace: "gloo-system",
+					},
 				},
-				ContainerName: "discovery",
 			},
 		}
 

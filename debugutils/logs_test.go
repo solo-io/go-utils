@@ -113,8 +113,10 @@ var _ = Describe("logs unit tests", func() {
 			sucessfulRequest.EXPECT().Stream().Times(1).Return(fakeReaderCloser, nil)
 			logRequests := []*LogsRequest{
 				{
-					Request:       sucessfulRequest,
-					ContainerName: "request1",
+					Request: sucessfulRequest,
+					LogMeta: LogMeta{
+						ContainerName: "request1",
+					},
 				},
 			}
 			sc.EXPECT().Save(fakeLocation, &StorageObject{
