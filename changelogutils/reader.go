@@ -3,7 +3,7 @@ package changelogutils
 import (
 	"context"
 	"github.com/ghodss/yaml"
-	"github.com/pkg/errors"
+	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
 	"path/filepath"
