@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Adds some basic utilities for writing bots.
+    issueLink: https://github.com/solo-io/go-utils/issues/215
