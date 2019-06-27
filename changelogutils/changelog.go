@@ -199,6 +199,7 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 	return proposedVersion, nil
 }
 
+// Deprecated: use changelogutils.ChangelogReader instead
 func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	var changelog ChangelogFile
 	bytes, err := afero.ReadFile(fs, path)
@@ -240,6 +241,7 @@ func ChangelogDirExists(fs afero.Fs, changelogParentPath string) (bool, error) {
 	return afero.Exists(fs, filepath.Join(changelogParentPath, ChangelogDirectory))
 }
 
+// Deprecated: use changelogutils.ChangelogReader instead
 func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Changelog, error) {
 	version, err := versionutils.ParseVersion(tag)
 	if err != nil {
@@ -282,6 +284,7 @@ func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Chan
 	return &changelog, nil
 }
 
+// Deprecated: use changelogutils.ChangelogReader instead
 func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelogParentPath string) (*Changelog, error) {
 	latestVersion, err := versionutils.ParseVersion(latestTag)
 	if err != nil {
