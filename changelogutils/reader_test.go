@@ -11,6 +11,7 @@ import (
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
 	"os"
+	"path/filepath"
 	"time"
 )
 var _ = Describe("ReaderTest", func() {
@@ -29,7 +30,7 @@ var _ = Describe("ReaderTest", func() {
 		)
 
 		var (
-			code vfsutils.MountedRepo
+			code  vfsutils.MountedRepo
 			entry = changelogutils.ChangelogEntry{
 				Type: changelogutils.NEW_FEATURE,
 				Description: "Now testrepo pushes rendered changelog to solo-docs on release builds.",
@@ -69,9 +70,6 @@ var _ = Describe("ReaderTest", func() {
 		const (
 			tag = "v0.0.1"
 			changelogDir = "changelog/v0.0.1"
-			summaryFile = "changelog/v0.0.1/summary.md"
-			closingFile = "changelog/v0.0.1/closing.md"
-			changelogFile = "changelog/v0.0.1/changelog.yaml"
 		)
 
 		var (
@@ -90,6 +88,17 @@ var _ = Describe("ReaderTest", func() {
 			ctrl.Finish()
 		})
 
+		It("errors on listing directory", func() {
+			mockCode.EXPECT().
+				ListFiles(ctx, changelogDir).
+				Return(nil, nestedErr)
+
+			expected := changelogutils.UnableToListFilesError(nestedErr, changelogDir)
+			changelog, err := reader.GetChangelogForTag(ctx, tag)
+			Expect(changelog).To(BeNil())
+			Expect(err.Error()).To(Equal(expected.Error()))
+		})
+
 		It("errors on unexpected directory", func() {
 			files := []os.FileInfo{getFileInfo("foo", true)}
 			mockCode.EXPECT().
@@ -103,16 +112,21 @@ var _ = Describe("ReaderTest", func() {
 			Expect(err.Error()).To(Equal(expected.Error()))
 		})
 
-		It("errors on reading summary", func() {
-			files := []os.FileInfo{getFileInfo("summary.md", false)}
+		setupMockChangelogDir := func(filename, contents string, err error) string {
+			path := filepath.Join(changelogDir, filename)
+			files := []os.FileInfo{getFileInfo(filename, false)}
 			mockCode.EXPECT().
 				ListFiles(ctx, changelogDir).
 				Return(files, nil)
 			mockCode.EXPECT().
-				GetFileContents(ctx, summaryFile).
-				Return(nil, nestedErr)
+				GetFileContents(ctx, path).
+				Return([]byte(contents), err)
+			return path
+		}
 
-			expected := changelogutils.UnableToReadSummaryFileError(nestedErr, summaryFile)
+		It("errors on reading summary", func() {
+			path := setupMockChangelogDir(changelogutils.SummaryFile, "", nestedErr)
+			expected := changelogutils.UnableToReadSummaryFileError(nestedErr, path)
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
 			Expect(changelog).To(BeNil())
@@ -120,15 +134,8 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on reading closing", func() {
-			files := []os.FileInfo{getFileInfo("closing.md", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, closingFile).
-				Return(nil, nestedErr)
-
-			expected := changelogutils.UnableToReadClosingFileError(nestedErr, closingFile)
+			path := setupMockChangelogDir(changelogutils.ClosingFile, "", nestedErr)
+			expected := changelogutils.UnableToReadClosingFileError(nestedErr, path)
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
 			Expect(changelog).To(BeNil())
@@ -136,15 +143,8 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on no entries in file", func() {
-			files := []os.FileInfo{getFileInfo("changelog.yaml", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, changelogFile).
-				Return([]byte(changelogNoEntries), nil)
-
-			expected := changelogutils.NoEntriesInChangelogError(changelogFile)
+			path := setupMockChangelogDir("changelog.yaml", changelogNoEntries, nil)
+			expected := changelogutils.NoEntriesInChangelogError(path)
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
 			Expect(changelog).To(BeNil())
@@ -152,15 +152,8 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on parsing problem", func() {
-			files := []os.FileInfo{getFileInfo("changelog.yaml", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, changelogFile).
-				Return([]byte("invalid changelog"), nil)
-
-			expected := changelogutils.UnableToParseChangelogError(nestedErr, changelogFile)
+			path := setupMockChangelogDir("changelog.yaml", "invalid changelog", nil)
+			expected := changelogutils.UnableToParseChangelogError(nestedErr, path)
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
 			Expect(changelog).To(BeNil())
@@ -168,14 +161,7 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on missing issue link", func() {
-			files := []os.FileInfo{getFileInfo("changelog.yaml", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, changelogFile).
-				Return([]byte(changelogMissingIssueLink), nil)
-
+			setupMockChangelogDir("changelog.yaml", changelogMissingIssueLink, nil)
 			expected := changelogutils.MissingIssueLinkError
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
@@ -184,14 +170,7 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on missing description", func() {
-			files := []os.FileInfo{getFileInfo("changelog.yaml", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, changelogFile).
-				Return([]byte(changelogMissingDescription), nil)
-
+			setupMockChangelogDir("changelog.yaml", changelogMissingDescription, nil)
 			expected := changelogutils.MissingDescriptionError
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
@@ -200,14 +179,7 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on missing owner", func() {
-			files := []os.FileInfo{getFileInfo("changelog.yaml", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, changelogFile).
-				Return([]byte(changelogMissingOwner), nil)
-
+			setupMockChangelogDir("changelog.yaml", changelogMissingOwner, nil)
 			expected := changelogutils.MissingOwnerError
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
@@ -216,14 +188,7 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on missing repo", func() {
-			files := []os.FileInfo{getFileInfo("changelog.yaml", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, changelogFile).
-				Return([]byte(changelogMissingRepo), nil)
-
+			setupMockChangelogDir("changelog.yaml", changelogMissingRepo, nil)
 			expected := changelogutils.MissingRepoError
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
@@ -232,19 +197,122 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("errors on missing tag", func() {
-			files := []os.FileInfo{getFileInfo("changelog.yaml", false)}
-			mockCode.EXPECT().
-				ListFiles(ctx, changelogDir).
-				Return(files, nil)
-			mockCode.EXPECT().
-				GetFileContents(ctx, changelogFile).
-				Return([]byte(changelogMissingTag), nil)
-
+			setupMockChangelogDir("changelog.yaml", changelogMissingTag, nil)
 			expected := changelogutils.MissingTagError
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
 			Expect(changelog).To(BeNil())
 			Expect(err).To(Equal(expected))
+		})
+
+		It("can get complex changelog", func() {
+			files := []os.FileInfo{
+				getFileInfo("summary.md", false),
+				getFileInfo("closing.md", false),
+				getFileInfo("1.yaml", false),
+				getFileInfo("2.yaml", false),
+				getFileInfo("3.yaml", false),
+			}
+			mockCode.EXPECT().
+				ListFiles(ctx, changelogDir).
+				Return(files, nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "1.yaml")).
+				Return([]byte(validChangelog1), nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "2.yaml")).
+				Return([]byte(validChangelog2), nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "3.yaml")).
+				Return([]byte(validChangelog3), nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "summary.md")).
+				Return([]byte("summary"), nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "closing.md")).
+				Return([]byte("closing"), nil)
+
+			resolvesIssueFalse := false
+			expected := changelogutils.Changelog{
+				Files: []*changelogutils.ChangelogFile{
+					{
+						Entries: []*changelogutils.ChangelogEntry{
+							{
+								Type: changelogutils.FIX,
+								Description: "foo1",
+								IssueLink: "bar1",
+							},
+							{
+								Type: changelogutils.NEW_FEATURE,
+								Description: "foo2",
+								IssueLink: "bar2",
+							},
+						},
+					},
+					{
+						Entries: []*changelogutils.ChangelogEntry{
+							{
+								Type: changelogutils.NON_USER_FACING,
+								Description: "foo3",
+							},
+							{
+								Type: changelogutils.FIX,
+								Description: "foo4",
+								IssueLink: "bar4",
+								ResolvesIssue: &resolvesIssueFalse,
+							},
+						},
+					},
+					{
+						Entries: []*changelogutils.ChangelogEntry{
+							{
+								Type: changelogutils.DEPENDENCY_BUMP,
+								DependencyOwner: "foo",
+								DependencyRepo: "bar",
+								DependencyTag: "baz",
+							},
+						},
+					},
+				},
+				Version: versionutils.NewVersion(0, 0, 1),
+				Summary: "summary",
+				Closing: "closing",
+			}
+
+			changelog, err := reader.GetChangelogForTag(ctx, tag)
+			Expect(err).To(BeNil())
+			Expect(*changelog).To(BeEquivalentTo(expected))
+		})
+
+		It("can handle release stable api", func() {
+			files := []os.FileInfo{
+				getFileInfo("1.yaml", false),
+			}
+			mockCode.EXPECT().
+				ListFiles(ctx, changelogDir).
+				Return(files, nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "1.yaml")).
+				Return([]byte(validStableReleaseChangelog), nil)
+
+			releaseStableApiTrue := true
+			expected := changelogutils.Changelog{
+				Files: []*changelogutils.ChangelogFile{
+					{
+						Entries: []*changelogutils.ChangelogEntry{
+							{
+								Type: changelogutils.NON_USER_FACING,
+							},
+						},
+						ReleaseStableApi: &releaseStableApiTrue,
+					},
+				},
+				Version: versionutils.NewVersion(0, 0, 1),
+			}
+
+			changelog, err := reader.GetChangelogForTag(ctx, tag)
+			Expect(err).To(BeNil())
+			Expect(*changelog).To(BeEquivalentTo(expected))
 		})
 
 	})
@@ -285,6 +353,38 @@ changelog:
   - type: DEPENDENCY_BUMP
     dependencyOwner: foo
     dependencyRepo: bar
+`
+
+	validChangelog1 = `
+changelog:
+  - type: FIX
+    description: foo1
+    issueLink: bar1
+  - type: NEW_FEATURE
+    description: foo2
+    issueLink: bar2
+`
+	validChangelog2 = `
+changelog:
+  - type: NON_USER_FACING
+    description: foo3
+  - type: FIX
+    description: foo4
+    issueLink: bar4
+    resolvesIssue: false
+`
+	validChangelog3 = `
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: foo
+    dependencyRepo: bar
+    dependencyTag: baz
+`
+
+	validStableReleaseChangelog = `
+changelog:
+  - type: NON_USER_FACING
+releaseStableApi: true
 `
 )
 

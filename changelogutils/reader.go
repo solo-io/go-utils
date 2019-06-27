@@ -12,6 +12,9 @@ import (
 //go:generate mockgen -destination reader_mock_test.go -self_package github.com/solo-io/go-utils/changelogutils -package changelogutils_test github.com/solo-io/go-utils/vfsutils MountedRepo
 
 var (
+	UnableToListFilesError = func(err error, directory string) error {
+		return errors.Wrapf(err, "Unable to list files in directory %s", directory)
+	}
 	UnexpectedDirectoryError = func(name, directory string) error {
 		return errors.Errorf("Unexpected directory %s in changelog directory %s", name, directory)
 	}
@@ -58,7 +61,7 @@ func (c* changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*
 	changelogPath := filepath.Join(ChangelogDirectory, tag)
 	files, err := c.code.ListFiles(ctx, changelogPath)
 	if err != nil {
-		return nil, err
+		return nil, UnableToListFilesError(err, changelogPath)
 	}
 	for _, changelogFileInfo := range files {
 		if changelogFileInfo.IsDir() {
