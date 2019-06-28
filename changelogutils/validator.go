@@ -42,6 +42,12 @@ var (
 	AddedChangelogInOldVersionError = func(latest string) error {
 		return errors.Errorf("Can only add changelog to unreleased version (currently %s)", latest)
 	}
+	InvalidUseOfStableApiError = func(tag string) error {
+		return errors.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", tag)
+	}
+	UnexpectedProposedVersionError = func(expected, actual string) error {
+		return errors.Errorf("Expected version %s to be next changelog version, found %s", expected, actual)
+	}
 )
 
 type ChangelogValidator interface {
@@ -136,8 +142,40 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 	if proposedVersion == "" {
 		return "", NoNewVersionsFoundError(latestTag)
 	}
-	_, err = NewChangelogReader(c.code).GetChangelogForTag(ctx, proposedVersion)
+	changelog, err := NewChangelogReader(c.code).GetChangelogForTag(ctx, proposedVersion)
+	if err != nil {
+		return proposedVersion, err
+	}
+	err = c.validateVersionBump(ctx, latestTag, changelog)
 	return proposedVersion, err
+}
+
+func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag string, changelog *Changelog) error {
+	latestVersion, err := versionutils.ParseVersion(latestTag)
+	if err != nil {
+		return err
+	}
+	breakingChanges := false
+	releaseStableApi := false
+
+	for _, file := range changelog.Files {
+		for _, entry := range file.Entries {
+			breakingChanges = breakingChanges || entry.Type.BreakingChange()
+		}
+		releaseStableApi = releaseStableApi || file.GetReleaseStableApi()
+	}
+
+	expectedVersion := latestVersion.IncrementVersion(breakingChanges)
+	if releaseStableApi {
+		if !changelog.Version.Equals(&versionutils.StableApiVersion) {
+			return InvalidUseOfStableApiError(changelog.Version.String())
+		}
+		expectedVersion = &versionutils.StableApiVersion
+	}
+	if *changelog.Version != *expectedVersion {
+		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
+	}
+	return nil
 }
 
 

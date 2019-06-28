@@ -381,6 +381,13 @@ changelog:
     dependencyTag: baz
 `
 
+	validBreakingChangelog = `
+changelog:
+  - type: BREAKING_CHANGE
+    description: foo
+    issueLink: bar
+`
+
 	validStableReleaseChangelog = `
 changelog:
   - type: NON_USER_FACING
