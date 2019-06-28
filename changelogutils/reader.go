@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-//go:generate mockgen -destination reader_mock_test.go -self_package github.com/solo-io/go-utils/changelogutils -package changelogutils_test github.com/solo-io/go-utils/vfsutils MountedRepo
+//go:generate mockgen -destination mounted_repo_mock_test.go -self_package github.com/solo-io/go-utils/changelogutils -package changelogutils_test github.com/solo-io/go-utils/vfsutils MountedRepo
 
 var (
 	UnableToListFilesError = func(err error, directory string) error {

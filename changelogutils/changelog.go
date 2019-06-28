@@ -117,6 +117,7 @@ func (e *errorInvalidDirectoryName) Error() string {
 }
 
 // Should return the last released version
+// Deprecated: use githubutils.RepoClient.FindLatestReleaseIncludingPrerelease instead
 func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	client, err := githubutils.GetClient(ctx)
 	if err != nil {
@@ -126,6 +127,7 @@ func GetLatestTag(ctx context.Context, owner, repo string) (string, error) {
 	return githubutils.FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repo)
 }
 
+// Deprecated: use ChangelogValidator instead
 func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
 	latestTag, err := githubutils.FindLatestReleaseTagIncudingPrerelease(ctx, client, owner, repo)
 	if err != nil {
@@ -164,6 +166,7 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 // Should return the next version to release, based on the names of the subdirectories in the changelog
 // Will return an error if there is no version, or multiple versions, larger than the latest tag,
 // according to semver
+// Deprecated: use ChangelogValidator instead
 func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string, error) {
 	// handle special case where this is the first release
 	if latestTag == versionutils.SemverNilVersionValue {
@@ -237,6 +240,7 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	return &changelog, nil
 }
 
+// Deprecated
 func ChangelogDirExists(fs afero.Fs, changelogParentPath string) (bool, error) {
 	return afero.Exists(fs, filepath.Join(changelogParentPath, ChangelogDirectory))
 }
@@ -325,6 +329,7 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 	return changelog, nil
 }
 
+// Deprecated: use githubutils.RepoClient.DirectoryExists
 func RefHasChangelog(ctx context.Context, client *github.Client, owner, repo, sha string) (bool, error) {
 	opts := &github.RepositoryContentGetOptions{
 		Ref: sha,
