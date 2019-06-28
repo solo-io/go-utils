@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Added changelog validator interface, deprecating the old changelog validation utilities.
+    issueLink: https://github.com/solo-io/go-utils/issues/221
