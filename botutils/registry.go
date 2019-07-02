@@ -2,7 +2,6 @@ package botutils
 
 import (
 	"context"
-	"github.com/solo-io/go-utils/botutils/botconfig"
 
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
@@ -36,18 +35,18 @@ func (r *Registry) RegisterPlugin(p Plugin) {
 	}
 }
 
-func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, config *botconfig.ApplicationConfig, event *github.PullRequestEvent) {
+func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, event *github.PullRequestEvent) {
 	for _, pr := range r.prplugins {
-		err := pr.HandlePREvent(ctx, client, config, event)
+		err := pr.HandlePREvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling PR", zap.Error(err))
 		}
 	}
 }
 
-func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.Client, config *botconfig.ApplicationConfig, event *github.PullRequestReviewEvent) {
+func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.Client, event *github.PullRequestReviewEvent) {
 	for _, pr := range r.prrplugins {
-		err := pr.HandlePullRequestReviewEvent(ctx, client, config, event)
+		err := pr.HandlePullRequestReviewEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling PR review", zap.Error(err))
 
@@ -55,27 +54,27 @@ func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.
 	}
 }
 
-func (r *Registry) CallIssueCommentPlugins(ctx context.Context, client *github.Client, config *botconfig.ApplicationConfig, event *github.IssueCommentEvent) {
+func (r *Registry) CallIssueCommentPlugins(ctx context.Context, client *github.Client, event *github.IssueCommentEvent) {
 	for _, pr := range r.icplugins {
-		err := pr.HandleIssueCommentEvent(ctx, client, config, event)
+		err := pr.HandleIssueCommentEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling issue comment", zap.Error(err))
 		}
 	}
 }
 
-func (r *Registry) CallCommitCommentPlugins(ctx context.Context, client *github.Client, config *botconfig.ApplicationConfig, event *github.CommitCommentEvent) {
+func (r *Registry) CallCommitCommentPlugins(ctx context.Context, client *github.Client, event *github.CommitCommentEvent) {
 	for _, pr := range r.ccplugins {
-		err := pr.HandleCommitCommentEvent(ctx, client, config, event)
+		err := pr.HandleCommitCommentEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling commit comment", zap.Error(err))
 		}
 	}
 }
 
-func (r *Registry) CallReleasePlugins(ctx context.Context, client *github.Client, config *botconfig.ApplicationConfig, event *github.ReleaseEvent) {
+func (r *Registry) CallReleasePlugins(ctx context.Context, client *github.Client, event *github.ReleaseEvent) {
 	for _, pr := range r.releaseplugins {
-		err := pr.HandleReleaseEvent(ctx, client, config, event)
+		err := pr.HandleReleaseEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling release", zap.Error(err))
 		}

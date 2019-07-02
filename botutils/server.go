@@ -68,7 +68,7 @@ func (b *simpleGitBot) Start(ctx context.Context, plugins ...Plugin) error {
 		return err
 	}
 
-	githubHandler := NewGithubHookHandler(ctx, cc, &b.config.AppConfig)
+	githubHandler := NewGithubHookHandler(ctx, cc)
 	for _, p := range plugins {
 		githubHandler.RegisterPlugin(p)
 	}
