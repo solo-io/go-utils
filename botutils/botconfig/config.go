@@ -84,7 +84,7 @@ type configReader struct {
 // specifying INSTALLATION_ID, INTEGRATION_ID, WEBHOOK_SECRET, and PRIVATE_KEY_FILE.
 // The default config location can be overridden with BOT_CONFIG.
 // If the config can't be read, parsed, or is missing critical values for the github connection, an
-// error will be returned. 
+// error will be returned.
 func (r *configReader) ReadConfig() (*Config, error) {
 	path := r.os.Getenv(BotConfigEnvVar)
 	if path == "" {
