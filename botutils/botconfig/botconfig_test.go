@@ -63,7 +63,6 @@ var _ = Describe("BotconfigTest", func() {
 		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.WebhookSecretEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.PrivateKeyEnvVar).Return("")
-		os.EXPECT().Getenv(botconfig.InstallationIdEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.IntegrationIdEnvVar).Return("")
 		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return([]byte(validConfig), nil)
 
@@ -76,7 +75,6 @@ var _ = Describe("BotconfigTest", func() {
 		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.WebhookSecretEnvVar).Return("foo")
 		os.EXPECT().Getenv(botconfig.PrivateKeyEnvVar).Return("private-key.file")
-		os.EXPECT().Getenv(botconfig.InstallationIdEnvVar).Return("1234567")
 		os.EXPECT().Getenv(botconfig.IntegrationIdEnvVar).Return("12345")
 		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return([]byte(validConfigTrimmed), nil)
 		os.EXPECT().ReadFile("private-key.file").Return([]byte("bar\nbaz\n"), nil)
@@ -100,41 +98,10 @@ var _ = Describe("BotconfigTest", func() {
 		Expect(err.Error()).To(ContainSubstring(expected.Error()))
 	})
 
-	It("errors if installation id can't be parsed", func() {
-		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
-		os.EXPECT().Getenv(botconfig.WebhookSecretEnvVar).Return("foo")
-		os.EXPECT().Getenv(botconfig.PrivateKeyEnvVar).Return("private-key.file")
-		os.EXPECT().Getenv(botconfig.InstallationIdEnvVar).Return("unparseable")
-		os.EXPECT().Getenv(botconfig.IntegrationIdEnvVar).Return("12345")
-		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return([]byte(validConfigTrimmed), nil)
-		os.EXPECT().ReadFile("private-key.file").Return([]byte("bar\nbaz\n"), nil)
-
-		expected := botconfig.FailedToParseEnvVarError(nestedErr, botconfig.InstallationIdEnvVar, "unparseable")
-		conf, err := reader.ReadConfig()
-		Expect(conf).To(BeNil())
-		Expect(err.Error()).To(ContainSubstring(expected.Error()))
-	})
-
-	It("errors if installation id is missing", func() {
-		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
-		os.EXPECT().Getenv(botconfig.WebhookSecretEnvVar).Return("foo")
-		os.EXPECT().Getenv(botconfig.PrivateKeyEnvVar).Return("private-key.file")
-		os.EXPECT().Getenv(botconfig.InstallationIdEnvVar).Return("")
-		os.EXPECT().Getenv(botconfig.IntegrationIdEnvVar).Return("12345")
-		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return([]byte(validConfigTrimmed), nil)
-		os.EXPECT().ReadFile("private-key.file").Return([]byte("bar\nbaz\n"), nil)
-
-		expected := botconfig.MissingBotConfigValueError(botconfig.InstallationIdEnvVar)
-		conf, err := reader.ReadConfig()
-		Expect(conf).To(BeNil())
-		Expect(err.Error()).To(ContainSubstring(expected.Error()))
-	})
-
 	It("errors if integration id is missing", func() {
 		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.WebhookSecretEnvVar).Return("foo")
 		os.EXPECT().Getenv(botconfig.PrivateKeyEnvVar).Return("private-key.file")
-		os.EXPECT().Getenv(botconfig.InstallationIdEnvVar).Return("1234567")
 		os.EXPECT().Getenv(botconfig.IntegrationIdEnvVar).Return("")
 		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return([]byte(validConfigTrimmed), nil)
 		os.EXPECT().ReadFile("private-key.file").Return([]byte("bar\nbaz\n"), nil)
@@ -149,7 +116,6 @@ var _ = Describe("BotconfigTest", func() {
 		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.WebhookSecretEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.PrivateKeyEnvVar).Return("private-key.file")
-		os.EXPECT().Getenv(botconfig.InstallationIdEnvVar).Return("1234567")
 		os.EXPECT().Getenv(botconfig.IntegrationIdEnvVar).Return("12345")
 		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return([]byte(validConfigTrimmed), nil)
 		os.EXPECT().ReadFile("private-key.file").Return([]byte("bar\nbaz\n"), nil)
@@ -164,7 +130,6 @@ var _ = Describe("BotconfigTest", func() {
 		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
 		os.EXPECT().Getenv(botconfig.WebhookSecretEnvVar).Return("foo")
 		os.EXPECT().Getenv(botconfig.PrivateKeyEnvVar).Return("")
-		os.EXPECT().Getenv(botconfig.InstallationIdEnvVar).Return("1234567")
 		os.EXPECT().Getenv(botconfig.IntegrationIdEnvVar).Return("12345")
 		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return([]byte(validConfigTrimmed), nil)
 
@@ -178,7 +143,6 @@ var _ = Describe("BotconfigTest", func() {
 
 func getValidConfig() *botconfig.Config {
 	c := getValidConfigTrimmed()
-	c.AppConfig.InstallationId = 1234567
 	c.Github.App.IntegrationID = 12345
 	c.Github.App.WebhookSecret = "foo"
 	c.Github.App.PrivateKey = "bar\nbaz\n"
@@ -194,12 +158,6 @@ func getValidConfigTrimmed() *botconfig.Config {
 		},
 		Github: githubapp.Config{
 			V3APIURL: "https://api.github.com/",
-		},
-		AppConfig: botconfig.ApplicationConfig{
-			InstallationId: 1234567,
-			SlackNotifications: botconfig.SlackNotifications{
-				DefaultUrl: "fake",
-			},
 		},
 	}
 	c.Github.App.IntegrationID = 12345
@@ -222,10 +180,6 @@ github:
     private_key: |
       bar
       baz
-app_configuration:
-  installation_id: 1234567
-  slack_notifications:
-    default_url: fake
 `
 
 	validConfigTrimmed = `
@@ -235,8 +189,5 @@ server:
   public_url: "https://fake.url"
 github:
   v3_api_url: "https://api.github.com/"
-app_configuration:
-  slack_notifications:
-    default_url: fake
 `
 )
