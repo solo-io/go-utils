@@ -1,7 +1,0 @@
-changelog:
-  - type: NEW_FEATURE
-    description: >
-      Support customizing bot config with WEBHOOK_SECRET, INSTALLATION_ID, INTEGRATION_ID, and PRIVATE_KEY_FILE environment
-      variables, to better support use cases around deploying to kubernetes from a git repo without checking in
-      unencrypted secrets.
-    issueLink: https://github.com/solo-io/go-utils/issues/223

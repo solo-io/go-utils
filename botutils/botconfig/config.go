@@ -44,18 +44,11 @@ var (
 type Config struct {
 	Server baseapp.HTTPConfig `yaml:"server"`
 	Github githubapp.Config   `yaml:"github"`
-
-	AppConfig ApplicationConfig `yaml:"app_configuration" json:"appConfiguration"`
 }
 
 type SlackNotifications struct {
 	DefaultUrl string            `yaml:"default_url" json:"defaultUrl"`
 	RepoUrls   map[string]string `yaml:"repo_urls" json:"repoUrls"`
-}
-
-type ApplicationConfig struct {
-	InstallationId     int                `yaml:"installation_id" json:"installationId"`
-	SlackNotifications SlackNotifications `yaml:"slack_notifications" json:"slackNotifications"`
 }
 
 func ReadConfig() (*Config, error) {
@@ -109,9 +102,6 @@ func (r *configReader) ReadConfig() (*Config, error) {
 	if err := r.updateIntegrationId(&c); err != nil {
 		return nil, err
 	}
-	if err := r.updateInstallationId(&c); err != nil {
-		return nil, err
-	}
 	if err := validateConfig(&c); err != nil {
 		return nil, err
 	}
@@ -119,9 +109,6 @@ func (r *configReader) ReadConfig() (*Config, error) {
 }
 
 func validateConfig(config *Config) error {
-	if config.AppConfig.InstallationId == 0 {
-		return MissingBotConfigValueError(InstallationIdEnvVar)
-	}
 	if config.Github.App.PrivateKey == "" {
 		return MissingBotConfigValueError(PrivateKeyEnvVar)
 	}
@@ -163,18 +150,6 @@ func (r *configReader) updateIntegrationId(config *Config) error {
 			return FailedToParseEnvVarError(err, IntegrationIdEnvVar, integrationIdStr)
 		}
 		config.Github.App.IntegrationID = integrationId
-	}
-	return nil
-}
-
-func (r *configReader) updateInstallationId(config *Config) error {
-	installationIdStr := r.os.Getenv(InstallationIdEnvVar)
-	if installationIdStr != "" {
-		installationId, err := strconv.Atoi(installationIdStr)
-		if err != nil {
-			return FailedToParseEnvVarError(err, InstallationIdEnvVar, installationIdStr)
-		}
-		config.AppConfig.InstallationId = installationId
 	}
 	return nil
 }
