@@ -3,8 +3,6 @@ package botutils
 import (
 	"context"
 	"encoding/json"
-	"github.com/solo-io/go-utils/botutils/botconfig"
-
 	"github.com/google/go-github/github"
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
@@ -17,12 +15,11 @@ import (
 type githubHookHandler struct {
 	ctx           context.Context
 	clientCreator githubapp.ClientCreator
-	config        *botconfig.ApplicationConfig
 	registry      *Registry
 }
 
-func NewGithubHookHandler(ctx context.Context, clientCreator githubapp.ClientCreator, config *botconfig.ApplicationConfig) *githubHookHandler {
-	return &githubHookHandler{ctx: ctx, clientCreator: clientCreator, config: config, registry: &Registry{}}
+func NewGithubHookHandler(ctx context.Context, clientCreator githubapp.ClientCreator) *githubHookHandler {
+	return &githubHookHandler{ctx: ctx, clientCreator: clientCreator, registry: &Registry{}}
 }
 
 func (h *githubHookHandler) RegisterPlugin(plugin Plugin) {
@@ -74,7 +71,7 @@ func (h *githubHookHandler) HandlePR(ctx context.Context, eventType, deliveryID 
 	if err != nil {
 		return err
 	}
-	go h.registry.CallPrPlugins(ctx, client, h.config, &event)
+	go h.registry.CallPrPlugins(ctx, client, &event)
 	return nil
 }
 
@@ -88,7 +85,7 @@ func (h *githubHookHandler) HandlePrReview(ctx context.Context, eventType, deliv
 	if err != nil {
 		return err
 	}
-	go h.registry.PullRequestReviewPlugins(ctx, client, h.config, &event)
+	go h.registry.PullRequestReviewPlugins(ctx, client, &event)
 	return nil
 }
 
@@ -102,7 +99,7 @@ func (h *githubHookHandler) HandleIssueComment(ctx context.Context, eventType, d
 	if err != nil {
 		return err
 	}
-	go h.registry.CallIssueCommentPlugins(ctx, client, h.config, &event)
+	go h.registry.CallIssueCommentPlugins(ctx, client, &event)
 	return nil
 }
 
@@ -116,7 +113,7 @@ func (h *githubHookHandler) HandleCommitComment(ctx context.Context, eventType, 
 	if err != nil {
 		return err
 	}
-	go h.registry.CallCommitCommentPlugins(ctx, client, h.config, &event)
+	go h.registry.CallCommitCommentPlugins(ctx, client, &event)
 	return nil
 }
 
@@ -130,6 +127,6 @@ func (h *githubHookHandler) HandleRelease(ctx context.Context, eventType, delive
 	if err != nil {
 		return err
 	}
-	go h.registry.CallReleasePlugins(ctx, client, h.config, &event)
+	go h.registry.CallReleasePlugins(ctx, client, &event)
 	return nil
 }
