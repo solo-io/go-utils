@@ -20,7 +20,6 @@ const (
 	WebhookSecretEnvVar = "WEBHOOK_SECRET"
 	PrivateKeyEnvVar = "PRIVATE_KEY_FILE"
 	IntegrationIdEnvVar = "INTEGRATION_ID"
-	InstallationIdEnvVar = "INSTALLATION_ID"
 )
 
 var (
@@ -74,7 +73,7 @@ type configReader struct {
 
 // Returns a config based on reading a mounted file containing yaml.
 // Rather than including in the config, certain values can be provided through the environment by
-// specifying INSTALLATION_ID, INTEGRATION_ID, WEBHOOK_SECRET, and PRIVATE_KEY_FILE.
+// specifying INTEGRATION_ID, WEBHOOK_SECRET, and PRIVATE_KEY_FILE.
 // The default config location can be overridden with BOT_CONFIG.
 // If the config can't be read, parsed, or is missing critical values for the github connection, an
 // error will be returned.
