@@ -3,24 +3,23 @@ package changelogutils
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
-	"strings"
 )
 
 //go:generate mockgen -destination repo_client_mock_test.go -self_package github.com/solo-io/go-utils/changelogutils -package changelogutils_test github.com/solo-io/go-utils/githubutils RepoClient
-
 
 const (
 	MasterBranch = "master"
 )
 
 var (
-	NoChangelogFileAddedError =
-		errors.Errorf("A changelog file must be added. For more information, check out https://github.com/solo-io/go-utils/tree/master/changelogutils.")
+	NoChangelogFileAddedError       = errors.Errorf("A changelog file must be added. For more information, check out https://github.com/solo-io/go-utils/tree/master/changelogutils.")
 	TooManyChangelogFilesAddedError = func(filesAdded int) error {
 		return errors.Errorf("Only one changelog file can be added in a PR, found %d.", filesAdded)
 	}
@@ -58,8 +57,8 @@ type ChangelogValidator interface {
 func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedRepo, base string) ChangelogValidator {
 	return &changelogValidator{
 		client: client,
-		code: code,
-		base: base,
+		code:   code,
+		base:   base,
 	}
 }
 
@@ -177,8 +176,6 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	}
 	return nil
 }
-
-
 
 func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github.CommitFile, *ChangelogFile, error) {
 	commitComparison, err := c.client.CompareCommits(ctx, c.base, c.code.GetSha())

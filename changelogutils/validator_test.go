@@ -2,6 +2,9 @@ package changelogutils_test
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-github/github"
 	. "github.com/onsi/ginkgo"
@@ -9,24 +12,22 @@ import (
 	"github.com/solo-io/go-utils/changelogutils"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
-	"os"
-	"path/filepath"
 )
 
 var _ = Describe("github utils", func() {
 
 	const (
 		base = "base"
-		sha = "sha"
+		sha  = "sha"
 	)
 
 	var (
-		ctrl *gomock.Controller
+		ctrl       *gomock.Controller
 		repoClient *MockRepoClient
 		code       *MockMountedRepo
-		validator changelogutils.ChangelogValidator
-		ctx = context.Background()
-		nestedErr = errors.Errorf("")
+		validator  changelogutils.ChangelogValidator
+		ctx        = context.Background()
+		nestedErr  = errors.Errorf("")
 	)
 
 	BeforeEach(func() {
@@ -110,14 +111,14 @@ var _ = Describe("github utils", func() {
 			filename1 = "1.yaml"
 			filename2 = "2.yaml"
 			filename3 = "3.yaml"
-			tag = "v0.5.1"
-			nextTag = "v0.5.2"
+			tag       = "v0.5.1"
+			nextTag   = "v0.5.2"
 		)
 
 		var (
-			path1 = filepath.Join(changelogutils.ChangelogDirectory, tag, filename1)
-			path2 = filepath.Join(changelogutils.ChangelogDirectory, tag, filename2)
-			added = githubutils.COMMIT_FILE_STATUS_ADDED
+			path1          = filepath.Join(changelogutils.ChangelogDirectory, tag, filename1)
+			path2          = filepath.Join(changelogutils.ChangelogDirectory, tag, filename2)
+			added          = githubutils.COMMIT_FILE_STATUS_ADDED
 			unexpectedFile = mockFileInfo{isDir: false, name: "unexpected"}
 
 			path3 = filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename3)
@@ -426,8 +427,6 @@ var _ = Describe("github utils", func() {
 				Expect(file).To(BeNil())
 			})
 		})
-
-
 
 	})
 })

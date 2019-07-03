@@ -2,6 +2,10 @@ package changelogutils_test
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -10,14 +14,12 @@ import (
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
-	"os"
-	"path/filepath"
-	"time"
 )
+
 var _ = Describe("ReaderTest", func() {
 
 	var (
-		ctx = context.TODO()
+		ctx    = context.TODO()
 		reader changelogutils.ChangelogReader
 	)
 
@@ -25,16 +27,16 @@ var _ = Describe("ReaderTest", func() {
 
 		const (
 			owner = "solo-io"
-			repo = "testrepo"
-			sha = "9065a9a84e286ea7f067f4fc240944b0a4d4c82a"
+			repo  = "testrepo"
+			sha   = "9065a9a84e286ea7f067f4fc240944b0a4d4c82a"
 		)
 
 		var (
 			code  vfsutils.MountedRepo
 			entry = changelogutils.ChangelogEntry{
-				Type: changelogutils.NEW_FEATURE,
+				Type:        changelogutils.NEW_FEATURE,
 				Description: "Now testrepo pushes rendered changelog to solo-docs on release builds.",
-				IssueLink: "https://github.com/solo-io/testrepo/issues/9",
+				IssueLink:   "https://github.com/solo-io/testrepo/issues/9",
 			}
 			file = changelogutils.ChangelogFile{
 				Entries: []*changelogutils.ChangelogEntry{&entry},
@@ -58,7 +60,7 @@ var _ = Describe("ReaderTest", func() {
 			changelog, err := reader.GetChangelogForTag(ctx, "v0.1.1")
 			Expect(err).NotTo(HaveOccurred())
 			expected := changelogutils.Changelog{
-				Files: []*changelogutils.ChangelogFile{&file},
+				Files:   []*changelogutils.ChangelogFile{&file},
 				Version: versionutils.NewVersion(0, 1, 1),
 			}
 			Expect(*changelog).To(BeEquivalentTo(expected))
@@ -68,13 +70,13 @@ var _ = Describe("ReaderTest", func() {
 	Context("edge cases with mocked mounted repo", func() {
 
 		const (
-			tag = "v0.0.1"
+			tag          = "v0.0.1"
 			changelogDir = "changelog/v0.0.1"
 		)
 
 		var (
-			ctrl *gomock.Controller
-			mockCode *MockMountedRepo
+			ctrl      *gomock.Controller
+			mockCode  *MockMountedRepo
 			nestedErr = errors.Errorf("")
 		)
 
@@ -238,27 +240,27 @@ var _ = Describe("ReaderTest", func() {
 					{
 						Entries: []*changelogutils.ChangelogEntry{
 							{
-								Type: changelogutils.FIX,
+								Type:        changelogutils.FIX,
 								Description: "foo1",
-								IssueLink: "bar1",
+								IssueLink:   "bar1",
 							},
 							{
-								Type: changelogutils.NEW_FEATURE,
+								Type:        changelogutils.NEW_FEATURE,
 								Description: "foo2",
-								IssueLink: "bar2",
+								IssueLink:   "bar2",
 							},
 						},
 					},
 					{
 						Entries: []*changelogutils.ChangelogEntry{
 							{
-								Type: changelogutils.NON_USER_FACING,
+								Type:        changelogutils.NON_USER_FACING,
 								Description: "foo3",
 							},
 							{
-								Type: changelogutils.FIX,
-								Description: "foo4",
-								IssueLink: "bar4",
+								Type:          changelogutils.FIX,
+								Description:   "foo4",
+								IssueLink:     "bar4",
 								ResolvesIssue: &resolvesIssueFalse,
 							},
 						},
@@ -266,10 +268,10 @@ var _ = Describe("ReaderTest", func() {
 					{
 						Entries: []*changelogutils.ChangelogEntry{
 							{
-								Type: changelogutils.DEPENDENCY_BUMP,
+								Type:            changelogutils.DEPENDENCY_BUMP,
 								DependencyOwner: "foo",
-								DependencyRepo: "bar",
-								DependencyTag: "baz",
+								DependencyRepo:  "bar",
+								DependencyTag:   "baz",
 							},
 						},
 					},
@@ -316,9 +318,6 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 	})
-
-
-
 
 })
 
@@ -397,13 +396,13 @@ releaseStableApi: true
 
 func getFileInfo(name string, isDir bool) os.FileInfo {
 	return &mockFileInfo{
-		name: name,
+		name:  name,
 		isDir: isDir,
 	}
 }
 
 type mockFileInfo struct {
-	name string
+	name  string
 	isDir bool
 }
 
@@ -430,5 +429,3 @@ func (i *mockFileInfo) IsDir() bool {
 func (i *mockFileInfo) Sys() interface{} {
 	return nil
 }
-
-
