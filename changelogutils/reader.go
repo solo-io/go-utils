@@ -2,11 +2,12 @@ package changelogutils
 
 import (
 	"context"
+	"path/filepath"
+
 	"github.com/ghodss/yaml"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
-	"path/filepath"
 )
 
 //go:generate mockgen -destination mounted_repo_mock_test.go -self_package github.com/solo-io/go-utils/changelogutils -package changelogutils_test github.com/solo-io/go-utils/vfsutils MountedRepo
@@ -30,11 +31,11 @@ var (
 	UnableToParseChangelogError = func(err error, path string) error {
 		return errors.Wrapf(err, "File %s is not a valid changelog file.", path)
 	}
-	MissingIssueLinkError = errors.Errorf("Changelog entries must have an issue link")
+	MissingIssueLinkError   = errors.Errorf("Changelog entries must have an issue link")
 	MissingDescriptionError = errors.Errorf("Changelog entries must have a description")
-	MissingOwnerError = errors.Errorf("Dependency bumps must have an owner")
-	MissingRepoError = errors.Errorf("Dependency bumps must have a repo")
-	MissingTagError = errors.Errorf("Dependency bumps must have a tag")
+	MissingOwnerError       = errors.Errorf("Dependency bumps must have an owner")
+	MissingRepoError        = errors.Errorf("Dependency bumps must have a repo")
+	MissingTagError         = errors.Errorf("Dependency bumps must have a tag")
 )
 
 type ChangelogReader interface {
@@ -50,7 +51,7 @@ func NewChangelogReader(code vfsutils.MountedRepo) ChangelogReader {
 	return &changelogReader{code: code}
 }
 
-func (c* changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*Changelog, error) {
+func (c *changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*Changelog, error) {
 	version, err := versionutils.ParseVersion(tag)
 	if err != nil {
 		return nil, err
@@ -92,7 +93,7 @@ func (c* changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*
 	return &changelog, nil
 }
 
-func (c* changelogReader) ReadChangelogFile(ctx context.Context, path string) (*ChangelogFile, error) {
+func (c *changelogReader) ReadChangelogFile(ctx context.Context, path string) (*ChangelogFile, error) {
 	var changelog ChangelogFile
 	bytes, err := c.code.GetFileContents(ctx, path)
 	if err != nil {

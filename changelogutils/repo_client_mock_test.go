@@ -6,9 +6,10 @@ package changelogutils_test
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	github "github.com/google/go-github/github"
-	reflect "reflect"
 )
 
 // MockRepoClient is a mock of RepoClient interface

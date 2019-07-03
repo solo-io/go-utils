@@ -36,7 +36,7 @@ func NewSimpleGitBot(staticConfig StaticBotConfig) (GitBot, error) {
 		return nil, err
 	}
 	return &simpleGitBot{
-		config: config,
+		config:       config,
 		staticConfig: staticConfig,
 	}, nil
 }
