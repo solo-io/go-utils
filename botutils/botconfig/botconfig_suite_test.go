@@ -1,4 +1,4 @@
-package changelogutils_test
+package botconfig_test
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestChangelogUtils(t *testing.T) {
+func TestBotconfig(t *testing.T) {
 	test = t
 	RegisterFailHandler(Fail)
 	testutils.RegisterPreFailHandler(
@@ -17,7 +17,7 @@ func TestChangelogUtils(t *testing.T) {
 			testutils.PrintTrimmedStack()
 		})
 	testutils.RegisterCommonFailHandlers()
-	RunSpecs(t, "ChangelogUtils Suite")
+	RunSpecs(t, "Botconfig Suite")
 }
 
 var test *testing.T

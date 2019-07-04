@@ -50,6 +50,9 @@ type TestConfig struct {
 	// Determines whether the test runner pod gets deployed
 	DeployTestRunner bool
 
+	// If true, glooctl will be run with a -v flag
+	Verbose bool
+
 	// The version of the Helm chart
 	version string
 }
@@ -115,6 +118,9 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 		"install", deploymentType,
 		"-n", h.InstallNamespace,
 		"-f", filepath.Join(h.TestAssetDir, h.HelmChartName+"-"+h.version+".tgz"),
+	}
+	if h.Verbose {
+		glooctlCommand = append(glooctlCommand, "-v")
 	}
 	if h.LicenseKey != "" {
 		glooctlCommand = append(glooctlCommand, "--license-key", h.LicenseKey)

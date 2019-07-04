@@ -5,11 +5,12 @@
 package debugutils
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	kuberesource "github.com/solo-io/go-utils/installutils/kuberesource"
 	v1 "k8s.io/api/core/v1"
 	v10 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	reflect "reflect"
 )
 
 // MockPodFinder is a mock of PodFinder interface
@@ -100,21 +101,6 @@ func (m *MockLogCollector) SaveLogs(arg0 StorageClient, arg1 string, arg2 []*Log
 func (mr *MockLogCollectorMockRecorder) SaveLogs(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLogs", reflect.TypeOf((*MockLogCollector)(nil).SaveLogs), arg0, arg1, arg2)
-}
-
-// StreamLogs mocks base method
-func (m *MockLogCollector) StreamLogs(arg0 []*LogsRequest) ([]*LogsResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StreamLogs", arg0)
-	ret0, _ := ret[0].([]*LogsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// StreamLogs indicates an expected call of StreamLogs
-func (mr *MockLogCollectorMockRecorder) StreamLogs(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamLogs", reflect.TypeOf((*MockLogCollector)(nil).StreamLogs), arg0)
 }
 
 // MockResourceCollector is a mock of ResourceCollector interface
