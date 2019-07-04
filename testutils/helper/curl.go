@@ -28,7 +28,7 @@ type CurlOpts struct {
 	WithoutStats bool
 }
 
-func (t *testContainer) getTimeouts(timeout ...time.Duration) (currentTimeout time.Duration, pollingInterval time.Duration) {
+func getTimeouts(timeout ...time.Duration) (currentTimeout time.Duration, pollingInterval time.Duration) {
 	defaultTimeout := time.Second * 20
 	defaultPollingTimeout := time.Second * 5
 	switch len(timeout) {
@@ -54,7 +54,7 @@ func (t *testContainer) getTimeouts(timeout ...time.Duration) (currentTimeout ti
 }
 
 func (t *testContainer) CurlEventuallyShouldOutput(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
-	currentTimeout, pollingInterval := t.getTimeouts(timeout...)
+	currentTimeout, pollingInterval := getTimeouts(timeout...)
 
 	// for some useful-ish output
 	tick := time.Tick(currentTimeout / 8)
@@ -91,7 +91,7 @@ func (t *testContainer) CurlEventuallyShouldOutput(opts CurlOpts, substr string,
 }
 
 func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
-	currentTimeout, pollingInterval := t.getTimeouts(timeout...)
+	currentTimeout, pollingInterval := getTimeouts(timeout...)
 	// for some useful-ish output
 	tick := time.Tick(currentTimeout / 8)
 
