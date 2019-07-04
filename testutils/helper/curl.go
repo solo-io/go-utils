@@ -176,5 +176,5 @@ func (t *testContainer) CurlAsync(opts CurlOpts) (*bytes.Buffer, chan struct{}, 
 
 func (t *testContainer) CurlAsyncChan(opts CurlOpts) (<-chan *bytes.Buffer, chan struct{}, error) {
 	args := t.buildCurlArgs(opts)
-	return t.TestRunnerPipe(&bytes.Buffer{}, args...)
+	return t.TestRunnerChan(&bytes.Buffer{}, args...)
 }

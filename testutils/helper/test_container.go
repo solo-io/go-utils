@@ -136,7 +136,7 @@ func (t *testContainer) TestRunnerAsync(args ...string) (*bytes.Buffer, chan str
 	return testutils.KubectlOutAsync(args...)
 }
 
-func (t *testContainer) TestRunnerPipe(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
+func (t *testContainer) TestRunnerChan(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
 	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
-	return testutils.KubectlOutPipe(r, args...)
+	return testutils.KubectlOutChan(r, args...)
 }

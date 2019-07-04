@@ -105,7 +105,7 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	return buf, done, err
 }
 
-func KubectlOutPipe(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
+func KubectlOutChan(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
 	cmd := exec.Command("kubectl", args...)
 	cmd.Env = os.Environ()
 	// disable DEBUG=1 from getting through to kube
