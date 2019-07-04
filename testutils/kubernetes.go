@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -102,6 +103,53 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 		}
 	}()
 	return buf, done, err
+}
+
+func KubectlOutPipe(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
+	cmd := exec.Command("kubectl", args...)
+	cmd.Env = os.Environ()
+	// disable DEBUG=1 from getting through to kube
+	for i, pair := range cmd.Env {
+		if strings.HasPrefix(pair, "DEBUG") {
+			cmd.Env = append(cmd.Env[:i], cmd.Env[i+1:]...)
+			break
+		}
+	}
+	buf := &bytes.Buffer{}
+	cmd.Stdout = buf
+	cmd.Stderr = buf
+	cmd.Stdin = r
+	log.Debugf("async running: %s", strings.Join(cmd.Args, " "))
+	err := cmd.Start()
+	if err != nil {
+		return nil, nil, err
+	}
+	done := make(chan struct{})
+	go func() {
+		select {
+		case <-done:
+			cmd.Process.Kill()
+		}
+	}()
+
+	result := make(chan *bytes.Buffer)
+	go func() {
+		for {
+			select {
+			case <-time.After(time.Second):
+				select {
+				case result <- buf:
+					continue
+				case <-done:
+					return
+				default:
+					continue
+				}
+			}
+		}
+	}()
+
+	return result, done, err
 }
 
 // WaitPodsRunning waits for all pods to be running
