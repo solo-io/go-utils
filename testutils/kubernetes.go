@@ -43,7 +43,7 @@ func DeleteCrd(crd string) error {
 	return Kubectl("delete", "crd", crd)
 }
 
-func Kubectl(args ...string) error {
+func kubectl(args ...string) *exec.Cmd {
 	cmd := exec.Command("kubectl", args...)
 	cmd.Env = os.Environ()
 	// disable DEBUG=1 from getting through to kube
@@ -53,6 +53,11 @@ func Kubectl(args ...string) error {
 			break
 		}
 	}
+	return cmd
+}
+
+func Kubectl(args ...string) error {
+	cmd := kubectl(args...)
 	cmd.Stdout = ginkgo.GinkgoWriter
 	cmd.Stderr = ginkgo.GinkgoWriter
 	log.Debugf("running: %s", strings.Join(cmd.Args, " "))
@@ -60,15 +65,7 @@ func Kubectl(args ...string) error {
 }
 
 func KubectlOut(args ...string) (string, error) {
-	cmd := exec.Command("kubectl", args...)
-	cmd.Env = os.Environ()
-	// disable DEBUG=1 from getting through to kube
-	for i, pair := range cmd.Env {
-		if strings.HasPrefix(pair, "DEBUG") {
-			cmd.Env = append(cmd.Env[:i], cmd.Env[i+1:]...)
-			break
-		}
-	}
+	cmd := kubectl(args...)
 	log.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -78,15 +75,7 @@ func KubectlOut(args ...string) (string, error) {
 }
 
 func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
-	cmd := exec.Command("kubectl", args...)
-	cmd.Env = os.Environ()
-	// disable DEBUG=1 from getting through to kube
-	for i, pair := range cmd.Env {
-		if strings.HasPrefix(pair, "DEBUG") {
-			cmd.Env = append(cmd.Env[:i], cmd.Env[i+1:]...)
-			break
-		}
-	}
+	cmd := kubectl(args...)
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
@@ -106,15 +95,7 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 }
 
 func KubectlOutChan(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
-	cmd := exec.Command("kubectl", args...)
-	cmd.Env = os.Environ()
-	// disable DEBUG=1 from getting through to kube
-	for i, pair := range cmd.Env {
-		if strings.HasPrefix(pair, "DEBUG") {
-			cmd.Env = append(cmd.Env[:i], cmd.Env[i+1:]...)
-			break
-		}
-	}
+	cmd := kubectl(args...)
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
