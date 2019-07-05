@@ -24,6 +24,7 @@ type CloudSubscriber struct {
 	pubsubClient        *pubsub.Client
 	cloudBuildSub       *pubsub.Subscription
 	registry            *CloudBuildRegistry
+	projectId           string
 }
 
 func NewCloudSubscriber(ctx context.Context, projectId string, subscriptionId string) (*CloudSubscriber, error) {
@@ -74,6 +75,10 @@ func (cs *CloudSubscriber) Run(ctx context.Context) error {
 		return errors.Wrapf(err, "error in subscription for cloud build events")
 	}
 	return nil
+}
+
+func (cs *CloudSubscriber) GetProjectId() string {
+	return cs.projectId
 }
 
 func (cs *CloudSubscriber) handleCloudBuildEvent(ctx context.Context, msg *pubsub.Message) {
