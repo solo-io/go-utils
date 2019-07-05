@@ -1,0 +1,3 @@
+changelog:
+- type: NON_USER_FACING
+  description: Add interface function to testrunner for checking output

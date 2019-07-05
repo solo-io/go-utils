@@ -22,7 +22,10 @@ type TestRunner interface {
 	Terminate() error
 	Exec(command ...string) (string, error)
 	TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error)
+	// Checks the response of the request
 	CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration)
+	// CHecks all of the output of the curl command
+	CurlEventuallyShouldOutput(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration)
 	Curl(opts CurlOpts) (string, error)
 }
 
