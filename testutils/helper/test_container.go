@@ -3,6 +3,7 @@ package helper
 import (
 	"bytes"
 	"context"
+	"io"
 	"time"
 
 	"github.com/solo-io/go-utils/log"
@@ -133,4 +134,9 @@ func (t *testContainer) Exec(command ...string) (string, error) {
 func (t *testContainer) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
 	return testutils.KubectlOutAsync(args...)
+}
+
+func (t *testContainer) TestRunnerChan(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
+	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
+	return testutils.KubectlOutChan(r, args...)
 }
