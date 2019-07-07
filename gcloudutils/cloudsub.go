@@ -48,6 +48,10 @@ func NewCloudSubscriber(ctx context.Context, projectId string, subscriptionId st
 	})
 	if err != nil {
 		if grpcErr, ok := status.FromError(err); ok && grpcErr.Message() != alreadyExistsError(subscriptionId) {
+			contextutils.LoggerFrom(ctx).Errorw("Failed on error",
+				zap.Error(err),
+				zap.String("grpcErr", grpcErr.Message()),
+				zap.String("alreadyExistsErr", alreadyExistsError(subscriptionId)))
 			return nil, err
 		}
 		cloudBuildSub = pubsubClient.Subscription(subscriptionId)
