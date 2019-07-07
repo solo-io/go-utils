@@ -46,11 +46,6 @@ type Config struct {
 	Github githubapp.Config   `yaml:"github"`
 }
 
-type SlackNotifications struct {
-	DefaultUrl string            `yaml:"default_url" json:"defaultUrl"`
-	RepoUrls   map[string]string `yaml:"repo_urls" json:"repoUrls"`
-}
-
 func ReadConfig() (*Config, error) {
 	configReader := &configReader{
 		os: osutils.NewOsClient(),

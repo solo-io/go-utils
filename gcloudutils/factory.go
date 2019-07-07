@@ -24,6 +24,7 @@ func NewCloudBot(ctx context.Context, projectIds []string, subscriberId string, 
 			subscriber.RegisterHandler(handler)
 		}
 	}
+	return &CloudBot{subscribers: subscribers}, nil
 }
 
 func (b *CloudBot) Run(ctx context.Context) error {
