@@ -3,6 +3,8 @@ package gcloudutils
 import (
 	"context"
 	"fmt"
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -35,11 +37,26 @@ func configFileName(projectId string) string {
 
 func credsFromProjectId(ctx context.Context, projectId string) (*google.Credentials, error) {
 	pathToCredsFile := configFileName(projectId)
+	contextutils.LoggerFrom(ctx).Infow("Looking for creds for project",
+		zap.String("projectId", projectId),
+		zap.String("credsFile", pathToCredsFile))
 	credByt, err := ioutil.ReadFile(pathToCredsFile)
 	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error reading creds file",
+			zap.Error(err),
+			zap.String("projectId", projectId),
+			zap.String("credsFile", pathToCredsFile))
 		return nil, err
 	}
-	return google.CredentialsFromJSON(ctx, credByt, cloudbuild.CloudPlatformScope)
+	creds, err := google.CredentialsFromJSON(ctx, credByt, cloudbuild.CloudPlatformScope)
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error getting creds",
+			zap.Error(err),
+			zap.String("projectId", projectId),
+			zap.String("credsFile", pathToCredsFile))
+		return nil, err
+	}
+	return creds, nil
 }
 
 func NewCloudBuildClient(ctx context.Context, projectId string) (*cloudbuild.Service, error) {
@@ -50,6 +67,9 @@ func NewCloudBuildClient(ctx context.Context, projectId string) (*cloudbuild.Ser
 	googleHttpClient := oauth2.NewClient(ctx, creds.TokenSource)
 	buildClient, err := cloudbuild.New(googleHttpClient)
 	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error creating cloud build client",
+			zap.Error(err),
+			zap.String("proejctId", projectId))
 		return nil, err
 	}
 	return buildClient, nil
@@ -68,5 +88,12 @@ func NewPubSubClient(ctx context.Context, projectId string) (*pubsub.Client, err
 	if err != nil {
 		return nil, err
 	}
-	return pubsub.NewClient(ctx, projectId, option.WithTokenSource(creds.TokenSource))
+	pubsub, err := pubsub.NewClient(ctx, projectId, option.WithTokenSource(creds.TokenSource))
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error creating pub sub client",
+			zap.Error(err),
+			zap.String("proejctId", projectId))
+		return nil, err
+	}
+	return pubsub, nil
 }
