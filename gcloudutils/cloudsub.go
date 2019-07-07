@@ -3,6 +3,7 @@ package gcloudutils
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
@@ -15,8 +16,12 @@ import (
 
 const (
 	TOPIC = "cloud-builds"
+)
 
-	alreadyExistsError = "Resource already exists in the project (resource=solobot)."
+var (
+	alreadyExistsError = func(subscriptionId string) string {
+		return fmt.Sprintf("Resource already exists in the project (resource=%s).", subscriptionId)
+	}
 )
 
 type CloudSubscriber struct {
@@ -37,11 +42,12 @@ func NewCloudSubscriber(ctx context.Context, projectId string, subscriptionId st
 	}
 	contextutils.LoggerFrom(ctx).Infow("Successfully created pubsub client", zap.String("projectId", projectId))
 
+	pubsubClient.Subscription()
 	cloudBuildSub, err := pubsubClient.CreateSubscription(ctx, subscriptionId, pubsub.SubscriptionConfig{
 		Topic: pubsubClient.Topic(TOPIC),
 	})
 	if err != nil {
-		if grpcErr, ok := status.FromError(err); ok && grpcErr.Message() != alreadyExistsError {
+		if grpcErr, ok := status.FromError(err); ok && grpcErr.Message() != alreadyExistsError(subscriptionId) {
 			return nil, err
 		}
 		cloudBuildSub = pubsubClient.Subscription(subscriptionId)
