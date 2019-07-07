@@ -42,7 +42,6 @@ func NewCloudSubscriber(ctx context.Context, projectId string, subscriptionId st
 	}
 	contextutils.LoggerFrom(ctx).Infow("Successfully created pubsub client", zap.String("projectId", projectId))
 
-	pubsubClient.Subscription()
 	cloudBuildSub, err := pubsubClient.CreateSubscription(ctx, subscriptionId, pubsub.SubscriptionConfig{
 		Topic: pubsubClient.Topic(TOPIC),
 	})
