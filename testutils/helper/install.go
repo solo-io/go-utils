@@ -111,7 +111,7 @@ func (h *SoloTestHelper) ChartVersion() string {
 }
 
 // Installs Gloo (and, optionally, the test runner)
-func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration) error {
+func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration, extraArgs ...string) error {
 	log.Printf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
@@ -125,6 +125,9 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	if h.LicenseKey != "" {
 		glooctlCommand = append(glooctlCommand, "--license-key", h.LicenseKey)
 	}
+
+	glooctlCommand = append(glooctlCommand, extraArgs...)
+
 	if err := exec.RunCommand(h.RootDir, true, glooctlCommand...); err != nil {
 		return errors.Wrapf(err, "error while installing gloo")
 	}
@@ -137,7 +140,7 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	return nil
 }
 
-func (h *SoloTestHelper) UninstallGloo() error {
+func (h *SoloTestHelper) UninstallGloo(extraArgs ...string) error {
 	if h.TestRunner != nil {
 		log.Debugf("terminating %s...", TestrunnerName)
 		if err := h.TestRunner.Terminate(); err != nil {
@@ -145,11 +148,14 @@ func (h *SoloTestHelper) UninstallGloo() error {
 			log.Warnf("error terminating %s", TestrunnerName)
 		}
 	}
+	glooctlCommand := []string{
+		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace, "--delete-namespace",
+	}
+
+	glooctlCommand = append(glooctlCommand, extraArgs...)
 
 	log.Printf("uninstalling gloo...")
-	return exec.RunCommand(h.RootDir, true,
-		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace, "--delete-namespace",
-	)
+	return exec.RunCommand(h.RootDir, true, glooctlCommand...)
 }
 
 // Parses the Helm index file and returns the version of the chart.
