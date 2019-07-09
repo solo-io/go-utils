@@ -36,14 +36,6 @@ steps:
     waitFor: ['run-tests']
     id: 'kubeinstall-tests'
 
-  - name: 'gcr.io/$PROJECT_ID/go-mod-ginkgo:0.1.5'
-    volumes: *vol
-    env:
-    - 'RUN_KUBE_TESTS=1'
-    args: ['-r', '-failFast', './debugutils/test']
-    waitFor: ['run-tests']
-    id: 'debugutils-tests'
-
 
 secrets:
   - kmsKeyName: projects/solo-public/locations/global/keyRings/build/cryptoKeys/build-key
