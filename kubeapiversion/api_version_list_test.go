@@ -1,4 +1,4 @@
-package kubeutils_test
+package kubeapiversion_test
 
 import (
 	"math/rand"
@@ -7,7 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/kubeutils"
+	"github.com/solo-io/go-utils/kubeapiversion"
 )
 
 var _ = Describe("ApiVersionList", func() {
@@ -15,9 +15,9 @@ var _ = Describe("ApiVersionList", func() {
 		It("works", func() {
 			orderedVersions := []string{"v1alpha1", "v1beta1", "v1beta2", "v1", "v2beta1", "v2beta2", "v4", "v5alpha2", "v5beta1"}
 
-			subject := make(kubeutils.ApiVersionList, 0, len(orderedVersions))
+			subject := make(kubeapiversion.ApiVersionList, 0, len(orderedVersions))
 			for _, v := range orderedVersions {
-				parsedVersion, err := kubeutils.ParseApiVersion(v)
+				parsedVersion, err := kubeapiversion.ParseApiVersion(v)
 				Expect(err).NotTo(HaveOccurred())
 				subject = append(subject, parsedVersion)
 			}

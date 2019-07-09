@@ -1,4 +1,4 @@
-package kubeutils
+package kubeapiversion
 
 import (
 	"regexp"

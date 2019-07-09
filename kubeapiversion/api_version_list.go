@@ -1,4 +1,4 @@
-package kubeutils
+package kubeapiversion
 
 // ApiVersionList implements sort.Interface
 type ApiVersionList []ApiVersion
