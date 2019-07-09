@@ -1,4 +1,4 @@
-package kubeapiversion
+package kubeapi
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -6,21 +6,21 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ApiVersion", func() {
-	Describe("ParseApiVersion", func() {
-		DescribeTable("it works", func(in string, expected ApiVersion) {
-			actual, err := ParseApiVersion(in)
+var _ = Describe("Version", func() {
+	Describe("ParseVersion", func() {
+		DescribeTable("it works", func(in string, expected Version) {
+			actual, err := ParseVersion(in)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actual.Equal(expected)).To(BeTrue())
 		},
-			Entry("valid minimal version", "v1", &apiVersion{major: 1, prerelease: 0, modifier: GA}),
-			Entry("valid 2-digit version", "v11", &apiVersion{major: 11, prerelease: 0, modifier: GA}),
-			Entry("valid alpha version", "v1alpha1", &apiVersion{major: 1, prerelease: 1, modifier: Alpha}),
-			Entry("valid beta version", "v11beta11", &apiVersion{major: 11, prerelease: 11, modifier: Beta}),
+			Entry("valid minimal version", "v1", &version{major: 1, prerelease: 0, modifier: GA}),
+			Entry("valid 2-digit version", "v11", &version{major: 11, prerelease: 0, modifier: GA}),
+			Entry("valid alpha version", "v1alpha1", &version{major: 1, prerelease: 1, modifier: Alpha}),
+			Entry("valid beta version", "v11beta11", &version{major: 11, prerelease: 11, modifier: Beta}),
 		)
 
 		DescribeTable("it errors", func(in string, expectedErr error) {
-			actual, err := ParseApiVersion(in)
+			actual, err := ParseVersion(in)
 			Expect(actual).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(expectedErr.Error()))
@@ -38,9 +38,9 @@ var _ = Describe("ApiVersion", func() {
 	})
 
 	Describe("accessors", func() {
-		var subject ApiVersion
+		var subject Version
 		BeforeEach(func() {
-			subject = &apiVersion{major: 1, prerelease: 2, modifier: Beta}
+			subject = &version{major: 1, prerelease: 2, modifier: Beta}
 		})
 
 		Describe("Major", func() {
@@ -64,7 +64,7 @@ var _ = Describe("ApiVersion", func() {
 
 	Describe("String", func() {
 		DescribeTable("it works", func(str string) {
-			subject, err := ParseApiVersion(str)
+			subject, err := ParseVersion(str)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(subject.String()).To(Equal(str))
 		},
@@ -76,9 +76,9 @@ var _ = Describe("ApiVersion", func() {
 	})
 
 	DescribeTable("GreaterThan", func(a, b string, expected bool) {
-		subject, err := ParseApiVersion(a)
+		subject, err := ParseVersion(a)
 		Expect(err).NotTo(HaveOccurred())
-		other, err := ParseApiVersion(b)
+		other, err := ParseVersion(b)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(subject.GreaterThan(other)).To(Equal(expected))
 	},
@@ -98,9 +98,9 @@ var _ = Describe("ApiVersion", func() {
 	)
 
 	DescribeTable("LessThan", func(a, b string, expected bool) {
-		subject, err := ParseApiVersion(a)
+		subject, err := ParseVersion(a)
 		Expect(err).NotTo(HaveOccurred())
-		other, err := ParseApiVersion(b)
+		other, err := ParseVersion(b)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(subject.LessThan(other)).To(Equal(expected))
 	},
@@ -120,9 +120,9 @@ var _ = Describe("ApiVersion", func() {
 	)
 
 	DescribeTable("Equal", func(a, b string, expected bool) {
-		subject, err := ParseApiVersion(a)
+		subject, err := ParseVersion(a)
 		Expect(err).NotTo(HaveOccurred())
-		other, err := ParseApiVersion(b)
+		other, err := ParseVersion(b)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(subject.Equal(other)).To(Equal(expected))
 	},

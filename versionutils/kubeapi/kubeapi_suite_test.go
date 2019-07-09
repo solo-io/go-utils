@@ -1,4 +1,4 @@
-package kubeapiversion_test
+package kubeapi_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestKubeapiversion(t *testing.T) {
+func TestKubeApi(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Kube Api Version Suite")
+	RunSpecs(t, "Kube Api Suite")
 }

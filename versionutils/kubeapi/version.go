@@ -1,4 +1,4 @@
-package kubeapiversion
+package kubeapi
 
 import (
 	"regexp"
@@ -43,25 +43,28 @@ func init() {
 	apiVersionRegexp = regexp.MustCompile(`^v([0-9]+)((alpha|beta)([0-9]+))?$`)
 }
 
-type ApiVersion interface {
+// Version models the structure of Kubernetes API version tags, but does NOT handle version as documented by k8s.
+// Priority is assigned by implied order of release, such that alpha/beta v2 tags are "greater than" the GA v1 tag.
+// https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#version-priority
+type Version interface {
 	Major() int
 	Prerelease() int
 	PrereleaseModifier() PrereleaseModifier
 	String() string
-	GreaterThan(other ApiVersion) bool
-	LessThan(other ApiVersion) bool
-	Equal(other ApiVersion) bool
+	GreaterThan(other Version) bool
+	LessThan(other Version) bool
+	Equal(other Version) bool
 }
 
-type apiVersion struct {
+type version struct {
 	major, prerelease int
 	modifier          PrereleaseModifier
 }
 
-func ParseApiVersion(version string) (ApiVersion, error) {
-	matches := apiVersionRegexp.FindStringSubmatch(version)
+func ParseVersion(v string) (Version, error) {
+	matches := apiVersionRegexp.FindStringSubmatch(v)
 	if matches == nil {
-		return nil, MalformedVersionError(version)
+		return nil, MalformedVersionError(v)
 	}
 
 	major, err := strconv.Atoi(matches[1])
@@ -72,7 +75,7 @@ func ParseApiVersion(version string) (ApiVersion, error) {
 		return nil, InvalidMajorVersionError
 	}
 
-	// Prerelease version info is optional
+	// Prerelease v info is optional
 	var prerelease int
 	if matches[3] != "" && matches[4] != "" {
 		prerelease, err = strconv.Atoi(matches[4])
@@ -94,26 +97,26 @@ func ParseApiVersion(version string) (ApiVersion, error) {
 		modifier = GA
 	}
 
-	return &apiVersion{
+	return &version{
 		major:      major,
 		prerelease: prerelease,
 		modifier:   modifier,
 	}, nil
 }
 
-func (v *apiVersion) Major() int {
+func (v *version) Major() int {
 	return v.major
 }
 
-func (v *apiVersion) Prerelease() int {
+func (v *version) Prerelease() int {
 	return v.prerelease
 }
 
-func (v *apiVersion) PrereleaseModifier() PrereleaseModifier {
+func (v *version) PrereleaseModifier() PrereleaseModifier {
 	return v.modifier
 }
 
-func (v *apiVersion) String() string {
+func (v *version) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("v")
 	sb.WriteString(strconv.Itoa(v.Major()))
@@ -130,7 +133,7 @@ func (v *apiVersion) String() string {
 	return sb.String()
 }
 
-func (v *apiVersion) GreaterThan(other ApiVersion) bool {
+func (v *version) GreaterThan(other Version) bool {
 	if v.Major() < other.Major() {
 		return false
 	}
@@ -150,7 +153,7 @@ func (v *apiVersion) GreaterThan(other ApiVersion) bool {
 	return true
 }
 
-func (v *apiVersion) LessThan(other ApiVersion) bool {
+func (v *version) LessThan(other Version) bool {
 	if v.Major() > other.Major() {
 		return false
 	}
@@ -170,6 +173,6 @@ func (v *apiVersion) LessThan(other ApiVersion) bool {
 	return true
 }
 
-func (v *apiVersion) Equal(other ApiVersion) bool {
+func (v *version) Equal(other Version) bool {
 	return v.String() == other.String()
 }
