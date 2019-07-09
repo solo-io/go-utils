@@ -4,26 +4,42 @@ import (
 	"time"
 )
 
+type echoPod struct {
+	*testContainer
+}
+
+func (t *echoPod) Deploy(timeout time.Duration) error {
+	return t.deploy(timeout)
+}
+
 const (
 	defaultHttpEchoImage = "kennship/http-echo:latest"
 	HttpEchoName         = "http-echo"
 	HttpEchoPort         = 3000
 )
 
-func NewEchoHttp(namespace string) (*httpEcho, error) {
+func NewEchoHttp(namespace string) (*echoPod, error) {
 	container, err := newTestContainer(namespace, defaultHttpEchoImage, HttpEchoName, HttpEchoPort)
 	if err != nil {
 		return nil, err
 	}
-	return &httpEcho{
+	return &echoPod{
 		testContainer: container,
 	}, nil
 }
 
-type httpEcho struct {
-	*testContainer
-}
+const (
+	defaultTcpEchoImage = "soloio/tcp-echo:latest"
+	TcpEchoName         = "tcp-echo"
+	TcpEchoPort         = 1025
+)
 
-func (t *httpEcho) Deploy(timeout time.Duration) error {
-	return t.deploy(timeout)
+func NewEchoTcp(namespace string) (*echoPod, error) {
+	container, err := newTestContainer(namespace, defaultTcpEchoImage, TcpEchoName, TcpEchoPort)
+	if err != nil {
+		return nil, err
+	}
+	return &echoPod{
+		testContainer: container,
+	}, nil
 }

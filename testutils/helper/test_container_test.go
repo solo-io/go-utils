@@ -75,7 +75,7 @@ var _ = Describe("test container tests", func() {
 	Context("http ehco", func() {
 
 		var (
-			httpEcho *httpEcho
+			httpEcho *echoPod
 		)
 		BeforeEach(func() {
 			var err error
@@ -102,6 +102,36 @@ var _ = Describe("test container tests", func() {
 				Port:              HttpEchoPort,
 				ConnectionTimeout: 10,
 			}, responseString, 1, 120*time.Second)
+		})
+	})
+
+	Context("tcp ehco", func() {
+
+		var (
+			tcpEcho *echoPod
+		)
+		BeforeEach(func() {
+			var err error
+			tcpEcho, err = NewEchoTcp(namespace)
+			Expect(err).NotTo(HaveOccurred())
+			err = tcpEcho.deploy(time.Minute)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := tcpEcho.Terminate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("can install and uninstall the tcp echo pod", func() {
+			responseString := fmt.Sprintf("Connected to %s",
+				TcpEchoName)
+			tcpEcho.CurlEventuallyShouldOutput(CurlOpts{
+				Protocol:          "telnet",
+				Service:           TcpEchoName,
+				Port:              TcpEchoPort,
+				ConnectionTimeout: 10,
+				Verbose:           true,
+			}, responseString, 1, 30*time.Second)
 		})
 	})
 })

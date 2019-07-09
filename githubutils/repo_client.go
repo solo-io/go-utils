@@ -2,6 +2,7 @@ package githubutils
 
 import (
 	"context"
+
 	"github.com/google/go-github/github"
 )
 
@@ -13,15 +14,15 @@ type RepoClient interface {
 
 type repoClient struct {
 	client *github.Client
-	owner string
-	repo string
+	owner  string
+	repo   string
 }
 
 func NewRepoClient(client *github.Client, owner, repo string) RepoClient {
 	return &repoClient{
 		client: client,
-		owner: owner,
-		repo: repo,
+		owner:  owner,
+		repo:   repo,
 	}
 }
 
@@ -51,5 +52,3 @@ func (c *repoClient) DirectoryExists(ctx context.Context, sha, directory string)
 	}
 	return false, nil
 }
-
-

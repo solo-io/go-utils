@@ -1,8 +1,9 @@
 package botconfig
 
 import (
-	"github.com/solo-io/go-utils/osutils"
 	"strconv"
+
+	"github.com/solo-io/go-utils/osutils"
 
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/pkg/errors"
@@ -14,11 +15,11 @@ import (
 //go:generate mockgen -destination os_mock_test.go -self_package github.com/solo-io/go-utils/botutils/botconfig -package botconfig_test github.com/solo-io/go-utils/osutils OsClient
 
 const (
-	DefaultBotCfg  = "/etc/solo-github-app/config.yml"
+	DefaultBotCfg = "/etc/solo-github-app/config.yml"
 
-	BotConfigEnvVar = "BOT_CONFIG"
+	BotConfigEnvVar     = "BOT_CONFIG"
 	WebhookSecretEnvVar = "WEBHOOK_SECRET"
-	PrivateKeyEnvVar = "PRIVATE_KEY_FILE"
+	PrivateKeyEnvVar    = "PRIVATE_KEY_FILE"
 	IntegrationIdEnvVar = "INTEGRATION_ID"
 )
 

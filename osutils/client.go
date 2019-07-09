@@ -24,6 +24,3 @@ func (*osClient) ReadFile(path string) ([]byte, error) {
 func NewOsClient() OsClient {
 	return &osClient{}
 }
-
-
-

@@ -2,6 +2,7 @@ package githubutils_test
 
 import (
 	"context"
+
 	"github.com/google/go-github/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

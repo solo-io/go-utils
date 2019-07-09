@@ -13,10 +13,10 @@ import (
 var _ = Describe("BotconfigTest", func() {
 
 	var (
-		os *MockOsClient
-		reader botconfig.ConfigReader
+		os        *MockOsClient
+		reader    botconfig.ConfigReader
 		nestedErr = errors.Errorf("")
-		ctrl *gomock.Controller
+		ctrl      *gomock.Controller
 	)
 
 	BeforeEach(func() {
@@ -152,8 +152,8 @@ func getValidConfig() *botconfig.Config {
 func getValidConfigTrimmed() *botconfig.Config {
 	c := &botconfig.Config{
 		Server: baseapp.HTTPConfig{
-			Address: "0.0.0.0",
-			Port: 8080,
+			Address:   "0.0.0.0",
+			Port:      8080,
 			PublicURL: "https://fake.url",
 		},
 		Github: githubapp.Config{

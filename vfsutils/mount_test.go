@@ -2,6 +2,7 @@ package vfsutils_test
 
 import (
 	"context"
+
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/vfsutils"
 

@@ -1,7 +1,9 @@
 package helper
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -26,11 +28,9 @@ type CurlOpts struct {
 	WithoutStats bool
 }
 
-func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
+func getTimeouts(timeout ...time.Duration) (currentTimeout time.Duration, pollingInterval time.Duration) {
 	defaultTimeout := time.Second * 20
 	defaultPollingTimeout := time.Second * 5
-	var currentTimeout time.Duration
-	var pollingInterval time.Duration
 	switch len(timeout) {
 	case 0:
 		currentTimeout = defaultTimeout
@@ -50,7 +50,48 @@ func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string
 			currentTimeout = defaultTimeout
 		}
 	}
+	return
+}
 
+func (t *testContainer) CurlEventuallyShouldOutput(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
+	currentTimeout, pollingInterval := getTimeouts(timeout...)
+
+	// for some useful-ish output
+	tick := time.Tick(currentTimeout / 8)
+
+	gomega.EventuallyWithOffset(ginkgoOffset+1, func() string {
+		var res string
+
+		bufChan, done, err := t.CurlAsyncChan(opts)
+		if err != nil {
+			res = err.Error()
+			// trigger an early exit if the pod has been deleted
+			gomega.Expect(res).NotTo(gomega.ContainSubstring(`pods "testrunner" not found`))
+		}
+		defer close(done)
+		buf := &bytes.Buffer{}
+		select {
+		case <-tick:
+		case r, ok := <-bufChan:
+			if ok {
+				buf = r
+			}
+		}
+		byt, err := ioutil.ReadAll(buf)
+		if err != nil {
+			res = err.Error()
+		} else {
+			res = string(byt)
+		}
+		if strings.Contains(res, substr) {
+			log.GreyPrintf("success: %v", res)
+		}
+		return res
+	}, currentTimeout, pollingInterval).Should(gomega.ContainSubstring(substr))
+}
+
+func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration) {
+	currentTimeout, pollingInterval := getTimeouts(timeout...)
 	// for some useful-ish output
 	tick := time.Tick(currentTimeout / 8)
 
@@ -74,7 +115,7 @@ func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string
 	}, currentTimeout, pollingInterval).Should(gomega.ContainSubstring(substr))
 }
 
-func (t *testContainer) Curl(opts CurlOpts) (string, error) {
+func (t *testContainer) buildCurlArgs(opts CurlOpts) []string {
 	args := []string{"curl"}
 	if opts.Verbose {
 		args = append(args, "-v")
@@ -120,5 +161,20 @@ func (t *testContainer) Curl(opts CurlOpts) (string, error) {
 	}
 	args = append(args, fmt.Sprintf("%v://%s:%v%s", protocol, service, port, opts.Path))
 	log.Printf("running: %v", strings.Join(args, " "))
+	return args
+}
+
+func (t *testContainer) Curl(opts CurlOpts) (string, error) {
+	args := t.buildCurlArgs(opts)
 	return t.Exec(args...)
+}
+
+func (t *testContainer) CurlAsync(opts CurlOpts) (*bytes.Buffer, chan struct{}, error) {
+	args := t.buildCurlArgs(opts)
+	return t.TestRunnerAsync(args...)
+}
+
+func (t *testContainer) CurlAsyncChan(opts CurlOpts) (<-chan *bytes.Buffer, chan struct{}, error) {
+	args := t.buildCurlArgs(opts)
+	return t.TestRunnerChan(&bytes.Buffer{}, args...)
 }
