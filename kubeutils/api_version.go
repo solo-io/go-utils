@@ -37,9 +37,9 @@ type ApiVersion interface {
 	Prerelease() int
 	PrereleaseModifier() PrereleaseModifier
 	String() string
-	GreaterThan(version ApiVersion) bool
-	LessThan(version ApiVersion) bool
-	Equal(version ApiVersion) bool
+	GreaterThan(other ApiVersion) bool
+	LessThan(other ApiVersion) bool
+	Equal(other ApiVersion) bool
 }
 
 type apiVersion struct {
@@ -127,18 +127,18 @@ func (v *apiVersion) String() string {
 	return sb.String()
 }
 
-func (v *apiVersion) GreaterThan(version ApiVersion) bool {
-	if v.Major() < version.Major() {
+func (v *apiVersion) GreaterThan(other ApiVersion) bool {
+	if v.Major() < other.Major() {
 		return false
 	}
 
-	if v.Major() == version.Major() {
-		if v.PrereleaseModifier() < version.PrereleaseModifier() {
+	if v.Major() == other.Major() {
+		if v.PrereleaseModifier() < other.PrereleaseModifier() {
 			return false
 		}
 
-		if v.PrereleaseModifier() == version.PrereleaseModifier() {
-			if v.Prerelease() <= version.Prerelease() {
+		if v.PrereleaseModifier() == other.PrereleaseModifier() {
+			if v.Prerelease() <= other.Prerelease() {
 				return false
 			}
 		}
@@ -147,18 +147,18 @@ func (v *apiVersion) GreaterThan(version ApiVersion) bool {
 	return true
 }
 
-func (v *apiVersion) LessThan(version ApiVersion) bool {
-	if v.Major() > version.Major() {
+func (v *apiVersion) LessThan(other ApiVersion) bool {
+	if v.Major() > other.Major() {
 		return false
 	}
 
-	if v.Major() == version.Major() {
-		if v.PrereleaseModifier() > version.PrereleaseModifier() {
+	if v.Major() == other.Major() {
+		if v.PrereleaseModifier() > other.PrereleaseModifier() {
 			return false
 		}
 
-		if v.PrereleaseModifier() == version.PrereleaseModifier() {
-			if v.Prerelease() >= version.Prerelease() {
+		if v.PrereleaseModifier() == other.PrereleaseModifier() {
+			if v.Prerelease() >= other.Prerelease() {
 				return false
 			}
 		}
@@ -167,6 +167,6 @@ func (v *apiVersion) LessThan(version ApiVersion) bool {
 	return true
 }
 
-func (v *apiVersion) Equal(version ApiVersion) bool {
-	return v.Major() == version.Major() && v.PrereleaseModifier() == v.PrereleaseModifier() && v.Prerelease() == v.Prerelease()
+func (v *apiVersion) Equal(other ApiVersion) bool {
+	return v.String() == other.String()
 }

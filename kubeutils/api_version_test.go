@@ -70,4 +70,65 @@ var _ = Describe("ApiVersion", func() {
 		)
 	})
 
+	DescribeTable("GreaterThan", func(a, b string, expected bool) {
+		subject, err := kubeutils.ParseApiVersion(a)
+		Expect(err).NotTo(HaveOccurred())
+		other, err := kubeutils.ParseApiVersion(b)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(subject.GreaterThan(other)).To(Equal(expected))
+	},
+		Entry("greater major", "v2", "v1", true),
+		Entry("greater major vs alpha", "v2", "v1alpha2", true),
+		Entry("greater major vs beta", "v2", "v1beta2", true),
+		Entry("greater alpha", "v1alpha2", "v1alpha1", true),
+		Entry("greater beta", "v1beta2", "v1beta1", true),
+		Entry("beta vs alpha", "v1beta1", "v1alpha1", true),
+		Entry("equal", "v1beta1", "v1beta1", false),
+		Entry("lesser major", "v1", "v2", false),
+		Entry("lesser major with alpha", "v1alpha1", "v2", false),
+		Entry("lesser major with beta", "v1beta1", "v2", false),
+		Entry("lesser alpha", "v1alpha1", "v1alpha2", false),
+		Entry("lesser beta", "v1beta1", "v1beta2", false),
+		Entry("alpha vs beta", "v1alpha1", "v1beta1", false),
+	)
+
+	DescribeTable("LessThan", func(a, b string, expected bool) {
+		subject, err := kubeutils.ParseApiVersion(a)
+		Expect(err).NotTo(HaveOccurred())
+		other, err := kubeutils.ParseApiVersion(b)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(subject.LessThan(other)).To(Equal(expected))
+	},
+		Entry("greater major", "v2", "v1", false),
+		Entry("greater major vs alpha", "v2", "v1alpha2", false),
+		Entry("greater major vs beta", "v2", "v1beta2", false),
+		Entry("greater alpha", "v1alpha2", "v1alpha1", false),
+		Entry("greater beta", "v1beta2", "v1beta1", false),
+		Entry("beta vs alpha", "v1beta1", "v1alpha1", false),
+		Entry("equal", "v1beta1", "v1beta1", false),
+		Entry("lesser major", "v1", "v2", true),
+		Entry("lesser major with alpha", "v1alpha1", "v2", true),
+		Entry("lesser major with beta", "v1beta1", "v2", true),
+		Entry("lesser alpha", "v1alpha1", "v1alpha2", true),
+		Entry("lesser beta", "v1beta1", "v1beta2", true),
+		Entry("alpha vs beta", "v1alpha1", "v1beta1", true),
+	)
+
+	DescribeTable("Equal", func(a, b string, expected bool) {
+		subject, err := kubeutils.ParseApiVersion(a)
+		Expect(err).NotTo(HaveOccurred())
+		other, err := kubeutils.ParseApiVersion(b)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(subject.Equal(other)).To(Equal(expected))
+	},
+		Entry("major", "v1", "v1", true),
+		Entry("alpha", "v1alpha1", "v1alpha1", true),
+		Entry("beta", "v1beta1", "v1beta1", true),
+		Entry("many digits", "v111beta222", "v111beta222", true),
+		Entry("major mismatch", "v1", "v2", false),
+		Entry("major mismatch with alpha", "v1alpha1", "v2alpha1", false),
+		Entry("alpha mismatch", "v1alpha2", "v1alpha1", false),
+		Entry("beta mismatch", "v1beta2", "v1beta1", false),
+		Entry("prerelease mismatch", "v1alpha1", "v1beta1", false),
+	)
 })
