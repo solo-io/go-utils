@@ -1,5 +1,6 @@
 package kubeutils
 
+// ApiVersionList implements sort.Interface
 type ApiVersionList []ApiVersion
 
 func (list ApiVersionList) Len() int {
