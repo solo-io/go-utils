@@ -1,41 +1,46 @@
-package kubeapiversion_test
+package kubeapiversion
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/kubeapiversion"
 )
 
 var _ = Describe("ApiVersion", func() {
 	Describe("ParseApiVersion", func() {
-		DescribeTable("it works", func(in string, expected kubeapiversion.ApiVersion) {
-			actual, err := kubeapiversion.ParseApiVersion(in)
+		DescribeTable("it works", func(in string, expected ApiVersion) {
+			actual, err := ParseApiVersion(in)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actual.Equal(expected)).To(BeTrue())
 		},
-			Entry("valid minimal version", "v1", kubeapiversion.NewApiVersion(1, 0, kubeapiversion.GA)),
-			Entry("valid 2-digit version", "v11", kubeapiversion.NewApiVersion(11, 0, kubeapiversion.GA)),
-			Entry("valid alpha version", "v1alpha1", kubeapiversion.NewApiVersion(1, 1, kubeapiversion.Alpha)),
-			Entry("valid beta version", "v11beta11", kubeapiversion.NewApiVersion(11, 11, kubeapiversion.Beta)),
+			Entry("valid minimal version", "v1", &apiVersion{major: 1, prerelease: 0, modifier: GA}),
+			Entry("valid 2-digit version", "v11", &apiVersion{major: 11, prerelease: 0, modifier: GA}),
+			Entry("valid alpha version", "v1alpha1", &apiVersion{major: 1, prerelease: 1, modifier: Alpha}),
+			Entry("valid beta version", "v11beta11", &apiVersion{major: 11, prerelease: 11, modifier: Beta}),
 		)
 
 		DescribeTable("it errors", func(in string, expectedErr error) {
-			actual, err := kubeapiversion.ParseApiVersion(in)
+			actual, err := ParseApiVersion(in)
 			Expect(actual).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(expectedErr.Error()))
 		},
-			Entry("no v", "1", kubeapiversion.MalformedVersionError("1")),
-			Entry("zero version", "v0", kubeapiversion.InvalidMajorVersionError),
-			Entry("zero alpha", "v1alpha0", kubeapiversion.InvalidPrereleaseVersionError),
+			Entry("no v prefix", "1", MalformedVersionError("1")),
+			Entry("non-v prefix", "x1", MalformedVersionError("x1")),
+			Entry("invalid modifier", "1gamma1", MalformedVersionError("1gamma1")),
+			Entry("trailing non-numerals", "1alpha2abc", MalformedVersionError("1alpha2abc")),
+			Entry("non-alphanumeric", "1alpha!2", MalformedVersionError("1alpha!2")),
+			Entry("not even dashes", "1alpha-2", MalformedVersionError("1alpha-2")),
+			Entry("zero version", "v0", InvalidMajorVersionError),
+			Entry("zero alpha", "v1alpha0", InvalidPrereleaseVersionError),
+			Entry("zero beta", "v1beta0", InvalidPrereleaseVersionError),
 		)
 	})
 
 	Describe("accessors", func() {
-		var subject kubeapiversion.ApiVersion
+		var subject ApiVersion
 		BeforeEach(func() {
-			subject = kubeapiversion.NewApiVersion(1, 2, kubeapiversion.Beta)
+			subject = &apiVersion{major: 1, prerelease: 2, modifier: Beta}
 		})
 
 		Describe("Major", func() {
@@ -52,14 +57,14 @@ var _ = Describe("ApiVersion", func() {
 
 		Describe("PrereleaseModifier", func() {
 			It("works", func() {
-				Expect(subject.PrereleaseModifier()).To(Equal(kubeapiversion.Beta))
+				Expect(subject.PrereleaseModifier()).To(Equal(Beta))
 			})
 		})
 	})
 
 	Describe("String", func() {
 		DescribeTable("it works", func(str string) {
-			subject, err := kubeapiversion.ParseApiVersion(str)
+			subject, err := ParseApiVersion(str)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(subject.String()).To(Equal(str))
 		},
@@ -71,9 +76,9 @@ var _ = Describe("ApiVersion", func() {
 	})
 
 	DescribeTable("GreaterThan", func(a, b string, expected bool) {
-		subject, err := kubeapiversion.ParseApiVersion(a)
+		subject, err := ParseApiVersion(a)
 		Expect(err).NotTo(HaveOccurred())
-		other, err := kubeapiversion.ParseApiVersion(b)
+		other, err := ParseApiVersion(b)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(subject.GreaterThan(other)).To(Equal(expected))
 	},
@@ -93,9 +98,9 @@ var _ = Describe("ApiVersion", func() {
 	)
 
 	DescribeTable("LessThan", func(a, b string, expected bool) {
-		subject, err := kubeapiversion.ParseApiVersion(a)
+		subject, err := ParseApiVersion(a)
 		Expect(err).NotTo(HaveOccurred())
-		other, err := kubeapiversion.ParseApiVersion(b)
+		other, err := ParseApiVersion(b)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(subject.LessThan(other)).To(Equal(expected))
 	},
@@ -115,9 +120,9 @@ var _ = Describe("ApiVersion", func() {
 	)
 
 	DescribeTable("Equal", func(a, b string, expected bool) {
-		subject, err := kubeapiversion.ParseApiVersion(a)
+		subject, err := ParseApiVersion(a)
 		Expect(err).NotTo(HaveOccurred())
-		other, err := kubeapiversion.ParseApiVersion(b)
+		other, err := ParseApiVersion(b)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(subject.Equal(other)).To(Equal(expected))
 	},

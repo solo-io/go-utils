@@ -8,8 +8,6 @@ import (
 	"github.com/solo-io/go-utils/errors"
 )
 
-type PrereleaseModifier int
-
 var (
 	apiVersionRegexp *regexp.Regexp
 
@@ -17,16 +15,29 @@ var (
 		return errors.Errorf("Failed to parse kubernetes api version from %v", version)
 	}
 
-	InvalidMajorVersionError = errors.Errorf("Major version cannot be zero")
+	InvalidMajorVersionError = errors.New("Major version cannot be zero")
 
-	InvalidPrereleaseVersionError = errors.Errorf("Prerelease version cannot be zero")
+	InvalidPrereleaseVersionError = errors.New("Prerelease version cannot be zero")
 )
+
+type PrereleaseModifier int
 
 const (
 	Alpha PrereleaseModifier = iota + 1
 	Beta
 	GA
 )
+
+func (m PrereleaseModifier) String() string {
+	switch m {
+	case Alpha:
+		return "alpha"
+	case Beta:
+		return "beta"
+	default:
+		return ""
+	}
+}
 
 func init() {
 	apiVersionRegexp = regexp.MustCompile(`^v([0-9]+)((alpha|beta)([0-9]+))?$`)
@@ -88,14 +99,6 @@ func ParseApiVersion(version string) (ApiVersion, error) {
 		prerelease: prerelease,
 		modifier:   modifier,
 	}, nil
-}
-
-func NewApiVersion(major, prerelease int, prereleaseModifier PrereleaseModifier) ApiVersion {
-	return &apiVersion{
-		major:      major,
-		prerelease: prerelease,
-		modifier:   prereleaseModifier,
-	}
 }
 
 func (v *apiVersion) Major() int {
