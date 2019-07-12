@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Helper for cleaning up CRDs after tests.
+    issueLink: https://github.com/solo-io/go-utils/issues/234
