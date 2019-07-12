@@ -51,10 +51,6 @@ func TeardownClusterResourcesWithPrefix(kube kubernetes.Interface, prefix string
 		}
 	}
 
-	TeardownCustomResourceDefinitionsWithPrefix(kube, prefix)
-}
-
-func TeardownCustomResourceDefinitionsWithPrefix(kube kubernetes.Interface, prefix string) {
 	cfg, err := kubeutils.GetConfig("", "")
 	Expect(err).NotTo(HaveOccurred())
 
