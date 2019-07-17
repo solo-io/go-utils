@@ -45,6 +45,8 @@ func (h *githubHookHandler) Handle(ctx context.Context, eventType, deliveryID st
 		return h.HandleCommitComment(ctx, eventType, deliveryID, payload)
 	case ReleaseType:
 		return h.HandleRelease(ctx, eventType, deliveryID, payload)
+	case IssuesType:
+		return h.HandleIssues(ctx, eventType, deliveryID, payload)
 	default:
 		return nil
 	}
@@ -129,5 +131,19 @@ func (h *githubHookHandler) HandleRelease(ctx context.Context, eventType, delive
 		return err
 	}
 	go h.registry.CallReleasePlugins(ctx, client, &event)
+	return nil
+}
+
+func (h *githubHookHandler) HandleIssues(ctx context.Context, eventType, deliveryID string, payload []byte) error {
+	var event github.IssuesEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		return errors.Wrap(err, "failed to parse issues event payload")
+	}
+	installationId := githubapp.GetInstallationIDFromEvent(&event)
+	client, err := h.getInstallationClient(ctx, installationId)
+	if err != nil {
+		return err
+	}
+	go h.registry.CallIssuesPlugins(ctx, client, &event)
 	return nil
 }

@@ -33,3 +33,8 @@ type ReleaseHandler interface {
 	Plugin
 	HandleReleaseEvent(ctx context.Context, client *github.Client, event *github.ReleaseEvent) error
 }
+
+type IssuesHandler interface {
+	Plugin
+	HandleIssuesEvent(ctx context.Context, client *github.Client, event *github.IssuesEvent) error
+}
