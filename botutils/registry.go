@@ -15,6 +15,7 @@ type Registry struct {
 	icplugins      []IssueCommentHandler
 	ccplugins      []CommitCommentHandler
 	releaseplugins []ReleaseHandler
+	issuesplugins  []IssuesHandler
 }
 
 func (r *Registry) RegisterPlugin(p Plugin) {
@@ -33,13 +34,16 @@ func (r *Registry) RegisterPlugin(p Plugin) {
 	if plugin, ok := p.(ReleaseHandler); ok {
 		r.releaseplugins = append(r.releaseplugins, plugin)
 	}
+	if plugin, ok := p.(IssuesHandler); ok {
+		r.issuesplugins = append(r.issuesplugins, plugin)
+	}
 }
 
 func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, event *github.PullRequestEvent) {
 	for _, pr := range r.prplugins {
 		err := pr.HandlePREvent(ctx, client, event)
 		if err != nil {
-			contextutils.LoggerFrom(ctx).Errorw("error handling PR", zap.Error(err))
+			contextutils.LoggerFrom(ctx).Errorw("error handling PR", zap.Error(err), zap.Any("event", event))
 		}
 	}
 }
@@ -48,7 +52,7 @@ func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.
 	for _, pr := range r.prrplugins {
 		err := pr.HandlePullRequestReviewEvent(ctx, client, event)
 		if err != nil {
-			contextutils.LoggerFrom(ctx).Errorw("error handling PR review", zap.Error(err))
+			contextutils.LoggerFrom(ctx).Errorw("error handling PR review", zap.Error(err), zap.Any("event", event))
 
 		}
 	}
@@ -58,7 +62,7 @@ func (r *Registry) CallIssueCommentPlugins(ctx context.Context, client *github.C
 	for _, pr := range r.icplugins {
 		err := pr.HandleIssueCommentEvent(ctx, client, event)
 		if err != nil {
-			contextutils.LoggerFrom(ctx).Errorw("error handling issue comment", zap.Error(err))
+			contextutils.LoggerFrom(ctx).Errorw("error handling issue comment", zap.Error(err), zap.Any("event", event))
 		}
 	}
 }
@@ -67,7 +71,7 @@ func (r *Registry) CallCommitCommentPlugins(ctx context.Context, client *github.
 	for _, pr := range r.ccplugins {
 		err := pr.HandleCommitCommentEvent(ctx, client, event)
 		if err != nil {
-			contextutils.LoggerFrom(ctx).Errorw("error handling commit comment", zap.Error(err))
+			contextutils.LoggerFrom(ctx).Errorw("error handling commit comment", zap.Error(err), zap.Any("event", event))
 		}
 	}
 }
@@ -76,7 +80,16 @@ func (r *Registry) CallReleasePlugins(ctx context.Context, client *github.Client
 	for _, pr := range r.releaseplugins {
 		err := pr.HandleReleaseEvent(ctx, client, event)
 		if err != nil {
-			contextutils.LoggerFrom(ctx).Errorw("error handling release", zap.Error(err))
+			contextutils.LoggerFrom(ctx).Errorw("error handling release", zap.Error(err), zap.Any("event", event))
+		}
+	}
+}
+
+func (r *Registry) CallIssuesPlugins(ctx context.Context, client *github.Client, event *github.IssuesEvent) {
+	for _, pr := range r.issuesplugins {
+		err := pr.HandleIssuesEvent(ctx, client, event)
+		if err != nil {
+			contextutils.LoggerFrom(ctx).Errorw("error handling issues", zap.Error(err), zap.Any("event", event))
 		}
 	}
 }
