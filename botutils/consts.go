@@ -6,4 +6,5 @@ const (
 	IssueCommentType  = "issue_comment"
 	CommitCommentType = "commit_comment"
 	ReleaseType       = "release"
+	IssuesType        = "issues"
 )
