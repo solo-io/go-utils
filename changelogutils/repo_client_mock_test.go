@@ -6,10 +6,10 @@ package changelogutils_test
 
 import (
 	context "context"
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	github "github.com/google/go-github/github"
+	githubutils "github.com/solo-io/go-utils/githubutils"
+	reflect "reflect"
 )
 
 // MockRepoClient is a mock of RepoClient interface
@@ -48,6 +48,35 @@ func (m *MockRepoClient) CompareCommits(arg0 context.Context, arg1, arg2 string)
 func (mr *MockRepoClientMockRecorder) CompareCommits(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompareCommits", reflect.TypeOf((*MockRepoClient)(nil).CompareCommits), arg0, arg1, arg2)
+}
+
+// CreateBranch mocks base method
+func (m *MockRepoClient) CreateBranch(arg0 context.Context, arg1 string) (*github.Reference, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBranch", arg0, arg1)
+	ret0, _ := ret[0].(*github.Reference)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBranch indicates an expected call of CreateBranch
+func (mr *MockRepoClientMockRecorder) CreateBranch(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBranch", reflect.TypeOf((*MockRepoClient)(nil).CreateBranch), arg0, arg1)
+}
+
+// CreatePR mocks base method
+func (m *MockRepoClient) CreatePR(arg0 context.Context, arg1 string, arg2 githubutils.PRSpec) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePR", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreatePR indicates an expected call of CreatePR
+func (mr *MockRepoClientMockRecorder) CreatePR(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePR", reflect.TypeOf((*MockRepoClient)(nil).CreatePR), arg0, arg1, arg2)
 }
 
 // DirectoryExists mocks base method

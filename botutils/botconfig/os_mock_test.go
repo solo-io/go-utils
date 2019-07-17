@@ -5,9 +5,8 @@
 package botconfig_test
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockOsClient is a mock of OsClient interface

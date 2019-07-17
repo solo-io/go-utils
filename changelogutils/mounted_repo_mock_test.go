@@ -6,10 +6,9 @@ package changelogutils_test
 
 import (
 	context "context"
+	gomock "github.com/golang/mock/gomock"
 	os "os"
 	reflect "reflect"
-
-	gomock "github.com/golang/mock/gomock"
 )
 
 // MockMountedRepo is a mock of MountedRepo interface
