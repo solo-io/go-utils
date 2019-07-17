@@ -3,21 +3,19 @@ package docsutils
 import (
 	"context"
 	"fmt"
-	"math/rand"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
-
 	"github.com/google/go-github/github"
 	"github.com/onsi/ginkgo"
 	"github.com/solo-io/go-utils/changelogutils"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/log"
+	"github.com/solo-io/go-utils/randutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 const (
@@ -132,7 +130,7 @@ func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 	}
 
 	// setup branch
-	branch := spec.Repo + "-docs-" + spec.Tag + "-" + randString(4)
+	branch := spec.Repo + "-docs-" + spec.Tag + "-" + randutils.RandString(4)
 	err = gitCheckoutNewBranch(branch)
 	if err != nil {
 		return errors.Wrapf(err, "Error checking out branch")
@@ -185,20 +183,6 @@ func replaceCliDocs(product, docsParentPath, cliPrefix string) error {
 		return errors.Wrapf(err, "Could not copy new docs %s", oldDocs)
 	}
 	return nil
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz1234567890")
-
-func randString(length int) string {
-	b := make([]rune, length)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
 }
 
 func submitPRIfChanges(ctx context.Context, owner, branch, tag, project string) error {

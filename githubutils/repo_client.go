@@ -2,14 +2,22 @@ package githubutils
 
 import (
 	"context"
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
 
 	"github.com/google/go-github/github"
 )
+
+type PRSpec struct {
+	Message string
+}
 
 type RepoClient interface {
 	FindLatestReleaseTagIncudingPrerelease(ctx context.Context) (string, error)
 	CompareCommits(ctx context.Context, base, sha string) (*github.CommitsComparison, error)
 	DirectoryExists(ctx context.Context, sha, directory string) (bool, error)
+	CreateBranch(ctx context.Context, branchName string) (*github.Reference, error)
+	CreatePR(ctx context.Context, branchName string, spec PRSpec) error
 }
 
 type repoClient struct {
@@ -51,4 +59,43 @@ func (c *repoClient) DirectoryExists(ctx context.Context, sha, directory string)
 		}
 	}
 	return false, nil
+}
+
+func (c *repoClient) CreateBranch(ctx context.Context, branchName string) (*github.Reference, error) {
+	// get master branch reference
+	// GitHub API docs: https://developer.github.com/v3/git/refs/#get-a-reference
+	masterRef, _, err := c.client.Git.GetRef(ctx, c.owner, c.repo, "refs/heads/master")
+	if err != nil {
+		return nil, err
+	}
+
+	// create new branch from master branch
+	// GitHub API docs: https://developer.github.com/v3/git/refs/#create-a-reference
+	ref, _, err := c.client.Git.CreateRef(ctx, c.owner, c.repo, &github.Reference{
+		Ref: github.String("refs/heads/" + branchName),
+		Object: &github.GitObject{
+			SHA: masterRef.Object.SHA,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ref, nil
+}
+
+func (c *repoClient) CreatePR(ctx context.Context, branchName string, spec PRSpec) error {
+	newPR := &github.NewPullRequest{
+		Title:               github.String(spec.Message),
+		Head:                github.String(branchName),
+		Base:                github.String("master"),
+		Body:                github.String(spec.Message),
+		MaintainerCanModify: github.Bool(true),
+	}
+	pr, _, err := c.client.PullRequests.Create(ctx, c.owner, c.repo, newPR)
+	if err != nil {
+		return err
+	}
+	contextutils.LoggerFrom(ctx).Infow("PR created",
+		zap.String("url", pr.GetHTMLURL()))
+	return nil
 }
