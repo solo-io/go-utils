@@ -1,4 +1,4 @@
-package githubutils
+package commitutils
 
 import (
 	"context"
