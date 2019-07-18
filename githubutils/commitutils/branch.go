@@ -46,7 +46,7 @@ func NewGithubRefUpdater(client *github.Client, owner, repo string) RefUpdater {
 }
 
 func (c *githubRefUpdater) SetRef(ctx context.Context, ref *github.Reference) error {
-	if ref != nil {
+	if c.ref != nil {
 		return RefAlreadySetError
 	}
 	c.ref = ref
