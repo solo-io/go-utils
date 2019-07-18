@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add a usage client to standardize interaction with the checkpoint server.
+    issueLink: https://github.com/solo-io/go-utils/issues/243

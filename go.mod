@@ -52,6 +52,8 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.5.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
+	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/huandu/xstrings v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
@@ -84,6 +86,7 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20190625031733-ee671ab25ff0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
+	github.com/solo-io/go-checkpoint v0.0.0-20181217204546-b798a7563f83
 	github.com/solo-io/solo-kit v0.6.3
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
