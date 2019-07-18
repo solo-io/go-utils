@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/239
+    description: Register Issues in the list of webhook events that are handled. 

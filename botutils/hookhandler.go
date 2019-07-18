@@ -28,7 +28,7 @@ func (h *githubHookHandler) RegisterPlugin(plugin Plugin) {
 }
 
 func (h *githubHookHandler) Handles() []string {
-	return []string{PrType, PrReviewType, IssueCommentType, CommitCommentType, ReleaseType}
+	return []string{PrType, PrReviewType, IssueCommentType, CommitCommentType, ReleaseType, IssuesType}
 }
 
 func (h *githubHookHandler) Handle(ctx context.Context, eventType, deliveryID string, payload []byte) error {
