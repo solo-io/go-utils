@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/google/go-github/github"
 )
 
 var (
@@ -20,6 +23,73 @@ type sha256Outputs struct {
 	darwinSha  []byte // sha256 for <ctl>-darwin binary
 	linuxSha   []byte // sha256 for <ctl>-linux binary
 	windowsSha []byte // sha256 for <ctl>-windows binary
+}
+
+// getGitHubSha256 extracts the sha256 strings from existing .sha256 files created as part of the build process.
+// Those .sha256 files need to be located in the GitHub Release for this version.
+// It returns the sha256s and any read errors encountered. It will also return ErrNoSha256sFound if any of the platform
+// shas are found.
+func getGitHubSha256(assets []github.ReleaseAsset, reShaFilename string) (*sha256Outputs, error) {
+	if reShaFilename == "" {
+		return nil, nil // special case to indicate that cli sha256s are not needed
+	}
+
+	// Scan outputDir directory looking for any files that match the reOS regular expression as targets for extraction
+	reOS := regexp.MustCompile(reShaFilename)
+
+	shas := sha256Outputs{}
+	for _, f := range assets {
+		s := reOS.FindStringSubmatch(f.GetName())
+		if s == nil {
+			continue
+		}
+
+		var err error
+
+		switch s[1] {
+		case "darwin":
+			shas.darwinSha, err = extractShaFromURL(f.GetBrowserDownloadURL())
+		case "linux":
+			shas.linuxSha, err = extractShaFromURL(f.GetBrowserDownloadURL())
+		case "windows":
+			shas.windowsSha, err = extractShaFromURL(f.GetBrowserDownloadURL())
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	if shas.darwinSha == nil && shas.linuxSha == nil && shas.windowsSha == nil {
+		return nil, ErrNoSha256sFound
+	}
+
+	return &shas, nil
+}
+
+// extractShaFromURL extracts the first field from url expecting it to be a sha.
+// Expected file format is two string fields "<sha> <binary name>".
+// It returns the sha field as a []byte and any read errors.
+func extractShaFromURL(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if !(len(b) > 0) {
+		return nil, ErrNoShaDataFound
+	}
+
+	s := strings.Fields(string(b))
+	if len(s) != 2 {
+		return nil, fmt.Errorf("pkgmgmtutils: Sha256 file %s is not in expected format", url)
+	}
+
+	return []byte(s[0]), nil
 }
 
 // getLocalBinarySha256 extracts the sha256 strings from existing .sha256 files created as part of the build process.
