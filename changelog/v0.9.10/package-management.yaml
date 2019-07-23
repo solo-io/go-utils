@@ -1,0 +1,3 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Pull CLI binary SHA256 from GitHub Releases for more consistent package management.
