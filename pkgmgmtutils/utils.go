@@ -94,7 +94,7 @@ func extractShaFromURL(url string) ([]byte, error) {
 
 // getLocalBinarySha256 extracts the sha256 strings from existing .sha256 files created as part of the build process.
 // Those .sha256 files need to be located in the outputDir directory.
-// It returns the sha256s and any read errors encountered. It will also return ErrNoSha256sFound if any of the platform
+// It returns the sha256s and any read errors encountered. It returns ErrNoSha256sFound if no platform
 // shas are found.
 func getLocalBinarySha256(outputDir string, reShaFilename string) (*sha256Outputs, error) {
 	if reShaFilename == "" {
