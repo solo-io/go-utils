@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -54,6 +55,35 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 			Labels:    b.Labels,
 		},
 		Spec: v1beta1.DeploymentSpec{
+			Replicas: getReplicas(),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: b.Labels,
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels:      b.Labels,
+					Annotations: b.Annotations,
+				},
+				Spec: v1.PodSpec{
+					Containers: b.getContainers(),
+				},
+			},
+		},
+	}
+}
+
+func (b *ResourceBuilder) GetDeploymentAppsv1() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      b.Name,
+			Namespace: b.Namespace,
+			Labels:    b.Labels,
+		},
+		Spec: appsv1.DeploymentSpec{
 			Replicas: getReplicas(),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: b.Labels,
