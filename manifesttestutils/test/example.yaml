@@ -183,6 +183,38 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
 ---
+---
+# Source: sm-marketplace/templates/10-operator-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: sm-marketplace
+    sm-marketplace: operator
+  name: smm-operator-apps-v1
+  namespace: sm-marketplace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sm-marketplace
+      sm-marketplace: operator
+  template:
+    metadata:
+      labels:
+        app: sm-marketplace
+        sm-marketplace: operator
+    spec:
+      containers:
+      - image: "quay.io/solo-io/smm-operator:dev"
+        imagePullPolicy: Always
+        name: smm-operator
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+---
 # Source: sm-marketplace/templates/15-mesh-discovery-deployment.yaml
 apiVersion: extensions/v1beta1
 kind: Deployment

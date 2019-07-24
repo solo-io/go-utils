@@ -1,17 +1,20 @@
 package manifesttestutils
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	"github.com/ghodss/yaml"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"regexp"
 
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
@@ -23,6 +26,7 @@ import (
 
 type TestManifest interface {
 	ExpectDeployment(deployment *v1beta1.Deployment)
+	ExpectDeploymentAppsV1(deployment *appsv1.Deployment)
 	ExpectServiceAccount(serviceAccount *corev1.ServiceAccount)
 	ExpectClusterRole(clusterRole *rbacv1.ClusterRole)
 	ExpectClusterRoleBinding(clusterRoleBinding *rbacv1.ClusterRoleBinding)
@@ -58,43 +62,50 @@ func (t *testManifest) NumResources() int {
 
 func (t *testManifest) ExpectDeployment(deployment *v1beta1.Deployment) {
 	obj := t.mustFindObject(deployment.Kind, deployment.Namespace, deployment.Name)
-	actual, ok := obj.(*v1beta1.Deployment)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&v1beta1.Deployment{}))
+	actual := obj.(*v1beta1.Deployment)
+	Expect(actual).To(BeEquivalentTo(deployment))
+}
+
+func (t *testManifest) ExpectDeploymentAppsV1(deployment *appsv1.Deployment) {
+	obj := t.mustFindObject(deployment.Kind, deployment.Namespace, deployment.Name)
+	Expect(obj).To(BeAssignableToTypeOf(&appsv1.Deployment{}))
+	actual := obj.(*appsv1.Deployment)
 	Expect(actual).To(BeEquivalentTo(deployment))
 }
 
 func (t *testManifest) ExpectServiceAccount(serviceAccount *corev1.ServiceAccount) {
 	obj := t.mustFindObject(serviceAccount.Kind, serviceAccount.Namespace, serviceAccount.Name)
-	actual, ok := obj.(*corev1.ServiceAccount)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&corev1.ServiceAccount{}))
+	actual := obj.(*corev1.ServiceAccount)
 	Expect(actual).To(BeEquivalentTo(serviceAccount))
 }
 
 func (t *testManifest) ExpectClusterRole(clusterRole *rbacv1.ClusterRole) {
 	obj := t.mustFindObject(clusterRole.Kind, clusterRole.Namespace, clusterRole.Name)
-	actual, ok := obj.(*rbacv1.ClusterRole)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&rbacv1.ClusterRole{}))
+	actual := obj.(*rbacv1.ClusterRole)
 	Expect(actual).To(BeEquivalentTo(clusterRole))
 }
 
 func (t *testManifest) ExpectClusterRoleBinding(clusterRoleBinding *rbacv1.ClusterRoleBinding) {
 	obj := t.mustFindObject(clusterRoleBinding.Kind, clusterRoleBinding.Namespace, clusterRoleBinding.Name)
-	actual, ok := obj.(*rbacv1.ClusterRoleBinding)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&rbacv1.ClusterRoleBinding{}))
+	actual := obj.(*rbacv1.ClusterRoleBinding)
 	Expect(actual).To(BeEquivalentTo(clusterRoleBinding))
 }
 
 func (t *testManifest) ExpectConfigMap(configMap *corev1.ConfigMap) {
 	obj := t.mustFindObject(configMap.Kind, configMap.Namespace, configMap.Name)
-	actual, ok := obj.(*corev1.ConfigMap)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&corev1.ConfigMap{}))
+	actual := obj.(*corev1.ConfigMap)
 	Expect(actual).To(BeEquivalentTo(configMap))
 }
 
 func (t *testManifest) ExpectConfigMapWithYamlData(configMap *corev1.ConfigMap) {
 	obj := t.mustFindObject(configMap.Kind, configMap.Namespace, configMap.Name)
-	actual, ok := obj.(*corev1.ConfigMap)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&corev1.ConfigMap{}))
+	actual := obj.(*corev1.ConfigMap)
 	for k, v := range actual.Data {
 		actual.Data[k] = MustCanonicalizeYaml(v)
 	}
@@ -106,29 +117,29 @@ func (t *testManifest) ExpectConfigMapWithYamlData(configMap *corev1.ConfigMap) 
 
 func (t *testManifest) ExpectSecret(secret *corev1.Secret) {
 	obj := t.mustFindObject(secret.Kind, secret.Namespace, secret.Name)
-	actual, ok := obj.(*corev1.Secret)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&corev1.Secret{}))
+	actual := obj.(*corev1.Secret)
 	Expect(actual).To(BeEquivalentTo(secret))
 }
 
 func (t *testManifest) ExpectService(service *corev1.Service) {
 	obj := t.mustFindObject(service.Kind, service.Namespace, service.Name)
-	actual, ok := obj.(*corev1.Service)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&corev1.Service{}))
+	actual := obj.(*corev1.Service)
 	Expect(actual).To(BeEquivalentTo(service))
 }
 
 func (t *testManifest) ExpectNamespace(namespace *corev1.Namespace) {
 	obj := t.mustFindObject(namespace.Kind, "", namespace.Name)
-	actual, ok := obj.(*corev1.Namespace)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&corev1.Namespace{}))
+	actual := obj.(*corev1.Namespace)
 	Expect(actual).To(BeEquivalentTo(namespace))
 }
 
 func (t *testManifest) ExpectCrd(crd *extv1beta1.CustomResourceDefinition) {
 	obj := t.mustFindObject(crd.Kind, "", crd.Name)
-	actual, ok := obj.(*extv1beta1.CustomResourceDefinition)
-	Expect(ok).To(BeTrue())
+	Expect(obj).To(BeAssignableToTypeOf(&extv1beta1.CustomResourceDefinition{}))
+	actual := obj.(*extv1beta1.CustomResourceDefinition)
 	Expect(actual).To(BeEquivalentTo(crd))
 }
 
@@ -150,7 +161,7 @@ func (t *testManifest) mustFindObject(kind, namespace, name string) runtime.Obje
 			return converted
 		}
 	}
-	Expect(false).To(BeTrue())
+	Fail(fmt.Sprintf("can't find object %s %s %s", kind, namespace, name))
 	return nil
 }
 
