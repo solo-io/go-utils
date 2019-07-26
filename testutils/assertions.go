@@ -8,7 +8,11 @@ import (
 // ExpectEqualProtoMessages provides richer error messages than struct comparison by leveraging the String() method that all
 // proto Messages provide. On error, Gomega's string comparison utility prints a few characters of the text immediately
 // surrounding the first discrepancy.
+//
+// Variadic optionalDescription argument is passed on to fmt.Sprintf() and is used to annotate failure messages.
+//
 // Example of the output:
+//   optionalDescription is rendered here: template string with values foo and bar
 //   Expected
 //       <string>: "...-1010" vers..."
 //   to equal               |
