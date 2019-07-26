@@ -26,7 +26,7 @@ type Array struct {
 	Something string `json:"something" desc:"create something"`
 }
 
-var _ = FDescribe("Docs", func() {
+var _ = Describe("Docs", func() {
 	It("should document helm values", func() {
 		c := Config{
 			Namespace: &Namespace{Create: true},
