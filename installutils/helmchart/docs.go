@@ -76,7 +76,6 @@ func docReflect(addValue addValue, path []string, desc string, typ reflect.Type,
 			desc := field.Tag.Get("desc")
 			fieldPath := path
 			if jsonName != "" {
-				// make a copy/...
 				fieldPath = append(fieldPath, jsonName)
 			}
 			var fieldVal reflect.Value
