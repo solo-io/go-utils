@@ -3,6 +3,11 @@ package docsutils
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/google/go-github/github"
 	"github.com/onsi/ginkgo"
 	"github.com/solo-io/go-utils/changelogutils"
@@ -12,15 +17,18 @@ import (
 	"github.com/solo-io/go-utils/randutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/spf13/afero"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 const (
 	DocsRepo = "solo-docs"
 )
+
+type File struct {
+	From string
+	To   string
+}
+
+type Files []File
 
 type DocsPRSpec struct {
 	// Repo owner, i.e. "solo-io"
@@ -37,6 +45,8 @@ type DocsPRSpec struct {
 	DocsParentPath string
 	// Paths to generated API doc directory that should be copied into docs, i.e. "docs/v1/github.com/solo-io/gloo"
 	ApiPaths []string // can be nil
+	// Individual files to copy.
+	Files Files
 	// Prefix of the CLI docs files, i.e. "glooctl"
 	CliPrefix string // empty means don't copy docs files
 }
@@ -152,6 +162,10 @@ func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 		replaceCliDocs(spec.Product, spec.DocsParentPath, spec.CliPrefix)
 	}
 
+	err = copyFiles(spec.Product, spec.DocsParentPath, spec.Files)
+	if err != nil {
+		return errors.Wrapf(err, "Error copy files")
+	}
 	// see if there is something to commit, push and open PR if so
 	project := spec.ChangelogPrefix
 	if project == "" {
@@ -350,6 +364,27 @@ func execGitWithOutput(dir string, args ...string) (string, error) {
 	return string(output), nil
 }
 
+func ensureDir(fs afero.Fs, path string) error {
+	parentPath := filepath.Dir(path)
+	return fs.MkdirAll(parentPath, 0700)
+}
+
+func copyFiles(product, docsParentPath string, files Files) error {
+	fs := afero.NewOsFs()
+	for _, file := range files {
+		fromPath := filepath.Join(docsParentPath, file.From)
+		toPath := filepath.Join(DocsRepo, product, file.To)
+		// make sure the parent exists so the copy below will work
+		if err := ensureDir(fs, toPath); err != nil {
+			return err
+		}
+		if err := exec.Command("cp", fromPath, toPath).Run(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func replaceApiDirectories(product, docsParentPath string, paths ...string) error {
 	fs := afero.NewOsFs()
 	for _, path := range paths {
@@ -366,9 +401,7 @@ func replaceApiDirectories(product, docsParentPath string, paths ...string) erro
 			}
 		} else {
 			// make sure the parent exists so the copy below will work
-			soloDocsParentPath := filepath.Dir(soloDocsPath)
-			err = fs.MkdirAll(soloDocsParentPath, 0700)
-			if err != nil {
+			if err := ensureDir(fs, soloDocsPath); err != nil {
 				return err
 			}
 		}
