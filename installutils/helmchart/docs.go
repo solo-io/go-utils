@@ -17,7 +17,7 @@ type HelmValues []HelmValue
 
 func (v HelmValues) ToMarkdown() string {
 	result := new(strings.Builder)
-	fmt.Fprintln(result, "|Option|Type|Description|Default Value|")
+	fmt.Fprintln(result, "|Option|Type|Default Value|Description|")
 	fmt.Fprintln(result, "|------|----|-----------|-------------|")
 	for _, value := range v {
 		fmt.Fprintf(result, "|%s|%s|%s|%s|\n", value.Key, value.Type, value.DefaultValue, value.Description)
