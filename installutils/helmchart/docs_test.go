@@ -68,7 +68,7 @@ var _ = Describe("Docs", func() {
 
 	It("should print markdown", func() {
 		values := HelmValues{{Key: "key", Type: "type", DefaultValue: "default", Description: "desc"}}
-		expected := "|Option|Type|Description|Default Value|\n|------|----|-----------|-------------|\n|key|type|default|desc|\n"
+		expected := "|Option|Type|Default Value|Description|\n|------|----|-----------|-------------|\n|key|type|default|desc|\n"
 
 		Expect(expected).To(Equal(values.ToMarkdown()))
 	})
