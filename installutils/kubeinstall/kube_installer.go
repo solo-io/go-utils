@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	batchv1 "k8s.io/api/batch/v1"
 
 	"github.com/solo-io/go-utils/stringutils"
 
@@ -549,6 +550,8 @@ func (r *KubeInstaller) waitForResourceReady(ctx context.Context, res *unstructu
 		return r.waitForDeploymentReplica(ctx, obj.Name, obj.Namespace)
 	case *appsv1beta2.Deployment:
 		return r.waitForDeploymentReplica(ctx, obj.Name, obj.Namespace)
+	case *batchv1.Job:
+		return r.waitForJobComplete(ctx, obj.Name, obj.Namespace)
 	}
 	return nil
 }
@@ -624,6 +627,40 @@ func (r *KubeInstaller) waitForDeploymentReplica(ctx context.Context, name, name
 
 		contextutils.LoggerFrom(ctx).Infof("deployment %v.%v ready", namespace, name)
 		return nil
+	},
+		r.retryOptions...,
+	)
+}
+
+func (r *KubeInstaller) waitForJobComplete(ctx context.Context, name, namespace string) error {
+	return retry.Do(func() error {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+		job, err := r.core.BatchV1().Jobs(namespace).Get(name, v1.GetOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "lookup job %v.%v", name, namespace)
+		}
+
+		// Wait for completion time to be set and a condition of type "Complete"
+		// per completeness definition in https://github.com/kubernetes/kubernetes/issues/68712#issuecomment-514008330
+		if job.Status.CompletionTime != nil {
+			for _, condition := range job.Status.Conditions {
+				if condition.Type == batchv1.JobComplete {
+					contextutils.LoggerFrom(ctx).Infof("job %v.%v complete", namespace, name)
+					return nil
+				}
+			}
+		}
+
+		// wait for at least one complete run
+		var condition batchv1.JobCondition
+		if len(job.Status.Conditions) > 0 {
+			condition = job.Status.Conditions[0]
+		}
+		return errors.Errorf("no successful runs of job %v.%v with condition %#v", namespace, name, condition)
 	},
 		r.retryOptions...,
 	)
