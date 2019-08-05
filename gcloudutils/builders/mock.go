@@ -21,7 +21,7 @@ func DefaultMockBuilderContext(ctx context.Context) (*mockBuilderContext, error)
 		return nil, err
 	}
 
-	sharedContext := NewSharedContext("solo-corp", 123, client, nil, "solo-io", "testrepo")
+	sharedContext := NewSharedContext("solo-public", 123, client, nil, "solo-io", "testrepo")
 	return NewMockBuilderContext(sharedContext, "v0.1.9", "4fa0be07c7daaafcfb97ffe021fbfa8f51696622"), nil
 }
 
