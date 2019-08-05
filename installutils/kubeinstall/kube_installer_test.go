@@ -10,6 +10,7 @@ import (
 	"github.com/solo-io/go-utils/testutils/clusterlock"
 	kubev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	batchv1 "k8s.io/kubernetes/staging/src/k8s.io/api/batch/v1"
 
 	"github.com/solo-io/go-utils/testutils/kube"
 
@@ -181,19 +182,30 @@ mixer:
 			for _, resource := range resources {
 				err := genericClient.Get(context.TODO(), client.ObjectKey{resource.GetNamespace(), resource.GetName()}, resource)
 				Expect(err).NotTo(HaveOccurred())
-				if resource.Object["kind"] == "Deployment" {
-					// ensure all deployments have at least one ready replica
-					deployment, err := kuberesource.ConvertUnstructured(resource)
+				if resource.Object["kind"] == "Deployment" || resource.Object["kind"] == "Job" {
+					// ensure all deployments have at least one ready replica and all jobs are complete
+					structured, err := kuberesource.ConvertUnstructured(resource)
 					Expect(err).NotTo(HaveOccurred())
-					switch dep := deployment.(type) {
+					switch t := structured.(type) {
 					case *appsv1.Deployment:
-						Expect(dep.Status.ReadyReplicas).To(BeNumerically(">=", 1))
+						Expect(t.Status.ReadyReplicas).To(BeNumerically(">=", 1))
 					case *extensionsv1beta1.Deployment:
-						Expect(dep.Status.ReadyReplicas).To(BeNumerically(">=", 1))
+						Expect(t.Status.ReadyReplicas).To(BeNumerically(">=", 1))
 					case *appsv1beta2.Deployment:
-						Expect(dep.Status.ReadyReplicas).To(BeNumerically(">=", 1))
+						Expect(t.Status.ReadyReplicas).To(BeNumerically(">=", 1))
+					case *batchv1.Job:
+						Expect(t.Status.CompletionTime).NotTo(BeNil())
+						var completeCondition batchv1.JobCondition
+						for _, condition := range t.Status.Conditions {
+							if condition.Type == batchv1.JobComplete {
+								completeCondition = condition
+								break
+							}
+						}
+						Expect(completeCondition).NotTo(BeNil())
 					}
 				}
+
 			}
 
 			Expect(ListAllCachedValues(context.TODO(), "unique", inst)).To(ConsistOf("setoflabels"))
