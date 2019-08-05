@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -70,7 +72,15 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 
 	versionSha := *ref.Object.SHA
 
-	shas, err := getLocalBinarySha256(parentPathSha256, reShaFilenames)
+	// Get list of release assets from GitHub
+	// GitHub API docs: https://developer.github.com/v3/repos/releases/#get-a-release-by-tag-name
+	rr, _, err := client.Repositories.GetReleaseByTag(ctx, projectRepoOwner, projectRepoName, versionStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// shas, err := getLocalBinarySha256(dir, reShaFilenames)
+	shas, err := getGitHubSha256(rr.Assets, reShaFilenames)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +91,9 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 		status[i].Name = fOpt.Name
 		status[i].Updated = false
 
-		branchName := fOpt.FormulaName + "-" + version
+		// Suffix branch name with random number to prevent collisions in rebuilding releases
+		rand.Seed(time.Now().UnixNano())
+		branchName := fmt.Sprintf("%s-%s-%d", fOpt.FormulaName, version, rand.Intn(1000))
 		commitString := fOpt.FormulaName + " " + version
 
 		if fOpt.PRRepoName == fOpt.RepoName && fOpt.PRRepoOwner == fOpt.RepoOwner {

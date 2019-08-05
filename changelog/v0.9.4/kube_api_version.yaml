@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add and implement ApiVersion interface for reasoning about kubernetes api versions.
+    issueLink: https://github.com/solo-io/go-utils/issues/230

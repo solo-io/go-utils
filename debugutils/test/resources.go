@@ -4,7 +4,7 @@ import (
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	)
+)
 
 func GeneratePodList() *corev1.PodList {
 	podList := &corev1.PodList{

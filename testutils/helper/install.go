@@ -50,6 +50,9 @@ type TestConfig struct {
 	// Determines whether the test runner pod gets deployed
 	DeployTestRunner bool
 
+	// If true, glooctl will be run with a -v flag
+	Verbose bool
+
 	// The version of the Helm chart
 	version string
 }
@@ -116,6 +119,9 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 		"-n", h.InstallNamespace,
 		"-f", filepath.Join(h.TestAssetDir, h.HelmChartName+"-"+h.version+".tgz"),
 	}
+	if h.Verbose {
+		glooctlCommand = append(glooctlCommand, "-v")
+	}
 	if h.LicenseKey != "" {
 		glooctlCommand = append(glooctlCommand, "--license-key", h.LicenseKey)
 	}
@@ -131,7 +137,17 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	return nil
 }
 
+// passes the --all flag to glooctl uninstall
+func (h *SoloTestHelper) UninstallGlooAll() error {
+	return h.uninstallGloo(true)
+}
+
+// does not pass the --all flag to glooctl uninstall
 func (h *SoloTestHelper) UninstallGloo() error {
+	return h.uninstallGloo(false)
+}
+
+func (h *SoloTestHelper) uninstallGloo(all bool) error {
 	if h.TestRunner != nil {
 		log.Debugf("terminating %s...", TestrunnerName)
 		if err := h.TestRunner.Terminate(); err != nil {
@@ -141,9 +157,13 @@ func (h *SoloTestHelper) UninstallGloo() error {
 	}
 
 	log.Printf("uninstalling gloo...")
-	return exec.RunCommand(h.RootDir, true,
+	cmdArgs := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName), "uninstall", "-n", h.InstallNamespace, "--delete-namespace",
-	)
+	}
+	if all {
+		cmdArgs = append(cmdArgs, "--all")
+	}
+	return exec.RunCommand(h.RootDir, true, cmdArgs...)
 }
 
 // Parses the Helm index file and returns the version of the chart.

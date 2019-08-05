@@ -19,7 +19,7 @@ var _ = Describe("Helm Test", func() {
 	version := "dev"
 
 	It("has the right number of resources", func() {
-		Expect(testManifest.NumResources()).To(Equal(13))
+		Expect(testManifest.NumResources()).To(Equal(14))
 	})
 
 	Describe("namespace and crds", func() {
@@ -156,6 +156,18 @@ var _ = Describe("Helm Test", func() {
 				Containers: []ContainerSpec{operatorContainer},
 			}
 			testManifest.ExpectDeployment(rb.GetDeployment())
+		})
+
+		It("has a apps/v1 deployment", func() {
+			operatorContainer := GetQuayContainerSpec(image, version, GetPodNamespaceEnvVar())
+			operatorContainer.PullPolicy = v1.PullAlways
+			rb := ResourceBuilder{
+				Name:       image + "-apps-v1",
+				Namespace:  namespace,
+				Labels:     labels,
+				Containers: []ContainerSpec{operatorContainer},
+			}
+			testManifest.ExpectDeploymentAppsV1(rb.GetDeploymentAppsv1())
 		})
 
 		It("has a config map", func() {

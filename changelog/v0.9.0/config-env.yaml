@@ -1,0 +1,12 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      Support customizing bot config with WEBHOOK_SECRET, INTEGRATION_ID, and PRIVATE_KEY_FILE environment
+      variables, to better support use cases around deploying to kubernetes from a git repo without checking in
+      unencrypted secrets.
+    issueLink: https://github.com/solo-io/go-utils/issues/223
+  - type: BREAKING_CHANGE
+    description: >
+      Removes ApplicationConfig (containing slack notifications and installation id) from the bot config
+      struct. This should only affect consumers of the new bot utilities (changelog-bot, approval-bot).
+    issueLink: https://github.com/solo-io/go-utils/issues/223

@@ -13,12 +13,13 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/Sirupsen/logrus v1.4.2 // indirect
 	github.com/avast/retry-go v2.2.0+incompatible
+	github.com/bluekeyes/hatpear v0.0.0-20180714193905-ffb42d5bb417 // indirect
+	github.com/bradleyfalzon/ghinstallation v0.1.2 // indirect
 	github.com/bxcodec/faker v2.0.1+incompatible // indirect
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
-	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
@@ -69,13 +70,19 @@ require (
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
+	github.com/palantir/go-baseapp v0.0.0-20190430095958-24408a192334
+	github.com/palantir/go-githubapp v0.0.0-20190620114758-91e10a96cd34
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pelletier/go-toml v1.2.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/common v0.0.0-20190104105734-b1c43a6df3ae // indirect
 	github.com/prometheus/procfs v0.0.0-20190104112138-b1a0a9a36d74 // indirect
+	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
+	github.com/rs/zerolog v1.14.3
 	github.com/russross/blackfriday v1.5.2 // indirect
+	github.com/shurcooL/githubv4 v0.0.0-20190625031733-ee671ab25ff0 // indirect
+	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/solo-io/solo-kit v0.6.3
 	github.com/spf13/afero v1.2.1
@@ -90,18 +97,20 @@ require (
 	go.etcd.io/bbolt v1.3.3 // indirect
 	go.opencensus.io v0.21.0
 	go.uber.org/zap v1.9.1
+	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/xerrors v0.0.0-20190513163551-3ee3066db522
 	google.golang.org/api v0.6.0
+	google.golang.org/grpc v1.20.1
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.3.0 // indirect
 	gopkg.in/src-d/go-git.v4 v4.10.0
-	gopkg.in/yaml.v2 v2.2.2 // indirect
+	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20181221193117-173ce66c1e39+incompatible
 	k8s.io/apiextensions-apiserver v0.0.0-20190111034747-7d26de67f177+incompatible
 	k8s.io/apimachinery v0.0.0-20190104073114-849b284f3b75+incompatible

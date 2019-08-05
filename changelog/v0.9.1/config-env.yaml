@@ -1,0 +1,8 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      Provide a utility function (for tests) to get the absolute path of the directory
+      containing the caller's file.
+    issueLink: https://github.com/solo-io/go-utils/issues/223
+  - type: NON_USER_FACING
+    description: Enable verbose flag for glooctl installs

@@ -170,3 +170,7 @@ func MatchesRegex(tag string) bool {
 	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+$)")
 	return regex.MatchString(tag)
 }
+
+func GetImageVersion(version *Version) string {
+	return fmt.Sprintf("%d.%d.%d", version.Major, version.Minor, version.Patch)
+}

@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Remove quotes from strings for compatibility with Kubernetes' naming convention.
+    issueLink: https://github.com/solo-io/go-utils/issues/232

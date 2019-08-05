@@ -16,7 +16,7 @@ type LogMeta struct {
 
 type LogsRequest struct {
 	LogMeta
-	Request       rest.ResponseWrapper
+	Request rest.ResponseWrapper
 }
 
 type LogsResponse struct {
@@ -33,5 +33,5 @@ func (lr LogMeta) ResourceId() string {
 }
 
 func NewLogsRequest(podMeta metav1.ObjectMeta, containerName string, request *rest.Request) *LogsRequest {
-	return &LogsRequest{LogMeta: LogMeta{PodMeta: podMeta, ContainerName: containerName,}, Request: request}
+	return &LogsRequest{LogMeta: LogMeta{PodMeta: podMeta, ContainerName: containerName}, Request: request}
 }

@@ -10,6 +10,7 @@ import (
 )
 
 func TestChangelogUtils(t *testing.T) {
+	test = t
 	RegisterFailHandler(Fail)
 	testutils.RegisterPreFailHandler(
 		func() {
@@ -18,3 +19,5 @@ func TestChangelogUtils(t *testing.T) {
 	testutils.RegisterCommonFailHandlers()
 	RunSpecs(t, "ChangelogUtils Suite")
 }
+
+var test *testing.T
