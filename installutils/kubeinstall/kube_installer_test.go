@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/solo-io/go-utils/testutils/clusterlock"
+	batchv1 "k8s.io/api/batch/v1"
 	kubev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	batchv1 "k8s.io/kubernetes/staging/src/k8s.io/api/batch/v1"
 
 	"github.com/solo-io/go-utils/testutils/kube"
 
@@ -194,7 +194,7 @@ mixer:
 					case *appsv1beta2.Deployment:
 						Expect(t.Status.ReadyReplicas).To(BeNumerically(">=", 1))
 					case *batchv1.Job:
-						Expect(t.Status.CompletionTime).NotTo(BeNil())
+						Expect(t.Status.CompletionTime).NotTo(BeNil(), "no complete time for job %v", t.Name)
 						var completeCondition batchv1.JobCondition
 						for _, condition := range t.Status.Conditions {
 							if condition.Type == batchv1.JobComplete {
@@ -202,7 +202,7 @@ mixer:
 								break
 							}
 						}
-						Expect(completeCondition).NotTo(BeNil())
+						Expect(completeCondition).NotTo(BeNil(), "no complete condition for job %v", t.Name)
 					}
 				}
 
