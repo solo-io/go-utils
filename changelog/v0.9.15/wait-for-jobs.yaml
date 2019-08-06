@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Wait for jobs to complete in the kube installer.
+    issueLink: https://github.com/solo-io/go-utils/issues/254
