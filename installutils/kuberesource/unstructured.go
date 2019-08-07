@@ -158,6 +158,10 @@ func ConvertUnstructured(res *unstructured.Unstructured) (runtime.Object, error)
 		obj = &rbac.ClusterRole{TypeMeta: typeMeta}
 	case "ClusterRoleBinding":
 		obj = &rbac.ClusterRoleBinding{TypeMeta: typeMeta}
+	case "Role":
+		obj = &rbac.Role{TypeMeta: typeMeta}
+	case "RoleBinding":
+		obj = &rbac.RoleBinding{TypeMeta: typeMeta}
 	case "Job":
 		obj = &batch.Job{TypeMeta: typeMeta}
 	case "ConfigMap":
