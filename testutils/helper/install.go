@@ -110,8 +110,21 @@ func (h *SoloTestHelper) ChartVersion() string {
 	return h.version
 }
 
+type InstallOption func(*InstallOptions)
+
+type InstallOptions struct {
+	GlooctlCommand []string
+	Verbose        bool
+}
+
+func ExtraArgs(args ...string) func(*InstallOptions) {
+	return func(io *InstallOptions) {
+		io.GlooctlCommand = append(io.GlooctlCommand, args...)
+	}
+}
+
 // Installs Gloo (and, optionally, the test runner)
-func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration) error {
+func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration, options ...InstallOption) error {
 	log.Printf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
@@ -125,7 +138,14 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	if h.LicenseKey != "" {
 		glooctlCommand = append(glooctlCommand, "--license-key", h.LicenseKey)
 	}
-	if err := exec.RunCommand(h.RootDir, true, glooctlCommand...); err != nil {
+	io := &InstallOptions{
+		GlooctlCommand: glooctlCommand,
+		Verbose:        true,
+	}
+	for _, opt := range options {
+		opt(io)
+	}
+	if err := exec.RunCommand(h.RootDir, io.Verbose, io.GlooctlCommand...); err != nil {
 		return errors.Wrapf(err, "error while installing gloo")
 	}
 
