@@ -30,6 +30,8 @@ type TestManifest interface {
 	ExpectServiceAccount(serviceAccount *corev1.ServiceAccount)
 	ExpectClusterRole(clusterRole *rbacv1.ClusterRole)
 	ExpectClusterRoleBinding(clusterRoleBinding *rbacv1.ClusterRoleBinding)
+	ExpectRole(role *rbacv1.Role)
+	ExpectRoleBinding(roleBinding *rbacv1.RoleBinding)
 	ExpectConfigMap(configMap *corev1.ConfigMap)
 	ExpectConfigMapWithYamlData(configMap *corev1.ConfigMap)
 	ExpectSecret(secret *corev1.Secret)
@@ -93,6 +95,20 @@ func (t *testManifest) ExpectClusterRoleBinding(clusterRoleBinding *rbacv1.Clust
 	Expect(obj).To(BeAssignableToTypeOf(&rbacv1.ClusterRoleBinding{}))
 	actual := obj.(*rbacv1.ClusterRoleBinding)
 	Expect(actual).To(BeEquivalentTo(clusterRoleBinding))
+}
+
+func (t *testManifest) ExpectRole(role *rbacv1.Role) {
+	obj := t.mustFindObject(role.Kind, role.Namespace, role.Name)
+	Expect(obj).To(BeAssignableToTypeOf(&rbacv1.Role{}))
+	actual := obj.(*rbacv1.Role)
+	Expect(actual).To(BeEquivalentTo(role))
+}
+
+func (t *testManifest) ExpectRoleBinding(roleBinding *rbacv1.RoleBinding) {
+	obj := t.mustFindObject(roleBinding.Kind, roleBinding.Namespace, roleBinding.Name)
+	Expect(obj).To(BeAssignableToTypeOf(&rbacv1.RoleBinding{}))
+	actual := obj.(*rbacv1.RoleBinding)
+	Expect(actual).To(BeEquivalentTo(roleBinding))
 }
 
 func (t *testManifest) ExpectConfigMap(configMap *corev1.ConfigMap) {

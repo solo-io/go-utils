@@ -168,6 +168,39 @@ func (b *ResourceBuilder) GetClusterRoleBinding() *rbacv1.ClusterRoleBinding {
 	}
 }
 
+func (b *ResourceBuilder) GetRole() *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
+		},
+		Rules: b.Rules,
+	}
+}
+
+func (b *ResourceBuilder) GetRoleBinding() *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        b.Name,
+			Namespace:   b.Namespace,
+			Labels:      b.Labels,
+			Annotations: b.Annotations,
+		},
+		Subjects: b.Subjects,
+		RoleRef:  b.RoleRef,
+	}
+}
+
 func (b *ResourceBuilder) GetConfigMap() *v1.ConfigMap {
 	return &v1.ConfigMap{
 		Data: b.Data,
