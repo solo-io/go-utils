@@ -14,12 +14,10 @@ import (
 	"go.uber.org/zap"
 )
 
-type Handler func(mux *http.ServeMux, profiles map[string]string)
-
-func StartStatsServer(addhandlers ...Handler) {
-	StartStatsServerWithPort("9091", "", addhandlers...)
+func StartStatsServer(addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
+	StartStatsServerWithPort("9091", addhandlers...)
 }
-func StartStatsServerWithPort(port, publicPort string, addhandlers ...Handler) {
+func StartStatsServerWithPort(port string, addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
 	logconfig := zap.NewProductionConfig()
 
 	logger, logerr := logconfig.Build()
@@ -27,38 +25,23 @@ func StartStatsServerWithPort(port, publicPort string, addhandlers ...Handler) {
 
 	go RunGoroutineStat()
 
-	privateMux := new(http.ServeMux)
-
-	exporter, err := prometheus.NewExporter(prometheus.Options{})
-	if err == nil {
-		view.RegisterExporter(exporter)
-		privateMux.Handle("/metrics", exporter)
-		profileDescriptions["/metrics"] = "Prometheus format metrics"
-	}
-
 	go func() {
+		mux := new(http.ServeMux)
+
 		if logerr == nil {
-			privateMux.Handle("/logging", logconfig.Level)
+			mux.Handle("/logging", logconfig.Level)
 		}
 
-		addhandlers = append(addhandlers, addPprof)
+		addhandlers = append(addhandlers, addPprof, addStats)
 
 		for _, addhandler := range addhandlers {
-			addhandler(privateMux, profileDescriptions)
+			addhandler(mux, profileDescriptions)
 		}
 
 		// add the index
-		privateMux.HandleFunc("/", Index)
-		http.ListenAndServe("localhost:"+port, privateMux)
+		mux.HandleFunc("/", Index)
+		http.ListenAndServe(":"+port, mux)
 	}()
-	if publicPort != "" {
-
-		go func() {
-			mux := new(http.ServeMux)
-			mux.Handle("/metrics", exporter)
-			http.ListenAndServe(":"+publicPort, mux)
-		}()
-	}
 }
 
 func addPprof(mux *http.ServeMux, profiles map[string]string) {
