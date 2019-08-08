@@ -1,0 +1,3 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Allow adding args to test helper
