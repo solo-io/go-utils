@@ -10,10 +10,7 @@ import (
 
 func TestCliCore(t *testing.T) {
 
-	testutils.RegisterPreFailHandler(
-		func() {
-			testutils.PrintTrimmedStack()
-		})
+	testutils.RegisterPreFailHandler(testutils.PrintTrimmedStack)
 	testutils.RegisterCommonFailHandlers()
 	RegisterFailHandler(Fail)
 	testutils.SetupLog()

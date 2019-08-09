@@ -12,10 +12,7 @@ import (
 func TestBotconfig(t *testing.T) {
 	test = t
 	RegisterFailHandler(Fail)
-	testutils.RegisterPreFailHandler(
-		func() {
-			testutils.PrintTrimmedStack()
-		})
+	testutils.RegisterPreFailHandler(testutils.PrintTrimmedStack)
 	testutils.RegisterCommonFailHandlers()
 	RunSpecs(t, "Botconfig Suite")
 }
