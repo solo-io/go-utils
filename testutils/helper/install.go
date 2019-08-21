@@ -6,6 +6,10 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/avast/retry-go"
+	"github.com/solo-io/go-utils/testutils/kube"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/testutils/exec"
@@ -150,11 +154,23 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	}
 
 	if h.TestRunner != nil {
+		if err := waitForDefaultServiceAccount(h.InstallNamespace); err != nil {
+			return errors.Wrapf(err, "waiting for default service account")
+		}
 		if err := h.TestRunner.Deploy(timeout); err != nil {
 			return errors.Wrapf(err, "deploying testrunner")
 		}
 	}
 	return nil
+}
+
+func waitForDefaultServiceAccount(installNamespace string) error {
+	kubeClient := kube.MustKubeClient()
+	getDefaultServiceAccount := func() error {
+		_, err := kubeClient.CoreV1().ServiceAccounts(installNamespace).Get("default", v1.GetOptions{})
+		return err
+	}
+	return retry.Do(getDefaultServiceAccount)
 }
 
 // passes the --all flag to glooctl uninstall
