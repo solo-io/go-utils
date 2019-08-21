@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Wait for default service account before deploying testrunner. 
+    issueLink: https://github.com/solo-io/go-utils/issues/259
