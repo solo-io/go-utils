@@ -256,7 +256,7 @@ func (t *TestClusterLocker) ReleaseLock() error {
 		return notLockOwnerError
 	}
 
-	lock.Set("", "")
+	lock.Clear()
 
 	if _, err := t.client.Update(lock); err != nil {
 		return err

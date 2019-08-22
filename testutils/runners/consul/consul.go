@@ -2,18 +2,15 @@ package consul
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/solo-io/go-utils/log"
-	"github.com/solo-io/go-utils/testutils/runners"
-
-	"io/ioutil"
-
 	"time"
 
 	"github.com/onsi/ginkgo"
+	"github.com/solo-io/go-utils/log"
+	"github.com/solo-io/go-utils/testutils/runners"
 )
 
 const defaultConsulDockerImage = "consul:1.5.3"

@@ -27,6 +27,10 @@ func (l *ClusterLock) Empty() bool {
 	return l.OwnerID == "" && l.Timeout == ""
 }
 
+func (l *ClusterLock) Clear() {
+	l.Set("", "")
+}
+
 func (l *ClusterLock) Set(ownerId, timeout string) {
 	l.OwnerID = ownerId
 	l.Timeout = timeout
