@@ -10,9 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/avast/retry-go"
-	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -34,10 +32,8 @@ const (
 	DefaultHeartbeatTime = time.Second * 10
 )
 
-var defaultConfigMap = &coreV1.ConfigMap{
-	ObjectMeta: v1.ObjectMeta{
-		Name: LockResourceName,
-	},
+var defaultClusterLock = &ClusterLock{
+	Name: LockResourceName,
 }
 
 var defaultOpts = []retry.Option{
@@ -61,10 +57,9 @@ var defaultOpts = []retry.Option{
 }
 
 type TestClusterLocker struct {
-	clientset kubernetes.Interface
-	namespace string
-	buidldId  string
-	ctx       context.Context
+	client  ClusterLockClient
+	ownerId string
+	ctx     context.Context
 }
 
 type Options struct {
@@ -73,20 +68,37 @@ type Options struct {
 	Context   context.Context
 }
 
+// Deprecated: use NewKubeClusterLocker
 func NewTestClusterLocker(clientset kubernetes.Interface, options Options) (*TestClusterLocker, error) {
+	return NewKubeClusterLocker(clientset, options)
+}
 
+func NewKubeClusterLocker(clientset kubernetes.Interface, options Options) (*TestClusterLocker, error) {
 	if options.Namespace == "" {
 		options.Namespace = LockDefaultNamespace
 	}
 	if options.Context == nil {
 		options.Context = context.Background()
 	}
-	buildId := options.IdPrefix + uuid.New().String()
-	_, err := clientset.CoreV1().ConfigMaps(options.Namespace).Create(defaultConfigMap)
+	client := &KubeClusterLockClient{
+		namespace: options.Namespace,
+		clientset: clientset,
+	}
+	return NewClusterLocker(options.Context, options.IdPrefix, client)
+}
+
+func NewClusterLocker(ctx context.Context, idPrefix string, client ClusterLockClient) (*TestClusterLocker, error) {
+	ownerId := idPrefix + uuid.New().String()
+
+	_, err := client.Create(defaultClusterLock)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return nil, err
 	}
-	return &TestClusterLocker{clientset: clientset, namespace: options.Namespace, buidldId: buildId, ctx: options.Context}, nil
+	return &TestClusterLocker{
+		client:  client,
+		ownerId: ownerId,
+		ctx:     ctx,
+	}, nil
 }
 
 func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
@@ -128,22 +140,21 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 }
 
 func (t *TestClusterLocker) reacquireLock() error {
-	cfgMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
+	lock, err := t.client.Get(LockResourceName)
 	if err != nil {
 		return err
 	}
 
-	if cfgMap.Annotations == nil || len(cfgMap.Annotations) == 0 {
+	if lock.Empty() {
 		return emptyLockReleaseError
-	} else if val, ok := cfgMap.Annotations[LockAnnotationKey]; ok && val != t.buidldId {
+	} else if lock.OwnerID != t.ownerId {
 		return notLockOwnerError
 	}
 
-	cfgMap.Annotations = map[string]string{
-		LockAnnotationKey:        t.buidldId,
-		LockTimeoutAnnotationKey: time.Now().Format(DefaultTimeFormat),
-	}
-	if _, err = t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap); err != nil {
+	lock.OwnerID = t.ownerId
+	lock.Timeout = time.Now().Format(DefaultTimeFormat)
+
+	if _, err = t.client.Update(lock); err != nil {
 		return err
 	}
 	return nil
@@ -151,39 +162,32 @@ func (t *TestClusterLocker) reacquireLock() error {
 
 func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 	var callback = func() error {
-		cfgMap, err := t.concurrentLockGet()
+		lock, err := t.concurrentLockGet()
 		if err != nil && !errors.IsTimeout(err) {
 			return err
 		}
 
-		if cfgMap.Annotations == nil || len(cfgMap.Annotations) == 0 {
-			// Case if annotations are empty
-			cfgMap.Annotations = map[string]string{
-				LockAnnotationKey:        t.buidldId,
-				LockTimeoutAnnotationKey: time.Now().Format(DefaultTimeFormat),
-			}
-
+		if lock.Empty() {
+			// Case if lock is are empty
+			lock.Set(t.ownerId, time.Now().Format(DefaultTimeFormat))
 		} else {
-			if timeoutStr, ok := cfgMap.Annotations[LockTimeoutAnnotationKey]; ok {
+			if lock.Timeout != "" {
 				// case if timeout has expired
-				savedTime, err := time.Parse(DefaultTimeFormat, timeoutStr)
+				savedTime, err := time.Parse(DefaultTimeFormat, lock.Timeout)
 				if err != nil {
 					return err
 				}
 				if time.Since(savedTime) > DefaultLockTimeout {
-					cfgMap.Annotations = map[string]string{
-						LockAnnotationKey:        t.buidldId,
-						LockTimeoutAnnotationKey: time.Now().Format(DefaultTimeFormat),
-					}
+					lock.Set(t.ownerId, time.Now().Format(DefaultTimeFormat))
 				}
 			}
 
-			if val, ok := cfgMap.Annotations[LockAnnotationKey]; ok && val != t.buidldId {
+			if lock.OwnerID != t.ownerId {
 				return lockInUseError
 			}
 		}
 
-		if _, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Update(cfgMap); err != nil {
+		if _, err := t.client.Update(lock); err != nil {
 			return err
 		}
 		return nil
@@ -191,24 +195,24 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 	return callback
 }
 
-func (t *TestClusterLocker) concurrentLockGet() (*coreV1.ConfigMap, error) {
-	originalConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			newConfigMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Create(defaultConfigMap)
-			if err != nil {
-				// force the loop to restart
-				if errors.IsAlreadyExists(err) {
-					return nil, lockInUseError
-				}
-				// actual error to be handled above
-				return nil, err
-			}
-			return newConfigMap, nil
-		}
-		return nil, err
+func (t *TestClusterLocker) concurrentLockGet() (*ClusterLock, error) {
+	originalLock, err := t.client.Get(LockResourceName)
+	if err == nil {
+		return originalLock, nil
 	}
-	return originalConfigMap, nil
+	if errors.IsNotFound(err) {
+		newLock, err := t.client.Create(defaultClusterLock)
+		if err != nil {
+			// force the loop to restart
+			if errors.IsAlreadyExists(err) {
+				return nil, lockInUseError
+			}
+			// actual error to be handled above
+			return nil, err
+		}
+		return newLock, nil
+	}
+	return nil, err
 }
 
 var (
@@ -229,9 +233,7 @@ var (
 )
 
 func (t *TestClusterLocker) ReleaseLock() error {
-	_, cancel := context.WithCancel(t.ctx)
-	cancel()
-	cfgMap, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Get(LockResourceName, v1.GetOptions{})
+	lock, err := t.client.Get(LockResourceName)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -239,13 +241,13 @@ func (t *TestClusterLocker) ReleaseLock() error {
 		return err
 	}
 
-	if cfgMap.Annotations == nil || len(cfgMap.Annotations) == 0 {
+	if lock.Empty() {
 		return emptyLockReleaseError
-	} else if val, ok := cfgMap.Annotations[LockAnnotationKey]; ok && val != t.buidldId {
+	} else if lock.OwnerID != t.ownerId {
 		return notLockOwnerError
 	}
 
-	if _, err := t.clientset.CoreV1().ConfigMaps(t.namespace).Update(defaultConfigMap); err != nil {
+	if _, err := t.client.Update(defaultClusterLock); err != nil {
 		return err
 	}
 	return nil
