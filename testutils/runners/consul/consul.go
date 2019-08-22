@@ -16,7 +16,7 @@ import (
 	"github.com/onsi/ginkgo"
 )
 
-const defaultConsulDockerImage = "consul@sha256:6ffe55dcc1000126a6e874b298fe1f1b87f556fb344781af60681932e408ec6a"
+const defaultConsulDockerImage = "consul:1.5.3"
 
 type ConsulFactory struct {
 	consulpath string
