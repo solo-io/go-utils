@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Extend cluster locker to support Consul clusters
+    issueLink: https://github.com/solo-io/go-utils/issues/261

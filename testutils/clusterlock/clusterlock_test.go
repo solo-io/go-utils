@@ -2,35 +2,27 @@ package clusterlock_test
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/solo-io/go-utils/kubeutils"
-	"github.com/solo-io/go-utils/testutils"
-	"github.com/solo-io/go-utils/testutils/clusterlock"
-	"github.com/solo-io/go-utils/testutils/kube"
+	"github.com/hashicorp/consul/api"
+	"github.com/solo-io/go-utils/testutils/runners/consul"
 
 	"github.com/avast/retry-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/kubeutils"
+	"github.com/solo-io/go-utils/testutils"
+	"github.com/solo-io/go-utils/testutils/clusterlock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
-var _ = Describe("cluster lock test", func() {
+var _ = Describe("kube cluster lock test", func() {
 
 	var (
-		kubeClient kubernetes.Interface
-		namespace  string
+		namespace string
 	)
-
-	var _ = BeforeSuite(func() {
-		kubeClient = kube.MustKubeClient()
-	})
-
-	var _ = AfterSuite(func() {
-		kubeClient.CoreV1().ConfigMaps("default").Delete(clusterlock.LockResourceName, &v1.DeleteOptions{})
-	})
 
 	BeforeEach(func() {
 		namespace = testutils.RandString(8)
@@ -149,4 +141,82 @@ var _ = Describe("cluster lock test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(lock2.AcquireLock()).NotTo(HaveOccurred())
 	})
+})
+
+var _ = Describe("consul cluster lock test", func() {
+	var (
+		consulClient   *api.Client
+		consulInstance *consul.ConsulInstance
+		keyPrefix      = testutils.RandString(6)
+	)
+	BeforeEach(func() {
+		var err error
+
+		consulInstance, err = consulFactory.NewConsulInstance()
+		Expect(err).NotTo(HaveOccurred())
+		err = consulInstance.Run()
+		Expect(err).NotTo(HaveOccurred())
+
+		cfg := api.DefaultConfig()
+		cfg.Address = fmt.Sprintf("127.0.0.1:%v", consulInstance.Ports.HttpPort)
+
+		consulClient, err = api.NewClient(cfg)
+		Expect(err).NotTo(HaveOccurred())
+
+	})
+
+	AfterEach(func() {
+		_ = consulInstance.Clean()
+	})
+
+	It("can handle a single locking scenario", func() {
+		lock, err := clusterlock.NewConsulClusterLocker(context.Background(), keyPrefix, consulClient)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
+		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
+	})
+
+	It("can handle synchronous requests", func() {
+		for idx := 0; idx < 5; idx++ {
+			lock, err := clusterlock.NewConsulClusterLocker(context.Background(), keyPrefix, consulClient)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(lock.AcquireLock()).NotTo(HaveOccurred())
+			Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
+		}
+	})
+
+	It("can handle concurrent requests", func() {
+		x := ""
+		sharedString := &x
+		wg := sync.WaitGroup{}
+		for idx := 0; idx < 5; idx++ {
+			idx := idx
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer GinkgoRecover()
+				lock, err := clusterlock.NewConsulClusterLocker(context.Background(), fmt.Sprintf("%v-", idx), consulClient)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(lock.AcquireLock(retry.Delay(time.Second))).NotTo(HaveOccurred())
+				Expect(*sharedString).To(Equal(""))
+				*sharedString = fmt.Sprintf("%v", idx)
+				time.Sleep(time.Second)
+				*sharedString = ""
+				Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
+			}()
+		}
+		wg.Wait()
+	})
+
+	It("errors out if lock isn't free after a set amount of time", func() {
+		lock, err := clusterlock.NewConsulClusterLocker(context.Background(), keyPrefix, consulClient)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
+		lock2, err := clusterlock.NewConsulClusterLocker(context.Background(), keyPrefix, consulClient)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(lock2.AcquireLock(retry.Delay(time.Millisecond), retry.Attempts(3))).To(HaveOccurred())
+		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
+	})
+
 })
