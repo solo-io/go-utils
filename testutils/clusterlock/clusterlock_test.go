@@ -9,32 +9,20 @@ import (
 	"github.com/hashicorp/consul/api"
 	"github.com/solo-io/go-utils/testutils/runners/consul"
 
-	"github.com/solo-io/go-utils/kubeutils"
-	"github.com/solo-io/go-utils/testutils"
-	"github.com/solo-io/go-utils/testutils/clusterlock"
-	"github.com/solo-io/go-utils/testutils/kube"
-
 	"github.com/avast/retry-go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/kubeutils"
+	"github.com/solo-io/go-utils/testutils"
+	"github.com/solo-io/go-utils/testutils/clusterlock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 var _ = Describe("kube cluster lock test", func() {
 
 	var (
-		kubeClient kubernetes.Interface
-		namespace  string
+		namespace string
 	)
-
-	var _ = BeforeSuite(func() {
-		kubeClient = kube.MustKubeClient()
-	})
-
-	var _ = AfterSuite(func() {
-		kubeClient.CoreV1().ConfigMaps("default").Delete(clusterlock.LockResourceName, &v1.DeleteOptions{})
-	})
 
 	BeforeEach(func() {
 		namespace = testutils.RandString(8)
@@ -158,27 +146,26 @@ var _ = Describe("kube cluster lock test", func() {
 var _ = Describe("consul cluster lock test", func() {
 	var (
 		consulClient   *api.Client
-		consulFactory  *consul.ConsulFactory
 		consulInstance *consul.ConsulInstance
 		keyPrefix      = testutils.RandString(6)
 	)
 	BeforeEach(func() {
 		var err error
-		consulFactory, err = consul.NewConsulFactory()
-		Expect(err).NotTo(HaveOccurred())
-
-		consulClient, err = api.NewClient(api.DefaultConfig())
-		Expect(err).NotTo(HaveOccurred())
 
 		consulInstance, err = consulFactory.NewConsulInstance()
 		Expect(err).NotTo(HaveOccurred())
 		err = consulInstance.Run()
 		Expect(err).NotTo(HaveOccurred())
 
+		cfg := api.DefaultConfig()
+		cfg.Address = fmt.Sprintf("127.0.0.1:%v", consulInstance.Ports.HttpPort)
+
+		consulClient, err = api.NewClient(cfg)
+		Expect(err).NotTo(HaveOccurred())
+
 	})
 
 	AfterEach(func() {
-		_ = consulFactory.Clean()
 		_ = consulInstance.Clean()
 	})
 

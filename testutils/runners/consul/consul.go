@@ -1,56 +1,46 @@
 package consul
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
+
+	"github.com/solo-io/go-utils/log"
+	"github.com/solo-io/go-utils/testutils/runners"
 
 	"io/ioutil"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
+	"time"
 
-	"github.com/solo-io/go-utils/log"
+	"github.com/onsi/ginkgo"
 )
 
-const consulDockerImage = "consul:1.5.2"
+const defaultConsulDockerImage = "consul@sha256:6ffe55dcc1000126a6e874b298fe1f1b87f556fb344781af60681932e408ec6a"
 
 type ConsulFactory struct {
-	consulPath string
+	consulpath string
 	tmpdir     string
-}
-
-type serviceDef struct {
-	Service *consulService `json:"service"`
-}
-
-type consulService struct {
-	ID      string   `json:"id"`
-	Name    string   `json:"name"`
-	Port    uint32   `json:"port"`
-	Tags    []string `json:"tags"`
-	Address string   `json:"address"`
+	Ports      ConsulPorts
 }
 
 func NewConsulFactory() (*ConsulFactory, error) {
-	consulPath := os.Getenv("CONSUL_BINARY")
+	consulpath := os.Getenv("CONSUL_BINARY")
 
-	if consulPath != "" {
-		return &ConsulFactory{
-			consulPath: consulPath,
-		}, nil
+	if consulpath == "" {
+		consulPath, err := exec.LookPath("consul")
+		if err == nil {
+			log.Printf("Using consul from PATH: %s", consulPath)
+			consulpath = consulPath
+		}
 	}
 
-	consulPath, err := exec.LookPath("consul")
-	if err == nil {
-		log.Printf("Using consul from PATH: %s", consulPath)
+	ports := NewRandomConsulPorts()
+
+	if consulpath != "" {
 		return &ConsulFactory{
-			consulPath: consulPath,
+			consulpath: consulpath,
+			Ports:      ports,
 		}, nil
 	}
 
@@ -70,25 +60,23 @@ docker inspect %s -f "{{.RepoDigests}}"
 
 docker cp $CID:/bin/consul .
 docker rm -f $CID
-    `, consulDockerImage, consulDockerImage)
-	scriptFile := filepath.Join(tmpdir, "get_consul.sh")
+    `, defaultConsulDockerImage, defaultConsulDockerImage)
+	scriptfile := filepath.Join(tmpdir, "getconsul.sh")
 
-	err = ioutil.WriteFile(scriptFile, []byte(bash), 0755)
-	if err != nil {
-		return nil, err
-	}
+	ioutil.WriteFile(scriptfile, []byte(bash), 0755)
 
-	cmd := exec.Command("bash", scriptFile)
+	cmd := exec.Command("bash", scriptfile)
 	cmd.Dir = tmpdir
-	cmd.Stdout = GinkgoWriter
-	cmd.Stderr = GinkgoWriter
+	cmd.Stdout = ginkgo.GinkgoWriter
+	cmd.Stderr = ginkgo.GinkgoWriter
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
 
 	return &ConsulFactory{
-		consulPath: filepath.Join(tmpdir, "consul"),
+		consulpath: filepath.Join(tmpdir, "consul"),
 		tmpdir:     tmpdir,
+		Ports:      ports,
 	}, nil
 }
 
@@ -97,10 +85,17 @@ func (ef *ConsulFactory) Clean() error {
 		return nil
 	}
 	if ef.tmpdir != "" {
-		_ = os.RemoveAll(ef.tmpdir)
+		os.RemoveAll(ef.tmpdir)
 
 	}
 	return nil
+}
+
+type ConsulInstance struct {
+	consulpath string
+	tmpdir     string
+	cmd        *exec.Cmd
+	Ports      ConsulPorts
 }
 
 func (ef *ConsulFactory) NewConsulInstance() (*ConsulInstance, error) {
@@ -110,56 +105,17 @@ func (ef *ConsulFactory) NewConsulInstance() (*ConsulInstance, error) {
 		return nil, err
 	}
 
-	cfgDir := filepath.Join(tmpdir, "config")
-	err = os.Mkdir(cfgDir, 0755)
-	if err != nil {
-		return nil, err
-	}
-
-	cmd := exec.Command(ef.consulPath, "agent", "-dev", "--client=0.0.0.0", "-config-dir", cfgDir,
-		"-node", "consul-dev")
+	cmd := exec.Command(ef.consulpath, append([]string{"agent", "-dev", "--client=0.0.0.0"}, ef.Ports.Flags()...)...)
 	cmd.Dir = ef.tmpdir
-	cmd.Stdout = GinkgoWriter
-	cmd.Stderr = GinkgoWriter
+	cmd.Stdout = ginkgo.GinkgoWriter
+	cmd.Stderr = ginkgo.GinkgoWriter
 	return &ConsulInstance{
-		consulPath:         ef.consulPath,
-		tmpdir:             tmpdir,
-		cfgDir:             cfgDir,
-		cmd:                cmd,
-		registeredServices: map[string]*serviceDef{},
+		consulpath: ef.consulpath,
+		tmpdir:     tmpdir,
+		cmd:        cmd,
+		Ports:      ef.Ports,
 	}, nil
-}
 
-type ConsulInstance struct {
-	consulPath string
-	tmpdir     string
-	cfgDir     string
-	cmd        *exec.Cmd
-
-	session *gexec.Session
-
-	registeredServices map[string]*serviceDef
-}
-
-func (i *ConsulInstance) AddConfig(svcId, content string) error {
-	fileName := filepath.Join(i.cfgDir, svcId+".json")
-	return ioutil.WriteFile(fileName, []byte(content), 0644)
-}
-
-func (i *ConsulInstance) AddConfigFromStruct(svcId string, cfg interface{}) error {
-	content, err := json.Marshal(cfg)
-	if err != nil {
-		return err
-	}
-	return i.AddConfig(svcId, string(content))
-}
-
-func (i *ConsulInstance) ReloadConfig() error {
-	err := i.cmd.Process.Signal(syscall.SIGHUP)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (i *ConsulInstance) Silence() {
@@ -168,53 +124,56 @@ func (i *ConsulInstance) Silence() {
 }
 
 func (i *ConsulInstance) Run() error {
-	var err error
-	i.session, err = gexec.Start(i.cmd, GinkgoWriter, GinkgoWriter)
+	return i.RunWithPort()
+}
 
+func (i *ConsulInstance) RunWithPort() error {
+	err := i.cmd.Start()
 	if err != nil {
 		return err
 	}
-	EventuallyWithOffset(2, i.session.Out, "5s").Should(gbytes.Say("New leader elected"))
+	time.Sleep(time.Millisecond * 1500)
 	return nil
 }
 
 func (i *ConsulInstance) Binary() string {
-	return i.consulPath
+	return i.consulpath
 }
 
 func (i *ConsulInstance) Clean() error {
-	if i == nil {
-		return nil
-	}
-	if i.session != nil {
-		i.session.Kill()
-	}
-	if i.cmd != nil && i.cmd.Process != nil {
+	if i.cmd != nil {
 		i.cmd.Process.Kill()
+		i.cmd.Wait()
 	}
 	if i.tmpdir != "" {
-		return os.RemoveAll(i.tmpdir)
+		os.RemoveAll(i.tmpdir)
 	}
 	return nil
 }
 
-func (i *ConsulInstance) RegisterService(svcName, svcId, address string, tags []string, port uint32) error {
-	svcDef := &serviceDef{
-		Service: &consulService{
-			ID:      svcId,
-			Name:    svcName,
-			Address: address,
-			Tags:    tags,
-			Port:    port,
-		},
+type ConsulPorts struct {
+	DnsPort, HttpPort, GrpcPort, ServerPort, SerfLanPort, SerfWanPort int
+}
+
+func NewRandomConsulPorts() ConsulPorts {
+	return ConsulPorts{
+		HttpPort:    runners.AllocateParallelPort(8500),
+		GrpcPort:    runners.AllocateParallelPort(8501),
+		DnsPort:     runners.AllocateParallelPort(8502),
+		ServerPort:  runners.AllocateParallelPort(8503),
+		SerfLanPort: runners.AllocateParallelPort(8504),
+		SerfWanPort: runners.AllocateParallelPort(8505),
 	}
+}
 
-	i.registeredServices[svcId] = svcDef
-
-	err := i.AddConfigFromStruct(svcId, svcDef)
-	if err != nil {
-		return err
+// return flags to set each port type as a string
+func (p ConsulPorts) Flags() []string {
+	return []string{
+		fmt.Sprintf("--dns-port=%v", p.DnsPort),
+		fmt.Sprintf("--grpc-port=%v", p.GrpcPort),
+		fmt.Sprintf("--http-port=%v", p.HttpPort),
+		fmt.Sprintf("--server-port=%v", p.ServerPort),
+		fmt.Sprintf("--serf-lan-port=%v", p.SerfLanPort),
+		fmt.Sprintf("--serf-wan-port=%v", p.SerfWanPort),
 	}
-
-	return i.ReloadConfig()
 }
