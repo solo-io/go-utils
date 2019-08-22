@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/consul/api"
+
 	"github.com/google/uuid"
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
@@ -85,6 +87,13 @@ func NewKubeClusterLocker(clientset kubernetes.Interface, options Options) (*Tes
 		clientset: clientset,
 	}
 	return NewClusterLocker(options.Context, options.IdPrefix, client)
+}
+
+func NewConsulClusterLocker(ctx context.Context, idPrefix string, consul *api.Client) (*TestClusterLocker, error) {
+	client := &ConsulClusterLockClient{
+		client: consul,
+	}
+	return NewClusterLocker(ctx, idPrefix, client)
 }
 
 func NewClusterLocker(ctx context.Context, idPrefix string, client ClusterLockClient) (*TestClusterLocker, error) {
@@ -247,7 +256,9 @@ func (t *TestClusterLocker) ReleaseLock() error {
 		return notLockOwnerError
 	}
 
-	if _, err := t.client.Update(defaultClusterLock); err != nil {
+	lock.Set("", "")
+
+	if _, err := t.client.Update(lock); err != nil {
 		return err
 	}
 	return nil

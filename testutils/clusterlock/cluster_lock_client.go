@@ -2,6 +2,7 @@ package clusterlock
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/consul/api"
@@ -18,7 +19,7 @@ type ClusterLock struct {
 	OwnerID string
 	Timeout string
 
-	// only for kube
+	// either a kube resource version or consul modify index
 	ResourceVersion string
 }
 
@@ -74,9 +75,11 @@ func fromData(data []byte) (string, string) {
 }
 
 func (l ClusterLock) KVPair(keyPrefix string) *api.KVPair {
+	modifyIndex, _ := strconv.Atoi(l.ResourceVersion)
 	return &api.KVPair{
-		Key:   keyPrefix + l.Name,
-		Value: toData(l.OwnerID, l.Timeout),
+		Key:         keyPrefix + l.Name,
+		Value:       toData(l.OwnerID, l.Timeout),
+		ModifyIndex: uint64(modifyIndex),
 	}
 }
 
@@ -84,9 +87,10 @@ func CLFromKVPair(keyPrefix string, kvp *api.KVPair) *ClusterLock {
 	ownerId, timeout := fromData(kvp.Value)
 
 	return &ClusterLock{
-		Name:    strings.TrimPrefix(kvp.Key, keyPrefix),
-		OwnerID: ownerId,
-		Timeout: timeout,
+		Name:            strings.TrimPrefix(kvp.Key, keyPrefix),
+		OwnerID:         ownerId,
+		Timeout:         timeout,
+		ResourceVersion: strconv.Itoa(int(kvp.ModifyIndex)),
 	}
 }
 
@@ -130,8 +134,16 @@ func (c *KubeClusterLockClient) Delete(name string) error {
 	return c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(name, &metav1.DeleteOptions{})
 }
 
+func ExistsError(name string) error {
+	return errors.NewAlreadyExists(v1.Resource("key-value-pair"), name)
+}
+
 func NotFoundError(name string) error {
-	return errors.NewNotFound(v1.Resource("configmap"), name)
+	return errors.NewNotFound(v1.Resource("key-value-pair"), name)
+}
+
+func ConflictError(name string) error {
+	return errors.NewConflict(v1.Resource("key-value-pair"), name, fmt.Errorf(""))
 }
 
 type ConsulClusterLockClient struct {
@@ -140,16 +152,47 @@ type ConsulClusterLockClient struct {
 }
 
 func (c *ConsulClusterLockClient) Create(cl *ClusterLock) (*ClusterLock, error) {
+	_, err := c.Get(cl.Name)
+	if err == nil {
+		return nil, ExistsError(cl.Name)
+	}
 	kvp := cl.KVPair(c.keyPrefix)
-	_, err := c.client.KV().Put(kvp, nil)
+	success, _, err := c.client.KV().CAS(kvp, nil)
 	if err != nil {
 		return nil, err
 	}
-	return cl, nil
+	if !success {
+		return nil, ExistsError(cl.Name)
+	}
+	return c.Get(cl.Name)
 }
 
 func (c *ConsulClusterLockClient) Update(cl *ClusterLock) (*ClusterLock, error) {
-	return c.Create(cl)
+	_, err := c.Get(cl.Name)
+	if err != nil {
+		return nil, err
+	}
+	kvp := cl.KVPair(c.keyPrefix)
+	success, _, err := c.client.KV().CAS(kvp, nil)
+	if err != nil {
+		return nil, err
+	}
+	if !success {
+		return nil, ConflictError(cl.Name)
+	}
+	return c.Get(cl.Name)
+}
+
+func (c *ConsulClusterLockClient) put(cl *ClusterLock) (*ClusterLock, error) {
+	kvp := cl.KVPair(c.keyPrefix)
+	success, _, err := c.client.KV().CAS(kvp, nil)
+	if err != nil {
+		return nil, err
+	}
+	if !success {
+		return nil, ConflictError(cl.Name)
+	}
+	return cl, nil
 }
 
 func (c *ConsulClusterLockClient) Get(name string) (*ClusterLock, error) {
