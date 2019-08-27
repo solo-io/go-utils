@@ -68,7 +68,7 @@ var (
 		Expect(err).NotTo(HaveOccurred())
 		unstructuredResources, err = manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-		err = installer.ReconcileResources(context.TODO(), "gloo-system", unstructuredResources, ownerLabels)
+		err = installer.ReconcileResources(context.TODO(), kubeinstall.NewReconcileParams("gloo-system", unstructuredResources, ownerLabels, false))
 		Expect(err).NotTo(HaveOccurred())
 		return nil
 	}, func(data []byte) {})

@@ -1,4 +1,0 @@
-changelog:
-  - type: NEW_FEATURE
-    description: Add option: respect manifest namespace on installer
-    issueLink: https://github.com/solo-io/go-utils/pull/266

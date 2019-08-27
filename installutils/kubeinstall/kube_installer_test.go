@@ -113,7 +113,7 @@ var _ = Describe("KubeInstaller", func() {
 			inst, err := NewKubeInstaller(restCfg, cache, nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = inst.ReconcileResources(context.TODO(), ns, kuberesource.UnstructuredResources{resource}, ownerLabels)
+			err = inst.ReconcileResources(context.TODO(), NewReconcileParams(ns, kuberesource.UnstructuredResources{resource}, ownerLabels, false))
 			Expect(err).NotTo(HaveOccurred())
 
 			afterReconcile := resource.DeepCopy()
@@ -127,7 +127,7 @@ var _ = Describe("KubeInstaller", func() {
 			an["hi"] = "bye"
 			resource.SetAnnotations(an)
 
-			err = inst.ReconcileResources(context.TODO(), ns, kuberesource.UnstructuredResources{resource}, ownerLabels)
+			err = inst.ReconcileResources(context.TODO(), NewReconcileParams(ns, kuberesource.UnstructuredResources{resource}, ownerLabels, false))
 			Expect(err).NotTo(HaveOccurred())
 
 			err = dynamicClient.Get(context.TODO(), client.ObjectKey{Name: afterReconcile.GetName(), Namespace: afterReconcile.GetNamespace()}, afterReconcile)
@@ -165,7 +165,7 @@ mixer:
 			Expect(err).NotTo(HaveOccurred())
 
 			uniqueLabels := map[string]string{"unique": "setoflabels"}
-			err = inst.ReconcileResources(context.TODO(), ns, resources, uniqueLabels)
+			err = inst.ReconcileResources(context.TODO(), NewReconcileParams(ns, resources, uniqueLabels, false))
 			Expect(err).NotTo(HaveOccurred())
 
 			genericClient, err := client.New(restCfg, client.Options{})
