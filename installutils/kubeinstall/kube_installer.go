@@ -46,15 +46,16 @@ type Installer interface {
 }
 
 type KubeInstaller struct {
-	cache          *Cache
-	cfg            *rest.Config
-	dynamic        dynamic.Interface
-	client         client.Client
-	core           kubernetes.Interface
-	apiExtensions  apiexts.Interface
-	callbacks      []CallbackOptions
-	retryOptions   []retry.Option
-	creationPolicy CreationPolicy
+	cache                     *Cache
+	cfg                       *rest.Config
+	dynamic                   dynamic.Interface
+	client                    client.Client
+	core                      kubernetes.Interface
+	apiExtensions             apiexts.Interface
+	callbacks                 []CallbackOptions
+	retryOptions              []retry.Option
+	creationPolicy            CreationPolicy
+	respectManifestNamespaces bool
 }
 
 var _ Installer = &KubeInstaller{}
@@ -79,6 +80,8 @@ type KubeInstallerOptions struct {
 	RetryOptions []retry.Option
 	// define how to handle AlreadyExist errors on resource creation
 	CreationPolicy CreationPolicy
+	// respect hard-coded namespaces inside of manifests
+	RespectManifestNamespaces bool
 }
 
 var defaultRetryOptions = []retry.Option{
@@ -113,7 +116,10 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, opts *KubeInstallerOptions
 	callbacks := initCallbacks()
 	retryOpts := defaultRetryOptions
 
-	var creationPolicy CreationPolicy
+	var (
+		creationPolicy            CreationPolicy
+		respectManifestNamespaces bool
+	)
 	if opts != nil {
 		for _, cb := range opts.Callbacks {
 			callbacks = append(callbacks, cb)
@@ -122,18 +128,20 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, opts *KubeInstallerOptions
 			retryOpts = opts.RetryOptions
 		}
 		creationPolicy = opts.CreationPolicy
+		respectManifestNamespaces = opts.RespectManifestNamespaces
 	}
 
 	return &KubeInstaller{
-		cache:          cache,
-		cfg:            cfg,
-		apiExtensions:  apiExts,
-		client:         client,
-		dynamic:        dynamicClient,
-		core:           core,
-		callbacks:      callbacks,
-		retryOptions:   retryOpts,
-		creationPolicy: creationPolicy,
+		cache:                     cache,
+		cfg:                       cfg,
+		apiExtensions:             apiExts,
+		client:                    client,
+		dynamic:                   dynamicClient,
+		core:                      core,
+		callbacks:                 callbacks,
+		retryOptions:              retryOpts,
+		creationPolicy:            creationPolicy,
+		respectManifestNamespaces: respectManifestNamespaces,
 	}, nil
 }
 
@@ -323,10 +331,12 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 		if err != nil {
 			return err
 		}
-		if isNamespaced {
-			res.SetNamespace(installNamespace)
-		} else {
-			res.SetNamespace("")
+		if !r.respectManifestNamespaces {
+			if isNamespaced {
+				res.SetNamespace(installNamespace)
+			} else {
+				res.SetNamespace("")
+			}
 		}
 	}
 
