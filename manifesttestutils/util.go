@@ -40,6 +40,8 @@ type TestManifest interface {
 	ExpectCrd(crd *extv1beta1.CustomResourceDefinition)
 	ExpectCustomResource(gvk, namespace, name string)
 	NumResources() int
+
+	Expect(kind, namespace, name string) GomegaAssertion
 }
 
 type testManifest struct {
@@ -169,7 +171,11 @@ func (t *testManifest) ExpectCustomResource(kind, namespace, name string) {
 	Expect(found).To(BeTrue())
 }
 
-func (t *testManifest) mustFindObject(kind, namespace, name string) runtime.Object {
+func (t *testManifest) Expect(kind, namespace, name string) GomegaAssertion {
+	return Expect(t.findObject(kind, namespace, name))
+}
+
+func (t *testManifest) findObject(kind, namespace, name string) runtime.Object {
 	for _, resource := range t.resources {
 		if resource.GetKind() == kind && resource.GetNamespace() == namespace && resource.GetName() == name {
 			converted, err := kuberesource.ConvertUnstructured(resource)
@@ -177,8 +183,15 @@ func (t *testManifest) mustFindObject(kind, namespace, name string) runtime.Obje
 			return converted
 		}
 	}
-	Fail(fmt.Sprintf("can't find object %s %s %s", kind, namespace, name))
 	return nil
+}
+
+func (t *testManifest) mustFindObject(kind, namespace, name string) runtime.Object {
+	obj := t.findObject(kind, namespace, name)
+	if obj == nil {
+		Fail(fmt.Sprintf("can't find object %s %s %s", kind, namespace, name))
+	}
+	return obj
 }
 
 func mustReadManifest(relativePathToManifest string) string {
