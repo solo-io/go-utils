@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: make kubeinstaller more robust for creating resources 
+    issueLink: https://github.com/solo-io/go-utils/pull/263

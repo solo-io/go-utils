@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/solo-io/go-utils/kubeerrutils"
+
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
 
@@ -44,21 +46,39 @@ type Installer interface {
 }
 
 type KubeInstaller struct {
-	cache         *Cache
-	cfg           *rest.Config
-	dynamic       dynamic.Interface
-	client        client.Client
-	core          kubernetes.Interface
-	apiExtensions apiexts.Interface
-	callbacks     []CallbackOptions
-	retryOptions  []retry.Option
+	cache          *Cache
+	cfg            *rest.Config
+	dynamic        dynamic.Interface
+	client         client.Client
+	core           kubernetes.Interface
+	apiExtensions  apiexts.Interface
+	callbacks      []CallbackOptions
+	retryOptions   []retry.Option
+	creationPolicy CreationPolicy
 }
 
 var _ Installer = &KubeInstaller{}
 
+// policies for how to handle resource creation
+// specifies behavior when resource creation fails
+type CreationPolicy int
+
+const (
+	// Attempt to create, return any error
+	CreationPolicy_ReturnErrors = iota
+	// Attempt to create, ignore  AlreadyExists error
+	CreationPolicy_IgnoreOnExists
+	// Attempt to create, fall back to Update on AlreadyExists error
+	CreationPolicy_UpdateOnExists
+	// Attempt to create, fall back to Update on AlreadyExists error, fall back to Destroy&Recreate on ImmutableField error
+	CreationPolicy_ForceUpdateOnExists
+)
+
 type KubeInstallerOptions struct {
 	Callbacks    []CallbackOptions
 	RetryOptions []retry.Option
+	// define how to handle AlreadyExist errors on resource creation
+	CreationPolicy CreationPolicy
 }
 
 var defaultRetryOptions = []retry.Option{
@@ -72,6 +92,7 @@ var defaultRetryOptions = []retry.Option{
    Should be one once globally
 */
 func NewKubeInstaller(cfg *rest.Config, cache *Cache, opts *KubeInstallerOptions) (*KubeInstaller, error) {
+
 	apiExts, err := apiexts.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -92,6 +113,7 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, opts *KubeInstallerOptions
 	callbacks := initCallbacks()
 	retryOpts := defaultRetryOptions
 
+	var creationPolicy CreationPolicy
 	if opts != nil {
 		for _, cb := range opts.Callbacks {
 			callbacks = append(callbacks, cb)
@@ -99,17 +121,19 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, opts *KubeInstallerOptions
 		if len(opts.RetryOptions) > 0 {
 			retryOpts = opts.RetryOptions
 		}
+		creationPolicy = opts.CreationPolicy
 	}
 
 	return &KubeInstaller{
-		cache:         cache,
-		cfg:           cfg,
-		apiExtensions: apiExts,
-		client:        client,
-		dynamic:       dynamicClient,
-		core:          core,
-		callbacks:     callbacks,
-		retryOptions:  retryOpts,
+		cache:          cache,
+		cfg:            cfg,
+		apiExtensions:  apiExts,
+		client:         client,
+		dynamic:        dynamicClient,
+		core:           core,
+		callbacks:      callbacks,
+		retryOptions:   retryOpts,
+		creationPolicy: creationPolicy,
 	}, nil
 }
 
@@ -380,7 +404,7 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 				resKey := fmt.Sprintf("%v %v.%v", res.GroupVersionKind().Kind, res.GetNamespace(), res.GetName())
 				logger.Infof("creating resource %v", resKey)
 
-				if err := retry.Do(func() error { return r.client.Create(ctx, res.DeepCopy()) }); err != nil {
+				if err := retry.Do(r.getCreationFunction(ctx, res)); err != nil {
 					return errors.Wrapf(err, "creating %v", resKey)
 				}
 				r.cache.Set(res)
@@ -477,6 +501,61 @@ func (r *KubeInstaller) isNamespaced(restMapper meta.RESTMapper, desiredResource
 
 	}
 	return mapping.Scope.Name() != meta.RESTScopeNameRoot, nil
+}
+
+func (r *KubeInstaller) getCreationFunction(ctx context.Context, res *unstructured.Unstructured) func() error {
+
+	resCopy := res.DeepCopy()
+
+	switch r.creationPolicy {
+	default:
+		return func() error {
+			return r.client.Create(ctx, res.DeepCopy())
+		}
+	case CreationPolicy_IgnoreOnExists:
+		return func() error {
+			// create, only return err if !AlreadyExists
+			if err := r.client.Create(ctx, resCopy); err != nil && !kubeerrs.IsAlreadyExists(err) {
+				return err
+			}
+			return nil
+		}
+	case CreationPolicy_UpdateOnExists:
+		return func() error {
+			// create, return if success or non AlreadyExists err occurred
+			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrs.IsAlreadyExists(err) {
+				return err
+			}
+			if err := r.updateResourceVersion(ctx, resCopy); err != nil {
+				return err
+			}
+			// attempt update
+			return r.client.Update(ctx, resCopy)
+		}
+	case CreationPolicy_ForceUpdateOnExists:
+		return func() error {
+			// create, return if success or non AlreadyExists err occurred
+			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrs.IsAlreadyExists(err) {
+				return err
+			}
+			if err := r.updateResourceVersion(ctx, resCopy); err != nil {
+				return err
+			}
+			// attempt update, return if success or non Immutability error occurred
+			if err := r.client.Update(ctx, resCopy); err == nil || !kubeerrutils.IsImmutableErr(err) {
+				return err
+			}
+			if err := r.client.Delete(ctx, resCopy); err != nil {
+				return err
+			}
+			if err := r.waitForNotExist(ctx, resCopy); err != nil {
+				return err
+			}
+			resCopy.SetResourceVersion("")
+
+			return r.client.Create(ctx, resCopy)
+		}
+	}
 }
 
 // create a patch from the diff between our cached object and the desired resource
@@ -666,9 +745,21 @@ func (r *KubeInstaller) waitForJobComplete(ctx context.Context, name, namespace 
 	)
 }
 
-// consider moving to kube utils/errs package?
-
-func IsNoKindMatch(err error) bool {
-	_, ok := err.(*meta.NoKindMatchError)
-	return ok
+func (r *KubeInstaller) waitForNotExist(ctx context.Context, res *unstructured.Unstructured) error {
+	return retry.Do(func() error {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+		objectKey := client.ObjectKey{Namespace: res.GetNamespace(), Name: res.GetName()}
+		if err := r.client.Get(ctx, objectKey, res); err == nil {
+			return errors.Errorf("resource %v still exists", res.GetName())
+		} else if !kubeerrs.IsNotFound(err) {
+			return err
+		}
+		return nil
+	},
+		r.retryOptions...,
+	)
 }

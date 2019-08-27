@@ -119,7 +119,14 @@ func (c *KubeClusterLockClient) Create(cl *ClusterLock) (*ClusterLock, error) {
 }
 
 func (c *KubeClusterLockClient) Update(cl *ClusterLock) (*ClusterLock, error) {
-	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Update(cl.ConfigMap(c.namespace))
+	originalCm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(cl.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	cm := cl.ConfigMap(c.namespace)
+	cm.ResourceVersion = originalCm.ResourceVersion
+	cm, err = c.clientset.CoreV1().ConfigMaps(c.namespace).Update(cl.ConfigMap(c.namespace))
 	if err != nil {
 		return nil, err
 	}
