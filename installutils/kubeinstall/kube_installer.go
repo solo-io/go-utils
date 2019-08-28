@@ -215,15 +215,15 @@ func (r *KubeInstaller) postDelete(res *unstructured.Unstructured) error {
 }
 
 type ReconcileParams struct {
-	installNamespace string
-	resources        kuberesource.UnstructuredResources
-	ownerLabels      map[string]string
+	InstallNamespace string
+	Resources        kuberesource.UnstructuredResources
+	OwnerLabels      map[string]string
 	// respect hard-coded namespaces inside of manifests
-	respectManifestNamespaces bool
+	RespectManifestNamespaces bool
 }
 
 func NewReconcileParams(installNamespace string, resources kuberesource.UnstructuredResources, ownerLabels map[string]string, respectManifestNamespaces bool) ReconcileParams {
-	return ReconcileParams{installNamespace: installNamespace, resources: resources, ownerLabels: ownerLabels, respectManifestNamespaces: respectManifestNamespaces}
+	return ReconcileParams{InstallNamespace: installNamespace, Resources: resources, OwnerLabels: ownerLabels, RespectManifestNamespaces: respectManifestNamespaces}
 }
 
 func (r *KubeInstaller) ReconcileResources(ctx context.Context, params ReconcileParams) error {
@@ -231,7 +231,7 @@ func (r *KubeInstaller) ReconcileResources(ctx context.Context, params Reconcile
 		return errors.Wrapf(err, "error in pre-install hook")
 	}
 
-	if err := r.reconcileResources(ctx, params.installNamespace, params.resources, params.ownerLabels, params.respectManifestNamespaces); err != nil {
+	if err := r.reconcileResources(ctx, params.InstallNamespace, params.Resources, params.OwnerLabels, params.RespectManifestNamespaces); err != nil {
 		return err
 	}
 
