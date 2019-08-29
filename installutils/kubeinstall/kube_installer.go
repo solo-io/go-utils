@@ -404,7 +404,7 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 	if len(resourcesToCreate) > 0 {
 		if _, err := r.core.CoreV1().Namespaces().Create(&kubev1.Namespace{
 			ObjectMeta: v1.ObjectMeta{Name: installNamespace},
-		}); err != nil && !kubeerrs.IsAlreadyExists(err) {
+		}); err != nil && !kubeerrutils.IsAlreadyExists(err) {
 			return errors.Wrapf(err, "creating installation namespace")
 		}
 	}
@@ -531,7 +531,7 @@ func (r *KubeInstaller) getCreationFunction(ctx context.Context, res *unstructur
 	case CreationPolicy_IgnoreOnExists:
 		return func() error {
 			// create, only return err if !AlreadyExists
-			if err := r.client.Create(ctx, resCopy); err != nil && !kubeerrs.IsAlreadyExists(err) {
+			if err := r.client.Create(ctx, resCopy); err != nil && !kubeerrutils.IsAlreadyExists(err) {
 				return err
 			}
 			return nil
@@ -539,7 +539,7 @@ func (r *KubeInstaller) getCreationFunction(ctx context.Context, res *unstructur
 	case CreationPolicy_UpdateOnExists:
 		return func() error {
 			// create, return if success or non AlreadyExists err occurred
-			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrs.IsAlreadyExists(err) {
+			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrutils.IsAlreadyExists(err) {
 				return err
 			}
 			if err := r.updateResourceVersion(ctx, resCopy); err != nil {
@@ -551,7 +551,7 @@ func (r *KubeInstaller) getCreationFunction(ctx context.Context, res *unstructur
 	case CreationPolicy_ForceUpdateOnExists:
 		return func() error {
 			// create, return if success or non AlreadyExists err occurred
-			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrs.IsAlreadyExists(err) {
+			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrutils.IsAlreadyExists(err) {
 				return err
 			}
 			if err := r.updateResourceVersion(ctx, resCopy); err != nil {
