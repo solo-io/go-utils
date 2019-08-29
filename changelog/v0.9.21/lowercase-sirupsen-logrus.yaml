@@ -1,0 +1,3 @@
+changelog:
+  - type: FIX
+    description: use lowercase sirupsen/logrus module to eliminate painful casing errors importing go-utils module
