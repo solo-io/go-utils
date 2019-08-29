@@ -11,7 +11,6 @@ require (
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v2.18.0+incompatible // indirect
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
-	github.com/Sirupsen/logrus v1.4.2 // indirect
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/bluekeyes/hatpear v0.0.0-20180714193905-ffb42d5bb417 // indirect
 	github.com/bradleyfalzon/ghinstallation v0.1.2 // indirect
@@ -84,6 +83,7 @@ require (
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20190625031733-ee671ab25ff0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
+	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/solo-io/solo-kit v0.6.3
 	github.com/spf13/afero v1.2.1
@@ -126,10 +126,4 @@ require (
 	sigs.k8s.io/testing_frameworks v0.1.1 // indirect
 	sigs.k8s.io/yaml v1.1.0
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787 // indirect
-)
-
-replace (
-	github.com/Sirupsen/logrus v1.0.5 => github.com/sirupsen/logrus v1.0.5
-	github.com/Sirupsen/logrus v1.3.0 => github.com/Sirupsen/logrus v1.0.6
-	github.com/Sirupsen/logrus v1.4.2 => github.com/sirupsen/logrus v1.0.6
 )
