@@ -94,12 +94,15 @@ func (c *changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*
 }
 
 func (c *changelogReader) ReadChangelogFile(ctx context.Context, path string) (*ChangelogFile, error) {
-	var changelog ChangelogFile
 	bytes, err := c.code.GetFileContents(ctx, path)
 	if err != nil {
 		return nil, err
 	}
+	return ParseChangelog(path, bytes)
+}
 
+func ParseChangelog(path string, bytes []byte) (*ChangelogFile, error) {
+	var changelog ChangelogFile
 	if err := yaml.Unmarshal(bytes, &changelog); err != nil {
 		return nil, UnableToParseChangelogError(err, path)
 	}
