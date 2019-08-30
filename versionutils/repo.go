@@ -223,6 +223,10 @@ func GetImageVersionFromToml(filename, imageName string) (string, error) {
 	if tag, ok = values[imageTagConst]; !ok {
 		return "", fmt.Errorf("no tag specified for image")
 	}
+	// Normally, we will just use the "name" key for the image name
+	// However, that value should be unique across the toml file. If a toml file wants to specify more than one version
+	// of the same image, the "altname" should be used to specify the image name while the "name" field provides a
+	// unique identifier.
 	if altName, ok = values[imageAltNameConst]; ok {
 		imageName = altName
 	}
