@@ -40,7 +40,7 @@ import (
 
 // an interface allowing these methods to be mocked
 type Installer interface {
-	ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, installLabels map[string]string) error
+	ReconcileResources(ctx context.Context, params ReconcileParams) error
 	PurgeResources(ctx context.Context, withLabels map[string]string) error
 	ListAllResources(ctx context.Context) kuberesource.UnstructuredResources
 }
@@ -113,7 +113,9 @@ func NewKubeInstaller(cfg *rest.Config, cache *Cache, opts *KubeInstallerOptions
 	callbacks := initCallbacks()
 	retryOpts := defaultRetryOptions
 
-	var creationPolicy CreationPolicy
+	var (
+		creationPolicy CreationPolicy
+	)
 	if opts != nil {
 		for _, cb := range opts.Callbacks {
 			callbacks = append(callbacks, cb)
@@ -212,12 +214,24 @@ func (r *KubeInstaller) postDelete(res *unstructured.Unstructured) error {
 	return nil
 }
 
-func (r *KubeInstaller) ReconcileResources(ctx context.Context, installNamespace string, resources kuberesource.UnstructuredResources, ownerLabels map[string]string) error {
+type ReconcileParams struct {
+	InstallNamespace string
+	Resources        kuberesource.UnstructuredResources
+	OwnerLabels      map[string]string
+	// respect hard-coded namespaces inside of manifests
+	RespectManifestNamespaces bool
+}
+
+func NewReconcileParams(installNamespace string, resources kuberesource.UnstructuredResources, ownerLabels map[string]string, respectManifestNamespaces bool) ReconcileParams {
+	return ReconcileParams{InstallNamespace: installNamespace, Resources: resources, OwnerLabels: ownerLabels, RespectManifestNamespaces: respectManifestNamespaces}
+}
+
+func (r *KubeInstaller) ReconcileResources(ctx context.Context, params ReconcileParams) error {
 	if err := r.preInstall(); err != nil {
 		return errors.Wrapf(err, "error in pre-install hook")
 	}
 
-	if err := r.reconcileResources(ctx, installNamespace, resources, ownerLabels); err != nil {
+	if err := r.reconcileResources(ctx, params.InstallNamespace, params.Resources, params.OwnerLabels, params.RespectManifestNamespaces); err != nil {
 		return err
 	}
 
@@ -281,7 +295,7 @@ func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstruc
 	return res, nil
 }
 
-func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace string, desiredResources kuberesource.UnstructuredResources, ownerLabels map[string]string) error {
+func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace string, desiredResources kuberesource.UnstructuredResources, ownerLabels map[string]string, respectManifestNamespaces bool) error {
 	cachedResourceList, err := getInstalledResources(r.cache.List().WithLabels(ownerLabels))
 	if err != nil {
 		return err
@@ -323,10 +337,12 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 		if err != nil {
 			return err
 		}
-		if isNamespaced {
-			res.SetNamespace(installNamespace)
-		} else {
-			res.SetNamespace("")
+		if !respectManifestNamespaces {
+			if isNamespaced {
+				res.SetNamespace(installNamespace)
+			} else {
+				res.SetNamespace("")
+			}
 		}
 	}
 
@@ -388,7 +404,7 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 	if len(resourcesToCreate) > 0 {
 		if _, err := r.core.CoreV1().Namespaces().Create(&kubev1.Namespace{
 			ObjectMeta: v1.ObjectMeta{Name: installNamespace},
-		}); err != nil && !kubeerrs.IsAlreadyExists(err) {
+		}); err != nil && !kubeerrutils.IsAlreadyExists(err) {
 			return errors.Wrapf(err, "creating installation namespace")
 		}
 	}
@@ -515,7 +531,7 @@ func (r *KubeInstaller) getCreationFunction(ctx context.Context, res *unstructur
 	case CreationPolicy_IgnoreOnExists:
 		return func() error {
 			// create, only return err if !AlreadyExists
-			if err := r.client.Create(ctx, resCopy); err != nil && !kubeerrs.IsAlreadyExists(err) {
+			if err := r.client.Create(ctx, resCopy); err != nil && !kubeerrutils.IsAlreadyExists(err) {
 				return err
 			}
 			return nil
@@ -523,7 +539,7 @@ func (r *KubeInstaller) getCreationFunction(ctx context.Context, res *unstructur
 	case CreationPolicy_UpdateOnExists:
 		return func() error {
 			// create, return if success or non AlreadyExists err occurred
-			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrs.IsAlreadyExists(err) {
+			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrutils.IsAlreadyExists(err) {
 				return err
 			}
 			if err := r.updateResourceVersion(ctx, resCopy); err != nil {
@@ -535,7 +551,7 @@ func (r *KubeInstaller) getCreationFunction(ctx context.Context, res *unstructur
 	case CreationPolicy_ForceUpdateOnExists:
 		return func() error {
 			// create, return if success or non AlreadyExists err occurred
-			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrs.IsAlreadyExists(err) {
+			if err := r.client.Create(ctx, resCopy); err == nil || !kubeerrutils.IsAlreadyExists(err) {
 				return err
 			}
 			if err := r.updateResourceVersion(ctx, resCopy); err != nil {
@@ -590,7 +606,7 @@ func (r *KubeInstaller) updateResourceVersion(ctx context.Context, res *unstruct
 }
 
 func (r *KubeInstaller) PurgeResources(ctx context.Context, withLabels map[string]string) error {
-	return r.reconcileResources(ctx, "", nil, withLabels)
+	return r.reconcileResources(ctx, "", nil, withLabels, false)
 }
 
 func (r *KubeInstaller) ListAllResources(ctx context.Context) kuberesource.UnstructuredResources {
