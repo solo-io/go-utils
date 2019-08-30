@@ -19,6 +19,7 @@ const (
 	override     = "override"
 	nameConst    = "name"
 	versionConst = "version"
+	imageConst   = "image"
 
 	GlooPkg      = "github.com/solo-io/gloo"
 	SoloKitPkg   = "github.com/solo-io/solo-kit"
@@ -135,6 +136,7 @@ func parseTomlFromDir(relativeDir, configType string) ([]*toml.Tree, error) {
 type TomlWrapper struct {
 	Overrides   []*toml.Tree
 	Constraints []*toml.Tree
+	SoloIo      []*toml.Tree
 }
 
 func ParseFullTomlFromDir(relativeDir string) (*TomlWrapper, error) {
@@ -154,4 +156,75 @@ func ParseFullTomlFromDir(relativeDir string) (*TomlWrapper, error) {
 
 func ParseFullToml() (*TomlWrapper, error) {
 	return ParseFullTomlFromDir("")
+}
+
+// For a toml file such as this:
+//
+// [[rootTableName]]
+// name = "name-1"
+// other = "some other value"
+// [[rootTableName]]
+// name = "name-2"
+// other = "some other value 2"
+//
+// GetTomlValues("my-file.toml", "rootTableName", "name", "name-1")
+// would return map[string]string{"name":"name-1","other":"some other value"}
+func GetTomlValues(filename, rootTableName, identiferKey, identifierValue string) (map[string]string, error) {
+	config, err := toml.LoadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	rawTomlParse := config.Get(rootTableName)
+	var rootedTrees []*toml.Tree
+
+	switch typedTree := rawTomlParse.(type) {
+	case []*toml.Tree:
+		rootedTrees = typedTree
+	default:
+		return nil, fmt.Errorf("unable to parse root toml tree")
+	}
+	output := make(map[string]string)
+	for _, rootedTree := range rootedTrees {
+		if rootedTree.Get(identiferKey) == identifierValue {
+			for key, val := range rootedTree.ToMap() {
+				switch typedVal := val.(type) {
+				case string:
+					output[key] = typedVal
+				default:
+					return nil, fmt.Errorf("nested or non-string element in toml: %v: %v where %v = %v, key = %v",
+						filename, rootTableName, identiferKey, identifierValue, key)
+				}
+			}
+		}
+	}
+	return output, nil
+}
+
+const (
+	imageRepoConst    = "repo"
+	imageTagConst     = "tag"
+	imageAltNameConst = "altname"
+)
+
+// GetImageVersionFromToml extracts an image spec from a toml file
+// the keys "name", "repo", and "tag" are required
+// the key "altname" is optional, and will replace "name" if provided
+func GetImageVersionFromToml(filename, imageName string) (string, error) {
+	values, err := GetTomlValues(filename, imageConst, nameConst, imageName)
+	if err != nil {
+		return "", err
+	}
+	var repo, tag, altName string
+	var ok bool
+	if repo, ok = values[imageRepoConst]; !ok {
+		return "", fmt.Errorf("no repo specified for image")
+	}
+	if tag, ok = values[imageTagConst]; !ok {
+		return "", fmt.Errorf("no tag specified for image")
+	}
+	if altName, ok = values[imageAltNameConst]; ok {
+		imageName = altName
+	}
+	return fmt.Sprintf("%v/%v:%v", repo, imageName, tag), nil
 }
