@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Utility for parsing image version from toml file.
+    issueLink: https://github.com/solo-io/go-utils/pull/279
