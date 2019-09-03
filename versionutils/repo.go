@@ -207,8 +207,8 @@ func NewSimpleTomlParserFromString(content string) (*SimpleTomlParser, error) {
 // name = "name-2"
 // other = "some other value 2"
 //
-// GetTomlValues("my-file.toml", "rootTableName", "name", "name-1")
-// would return map[string]string{"name":"name-1","other":"some other value"}
+// getTomlValues("rootTableName", "name", "name-1")
+// would return map[string]string{"name":"name-1", "other":"some other value"}
 func (stp *SimpleTomlParser) getTomlValues(rootTableName, identiferKey, identifierValue string) error {
 	rawTomlParse := stp.tree.Get(rootTableName)
 	var rootedTrees []*toml.Tree
