@@ -24,11 +24,22 @@ const (
 	GlooPkg      = "github.com/solo-io/gloo"
 	SoloKitPkg   = "github.com/solo-io/solo-kit"
 	SuperglooPkg = "github.com/solo-io/supergloo"
+
+	imageIdKey   = "id"
+	imageRepoKey = "repo"
+	imageTagKey  = "tag"
+	imageNameKey = "name"
 )
 
 var (
 	UnableToFindVersionInTomlError = func(pkgName string) error {
 		return fmt.Errorf("unable to find version for %s in toml", pkgName)
+	}
+	InvalidImageSpecError = func(field string) error {
+		return fmt.Errorf("invalid image spec: no %v specified", field)
+	}
+	IdentifierNotFoundError = func(key, value string) error {
+		return fmt.Errorf(`root key-value pair "%v"="%v" not found`, key, value)
 	}
 )
 
@@ -136,7 +147,6 @@ func parseTomlFromDir(relativeDir, configType string) ([]*toml.Tree, error) {
 type TomlWrapper struct {
 	Overrides   []*toml.Tree
 	Constraints []*toml.Tree
-	SoloIo      []*toml.Tree
 }
 
 func ParseFullTomlFromDir(relativeDir string) (*TomlWrapper, error) {
@@ -158,6 +168,36 @@ func ParseFullToml() (*TomlWrapper, error) {
 	return ParseFullTomlFromDir("")
 }
 
+// SimpleTomlParser is simple in the sense that it parses the root-level toml keys and values only, ignoring nested structures
+// This meets the use case of common version management
+type SimpleTomlParser struct {
+	tree   *toml.Tree
+	values map[string]string
+}
+
+// separate the toml ingestion step from the version extraction step in order to simplify testing and avoid repeat toml
+// ingestion when reading multiple versions
+func NewSimpleTomlParser(filename string) (*SimpleTomlParser, error) {
+	stp := &SimpleTomlParser{}
+	var err error
+	stp.tree, err = toml.LoadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	return stp, nil
+}
+
+// for testing, mainly
+func NewSimpleTomlParserFromString(content string) (*SimpleTomlParser, error) {
+	stp := &SimpleTomlParser{}
+	var err error
+	stp.tree, err = toml.Load(content)
+	if err != nil {
+		return nil, err
+	}
+	return stp, nil
+}
+
 // For a toml file such as this:
 //
 // [[rootTableName]]
@@ -169,20 +209,15 @@ func ParseFullToml() (*TomlWrapper, error) {
 //
 // GetTomlValues("my-file.toml", "rootTableName", "name", "name-1")
 // would return map[string]string{"name":"name-1","other":"some other value"}
-func GetTomlValues(filename, rootTableName, identiferKey, identifierValue string) (map[string]string, error) {
-	config, err := toml.LoadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	rawTomlParse := config.Get(rootTableName)
+func (stp *SimpleTomlParser) getTomlValues(rootTableName, identiferKey, identifierValue string) error {
+	rawTomlParse := stp.tree.Get(rootTableName)
 	var rootedTrees []*toml.Tree
 
 	switch typedTree := rawTomlParse.(type) {
 	case []*toml.Tree:
 		rootedTrees = typedTree
 	default:
-		return nil, fmt.Errorf("unable to parse root toml tree")
+		return fmt.Errorf("unable to parse root toml tree")
 	}
 	output := make(map[string]string)
 	for _, rootedTree := range rootedTrees {
@@ -192,43 +227,38 @@ func GetTomlValues(filename, rootTableName, identiferKey, identifierValue string
 				case string:
 					output[key] = typedVal
 				default:
-					return nil, fmt.Errorf("nested or non-string element in toml: %v: %v where %v = %v, key = %v",
-						filename, rootTableName, identiferKey, identifierValue, key)
+					return fmt.Errorf("nested or non-string element in toml: %v where %v = %v, key = %v",
+						rootTableName, identiferKey, identifierValue, key)
 				}
 			}
 		}
 	}
-	return output, nil
+
+	if len(output) == 0 {
+		return IdentifierNotFoundError(identiferKey, identifierValue)
+	}
+	stp.values = output
+	return nil
 }
 
-const (
-	imageRepoConst    = "repo"
-	imageTagConst     = "tag"
-	imageAltNameConst = "altname"
-)
-
 // GetImageVersionFromToml extracts an image spec from a toml file
-// the keys "name", "repo", and "tag" are required
-// the key "altname" is optional, and will replace "name" if provided
-func GetImageVersionFromToml(filename, imageName string) (string, error) {
-	values, err := GetTomlValues(filename, imageConst, nameConst, imageName)
+// the keys "id", "name", "repo", and "tag" are required
+// the key "id" is required in order to support the case where multiple versions of the same image are needed
+func (stp *SimpleTomlParser) GetImageVersionFromToml(imageId string) (string, error) {
+	err := stp.getTomlValues(imageConst, imageIdKey, imageId)
 	if err != nil {
 		return "", err
 	}
-	var repo, tag, altName string
+	var repo, tag, imageName string
 	var ok bool
-	if repo, ok = values[imageRepoConst]; !ok {
-		return "", fmt.Errorf("no repo specified for image")
+	if repo, ok = stp.values[imageRepoKey]; !ok {
+		return "", InvalidImageSpecError(imageRepoKey)
 	}
-	if tag, ok = values[imageTagConst]; !ok {
-		return "", fmt.Errorf("no tag specified for image")
+	if tag, ok = stp.values[imageTagKey]; !ok {
+		return "", InvalidImageSpecError(imageTagKey)
 	}
-	// Normally, we will just use the "name" key for the image name
-	// However, that value should be unique across the toml file. If a toml file wants to specify more than one version
-	// of the same image, the "altname" should be used to specify the image name while the "name" field provides a
-	// unique identifier.
-	if altName, ok = values[imageAltNameConst]; ok {
-		imageName = altName
+	if imageName, ok = stp.values[imageNameKey]; !ok {
+		return "", InvalidImageSpecError(imageNameKey)
 	}
 	return fmt.Sprintf("%v/%v:%v", repo, imageName, tag), nil
 }
