@@ -214,9 +214,13 @@ func mustGetResources(relativePathToManifest string) kuberesource.UnstructuredRe
 			continue
 		}
 		jsn, err := yaml2json.ToJSON([]byte(objectYaml))
+		// yaml2json errors are very terse and expect the source yaml to be available when interpreting the failure
+		// message, so print it on failure
+		infoForError(err, objectYaml)
 		Expect(err).To(BeNil())
 
 		uncastObj, err := runtime.Decode(unstructured.UnstructuredJSONScheme, jsn)
+		infoForError(err, objectYaml)
 		Expect(err).To(BeNil())
 		if resourceList, ok := uncastObj.(*unstructured.UnstructuredList); ok {
 			for _, item := range resourceList.Items {
@@ -235,4 +239,10 @@ func MustCanonicalizeYaml(input string) string {
 	yml, err := yaml.JSONToYAML(jsn)
 	Expect(err).To(BeNil())
 	return string(yml)
+}
+
+func infoForError(err error, str string) {
+	if err != nil {
+		fmt.Printf("error is: %v\nrelated info:\n%v\n")
+	}
 }

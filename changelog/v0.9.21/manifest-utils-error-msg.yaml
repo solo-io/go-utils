@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add contextual info to manifestutils error messages.
+    issueLink: https://github.com/solo-io/go-utils/issues/272
