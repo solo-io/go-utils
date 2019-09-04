@@ -243,6 +243,6 @@ func MustCanonicalizeYaml(input string) string {
 
 func infoForError(err error, str string) {
 	if err != nil {
-		fmt.Printf("error is: %v\nrelated info:\n%v\n")
+		fmt.Printf("error is: %v\nrelated info:\n%v\n", err, str)
 	}
 }
