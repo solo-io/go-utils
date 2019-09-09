@@ -71,7 +71,7 @@ var _ = Describe("grpc healthchecker", func() {
 		ctx, cancel = context.WithCancel(context.Background())
 		srv = RunServer(ctx)
 		var err error
-		conn, err = grpc.DialContext(ctx, fmt.Sprintf("[::1]:%d", srv.Port), grpc.WithInsecure())
+		conn, err = grpc.DialContext(ctx, fmt.Sprintf("localhost:%d", srv.Port), grpc.WithInsecure())
 		Expect(err).NotTo(HaveOccurred())
 		client = healthpb.NewHealthClient(conn)
 	})
