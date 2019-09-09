@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  description: Add grpc health check lib.
+  issueLink: https://github.com/solo-io/go-utils/issues/275
