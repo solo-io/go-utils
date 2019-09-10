@@ -228,7 +228,15 @@ func (t *testManifest) ExpectPermissions(permissions *ServiceAccountPermissions)
 		}
 	}
 
-	Expect(manifestPermissions).To(BeEquivalentTo(permissions))
+	// Convert permission structs to YAML for:
+	// 1) correct assertions
+	// 2) readable failures
+	ownYaml, err := yaml.Marshal(manifestPermissions)
+	Expect(err).NotTo(HaveOccurred())
+	expectedYaml, err := yaml.Marshal(permissions)
+	Expect(err).NotTo(HaveOccurred())
+
+	Expect(string(ownYaml)).To(BeEquivalentTo(string(expectedYaml)))
 }
 
 func (t *testManifest) findObject(kind, namespace, name string) runtime.Object {
