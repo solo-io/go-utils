@@ -202,10 +202,11 @@ var _ = Describe("Helm Test", func() {
 			container := GetQuayContainerSpec(name, "0.3.13", GetPodNamespaceEnvVar())
 			container.Args = []string{"--disable-config"}
 			rb := ResourceBuilder{
-				Labels:     labels,
-				Name:       name,
-				Namespace:  namespace,
-				Containers: []ContainerSpec{container},
+				Labels:             labels,
+				Name:               name,
+				Namespace:          namespace,
+				Containers:         []ContainerSpec{container},
+				ServiceAccountName: "mesh-discovery",
 			}
 			testManifest.ExpectDeployment(rb.GetDeployment())
 		})
@@ -246,5 +247,32 @@ var _ = Describe("Helm Test", func() {
 			testManifest.ExpectCustomResource(gvk, namespace, name)
 		})
 
+	})
+
+	Describe("permissions", func() {
+		It("has expected permissions associated with each deployment", func() {
+			permissions := &ServiceAccountPermissions{}
+			permissions.AddExpectedPermission(
+				"sm-marketplace.mesh-discovery",
+				"",
+				[]string{""},
+				[]string{"configmaps", "pods", "services", "secrets", "endpoints", "namespaces"},
+				[]string{"get", "list", "watch"})
+			permissions.AddExpectedPermission(
+				"sm-marketplace.mesh-discovery",
+				"",
+				[]string{"authentication.istio.io"},
+				[]string{"meshpolicies"},
+				[]string{"get", "list", "watch"})
+			permissions.AddExpectedPermission(
+				"sm-marketplace.mesh-discovery",
+				"",
+				[]string{"apiextensions.k8s.io"},
+				[]string{"customresourcedefinitions"},
+				[]string{"get", "create"})
+			// TODO this permissions stuff should get moved to the manifest tester
+			testRbac := NewRbacTester(MustGetResources("example.yaml"))
+			testRbac.ExpectServiceAccountPermissions(permissions)
+		})
 	})
 })

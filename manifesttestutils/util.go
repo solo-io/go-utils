@@ -25,7 +25,7 @@ import (
 )
 
 type TestManifest interface {
-	ExpectDeployment(deployment *v1beta1.Deployment)
+	ExpectDeployment(deployment *v1beta1.Deployment) *v1beta1.Deployment
 	ExpectDeploymentAppsV1(deployment *appsv1.Deployment)
 	ExpectServiceAccount(serviceAccount *corev1.ServiceAccount)
 	ExpectClusterRole(clusterRole *rbacv1.ClusterRole)
@@ -50,7 +50,7 @@ type testManifest struct {
 
 func NewTestManifest(relativePathToManifest string) TestManifest {
 	return &testManifest{
-		resources: mustGetResources(relativePathToManifest),
+		resources: MustGetResources(relativePathToManifest),
 	}
 }
 
@@ -64,11 +64,12 @@ func (t *testManifest) NumResources() int {
 	return len(t.resources)
 }
 
-func (t *testManifest) ExpectDeployment(deployment *v1beta1.Deployment) {
+func (t *testManifest) ExpectDeployment(deployment *v1beta1.Deployment) *v1beta1.Deployment {
 	obj := t.mustFindObject(deployment.Kind, deployment.Namespace, deployment.Name)
 	Expect(obj).To(BeAssignableToTypeOf(&v1beta1.Deployment{}))
 	actual := obj.(*v1beta1.Deployment)
 	Expect(actual).To(BeEquivalentTo(deployment))
+	return actual
 }
 
 func (t *testManifest) ExpectDeploymentAppsV1(deployment *appsv1.Deployment) {
@@ -204,7 +205,7 @@ var (
 	yamlSeparator = regexp.MustCompile("\n---")
 )
 
-func mustGetResources(relativePathToManifest string) kuberesource.UnstructuredResources {
+func MustGetResources(relativePathToManifest string) kuberesource.UnstructuredResources {
 	manifest := mustReadManifest(relativePathToManifest)
 	snippets := yamlSeparator.Split(manifest, -1)
 
