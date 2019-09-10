@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add manifest test function for getting permissions granted to k8s service accounts.
+    issueLink: https://github.com/solo-io/go-utils/issues/277
