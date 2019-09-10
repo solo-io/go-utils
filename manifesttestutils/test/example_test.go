@@ -270,9 +270,7 @@ var _ = Describe("Helm Test", func() {
 				[]string{"apiextensions.k8s.io"},
 				[]string{"customresourcedefinitions"},
 				[]string{"get", "create"})
-			// TODO this permissions stuff should get moved to the manifest tester
-			testRbac := NewRbacTester(MustGetResources("example.yaml"))
-			testRbac.ExpectServiceAccountPermissions(permissions)
+			testManifest.ExpectPermissions(permissions)
 		})
 	})
 })

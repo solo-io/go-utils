@@ -9,14 +9,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-type RbacTester interface {
-	ExpectServiceAccountPermissions(permissions *ServiceAccountPermissions)
-}
-
-type rbacTester struct {
-	serviceAccountPermissions *ServiceAccountPermissions
-}
-
 type ServiceAccountPermissions struct {
 	serviceAccount map[string]*namespacePermissions
 }
@@ -81,67 +73,6 @@ func (p *resourcePermissions) addExpectedPermission(resources, verbsToAdd []stri
 			p.resource[r].values[v] = true
 		}
 	}
-}
-
-func NewRbacTester(resources kuberesource.UnstructuredResources) RbacTester {
-	manifest := testManifest{resources: resources}
-	permissions := &ServiceAccountPermissions{}
-
-	// get all deployments
-	v1beta1Deployments := manifest.mustFindDeploymentsV1Beta1()
-	appsv1Deployments := manifest.mustFindDeploymentsAppsV1()
-
-	// get all service accounts referenced in deployments
-	serviceAccounts := make([]*corev1.ServiceAccount, 0, len(v1beta1Deployments)+len(appsv1Deployments))
-	for _, d := range v1beta1Deployments {
-		if d.Spec.Template.Spec.ServiceAccountName == "" {
-			continue
-		}
-		account := manifest.mustFindObject("ServiceAccount", d.Namespace, d.Spec.Template.Spec.ServiceAccountName)
-		serviceAccounts = append(serviceAccounts, account.(*corev1.ServiceAccount))
-	}
-	for _, d := range appsv1Deployments {
-		if d.Spec.Template.Spec.ServiceAccountName == "" {
-			continue
-		}
-		account := manifest.mustFindObject("ServiceAccount", d.Namespace, d.Spec.Template.Spec.ServiceAccountName)
-		serviceAccounts = append(serviceAccounts, account.(*corev1.ServiceAccount))
-	}
-
-	// get all roles
-	for _, account := range serviceAccounts {
-		roleBindings := manifest.mustFindRoleBindings("ServiceAccount", "", account.Namespace, account.Name)
-		for _, rb := range roleBindings {
-			obj := manifest.mustFindObject(rb.RoleRef.Kind, account.Namespace, rb.RoleRef.Name)
-			Expect(obj).To(BeAssignableToTypeOf(&rbacv1.Role{}))
-			role := obj.(*rbacv1.Role)
-			for _, rule := range role.Rules {
-				permissions.AddExpectedPermission(account.Namespace+"."+account.Name, account.Namespace, rule.APIGroups, rule.Resources, rule.Verbs)
-			}
-		}
-	}
-
-	// get all cluster roles
-	for _, account := range serviceAccounts {
-		clusterRoleBindings := manifest.mustFindClusterRoleBindings("ServiceAccount", "", account.Namespace, account.Name)
-		for _, rb := range clusterRoleBindings {
-			obj := manifest.mustFindObject(rb.RoleRef.Kind, "", rb.RoleRef.Name)
-			Expect(obj).To(BeAssignableToTypeOf(&rbacv1.ClusterRole{}))
-			clusterRole := obj.(*rbacv1.ClusterRole)
-			for _, rule := range clusterRole.Rules {
-				permissions.AddExpectedPermission(account.Namespace+"."+account.Name, corev1.NamespaceAll, rule.APIGroups, rule.Resources, rule.Verbs)
-			}
-		}
-	}
-
-	return &rbacTester{
-		serviceAccountPermissions: permissions,
-	}
-}
-
-func (r rbacTester) ExpectServiceAccountPermissions(permissions *ServiceAccountPermissions) {
-	Expect(r.serviceAccountPermissions).To(BeEquivalentTo(permissions))
-
 }
 
 func (t *testManifest) mustFindDeploymentsV1Beta1() []*v1beta1.Deployment {
