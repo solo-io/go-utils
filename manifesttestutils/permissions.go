@@ -9,65 +9,73 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-type ServiceAccountPermissions struct {
-	ServiceAccount map[string]*NamespacePermissions
+type serviceAccountPermissions struct {
+	ServiceAccount map[string]*namespacePermissions
 }
 
-type NamespacePermissions struct {
-	Namespace map[string]*ApiGroupPermissions
+type namespacePermissions struct {
+	Namespace map[string]*apiGroupPermissions
 }
 
-type ApiGroupPermissions struct {
-	ApiGroup map[string]*ResourcePermissions
+type apiGroupPermissions struct {
+	ApiGroup map[string]*resourcePermissions
 }
 
-type ResourcePermissions struct {
-	Resource map[string]*Verbs
+type resourcePermissions struct {
+	Resource map[string]*verbs
 }
 
-type Verbs struct {
+type verbs struct {
 	Values map[string]bool
 }
 
-func (p *ServiceAccountPermissions) AddExpectedPermission(serviceAccount, namespace string, apiGroups, resources, verbs []string) {
+func NewServiceAccountPermissions() ServiceAccountPermissions {
+	return &serviceAccountPermissions{}
+}
+
+type ServiceAccountPermissions interface {
+	AddExpectedPermission(serviceAccount, namespace string, apiGroups, resources, verbs []string)
+}
+
+func (p *serviceAccountPermissions) AddExpectedPermission(serviceAccount, namespace string, apiGroups, resources, verbs []string) {
 	if p.ServiceAccount == nil {
-		p.ServiceAccount = make(map[string]*NamespacePermissions)
+		p.ServiceAccount = make(map[string]*namespacePermissions)
 	}
 	if _, exists := p.ServiceAccount[serviceAccount]; !exists {
-		p.ServiceAccount[serviceAccount] = &NamespacePermissions{}
+		p.ServiceAccount[serviceAccount] = &namespacePermissions{}
 	}
 	p.ServiceAccount[serviceAccount].addExpectedPermission(namespace, apiGroups, resources, verbs)
 }
 
-func (p *NamespacePermissions) addExpectedPermission(namespace string, apiGroups, resources, verbs []string) {
+func (p *namespacePermissions) addExpectedPermission(namespace string, apiGroups, resources, verbs []string) {
 	if p.Namespace == nil {
-		p.Namespace = make(map[string]*ApiGroupPermissions)
+		p.Namespace = make(map[string]*apiGroupPermissions)
 	}
 	if _, exists := p.Namespace[namespace]; !exists {
-		p.Namespace[namespace] = &ApiGroupPermissions{}
+		p.Namespace[namespace] = &apiGroupPermissions{}
 	}
 	p.Namespace[namespace].addExpectedPermission(apiGroups, resources, verbs)
 }
 
-func (p *ApiGroupPermissions) addExpectedPermission(apiGroups, resources, verbs []string) {
+func (p *apiGroupPermissions) addExpectedPermission(apiGroups, resources, verbs []string) {
 	if p.ApiGroup == nil {
-		p.ApiGroup = make(map[string]*ResourcePermissions)
+		p.ApiGroup = make(map[string]*resourcePermissions)
 	}
 	for _, g := range apiGroups {
 		if _, exists := p.ApiGroup[g]; !exists {
-			p.ApiGroup[g] = &ResourcePermissions{}
+			p.ApiGroup[g] = &resourcePermissions{}
 		}
 		p.ApiGroup[g].addExpectedPermission(resources, verbs)
 	}
 }
 
-func (p *ResourcePermissions) addExpectedPermission(resources, verbsToAdd []string) {
+func (p *resourcePermissions) addExpectedPermission(resources, verbsToAdd []string) {
 	if p.Resource == nil {
-		p.Resource = make(map[string]*Verbs)
+		p.Resource = make(map[string]*verbs)
 	}
 	for _, r := range resources {
 		if _, exists := p.Resource[r]; !exists {
-			p.Resource[r] = &Verbs{Values: make(map[string]bool)}
+			p.Resource[r] = &verbs{Values: make(map[string]bool)}
 		}
 		for _, v := range verbsToAdd {
 			p.Resource[r].Values[v] = true

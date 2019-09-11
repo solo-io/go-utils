@@ -251,7 +251,7 @@ var _ = Describe("Helm Test", func() {
 
 	Describe("permissions", func() {
 		It("has expected permissions associated with each deployment", func() {
-			permissions := &ServiceAccountPermissions{}
+			permissions := NewServiceAccountPermissions()
 			permissions.AddExpectedPermission(
 				"sm-marketplace.mesh-discovery",
 				"",
