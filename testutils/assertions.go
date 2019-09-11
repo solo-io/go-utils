@@ -22,7 +22,7 @@ import (
 //   to equal               |
 //       <string>: "...-10101" ver..."
 func ExpectEqualProtoMessages(a, b proto.Message, optionalDescription ...interface{}) {
-	if proto.Equal(a, b) {
+	if !proto.Equal(a, b) {
 		fmt.Fprintf(ginkgo.GinkgoWriter, "protos do not match\nhave (length %v):\n%v\n want (length %v):\n %v", len(a.String()), a.String(), len(b.String()), b.String())
 		fmt.Fprintf(ginkgo.GinkgoWriter, "set CharactersAroundMismatchToInclude to include more or less diff context (current value is %v)", format.CharactersAroundMismatchToInclude)
 	}
