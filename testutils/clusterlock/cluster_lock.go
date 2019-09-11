@@ -34,8 +34,10 @@ const (
 	DefaultHeartbeatTime = time.Second * 10
 )
 
-var defaultClusterLock = &ClusterLock{
-	Name: LockResourceName,
+func generateDefaultClusterLock() *ClusterLock {
+	return &ClusterLock{
+		Name: LockResourceName,
+	}
 }
 
 var defaultOpts = []retry.Option{
@@ -99,7 +101,7 @@ func NewConsulClusterLocker(ctx context.Context, idPrefix string, consul *api.Cl
 func NewClusterLocker(ctx context.Context, idPrefix string, client ClusterLockClient) (*TestClusterLocker, error) {
 	ownerId := idPrefix + uuid.New().String()
 
-	_, err := client.Create(defaultClusterLock)
+	_, err := client.Create(generateDefaultClusterLock())
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return nil, err
 	}
