@@ -184,6 +184,7 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 		} else {
 			if lock.Timeout != "" {
 				// case if timeout has expired
+				fmt.Printf("attempting to parse time, owner: %v, time:%v\n", lock.OwnerID, lock.Timeout)
 				savedTime, err := time.Parse(DefaultTimeFormat, lock.Timeout)
 				if err != nil {
 					return err
