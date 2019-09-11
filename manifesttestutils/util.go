@@ -43,7 +43,7 @@ type TestManifest interface {
 
 	Expect(kind, namespace, name string) GomegaAssertion
 
-	ExpectPermissions(permissions ServiceAccountPermissions)
+	ExpectPermissions(permissions *ServiceAccountPermissions)
 }
 
 type testManifest struct {
@@ -178,8 +178,8 @@ func (t *testManifest) Expect(kind, namespace, name string) GomegaAssertion {
 	return Expect(t.findObject(kind, namespace, name))
 }
 
-func (t *testManifest) ExpectPermissions(permissions ServiceAccountPermissions) {
-	manifestPermissions := NewServiceAccountPermissions()
+func (t *testManifest) ExpectPermissions(permissions *ServiceAccountPermissions) {
+	manifestPermissions := &ServiceAccountPermissions{}
 
 	// get all deployments
 	v1beta1Deployments := t.mustFindDeploymentsV1Beta1()
