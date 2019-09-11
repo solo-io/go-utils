@@ -1,17 +1,15 @@
 package testutils
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/proto"
-	"github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
 )
 
 // ExpectEqualProtoMessages provides richer error messages than struct comparison by leveraging the String() method that all
-// proto Messages provide. On error, Gomega's string comparison utility prints a few characters of the text immediately
-// surrounding the first discrepancy. Customize the size of the rendered diff by setting format.CharactersAroundMismatchToInclude
+// proto Messages provide. On error, Gomega's string comparison utility prints the characters of the text immediately
+// surrounding the first discrepancy. The number of characters rendered is determined by format.CharactersAroundMismatchToInclude.
+// Here, we set the value to 200 to highlight the diff in context without overwhelming users with too much information.
 //
 // Variadic optionalDescription argument is passed on to fmt.Sprintf() and is used to annotate failure messages.
 //
@@ -22,10 +20,15 @@ import (
 //   to equal               |
 //       <string>: "...-10101" ver..."
 func ExpectEqualProtoMessages(a, b proto.Message, optionalDescription ...interface{}) {
-	if !proto.Equal(a, b) {
-		fmt.Fprintf(ginkgo.GinkgoWriter, "protos do not match\nhave (length %v):\n%v\n want (length %v):\n %v", len(a.String()), a.String(), len(b.String()), b.String())
-		fmt.Fprintf(ginkgo.GinkgoWriter, "set CharactersAroundMismatchToInclude to include more or less diff context (current value is %v)", format.CharactersAroundMismatchToInclude)
+	if proto.Equal(a, b) {
+		return
 	}
+
+	initialCharactersAroundMismatchToInclude := format.CharactersAroundMismatchToInclude
+	format.CharactersAroundMismatchToInclude = 200
+	defer func() {
+		format.CharactersAroundMismatchToInclude = initialCharactersAroundMismatchToInclude
+	}()
 
 	Expect(a.String()).To(Equal(b.String()), optionalDescription...)
 }
