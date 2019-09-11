@@ -12,18 +12,19 @@ import (
 )
 
 type ResourceBuilder struct {
-	Namespace   string
-	Name        string
-	Args        []string
-	Labels      map[string]string
-	Annotations map[string]string
-	Rules       []rbacv1.PolicyRule
-	Data        map[string]string
-	Subjects    []rbacv1.Subject
-	RoleRef     rbacv1.RoleRef
-	Containers  []ContainerSpec
-	Service     ServiceSpec
-	SecretType  v1.SecretType
+	Namespace          string
+	Name               string
+	Args               []string
+	Labels             map[string]string
+	Annotations        map[string]string
+	Rules              []rbacv1.PolicyRule
+	Data               map[string]string
+	Subjects           []rbacv1.Subject
+	RoleRef            rbacv1.RoleRef
+	Containers         []ContainerSpec
+	Service            ServiceSpec
+	SecretType         v1.SecretType
+	ServiceAccountName string
 }
 
 type ContainerSpec struct {
@@ -65,7 +66,8 @@ func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 					Annotations: b.Annotations,
 				},
 				Spec: v1.PodSpec{
-					Containers: b.getContainers(),
+					ServiceAccountName: b.ServiceAccountName,
+					Containers:         b.getContainers(),
 				},
 			},
 		},

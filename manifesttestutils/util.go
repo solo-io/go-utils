@@ -25,7 +25,7 @@ import (
 )
 
 type TestManifest interface {
-	ExpectDeployment(deployment *v1beta1.Deployment)
+	ExpectDeployment(deployment *v1beta1.Deployment) *v1beta1.Deployment
 	ExpectDeploymentAppsV1(deployment *appsv1.Deployment)
 	ExpectServiceAccount(serviceAccount *corev1.ServiceAccount)
 	ExpectClusterRole(clusterRole *rbacv1.ClusterRole)
@@ -42,6 +42,8 @@ type TestManifest interface {
 	NumResources() int
 
 	Expect(kind, namespace, name string) GomegaAssertion
+
+	ExpectPermissions(permissions *ServiceAccountPermissions)
 }
 
 type testManifest struct {
@@ -64,11 +66,12 @@ func (t *testManifest) NumResources() int {
 	return len(t.resources)
 }
 
-func (t *testManifest) ExpectDeployment(deployment *v1beta1.Deployment) {
+func (t *testManifest) ExpectDeployment(deployment *v1beta1.Deployment) *v1beta1.Deployment {
 	obj := t.mustFindObject(deployment.Kind, deployment.Namespace, deployment.Name)
 	Expect(obj).To(BeAssignableToTypeOf(&v1beta1.Deployment{}))
 	actual := obj.(*v1beta1.Deployment)
 	Expect(actual).To(BeEquivalentTo(deployment))
+	return actual
 }
 
 func (t *testManifest) ExpectDeploymentAppsV1(deployment *appsv1.Deployment) {
@@ -173,6 +176,67 @@ func (t *testManifest) ExpectCustomResource(kind, namespace, name string) {
 
 func (t *testManifest) Expect(kind, namespace, name string) GomegaAssertion {
 	return Expect(t.findObject(kind, namespace, name))
+}
+
+func (t *testManifest) ExpectPermissions(permissions *ServiceAccountPermissions) {
+	manifestPermissions := &ServiceAccountPermissions{}
+
+	// get all deployments
+	v1beta1Deployments := t.mustFindDeploymentsV1Beta1()
+	appsv1Deployments := t.mustFindDeploymentsAppsV1()
+
+	// get all service accounts referenced in deployments
+	serviceAccounts := make([]*corev1.ServiceAccount, 0, len(v1beta1Deployments)+len(appsv1Deployments))
+	for _, d := range v1beta1Deployments {
+		if d.Spec.Template.Spec.ServiceAccountName == "" {
+			continue
+		}
+		account := t.mustFindObject("ServiceAccount", d.Namespace, d.Spec.Template.Spec.ServiceAccountName)
+		serviceAccounts = append(serviceAccounts, account.(*corev1.ServiceAccount))
+	}
+	for _, d := range appsv1Deployments {
+		if d.Spec.Template.Spec.ServiceAccountName == "" {
+			continue
+		}
+		account := t.mustFindObject("ServiceAccount", d.Namespace, d.Spec.Template.Spec.ServiceAccountName)
+		serviceAccounts = append(serviceAccounts, account.(*corev1.ServiceAccount))
+	}
+
+	// get all roles
+	for _, account := range serviceAccounts {
+		roleBindings := t.mustFindRoleBindings("ServiceAccount", "", account.Namespace, account.Name)
+		for _, rb := range roleBindings {
+			obj := t.mustFindObject(rb.RoleRef.Kind, account.Namespace, rb.RoleRef.Name)
+			Expect(obj).To(BeAssignableToTypeOf(&rbacv1.Role{}))
+			role := obj.(*rbacv1.Role)
+			for _, rule := range role.Rules {
+				manifestPermissions.AddExpectedPermission(account.Namespace+"."+account.Name, account.Namespace, rule.APIGroups, rule.Resources, rule.Verbs)
+			}
+		}
+	}
+
+	// get all cluster roles
+	for _, account := range serviceAccounts {
+		clusterRoleBindings := t.mustFindClusterRoleBindings("ServiceAccount", "", account.Namespace, account.Name)
+		for _, rb := range clusterRoleBindings {
+			obj := t.mustFindObject(rb.RoleRef.Kind, "", rb.RoleRef.Name)
+			Expect(obj).To(BeAssignableToTypeOf(&rbacv1.ClusterRole{}))
+			clusterRole := obj.(*rbacv1.ClusterRole)
+			for _, rule := range clusterRole.Rules {
+				manifestPermissions.AddExpectedPermission(account.Namespace+"."+account.Name, corev1.NamespaceAll, rule.APIGroups, rule.Resources, rule.Verbs)
+			}
+		}
+	}
+
+	// Convert permission structs to YAML for:
+	// 1) correct assertions
+	// 2) readable failures
+	ownYaml, err := yaml.Marshal(manifestPermissions)
+	Expect(err).NotTo(HaveOccurred())
+	expectedYaml, err := yaml.Marshal(permissions)
+	Expect(err).NotTo(HaveOccurred())
+
+	Expect(string(ownYaml)).To(BeEquivalentTo(string(expectedYaml)))
 }
 
 func (t *testManifest) findObject(kind, namespace, name string) runtime.Object {
