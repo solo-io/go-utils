@@ -212,7 +212,7 @@ func (t *TestClusterLocker) concurrentLockGet() (*ClusterLock, error) {
 		return originalLock, nil
 	}
 	if errors.IsNotFound(err) {
-		newLock, err := t.client.Create(defaultClusterLock)
+		newLock, err := t.client.Create(generateDefaultClusterLock())
 		if err != nil {
 			// force the loop to restart
 			if errors.IsAlreadyExists(err) {
