@@ -104,10 +104,10 @@ func (lpf *LabelPodFinder) getPodsForMatchLabels(matchLabels map[string]string, 
 	})
 }
 
-func convertPodListsToUnstructured(pods []*corev1.PodList) (kuberesource.UnstructuredResources, error) {
+func ConvertPodListsToUnstructured(pods []*corev1.PodList) (kuberesource.UnstructuredResources, error) {
 	var result kuberesource.UnstructuredResources
 	for _, list := range pods {
-		convertedList, err := convertPodsToUnstructured(list)
+		convertedList, err := ConvertPodsToUnstructured(list)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func convertPodListsToUnstructured(pods []*corev1.PodList) (kuberesource.Unstruc
 	return result, nil
 }
 
-func convertPodsToUnstructured(pods *corev1.PodList) (kuberesource.UnstructuredResources, error) {
+func ConvertPodsToUnstructured(pods *corev1.PodList) (kuberesource.UnstructuredResources, error) {
 	result := make(kuberesource.UnstructuredResources, len(pods.Items))
 	for idx, val := range pods.Items {
 		resource, err := kuberesource.ConvertToUnstructured(&val)
