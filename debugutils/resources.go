@@ -92,7 +92,7 @@ func (rc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 	if err != nil {
 		return nil, err
 	}
-	convertedPods, err := convertPodListsToUnstructured(pods)
+	convertedPods, err := ConvertPodListsToUnstructured(pods)
 	if err != nil {
 		return nil, err
 	}
