@@ -19,11 +19,11 @@ type LogCollector interface {
 }
 
 type logCollector struct {
-	logRequestBuilder *LogRequestBuilder
+	LogRequestBuilder *LogRequestBuilder
 }
 
 func NewLogCollector(logRequestBuilder *LogRequestBuilder) *logCollector {
-	return &logCollector{logRequestBuilder: logRequestBuilder}
+	return &logCollector{LogRequestBuilder: logRequestBuilder}
 
 }
 
@@ -33,7 +33,7 @@ func DefaultLogCollector() (*logCollector, error) {
 		return nil, err
 	}
 	return &logCollector{
-		logRequestBuilder: logRequestBuilder,
+		LogRequestBuilder: logRequestBuilder,
 	}, nil
 }
 
@@ -42,16 +42,16 @@ func (lc *logCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests
 	if err != nil {
 		return nil, err
 	}
-	return lc.logRequestBuilder.LogsFromUnstructured(resources)
+	return lc.LogRequestBuilder.LogsFromUnstructured(resources)
 }
 
 func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
-	return lc.logRequestBuilder.LogsFromUnstructured(resources)
+	return lc.LogRequestBuilder.LogsFromUnstructured(resources)
 }
 
 func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
-	responses, err := lc.logRequestBuilder.StreamLogs(requests)
+	responses, err := lc.LogRequestBuilder.StreamLogs(requests)
 	if err != nil {
 		return err
 	}
