@@ -27,6 +27,7 @@ import (
 type TestManifest interface {
 	ExpectDeployment(deployment *v1beta1.Deployment) *v1beta1.Deployment
 	ExpectDeploymentAppsV1(deployment *appsv1.Deployment)
+	ExpectNoSuchResource(kind, namespace, name string)
 	ExpectServiceAccount(serviceAccount *corev1.ServiceAccount)
 	ExpectClusterRole(clusterRole *rbacv1.ClusterRole)
 	ExpectClusterRoleBinding(clusterRoleBinding *rbacv1.ClusterRoleBinding)
@@ -79,6 +80,13 @@ func (t *testManifest) ExpectDeploymentAppsV1(deployment *appsv1.Deployment) {
 	Expect(obj).To(BeAssignableToTypeOf(&appsv1.Deployment{}))
 	actual := obj.(*appsv1.Deployment)
 	Expect(actual).To(BeEquivalentTo(deployment))
+}
+
+func (t *testManifest) ExpectNoSuchResource(kind, namespace, name string) {
+	obj := t.findObject(kind, namespace, name)
+	if obj != nil {
+		Fail(fmt.Sprintf("object %s %s %s should not have been present", kind, namespace, name))
+	}
 }
 
 func (t *testManifest) ExpectServiceAccount(serviceAccount *corev1.ServiceAccount) {
