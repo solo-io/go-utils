@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: add util to generate certs
+    issueLink: https://github.com/solo-io/go-utils/pull/287
