@@ -29,7 +29,7 @@ func createTag(title, item string) string {
 	return fmt.Sprintf("%s%s%s", title, seperator, item)
 }
 
-func createIntegerTag(title string, item int64) string {
+func CreateIntegerTag(title string, item int64) string {
 	return fmt.Sprintf("%s%s%d", title, seperator, item)
 }
 
@@ -46,7 +46,7 @@ func (t Tags) AddRepoTag(repo string) Tags {
 }
 
 func (t Tags) AddInstallationIdTag(instId int64) Tags {
-	return append(t, createIntegerTag(instIdConst, instId))
+	return append(t, CreateIntegerTag(instIdConst, instId))
 }
 
 func (t Tags) AddRefTag(ref string) Tags {
@@ -54,7 +54,7 @@ func (t Tags) AddRefTag(ref string) Tags {
 }
 
 func (t Tags) AddPRTag(pr int) Tags {
-	return append(t, createIntegerTag(prConst, int64(pr)))
+	return append(t, CreateIntegerTag(prConst, int64(pr)))
 }
 
 func (t Tags) IsReleaseBuild() bool {
