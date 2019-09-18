@@ -81,6 +81,12 @@ func (t Tags) GetRepo() string {
 	return t.getByConst(repoConst)
 }
 
+func (t Tags) GetPR() int {
+	stringVal := t.getByConst(prConst)
+	prNum, _ := strconv.Atoi(stringVal)
+	return prNum
+}
+
 func (t Tags) GetInstallationId() int64 {
 	stringVal := t.getByConst(instIdConst)
 	instId, _ := strconv.ParseInt(stringVal, 10, 64)
