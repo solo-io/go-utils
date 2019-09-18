@@ -13,9 +13,9 @@ const (
 	tagConst    = "tag"
 	shaConst    = "sha"
 	refConst    = "ref"
-	repoConst   = "repo"
+	RepoConst   = "repo"
 	instIdConst = "instId"
-	prConst     = "pr"
+	PrConst     = "pr"
 )
 
 func InitializeTags(input []string) Tags {
@@ -78,11 +78,11 @@ func (t Tags) GetRef() string {
 
 // returns "" for empty
 func (t Tags) GetRepo() string {
-	return t.getByConst(repoConst)
+	return t.getByConst(RepoConst)
 }
 
 func (t Tags) GetPR() int {
-	stringVal := t.getByConst(prConst)
+	stringVal := t.getByConst(PrConst)
 	prNum, _ := strconv.Atoi(stringVal)
 	return prNum
 }
