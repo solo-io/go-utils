@@ -23,6 +23,11 @@ type ShaBuildContext interface {
 	Sha() string
 }
 
+type PrBuildContext interface {
+	BuildContext
+	Sha() string
+}
+
 type RefBuildContext interface {
 	BuildContext
 	Ref() string

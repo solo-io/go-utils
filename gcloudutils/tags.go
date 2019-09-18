@@ -15,6 +15,7 @@ const (
 	refConst    = "ref"
 	repoConst   = "repo"
 	instIdConst = "instId"
+	prConst     = "pr"
 )
 
 func InitializeTags(input []string) Tags {
@@ -50,6 +51,10 @@ func (t Tags) AddInstallationIdTag(instId int64) Tags {
 
 func (t Tags) AddRefTag(ref string) Tags {
 	return append(t, createTag(refConst, ref))
+}
+
+func (t Tags) AddPRTag(pr int) Tags {
+	return append(t, createIntegerTag(prConst, int64(pr)))
 }
 
 func (t Tags) IsReleaseBuild() bool {
