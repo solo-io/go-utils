@@ -25,7 +25,7 @@ func InitializeTags(input []string) Tags {
 	return input
 }
 
-func createTag(title, item string) string {
+func CreateTag(title, item string) string {
 	return fmt.Sprintf("%s%s%s", title, seperator, item)
 }
 
@@ -34,15 +34,15 @@ func CreateIntegerTag(title string, item int64) string {
 }
 
 func (t Tags) AddReleaseTag(tag string) Tags {
-	return append(t, createTag(tagConst, tag))
+	return append(t, CreateTag(tagConst, tag))
 }
 
 func (t Tags) AddShaTag(sha string) Tags {
-	return append(t, createTag(shaConst, sha))
+	return append(t, CreateTag(shaConst, sha))
 }
 
 func (t Tags) AddRepoTag(repo string) Tags {
-	return append(t, createTag(repoConst, repo))
+	return append(t, CreateTag(repoConst, repo))
 }
 
 func (t Tags) AddInstallationIdTag(instId int64) Tags {
@@ -50,7 +50,7 @@ func (t Tags) AddInstallationIdTag(instId int64) Tags {
 }
 
 func (t Tags) AddRefTag(ref string) Tags {
-	return append(t, createTag(refConst, ref))
+	return append(t, CreateTag(refConst, ref))
 }
 
 func (t Tags) AddPRTag(pr int) Tags {
