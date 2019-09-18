@@ -1,4 +1,4 @@
 changelog:
   - type: NEW_FEATURE
     issueLink: https://github.com/solo-io/go-utils/issues/289
-    description: Support PR number tag on builds. 
+    description: Support PR number tag on builds.
