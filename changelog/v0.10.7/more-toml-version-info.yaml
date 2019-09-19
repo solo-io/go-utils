@@ -1,5 +1,0 @@
-changelog:
-- type: NON_USER_FACING
-  description: Return more info about a dependency version detrieved from a .toml file.
-- type: NON_USER_FACING
-  description: Return more complete info about the current HEAD of a git repository.
