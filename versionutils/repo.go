@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	gopkgToml    = "Gopkg.toml"
-	constraint   = "constraint"
-	override     = "override"
-	nameConst    = "name"
-	versionConst = "version"
+	gopkgToml     = "Gopkg.toml"
+	constraint    = "constraint"
+	override      = "override"
+	nameConst     = "name"
+	versionConst  = "version"
+	revisionConst = "revision"
+	branchConst   = "branch"
 
 	GlooPkg      = "github.com/solo-io/gloo"
 	SoloKitPkg   = "github.com/solo-io/solo-kit"
@@ -75,8 +77,8 @@ func GetVersionFromTag(shouldBeAVersion string) (string, error) {
 // Deprecated: Use GetTomlVersion instead
 func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 	for _, v := range tomlTree {
-		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
-			return v.Get(versionConst).(string), nil
+		if found, version := getVersionFromTree(v, pkgName); found {
+			return version, nil
 		}
 	}
 	return "", UnableToFindVersionInTomlError(pkgName)
@@ -84,13 +86,13 @@ func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 
 func GetTomlVersion(pkgName string, toml *TomlWrapper) (string, error) {
 	for _, v := range toml.Overrides {
-		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
-			return v.Get(versionConst).(string), nil
+		if found, version := getVersionFromTree(v, pkgName); found {
+			return version, nil
 		}
 	}
 	for _, v := range toml.Constraints {
-		if v.Get(nameConst) == pkgName && v.Get(versionConst) != "" {
-			return v.Get(versionConst).(string), nil
+		if found, version := getVersionFromTree(v, pkgName); found {
+			return version, nil
 		}
 	}
 	return "", UnableToFindVersionInTomlError(pkgName)
@@ -154,4 +156,20 @@ func ParseFullTomlFromDir(relativeDir string) (*TomlWrapper, error) {
 
 func ParseFullToml() (*TomlWrapper, error) {
 	return ParseFullTomlFromDir("")
+}
+
+func getVersionFromTree(tomlTree *toml.Tree, pkgName string) (found bool, version string) {
+	isEmpty := func(node *toml.Tree, key string) bool {
+		return node.Get(key) == nil || node.Get(key) == ""
+	}
+
+	switch {
+	case tomlTree.Get(nameConst) == pkgName && !isEmpty(tomlTree, versionConst):
+		return true, tomlTree.Get(versionConst).(string)
+	case tomlTree.Get(nameConst) == pkgName && !isEmpty(tomlTree, revisionConst):
+		return true, tomlTree.Get(revisionConst).(string)
+	case tomlTree.Get(nameConst) == pkgName && !isEmpty(tomlTree, branchConst):
+		return true, tomlTree.Get(branchConst).(string)
+	}
+	return
 }
