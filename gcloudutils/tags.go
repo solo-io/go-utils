@@ -15,6 +15,7 @@ const (
 	refConst    = "ref"
 	repoConst   = "repo"
 	instIdConst = "instId"
+	prConst     = "pr"
 )
 
 func InitializeTags(input []string) Tags {
@@ -52,6 +53,10 @@ func (t Tags) AddRefTag(ref string) Tags {
 	return append(t, createTag(refConst, ref))
 }
 
+func (t Tags) AddPRTag(pr int) Tags {
+	return append(t, createIntegerTag(prConst, int64(pr)))
+}
+
 func (t Tags) IsReleaseBuild() bool {
 	return t.GetReleaseTag() != ""
 }
@@ -74,6 +79,12 @@ func (t Tags) GetRef() string {
 // returns "" for empty
 func (t Tags) GetRepo() string {
 	return t.getByConst(repoConst)
+}
+
+func (t Tags) GetPR() int {
+	stringVal := t.getByConst(prConst)
+	prNum, _ := strconv.Atoi(stringVal)
+	return prNum
 }
 
 func (t Tags) GetInstallationId() int64 {
