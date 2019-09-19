@@ -34,35 +34,35 @@ func (v *Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
-func (greaterEqual *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
-	if greaterEqual == nil {
+func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
+	if v == nil {
 		return false, errors.Errorf("cannot compare versions, greater version is nil")
 	}
 	if lesser == nil {
 		return false, errors.Errorf("cannot compare versions, lesser version is nil")
 	}
-	if greaterEqual.Patch == lesser.Patch && greaterEqual.Minor == lesser.Minor && greaterEqual.Major == lesser.Major {
+	if v.Patch == lesser.Patch && v.Minor == lesser.Minor && v.Major == lesser.Major {
 		return true, nil
 	}
-	return greaterEqual.IsGreaterThan(lesser), nil
+	return v.IsGreaterThan(lesser), nil
 }
 
-func (greater *Version) IsGreaterThan(lesser *Version) bool {
-	if greater.Major > lesser.Major {
+func (v *Version) IsGreaterThan(lesser *Version) bool {
+	if v.Major > lesser.Major {
 		return true
-	} else if greater.Major < lesser.Major {
+	} else if v.Major < lesser.Major {
 		return false
 	}
 
-	if greater.Minor > lesser.Minor {
+	if v.Minor > lesser.Minor {
 		return true
-	} else if greater.Minor < lesser.Minor {
+	} else if v.Minor < lesser.Minor {
 		return false
 	}
 
-	if greater.Patch > lesser.Patch {
+	if v.Patch > lesser.Patch {
 		return true
-	} else if greater.Patch < lesser.Patch {
+	} else if v.Patch < lesser.Patch {
 		return false
 	}
 

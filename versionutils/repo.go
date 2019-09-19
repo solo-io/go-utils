@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/solo-io/go-utils/versionutils/dep"
+
 	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
 )
@@ -21,10 +23,6 @@ const (
 	versionConst  = "version"
 	revisionConst = "revision"
 	branchConst   = "branch"
-
-	GlooPkg      = "github.com/solo-io/gloo"
-	SoloKitPkg   = "github.com/solo-io/solo-kit"
-	SuperglooPkg = "github.com/solo-io/supergloo"
 )
 
 var (
@@ -77,25 +75,41 @@ func GetVersionFromTag(shouldBeAVersion string) (string, error) {
 // Deprecated: Use GetTomlVersion instead
 func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 	for _, v := range tomlTree {
-		if version, found := getVersionFromTree(v, pkgName); found {
-			return version, nil
+		if version, found := getVersionInfoFromTree(v, pkgName); found {
+			return version.Version, nil
 		}
 	}
 	return "", UnableToFindVersionInTomlError(pkgName)
 }
 
+// Deprecated: use GetDependencyVersionInfo
 func GetTomlVersion(pkgName string, toml *TomlWrapper) (string, error) {
 	for _, v := range toml.Overrides {
-		if version, found := getVersionFromTree(v, pkgName); found {
+		if version, found := getVersionInfoFromTree(v, pkgName); found {
+			return version.Version, nil
+		}
+	}
+	for _, v := range toml.Constraints {
+		if version, found := getVersionInfoFromTree(v, pkgName); found {
+			return version.Version, nil
+		}
+	}
+	return "", UnableToFindVersionInTomlError(pkgName)
+}
+
+// Returns the version of the given package together with the type of version identifier, i.e. revision, version, branch.
+func GetDependencyVersionInfo(pkgName string, toml *TomlWrapper) (*dep.VersionInfo, error) {
+	for _, v := range toml.Overrides {
+		if version, found := getVersionInfoFromTree(v, pkgName); found {
 			return version, nil
 		}
 	}
 	for _, v := range toml.Constraints {
-		if version, found := getVersionFromTree(v, pkgName); found {
+		if version, found := getVersionInfoFromTree(v, pkgName); found {
 			return version, nil
 		}
 	}
-	return "", UnableToFindVersionInTomlError(pkgName)
+	return nil, UnableToFindVersionInTomlError(pkgName)
 }
 
 // Deprecated: Use ParseFullToml instead
@@ -158,22 +172,31 @@ func ParseFullToml() (*TomlWrapper, error) {
 	return ParseFullTomlFromDir("")
 }
 
-func getVersionFromTree(tomlTree *toml.Tree, pkgName string) (version string, found bool) {
+func getVersionInfoFromTree(tomlTree *toml.Tree, pkgName string) (info *dep.VersionInfo, found bool) {
 	isEmpty := func(node *toml.Tree, key string) bool {
 		return node.Get(key) == nil || node.Get(key) == ""
 	}
 
 	if tomlTree.Get(nameConst) != pkgName {
-		return "", false
+		return nil, false
 	}
 
 	switch {
 	case !isEmpty(tomlTree, versionConst):
-		return tomlTree.Get(versionConst).(string), true
+		return &dep.VersionInfo{
+			Version: tomlTree.Get(versionConst).(string),
+			Type:    dep.Version,
+		}, true
 	case !isEmpty(tomlTree, revisionConst):
-		return tomlTree.Get(revisionConst).(string), true
+		return &dep.VersionInfo{
+			Version: tomlTree.Get(revisionConst).(string),
+			Type:    dep.Revision,
+		}, true
 	case !isEmpty(tomlTree, branchConst):
-		return tomlTree.Get(branchConst).(string), true
+		return &dep.VersionInfo{
+			Version: tomlTree.Get(branchConst).(string),
+			Type:    dep.Branch,
+		}, true
 	}
-	return "", false
+	return nil, false
 }
