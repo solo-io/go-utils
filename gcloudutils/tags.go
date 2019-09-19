@@ -25,36 +25,36 @@ func InitializeTags(input []string) Tags {
 	return input
 }
 
-func CreateTag(title, item string) string {
+func createTag(title, item string) string {
 	return fmt.Sprintf("%s%s%s", title, seperator, item)
 }
 
-func CreateIntegerTag(title string, item int64) string {
+func createIntegerTag(title string, item int64) string {
 	return fmt.Sprintf("%s%s%d", title, seperator, item)
 }
 
 func (t Tags) AddReleaseTag(tag string) Tags {
-	return append(t, CreateTag(tagConst, tag))
+	return append(t, createTag(tagConst, tag))
 }
 
 func (t Tags) AddShaTag(sha string) Tags {
-	return append(t, CreateTag(shaConst, sha))
+	return append(t, createTag(shaConst, sha))
 }
 
 func (t Tags) AddRepoTag(repo string) Tags {
-	return append(t, CreateTag(repoConst, repo))
+	return append(t, createTag(repoConst, repo))
 }
 
 func (t Tags) AddInstallationIdTag(instId int64) Tags {
-	return append(t, CreateIntegerTag(instIdConst, instId))
+	return append(t, createIntegerTag(instIdConst, instId))
 }
 
 func (t Tags) AddRefTag(ref string) Tags {
-	return append(t, CreateTag(refConst, ref))
+	return append(t, createTag(refConst, ref))
 }
 
 func (t Tags) AddPRTag(pr int) Tags {
-	return append(t, CreateIntegerTag(prConst, int64(pr)))
+	return append(t, createIntegerTag(prConst, int64(pr)))
 }
 
 func (t Tags) IsReleaseBuild() bool {
