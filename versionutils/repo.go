@@ -164,7 +164,7 @@ func getVersionFromTree(tomlTree *toml.Tree, pkgName string) (version string, fo
 	}
 
 	if tomlTree.Get(nameConst) != pkgName {
-		return
+		return "", false
 	}
 
 	switch {
@@ -175,5 +175,5 @@ func getVersionFromTree(tomlTree *toml.Tree, pkgName string) (version string, fo
 	case !isEmpty(tomlTree, branchConst):
 		return tomlTree.Get(branchConst).(string), true
 	}
-	return
+	return "", false
 }
