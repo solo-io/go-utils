@@ -77,7 +77,7 @@ func GetVersionFromTag(shouldBeAVersion string) (string, error) {
 // Deprecated: Use GetTomlVersion instead
 func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 	for _, v := range tomlTree {
-		if found, version := getVersionFromTree(v, pkgName); found {
+		if version, found := getVersionFromTree(v, pkgName); found {
 			return version, nil
 		}
 	}
@@ -86,12 +86,12 @@ func GetVersion(pkgName string, tomlTree []*toml.Tree) (string, error) {
 
 func GetTomlVersion(pkgName string, toml *TomlWrapper) (string, error) {
 	for _, v := range toml.Overrides {
-		if found, version := getVersionFromTree(v, pkgName); found {
+		if version, found := getVersionFromTree(v, pkgName); found {
 			return version, nil
 		}
 	}
 	for _, v := range toml.Constraints {
-		if found, version := getVersionFromTree(v, pkgName); found {
+		if version, found := getVersionFromTree(v, pkgName); found {
 			return version, nil
 		}
 	}
@@ -158,18 +158,18 @@ func ParseFullToml() (*TomlWrapper, error) {
 	return ParseFullTomlFromDir("")
 }
 
-func getVersionFromTree(tomlTree *toml.Tree, pkgName string) (found bool, version string) {
+func getVersionFromTree(tomlTree *toml.Tree, pkgName string) (version string, found bool) {
 	isEmpty := func(node *toml.Tree, key string) bool {
 		return node.Get(key) == nil || node.Get(key) == ""
 	}
 
 	switch {
 	case tomlTree.Get(nameConst) == pkgName && !isEmpty(tomlTree, versionConst):
-		return true, tomlTree.Get(versionConst).(string)
+		return tomlTree.Get(versionConst).(string), true
 	case tomlTree.Get(nameConst) == pkgName && !isEmpty(tomlTree, revisionConst):
-		return true, tomlTree.Get(revisionConst).(string)
+		return tomlTree.Get(revisionConst).(string), true
 	case tomlTree.Get(nameConst) == pkgName && !isEmpty(tomlTree, branchConst):
-		return true, tomlTree.Get(branchConst).(string)
+		return tomlTree.Get(branchConst).(string), true
 	}
 	return
 }
