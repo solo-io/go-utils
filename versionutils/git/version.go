@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"os"
@@ -14,6 +15,8 @@ var (
 	FailedCommandError = func(err error, args []string, output string) error {
 		return errors.Wrapf(err, "%v failed: %s", args, output)
 	}
+	UnexpectedGitBranchOutputError = errors.New("unexpected 'git branch' output. " +
+		"Current branch line should consist of 2 or more space-separated tokens")
 )
 
 // Contains different representations of a git ref.
@@ -101,15 +104,18 @@ func (g gitRepo) getBranch() (string, error) {
 		return "", FailedCommandError(err, cmd.Args, string(output))
 	}
 
-	lines := strings.Split(string(output), "\n")
-
 	var currentBranchLine string
-	for _, line := range lines {
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	for scanner.Scan() {
 		// The line referring to the current branch starts with a "*" character
+		line := scanner.Text()
 		if strings.HasPrefix(line, "*") {
 			currentBranchLine = line
 			break
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
 	}
 
 	// If we are in detached head state, the command outputs "* (HEAD detached at <the_sha>)"
@@ -118,5 +124,10 @@ func (g gitRepo) getBranch() (string, error) {
 		return "", nil
 	}
 
-	return strings.Split(currentBranchLine, " ")[1], nil
+	parts := strings.Split(currentBranchLine, " ")
+	if len(parts) < 2 {
+		return "", UnexpectedGitBranchOutputError
+	}
+
+	return parts[1], nil
 }
