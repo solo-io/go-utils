@@ -1,4 +1,0 @@
-changelog:
-- type: NEW_FEATURE
-  issueLink: https://github.com/solo-io/go-utils/issues/291
-  description: Consider all possible version fields (version, branch, revision) when retrieving a dependency version from a .toml file.
