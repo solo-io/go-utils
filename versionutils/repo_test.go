@@ -91,5 +91,4 @@ var _ = Describe("Repo", func() {
 			Expect(version).To(Equal("f1cdf253cb03da85ed2af456140c38eb90bcb53b"))
 		})
 	})
-
 })

@@ -29,10 +29,15 @@ var (
 	UnableToFindVersionInTomlError = func(pkgName string) error {
 		return fmt.Errorf("unable to find version for %s in toml", pkgName)
 	}
+	FailedCommandError = func(err error, args []string, output string) error {
+		return errors.Wrapf(err, "%v failed: %s", args, output)
+	}
 )
 
-func PinGitVersion(relativeRepoDir string, version string) error {
-	tag := GetTag(version)
+// Deprecated: use git.PinDependencyVersion
+// This function prepends a "v" to the semver and then tries to 'git checkout' the resulting tag in the given directory.
+func PinGitVersion(relativeRepoDir string, semVerVersion string) error {
+	tag := GetTag(semVerVersion)
 	cmd := exec.Command("git", "checkout", tag)
 	cmd.Dir = relativeRepoDir
 	buf := &bytes.Buffer{}
@@ -40,21 +45,23 @@ func PinGitVersion(relativeRepoDir string, version string) error {
 	cmd.Stdout = out
 	cmd.Stderr = out
 	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "%v failed: %s", cmd.Args, buf.String())
+		return FailedCommandError(err, cmd.Args, buf.String())
 	}
 	return nil
 }
 
+// Deprecated: use git.GetGitRefInfo
 func GetGitVersion(relativeRepoDir string) (string, error) {
 	cmd := exec.Command("git", "describe", "--tags", "--dirty")
 	cmd.Dir = relativeRepoDir
 	output, err := cmd.Output()
 	if err != nil {
-		return "", errors.Wrapf(err, "%v failed: %s", cmd.Args, output)
+		return "", FailedCommandError(err, cmd.Args, string(output))
 	}
 	return strings.TrimSpace(string(output)), nil
 }
 
+// Deprecated: use git.AppendTagPrefix
 func GetTag(version string) string {
 	if strings.HasPrefix(version, "v") {
 		return version
