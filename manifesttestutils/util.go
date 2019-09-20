@@ -41,8 +41,8 @@ type TestManifest interface {
 	ExpectCustomResource(gvk, namespace, name string) *unstructured.Unstructured
 	NumResources() int
 
-	Expect(kind, namespace, name string) GomegaAssertion
-	ExpectUnstructured(kind, namespace, name string) GomegaAssertion
+	Expect(kind, namespace, name string) Assertion
+	ExpectUnstructured(kind, namespace, name string) Assertion
 
 	ExpectPermissions(permissions *ServiceAccountPermissions)
 }
