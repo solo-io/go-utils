@@ -12,6 +12,14 @@ type ChangelogClient interface {
 	GetChangelogForTag(ctx context.Context, sha, tag string) (*Changelog, error)
 }
 
+func NewChangelogClient(client githubutils.RepoClient) *changelogClient {
+	return &changelogClient{
+		client: client,
+	}
+}
+
+var _ ChangelogClient = new(changelogClient)
+
 type changelogClient struct {
 	client githubutils.RepoClient
 }
