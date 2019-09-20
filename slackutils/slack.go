@@ -18,7 +18,10 @@ type SlackNotifications struct {
 }
 
 type SlackClient interface {
-	Notify(ctx context.Context, repo, message string)
+	// Use repo-specific channel, if exists
+	NotifyForRepo(ctx context.Context, repo, message string)
+	// Use default channel
+	Notify(ctx context.Context, message string)
 }
 
 func NewSlackClient(notifications *SlackNotifications) *slackClient {
@@ -35,14 +38,21 @@ func (s *slackClient) getSlackUrl(repo string) string {
 	if s.notifications == nil || s.notifications.RepoUrls == nil {
 		return ""
 	}
-	repoUrl := s.notifications.RepoUrls[repo]
-	if repoUrl != "" {
+	if repo == "" {
+		return s.notifications.DefaultUrl
+	}
+	repoUrl, ok := s.notifications.RepoUrls[repo]
+	if ok {
 		return repoUrl
 	}
 	return s.notifications.DefaultUrl
 }
 
-func (s *slackClient) Notify(ctx context.Context, repo, message string) {
+func (s *slackClient) Notify(ctx context.Context, message string) {
+	s.NotifyForRepo(ctx, "", message)
+}
+
+func (s *slackClient) NotifyForRepo(ctx context.Context, repo, message string) {
 	slackUrl := s.getSlackUrl(repo)
 	if slackUrl == "" {
 		return
