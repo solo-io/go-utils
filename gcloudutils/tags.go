@@ -9,13 +9,14 @@ import (
 type Tags []string
 
 const (
-	seperator   = "_"
-	tagConst    = "tag"
-	shaConst    = "sha"
-	refConst    = "ref"
-	repoConst   = "repo"
-	instIdConst = "instId"
-	prConst     = "pr"
+	seperator    = "_"
+	tagConst     = "tag"
+	shaConst     = "sha"
+	refConst     = "ref"
+	repoConst    = "repo"
+	instIdConst  = "instId"
+	prConst      = "pr"
+	builderConst = "builder"
 )
 
 func InitializeTags(input []string) Tags {
@@ -35,6 +36,10 @@ func createIntegerTag(title string, item int64) string {
 
 func (t Tags) AddReleaseTag(tag string) Tags {
 	return append(t, createTag(tagConst, tag))
+}
+
+func (t Tags) AddBuilderTag(builder string) Tags {
+	return append(t, createTag(builderConst, builder))
 }
 
 func (t Tags) AddShaTag(sha string) Tags {
@@ -64,6 +69,10 @@ func (t Tags) IsReleaseBuild() bool {
 // returns "" for empty
 func (t Tags) GetReleaseTag() string {
 	return t.getByConst(tagConst)
+}
+
+func (t Tags) GetBuilderTag() string {
+	return t.getByConst(builderConst)
 }
 
 // returns "" for empty

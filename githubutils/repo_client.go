@@ -2,6 +2,7 @@ package githubutils
 
 import (
 	"context"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
@@ -16,8 +17,12 @@ type RepoClient interface {
 	FindLatestReleaseTagIncudingPrerelease(ctx context.Context) (string, error)
 	CompareCommits(ctx context.Context, base, sha string) (*github.CommitsComparison, error)
 	DirectoryExists(ctx context.Context, sha, directory string) (bool, error)
+	FileExists(ctx context.Context, sha, path string) (bool, error)
 	CreateBranch(ctx context.Context, branchName string) (*github.Reference, error)
 	CreatePR(ctx context.Context, branchName string, spec PRSpec) error
+	GetShaForTag(ctx context.Context, tag string) (string, error)
+	GetPR(ctx context.Context, num int) (*github.PullRequest, error)
+	UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error)
 }
 
 type repoClient struct {
@@ -54,7 +59,30 @@ func (c *repoClient) DirectoryExists(ctx context.Context, sha, directory string)
 	if err == nil && len(repoDirectory) > 0 {
 		return true, nil
 	} else {
-		if branchResponse.StatusCode != 404 {
+		if branchResponse != nil && branchResponse.StatusCode != 404 {
+			contextutils.LoggerFrom(ctx).Errorw("Unable to determine whether ref has directory",
+				zap.Error(err),
+				zap.String("sha", sha),
+				zap.String("directory", directory))
+			return false, err
+		}
+	}
+	return false, nil
+}
+
+func (c *repoClient) FileExists(ctx context.Context, sha, path string) (bool, error) {
+	opts := &github.RepositoryContentGetOptions{
+		Ref: sha,
+	}
+	_, _, branchResponse, err := c.client.Repositories.GetContents(ctx, c.owner, c.repo, path, opts)
+	if err == nil {
+		return true, nil
+	} else {
+		if branchResponse != nil && branchResponse.StatusCode != 404 {
+			contextutils.LoggerFrom(ctx).Errorw("Unable to determine whether ref has file",
+				zap.Error(err),
+				zap.String("sha", sha),
+				zap.String("path", path))
 			return false, err
 		}
 	}
@@ -98,4 +126,35 @@ func (c *repoClient) CreatePR(ctx context.Context, branchName string, spec PRSpe
 	contextutils.LoggerFrom(ctx).Infow("PR created",
 		zap.String("url", pr.GetHTMLURL()))
 	return nil
+}
+
+func (c *repoClient) GetShaForTag(ctx context.Context, tag string) (string, error) {
+	ref, _, err := c.client.Git.GetRef(ctx, c.owner, c.owner, "tags/"+tag)
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error loading ref for tag", zap.Error(err), zap.String("tag", tag))
+		return "", err
+	}
+	return *ref.Object.SHA, nil
+}
+
+func (c *repoClient) GetPR(ctx context.Context, num int) (*github.PullRequest, error) {
+	pr, _, err := c.client.PullRequests.Get(ctx, c.owner, c.repo, num)
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("can't get PR object",
+			zap.Error(err),
+			zap.String("owner", c.owner),
+			zap.String("repo", c.repo),
+			zap.Int("prNumber", num))
+		return nil, err
+	}
+	return pr, nil
+}
+
+func (c *repoClient) UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error) {
+	updatedRelease, _, err := c.client.Repositories.EditRelease(ctx, c.owner, c.repo, release.GetID(), release)
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Unable to update release", zap.Error(err))
+		return nil, err
+	}
+	return updatedRelease, nil
 }

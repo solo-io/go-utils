@@ -6,10 +6,11 @@ package changelogutils_test
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	github "github.com/google/go-github/github"
 	githubutils "github.com/solo-io/go-utils/githubutils"
-	reflect "reflect"
 )
 
 // MockRepoClient is a mock of RepoClient interface
@@ -94,6 +95,21 @@ func (mr *MockRepoClientMockRecorder) DirectoryExists(arg0, arg1, arg2 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DirectoryExists", reflect.TypeOf((*MockRepoClient)(nil).DirectoryExists), arg0, arg1, arg2)
 }
 
+// FileExists mocks base method
+func (m *MockRepoClient) FileExists(arg0 context.Context, arg1, arg2 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FileExists", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FileExists indicates an expected call of FileExists
+func (mr *MockRepoClientMockRecorder) FileExists(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FileExists", reflect.TypeOf((*MockRepoClient)(nil).FileExists), arg0, arg1, arg2)
+}
+
 // FindLatestReleaseTagIncudingPrerelease mocks base method
 func (m *MockRepoClient) FindLatestReleaseTagIncudingPrerelease(arg0 context.Context) (string, error) {
 	m.ctrl.T.Helper()
@@ -107,4 +123,49 @@ func (m *MockRepoClient) FindLatestReleaseTagIncudingPrerelease(arg0 context.Con
 func (mr *MockRepoClientMockRecorder) FindLatestReleaseTagIncudingPrerelease(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindLatestReleaseTagIncudingPrerelease", reflect.TypeOf((*MockRepoClient)(nil).FindLatestReleaseTagIncudingPrerelease), arg0)
+}
+
+// GetPR mocks base method
+func (m *MockRepoClient) GetPR(arg0 context.Context, arg1 int) (*github.PullRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPR", arg0, arg1)
+	ret0, _ := ret[0].(*github.PullRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPR indicates an expected call of GetPR
+func (mr *MockRepoClientMockRecorder) GetPR(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPR", reflect.TypeOf((*MockRepoClient)(nil).GetPR), arg0, arg1)
+}
+
+// GetShaForTag mocks base method
+func (m *MockRepoClient) GetShaForTag(arg0 context.Context, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetShaForTag", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetShaForTag indicates an expected call of GetShaForTag
+func (mr *MockRepoClientMockRecorder) GetShaForTag(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShaForTag", reflect.TypeOf((*MockRepoClient)(nil).GetShaForTag), arg0, arg1)
+}
+
+// UpdateRelease mocks base method
+func (m *MockRepoClient) UpdateRelease(arg0 context.Context, arg1 *github.RepositoryRelease) (*github.RepositoryRelease, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRelease", arg0, arg1)
+	ret0, _ := ret[0].(*github.RepositoryRelease)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateRelease indicates an expected call of UpdateRelease
+func (mr *MockRepoClientMockRecorder) UpdateRelease(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRelease", reflect.TypeOf((*MockRepoClient)(nil).UpdateRelease), arg0, arg1)
 }
