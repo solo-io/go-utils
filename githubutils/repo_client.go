@@ -2,6 +2,7 @@ package githubutils
 
 import (
 	"context"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
@@ -18,6 +19,7 @@ type RepoClient interface {
 	DirectoryExists(ctx context.Context, sha, directory string) (bool, error)
 	CreateBranch(ctx context.Context, branchName string) (*github.Reference, error)
 	CreatePR(ctx context.Context, branchName string, spec PRSpec) error
+	GetShaForTag(ctx context.Context, tag string) (string, error)
 }
 
 type repoClient struct {
@@ -98,4 +100,13 @@ func (c *repoClient) CreatePR(ctx context.Context, branchName string, spec PRSpe
 	contextutils.LoggerFrom(ctx).Infow("PR created",
 		zap.String("url", pr.GetHTMLURL()))
 	return nil
+}
+
+func (c *repoClient) GetShaForTag(ctx context.Context, tag string) (string, error) {
+	ref, _, err := c.client.Git.GetRef(ctx, c.owner, c.owner, "tags/"+tag)
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Error loading ref for tag", zap.Error(err), zap.String("tag", tag))
+		return "", err
+	}
+	return *ref.Object.SHA, nil
 }
