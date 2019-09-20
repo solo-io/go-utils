@@ -18,6 +18,7 @@ type RepoClient interface {
 	FindLatestReleaseTagIncudingPrerelease(ctx context.Context) (string, error)
 	CompareCommits(ctx context.Context, base, sha string) (*github.CommitsComparison, error)
 	DirectoryExists(ctx context.Context, sha, directory string) (bool, error)
+	FileExists(ctx context.Context, sha, path string) (bool, error)
 	CreateBranch(ctx context.Context, branchName string) (*github.Reference, error)
 	CreatePR(ctx context.Context, branchName string, spec PRSpec) error
 	GetShaForTag(ctx context.Context, tag string) (string, error)
@@ -65,6 +66,25 @@ func (c *repoClient) DirectoryExists(ctx context.Context, sha, directory string)
 				zap.Error(err),
 				zap.String("sha", sha),
 				zap.String("directory", directory))
+			return false, err
+		}
+	}
+	return false, nil
+}
+
+func (c *repoClient) FileExists(ctx context.Context, sha, path string) (bool, error) {
+	opts := &github.RepositoryContentGetOptions{
+		Ref: sha,
+	}
+	_, _, branchResponse, err := c.client.Repositories.GetContents(ctx, c.owner, c.repo, path, opts)
+	if err == nil {
+		return true, nil
+	} else {
+		if branchResponse != nil && branchResponse.StatusCode != 404 {
+			contextutils.LoggerFrom(ctx).Errorw("Unable to determine whether ref has file",
+				zap.Error(err),
+				zap.String("sha", sha),
+				zap.String("path", path))
 			return false, err
 		}
 	}
