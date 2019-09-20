@@ -20,6 +20,7 @@ type RepoClient interface {
 	CreateBranch(ctx context.Context, branchName string) (*github.Reference, error)
 	CreatePR(ctx context.Context, branchName string, spec PRSpec) error
 	GetShaForTag(ctx context.Context, tag string) (string, error)
+	GetPR(ctx context.Context, num int) (*github.PullRequest, error)
 }
 
 type repoClient struct {
@@ -109,4 +110,17 @@ func (c *repoClient) GetShaForTag(ctx context.Context, tag string) (string, erro
 		return "", err
 	}
 	return *ref.Object.SHA, nil
+}
+
+func (c *repoClient) GetPR(ctx context.Context, num int) (*github.PullRequest, error) {
+	pr, _, err := c.client.PullRequests.Get(ctx, c.owner, c.repo, num)
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("can't get PR object",
+			zap.Error(err),
+			zap.String("owner", c.owner),
+			zap.String("repo", c.repo),
+			zap.Int("prNumber", num))
+		return nil, err
+	}
+	return pr, nil
 }
