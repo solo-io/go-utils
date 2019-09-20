@@ -41,6 +41,12 @@ func (r *Registry) RegisterPlugin(p Plugin) {
 
 func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, event *github.PullRequestEvent) {
 	for _, pr := range r.prplugins {
+		contextutils.LoggerFrom(ctx).Debugw("PR event",
+			zap.String("owner", event.GetPullRequest().GetBase().GetRepo().GetOwner().GetLogin()),
+			zap.String("repo", event.GetPullRequest().GetBase().GetRepo().GetName()),
+			zap.String("sha", event.GetPullRequest().GetHead().GetSHA()),
+			zap.String("base", event.GetPullRequest().GetBase().GetRef()),
+			zap.Int("pr", event.GetPullRequest().GetNumber()))
 		err := pr.HandlePREvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling PR", zap.Error(err), zap.Any("event", event))
@@ -50,6 +56,12 @@ func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, eve
 
 func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.Client, event *github.PullRequestReviewEvent) {
 	for _, pr := range r.prrplugins {
+		contextutils.LoggerFrom(ctx).Debugw("PR review event",
+			zap.String("owner", event.GetPullRequest().GetBase().GetRepo().GetOwner().GetLogin()),
+			zap.String("repo", event.GetPullRequest().GetBase().GetRepo().GetName()),
+			zap.String("sha", event.GetPullRequest().GetHead().GetSHA()),
+			zap.String("base", event.GetPullRequest().GetBase().GetRef()),
+			zap.Int("pr", event.GetPullRequest().GetNumber()))
 		err := pr.HandlePullRequestReviewEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling PR review", zap.Error(err), zap.Any("event", event))
@@ -60,6 +72,11 @@ func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.
 
 func (r *Registry) CallIssueCommentPlugins(ctx context.Context, client *github.Client, event *github.IssueCommentEvent) {
 	for _, pr := range r.icplugins {
+		contextutils.LoggerFrom(ctx).Debugw("Issue comment",
+			zap.String("owner", event.GetRepo().GetOwner().GetLogin()),
+			zap.String("repo", event.GetRepo().GetName()),
+			zap.Int("issue", event.GetIssue().GetNumber()),
+			zap.String("body", event.GetIssue().GetBody()))
 		err := pr.HandleIssueCommentEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling issue comment", zap.Error(err), zap.Any("event", event))
@@ -69,6 +86,10 @@ func (r *Registry) CallIssueCommentPlugins(ctx context.Context, client *github.C
 
 func (r *Registry) CallCommitCommentPlugins(ctx context.Context, client *github.Client, event *github.CommitCommentEvent) {
 	for _, pr := range r.ccplugins {
+		contextutils.LoggerFrom(ctx).Debugw("Issue comment",
+			zap.String("owner", event.GetRepo().GetOwner().GetLogin()),
+			zap.String("repo", event.GetRepo().GetName()),
+			zap.String("body", event.GetComment().GetBody()))
 		err := pr.HandleCommitCommentEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling commit comment", zap.Error(err), zap.Any("event", event))
@@ -78,6 +99,11 @@ func (r *Registry) CallCommitCommentPlugins(ctx context.Context, client *github.
 
 func (r *Registry) CallReleasePlugins(ctx context.Context, client *github.Client, event *github.ReleaseEvent) {
 	for _, pr := range r.releaseplugins {
+		contextutils.LoggerFrom(ctx).Infow("Release",
+			zap.String("tag", event.GetRelease().GetTagName()),
+			zap.String("sha", event.GetRelease().GetTargetCommitish()),
+			zap.String("org", event.GetRepo().GetOwner().GetLogin()),
+			zap.String("repo", event.GetRepo().GetName()))
 		err := pr.HandleReleaseEvent(ctx, client, event)
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("error handling release", zap.Error(err), zap.Any("event", event))

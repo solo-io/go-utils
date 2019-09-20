@@ -21,6 +21,7 @@ type RepoClient interface {
 	CreatePR(ctx context.Context, branchName string, spec PRSpec) error
 	GetShaForTag(ctx context.Context, tag string) (string, error)
 	GetPR(ctx context.Context, num int) (*github.PullRequest, error)
+	UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error)
 }
 
 type repoClient struct {
@@ -123,4 +124,13 @@ func (c *repoClient) GetPR(ctx context.Context, num int) (*github.PullRequest, e
 		return nil, err
 	}
 	return pr, nil
+}
+
+func (c *repoClient) UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error) {
+	updatedRelease, _, err := c.client.Repositories.EditRelease(ctx, c.owner, c.repo, release.GetID(), release)
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Errorw("Unable to update release", zap.Error(err))
+		return nil, err
+	}
+	return updatedRelease, nil
 }
