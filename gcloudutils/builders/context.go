@@ -74,8 +74,8 @@ func (ctx *sharedContext) Builder() string {
 	return ctx.builder
 }
 
-func (ctx *sharedContext) SetBuilder() string {
-	return ctx.builder
+func (ctx *sharedContext) SetBuilder(builder string) {
+	ctx.builder = builder
 }
 
 type PullRequestContext struct {
