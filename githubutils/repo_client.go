@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/vfsutils"
 	"go.uber.org/zap"
 
 	"github.com/google/go-github/github"
@@ -24,7 +23,6 @@ type RepoClient interface {
 	GetShaForTag(ctx context.Context, tag string) (string, error)
 	GetPR(ctx context.Context, num int) (*github.PullRequest, error)
 	UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error)
-	GetCode(ctx context.Context, sha string) vfsutils.MountedRepo
 }
 
 type repoClient struct {
@@ -159,8 +157,4 @@ func (c *repoClient) UpdateRelease(ctx context.Context, release *github.Reposito
 		return nil, err
 	}
 	return updatedRelease, nil
-}
-
-func (c *repoClient) GetCode(ctx context.Context, sha string) vfsutils.MountedRepo {
-	return vfsutils.NewLazilyMountedRepo(c.client, c.owner, c.repo, sha)
 }
