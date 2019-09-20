@@ -38,10 +38,11 @@ type TestManifest interface {
 	ExpectService(service *corev1.Service)
 	ExpectNamespace(namespace *corev1.Namespace)
 	ExpectCrd(crd *extv1beta1.CustomResourceDefinition)
-	ExpectCustomResource(gvk, namespace, name string)
+	ExpectCustomResource(gvk, namespace, name string) *unstructured.Unstructured
 	NumResources() int
 
 	Expect(kind, namespace, name string) GomegaAssertion
+	ExpectUnstructured(kind, namespace, name string) GomegaAssertion
 
 	ExpectPermissions(permissions *ServiceAccountPermissions)
 }
@@ -164,18 +165,24 @@ func (t *testManifest) ExpectCrd(crd *extv1beta1.CustomResourceDefinition) {
 	Expect(actual).To(BeEquivalentTo(crd))
 }
 
-func (t *testManifest) ExpectCustomResource(kind, namespace, name string) {
+func (t *testManifest) ExpectCustomResource(kind, namespace, name string) *unstructured.Unstructured {
 	found := false
 	for _, resource := range t.resources {
 		if resource.GetKind() == kind && resource.GetNamespace() == namespace && resource.GetName() == name {
 			found = true
+			return resource
 		}
 	}
 	Expect(found).To(BeTrue())
+	return nil
 }
 
 func (t *testManifest) Expect(kind, namespace, name string) GomegaAssertion {
 	return Expect(t.findObject(kind, namespace, name))
+}
+
+func (t *testManifest) ExpectUnstructured(kind, namespace, name string) GomegaAssertion {
+	return Expect(t.findUnstructured(kind, namespace, name))
 }
 
 func (t *testManifest) ExpectPermissions(permissions *ServiceAccountPermissions) {
@@ -239,13 +246,20 @@ func (t *testManifest) ExpectPermissions(permissions *ServiceAccountPermissions)
 	Expect(string(ownYaml)).To(BeEquivalentTo(string(expectedYaml)))
 }
 
-func (t *testManifest) findObject(kind, namespace, name string) runtime.Object {
+func (t *testManifest) findUnstructured(kind, namespace, name string) *unstructured.Unstructured {
 	for _, resource := range t.resources {
 		if resource.GetKind() == kind && resource.GetNamespace() == namespace && resource.GetName() == name {
-			converted, err := kuberesource.ConvertUnstructured(resource)
-			Expect(err).NotTo(HaveOccurred())
-			return converted
+			return resource
 		}
+	}
+	return nil
+}
+
+func (t *testManifest) findObject(kind, namespace, name string) runtime.Object {
+	if obj := t.findUnstructured(kind, namespace, name); obj != nil {
+		converted, err := kuberesource.ConvertUnstructured(obj)
+		Expect(err).NotTo(HaveOccurred())
+		return converted
 	}
 	return nil
 }

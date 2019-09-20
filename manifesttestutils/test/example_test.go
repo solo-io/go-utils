@@ -247,6 +247,10 @@ var _ = Describe("Helm Test", func() {
 			testManifest.ExpectCustomResource(gvk, namespace, name)
 		})
 
+		It("can match an unstructured", func() {
+			testManifest.ExpectUnstructured(gvk, namespace, name).NotTo(BeNil())
+		})
+
 	})
 
 	Describe("permissions", func() {

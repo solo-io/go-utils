@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  description: Return more info about a dependency version retrieved from a .toml file.
+  issueLink: https://github.com/solo-io/go-utils/issues/294
