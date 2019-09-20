@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add builder tag and other utilities to simplify writing build bots. 
+    issueLink: https://github.com/solo-io/go-utils/issues/297
