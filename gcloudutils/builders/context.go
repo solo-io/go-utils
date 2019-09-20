@@ -16,6 +16,7 @@ type BuildContext interface {
 	Repo() string
 	ProjectId() string
 	InstallationId() int64
+	Builder() string
 }
 
 type ShaBuildContext interface {
@@ -44,8 +45,9 @@ type sharedContext struct {
 	client         *github.Client
 	service        *cloudbuild.Service
 
-	owner string
-	repo  string
+	owner   string
+	repo    string
+	builder string
 }
 
 func NewSharedContext(projectId string, installationId int64, client *github.Client, service *cloudbuild.Service, owner string, repo string) *sharedContext {
@@ -66,6 +68,14 @@ func (ctx *sharedContext) ProjectId() string {
 
 func (ctx *sharedContext) InstallationId() int64 {
 	return ctx.installationId
+}
+
+func (ctx *sharedContext) Builder() string {
+	return ctx.builder
+}
+
+func (ctx *sharedContext) SetBuilder() string {
+	return ctx.builder
 }
 
 type PullRequestContext struct {

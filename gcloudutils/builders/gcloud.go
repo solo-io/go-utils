@@ -99,7 +99,7 @@ func startBuild(ctx context.Context, builderCtx BuildContext, cbm *cloudbuild.Bu
 	return &bi, nil
 }
 
-func StartPRBuild(ctx context.Context, buildContext *PullRequestContext, builder string) (*BuildInfo, error) {
+func StartPRBuild(ctx context.Context, buildContext *PullRequestContext) (*BuildInfo, error) {
 	storageBuilder, err := NewStorageBuilder(ctx, buildContext.ProjectId())
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func StartPRBuild(ctx context.Context, buildContext *PullRequestContext, builder
 	tags = tags.AddShaTag(buildContext.Sha())
 	tags = tags.AddRepoTag(buildContext.Repo())
 	tags = tags.AddPRTag(buildContext.PullRequest().GetNumber())
-	tags = tags.AddBuilderTag(builder)
+	tags = tags.AddBuilderTag(buildContext.Builder())
 	cbm.Tags = tags
 
 	return startBuild(ctx, buildContext, cbm)
@@ -134,6 +134,7 @@ func StartBuildWithTag(ctx context.Context, builderCtx TagBuildContext) (*BuildI
 	tags = tags.AddReleaseTag(builderCtx.Tag())
 	tags = tags.AddRepoTag(builderCtx.Repo())
 	tags = tags.AddInstallationIdTag(builderCtx.InstallationId())
+	tags = tags.AddBuilderTag(builderCtx.Builder())
 	cbm.Tags = tags
 
 	return startBuild(ctx, builderCtx, cbm)
@@ -153,6 +154,7 @@ func StartBuildWithSha(ctx context.Context, builderCtx ShaBuildContext) (*BuildI
 	tags = tags.AddInstallationIdTag(builderCtx.InstallationId())
 	tags = tags.AddShaTag(builderCtx.Sha())
 	tags = tags.AddRepoTag(builderCtx.Repo())
+	tags = tags.AddBuilderTag(builderCtx.Builder())
 	cbm.Tags = tags
 
 	return startBuild(ctx, builderCtx, cbm)
