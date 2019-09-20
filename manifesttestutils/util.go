@@ -256,8 +256,8 @@ func (t *testManifest) findUnstructured(kind, namespace, name string) *unstructu
 }
 
 func (t *testManifest) findObject(kind, namespace, name string) runtime.Object {
-	if obj := t.findUnstructured(kind, namespace, name); obj != nil {
-		converted, err := kuberesource.ConvertUnstructured(obj)
+	if unst := t.findUnstructured(kind, namespace, name); unst != nil {
+		converted, err := kuberesource.ConvertUnstructured(unst)
 		Expect(err).NotTo(HaveOccurred())
 		return converted
 	}
