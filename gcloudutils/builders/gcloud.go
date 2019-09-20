@@ -99,7 +99,7 @@ func startBuild(ctx context.Context, builderCtx BuildContext, cbm *cloudbuild.Bu
 	return &bi, nil
 }
 
-func StartPRBuild(ctx context.Context, buildContext *PullRequestContext) (*BuildInfo, error) {
+func StartPRBuild(ctx context.Context, buildContext *PullRequestContext, builder string) (*BuildInfo, error) {
 	storageBuilder, err := NewStorageBuilder(ctx, buildContext.ProjectId())
 	if err != nil {
 		return nil, err
@@ -114,6 +114,7 @@ func StartPRBuild(ctx context.Context, buildContext *PullRequestContext) (*Build
 	tags = tags.AddShaTag(buildContext.Sha())
 	tags = tags.AddRepoTag(buildContext.Repo())
 	tags = tags.AddPRTag(buildContext.PullRequest().GetNumber())
+	tags = tags.AddBuilderTag(builder)
 	cbm.Tags = tags
 
 	return startBuild(ctx, buildContext, cbm)
