@@ -2,17 +2,21 @@ package commitutils
 
 import (
 	"context"
+	"time"
+
 	"github.com/google/go-github/github"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/vfsutils"
 	"go.uber.org/zap"
-	"time"
 )
 
 var (
-	RefNotSetError = errors.Errorf("Must initialize with set ref before updating files.")
-	RefAlreadySetError = errors.Errorf("Ref was already set.")
+	RefNotSetError           = errors.Errorf("Must initialize with set ref before updating files.")
+	RefAlreadySetError       = errors.Errorf("Ref was already set.")
+	CouldNotFindFileToRename = func(oldPath string) error {
+		return errors.Errorf("Could not find file %s in tree", oldPath)
+	}
 )
 
 type CommitSpec struct {
@@ -24,24 +28,26 @@ type CommitSpec struct {
 type RefUpdater interface {
 	SetRef(ctx context.Context, ref *github.Reference) error
 	UpdateFile(ctx context.Context, path string, contentUpdater func(string) string) error
+	RenameFile(ctx context.Context, oldPath, newPath string) error
 	Commit(ctx context.Context, spec CommitSpec) error
+	Code(ctx context.Context) (vfsutils.MountedRepo, error)
 }
 
 type githubRefUpdater struct {
 	client *github.Client
-	owner string
-	repo string
+	owner  string
+	repo   string
 
-	ref *github.Reference
-	code   vfsutils.MountedRepo
+	ref           *github.Reference
+	code          vfsutils.MountedRepo
 	filesToCommit []github.TreeEntry
 }
 
 func NewGithubRefUpdater(client *github.Client, owner, repo string) RefUpdater {
 	return &githubRefUpdater{
 		client: client,
-		owner: owner,
-		repo: repo,
+		owner:  owner,
+		repo:   repo,
 	}
 }
 
@@ -104,8 +110,48 @@ func (c *githubRefUpdater) Commit(ctx context.Context, spec CommitSpec) error {
 		return err
 	}
 
-	// Attach the commit to the master branch.
 	c.ref.Object.SHA = newCommit.SHA
 	_, _, err = c.client.Git.UpdateRef(ctx, c.code.GetOwner(), c.code.GetRepo(), c.ref, false)
 	return err
+}
+
+func (c *githubRefUpdater) RenameFile(ctx context.Context, oldPath, newPath string) error {
+	if c.ref == nil {
+		return RefNotSetError
+	}
+	// Get the parent commit to attach the commit to.
+	parent, _, err := c.client.Repositories.GetCommit(ctx, c.code.GetOwner(), c.code.GetRepo(), *c.ref.Object.SHA)
+	if err != nil {
+		return err
+	}
+	// find the parent's tree entry for the old path
+	tree, _, err := c.client.Git.GetTree(ctx, c.code.GetOwner(), c.code.GetRepo(), parent.GetSHA(), false)
+	if err != nil {
+		return err
+	}
+	var found *github.TreeEntry
+	for _, entry := range tree.Entries {
+		if entry.GetPath() == oldPath {
+			found = &entry
+		}
+	}
+	if found == nil {
+		return CouldNotFindFileToRename(oldPath)
+	}
+
+	updated := github.TreeEntry{
+		Path: github.String(newPath),
+		Type: found.Type,
+		SHA:  found.SHA,
+		Mode: found.Mode,
+	}
+	c.filesToCommit = append(c.filesToCommit, updated)
+	return nil
+}
+
+func (c *githubRefUpdater) Code(ctx context.Context) (vfsutils.MountedRepo, error) {
+	if c.ref == nil {
+		return nil, RefNotSetError
+	}
+	return c.code, nil
 }
