@@ -30,6 +30,7 @@ type RefUpdater interface {
 	UpdateFile(ctx context.Context, path string, contentUpdater func(string) string) error
 	RenameFile(ctx context.Context, oldPath, newPath string) error
 	Commit(ctx context.Context, spec CommitSpec) error
+	Code(ctx context.Context) (vfsutils.MountedRepo, error)
 }
 
 type githubRefUpdater struct {
@@ -146,4 +147,11 @@ func (c *githubRefUpdater) RenameFile(ctx context.Context, oldPath, newPath stri
 	}
 	c.filesToCommit = append(c.filesToCommit, updated)
 	return nil
+}
+
+func (c *githubRefUpdater) Code(ctx context.Context) (vfsutils.MountedRepo, error) {
+	if c.ref == nil {
+		return nil, RefNotSetError
+	}
+	return c.code, nil
 }
