@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add utilites to help move and inspect files in a repo. 
+    issueLink: https://github.com/solo-io/go-utils/issues/298
