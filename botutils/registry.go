@@ -44,8 +44,6 @@ func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, eve
 		contextutils.LoggerFrom(ctx).Debugw("PR event",
 			zap.String("owner", event.GetPullRequest().GetBase().GetRepo().GetOwner().GetLogin()),
 			zap.String("repo", event.GetPullRequest().GetBase().GetRepo().GetName()),
-			zap.String("sha", event.GetPullRequest().GetHead().GetSHA()),
-			zap.String("base", event.GetPullRequest().GetBase().GetRef()),
 			zap.Int("pr", event.GetPullRequest().GetNumber()))
 		err := pr.HandlePREvent(ctx, client, event)
 		if err != nil {
@@ -59,8 +57,6 @@ func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.
 		contextutils.LoggerFrom(ctx).Debugw("PR review event",
 			zap.String("owner", event.GetPullRequest().GetBase().GetRepo().GetOwner().GetLogin()),
 			zap.String("repo", event.GetPullRequest().GetBase().GetRepo().GetName()),
-			zap.String("sha", event.GetPullRequest().GetHead().GetSHA()),
-			zap.String("base", event.GetPullRequest().GetBase().GetRef()),
 			zap.Int("pr", event.GetPullRequest().GetNumber()))
 		err := pr.HandlePullRequestReviewEvent(ctx, client, event)
 		if err != nil {
@@ -101,7 +97,6 @@ func (r *Registry) CallReleasePlugins(ctx context.Context, client *github.Client
 	for _, pr := range r.releaseplugins {
 		contextutils.LoggerFrom(ctx).Infow("Release",
 			zap.String("tag", event.GetRelease().GetTagName()),
-			zap.String("sha", event.GetRelease().GetTargetCommitish()),
 			zap.String("org", event.GetRepo().GetOwner().GetLogin()),
 			zap.String("repo", event.GetRepo().GetName()))
 		err := pr.HandleReleaseEvent(ctx, client, event)

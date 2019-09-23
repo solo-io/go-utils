@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/301
+    description: Invalid data was being logged, causing the bot handler to crash. 
