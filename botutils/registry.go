@@ -97,7 +97,6 @@ func (r *Registry) CallReleasePlugins(ctx context.Context, client *github.Client
 	for _, pr := range r.releaseplugins {
 		contextutils.LoggerFrom(ctx).Infow("Release",
 			zap.String("tag", event.GetRelease().GetTagName()),
-			zap.String("sha", event.GetRelease().GetTargetCommitish()),
 			zap.String("org", event.GetRepo().GetOwner().GetLogin()),
 			zap.String("repo", event.GetRepo().GetName()))
 		err := pr.HandleReleaseEvent(ctx, client, event)
