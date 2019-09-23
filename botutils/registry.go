@@ -42,8 +42,8 @@ func (r *Registry) RegisterPlugin(p Plugin) {
 func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, event *github.PullRequestEvent) {
 	for _, pr := range r.prplugins {
 		contextutils.LoggerFrom(ctx).Debugw("PR event",
-			zap.String("owner", event.GetPullRequest().GetBase().GetRepo().GetOwner().GetLogin()),
-			zap.String("repo", event.GetPullRequest().GetBase().GetRepo().GetName()),
+			zap.String("owner", event.GetRepo().GetOwner().GetLogin()),
+			zap.String("repo", event.GetRepo().GetName()),
 			zap.Int("pr", event.GetPullRequest().GetNumber()))
 		err := pr.HandlePREvent(ctx, client, event)
 		if err != nil {
@@ -55,8 +55,8 @@ func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, eve
 func (r *Registry) PullRequestReviewPlugins(ctx context.Context, client *github.Client, event *github.PullRequestReviewEvent) {
 	for _, pr := range r.prrplugins {
 		contextutils.LoggerFrom(ctx).Debugw("PR review event",
-			zap.String("owner", event.GetPullRequest().GetBase().GetRepo().GetOwner().GetLogin()),
-			zap.String("repo", event.GetPullRequest().GetBase().GetRepo().GetName()),
+			zap.String("owner", event.GetRepo().GetOwner().GetLogin()),
+			zap.String("repo", event.GetRepo().GetName()),
 			zap.Int("pr", event.GetPullRequest().GetNumber()))
 		err := pr.HandlePullRequestReviewEvent(ctx, client, event)
 		if err != nil {
