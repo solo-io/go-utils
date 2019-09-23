@@ -64,4 +64,11 @@ var _ = Describe("github utils", func() {
 		Expect(err).To(BeNil())
 		Expect(cc.Files).To(HaveLen(5))
 	})
+
+	It("can get sha for tag", func() {
+		client = githubutils.NewRepoClient(githubClient, owner, repo)
+		sha, err := client.GetShaForTag(ctx, "v0.1.16")
+		Expect(err).To(BeNil())
+		Expect(sha).To(Equal("04da4a385be3fde4797963cd4f3f76a185e56ba7"))
+	})
 })
