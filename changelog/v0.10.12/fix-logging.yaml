@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/302
+    description: Fix log messages to avoid nil value issues. 
