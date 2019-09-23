@@ -40,6 +40,7 @@ func (r *Registry) RegisterPlugin(p Plugin) {
 }
 
 func (r *Registry) CallPrPlugins(ctx context.Context, client *github.Client, event *github.PullRequestEvent) {
+	contextutils.LoggerFrom(ctx).Infow("Calling PR plugins")
 	for _, pr := range r.prplugins {
 		err := pr.HandlePREvent(ctx, client, event)
 		if err != nil {

@@ -74,6 +74,7 @@ func (h *githubHookHandler) HandlePR(ctx context.Context, eventType, deliveryID 
 	if err != nil {
 		return err
 	}
+	contextutils.LoggerFrom(ctx).Infow("calling PR plugins")
 	go h.registry.CallPrPlugins(ctx, client, &event)
 	return nil
 }
