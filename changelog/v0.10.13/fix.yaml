@@ -1,4 +1,4 @@
 changelog:
   - type: FIX
     description: Use correct repo when getting sha for a tag in repo client. 
-    issueLink: https://github.com/solo-io/testrepo/issues/64
+    issueLink: https://github.com/solo-io/go-utils/issues/304
