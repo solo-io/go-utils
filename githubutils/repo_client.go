@@ -129,7 +129,7 @@ func (c *repoClient) CreatePR(ctx context.Context, branchName string, spec PRSpe
 }
 
 func (c *repoClient) GetShaForTag(ctx context.Context, tag string) (string, error) {
-	ref, _, err := c.client.Git.GetRef(ctx, c.owner, c.owner, "tags/"+tag)
+	ref, _, err := c.client.Git.GetRef(ctx, c.owner, c.repo, "tags/"+tag)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Errorw("Error loading ref for tag", zap.Error(err), zap.String("tag", tag))
 		return "", err
