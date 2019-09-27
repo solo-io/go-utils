@@ -18,7 +18,6 @@ import (
 
 const (
 	GATEWAY            = "gateway"
-	GATEWAY_ENTERPRISE = "gateway enterprise"
 	INGRESS            = "ingress"
 	KNATIVE            = "knative"
 )
@@ -134,15 +133,18 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
 		"install", deploymentType,
-		"-n", h.InstallNamespace,
-		"-f", filepath.Join(h.TestAssetDir, h.HelmChartName+"-"+h.version+".tgz"),
 	}
+	if h.LicenseKey != "" {
+		glooctlCommand = append(glooctlCommand, "enterprise", "--license-key", h.LicenseKey)
+	}
+	glooctlCommand = append(glooctlCommand,
+		"-n", h.InstallNamespace,
+		"-f", filepath.Join(h.TestAssetDir, h.HelmChartName+"-"+h.version+".tgz"))
+
 	if h.Verbose {
 		glooctlCommand = append(glooctlCommand, "-v")
 	}
-	if h.LicenseKey != "" {
-		glooctlCommand = append(glooctlCommand, "--license-key", h.LicenseKey)
-	}
+
 	io := &InstallOptions{
 		GlooctlCommand: glooctlCommand,
 		Verbose:        true,
