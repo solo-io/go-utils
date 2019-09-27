@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	GATEWAY = "gateway"
-	INGRESS = "ingress"
-	KNATIVE = "knative"
+	GATEWAY            = "gateway"
+	GATEWAY_ENTERPRISE = "gateway enterprise"
+	INGRESS            = "ingress"
+	KNATIVE            = "knative"
 )
 
 // Default test configuration
