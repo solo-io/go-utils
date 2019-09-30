@@ -1,6 +1,13 @@
 package changelogutils
 
-import "strings"
+import (
+	"context"
+	"fmt"
+	"io"
+	"strings"
+
+	"github.com/solo-io/go-utils/vfsutils"
+)
 
 /*
 Changelog markdown:
@@ -12,6 +19,39 @@ fixes
 closing
 
 */
+
+func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, sha, changelogDirPath string, w io.Writer) error {
+	mountedRepo, fs := vfsutils.NewLocalMountedRepoForFs(repoRootPath, owner, repo, sha)
+	dirContent, err := fs.Open(changelogDirPath)
+	if err != nil {
+		return err
+	}
+	fmt.Println(dirContent)
+	dirs, err := dirContent.Readdirnames(-1)
+	fmt.Println(dirs)
+	if err != nil {
+		return err
+	}
+	reader := NewChangelogReader(mountedRepo)
+	return GenerateChangelogForTags(ctx, dirs, reader, w)
+
+}
+func GenerateChangelogForTags(ctx context.Context, tags []string, reader ChangelogReader, w io.Writer) error {
+	for _, tag := range tags {
+		cl, err := reader.GetChangelogForTag(ctx, tag)
+		if err != nil {
+			return err
+		}
+		md := GenerateChangelogMarkdown(cl)
+		if _, err := fmt.Fprintf(w, "# %v\n", tag); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprint(w, md); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func GenerateChangelogMarkdown(changelog *Changelog) string {
 	output := changelog.Summary
 	if output != "" {
