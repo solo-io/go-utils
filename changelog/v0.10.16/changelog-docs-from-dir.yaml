@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Utility for generating changelog summary documentation from a changelog directory.
+    issueLink: https://github.com/solo-io/go-utils/issues/309

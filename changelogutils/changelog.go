@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sort"
 
 	"github.com/google/go-github/github"
 
@@ -345,4 +346,22 @@ func RefHasChangelog(ctx context.Context, client *github.Client, owner, repo, sh
 	}
 
 	return false, nil
+}
+
+// Sort interface implementation for ChangelogList
+
+type ChangelogList []*Changelog
+
+var _ sort.Interface = ChangelogList{}
+
+func (l ChangelogList) Len() int {
+	return len(l)
+}
+
+func (l ChangelogList) Less(i, j int) bool {
+	return !l[i].Version.IsGreaterThan(l[j].Version)
+}
+
+func (l ChangelogList) Swap(i, j int) {
+	l[i], l[j] = l[j], l[i]
 }
