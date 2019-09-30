@@ -1,6 +1,7 @@
 package changelogutils_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -394,6 +395,70 @@ closing
 			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "solo-docs", "master")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasChangelog).To(BeFalse())
+		})
+	})
+
+	Context("Summary documentation generation", func() {
+		It("produces the expected output", func() {
+			ctx := context.TODO()
+			repoRootPath := ".."
+			owner := "solo-io"
+			repo := "go-utils"
+			changelogDirPath := "../changelog"
+
+			w := bytes.NewBuffer([]byte{})
+			err := changelogutils.GenerateChangelogFromLocalDirectory(ctx, repoRootPath, owner, repo, changelogDirPath, w)
+			Expect(err).NotTo(HaveOccurred())
+			// testing against a substring since the full value will change with each new changelog
+			// this substring should never change unless we change our changelog formatting
+			// it covers the sorting concern, showing that 0.2.12 is indeed greater than 0.2.8
+			Expect(w.String()).To(ContainSubstring(`
+# v0.2.12
+
+**Fixes**
+
+- No longer create unwanted nested directory when pushing solo-kit docs for the first time. (https://github.com/solo-io/go-utils/issues/43)
+
+
+# v0.2.11
+
+**Fixes**
+
+- Fixes the sha upload in ` + "`" + `UploadReleaseAssetsCli` + "`" + ` to upload a checksum for ` + "`" + `foo` + "`" + ` that matches the output of ` + "`" + `shasum -a 256 foo &gt; foo.sha256` + "`" + `. (https://github.com/solo-io/go-utils/issues/41)
+
+
+# v0.2.10
+
+**New Features**
+
+- A utility CLI has been added for uploading release artifacts to github, to replace the old shell script. See the [readme](https://github.com/solo-io/go-utils/tree/master/githubutils) for more information. (https://github.com/solo-io/go-utils/issues/38)
+
+**Fixes**
+
+- PushDocsCli no longer errors on the initial push when the destination directory doesn&#39;t exist. (https://github.com/solo-io/go-utils/issues/40)
+
+
+# v0.2.9
+
+**New Features**
+
+- The docs push utility now supports automated CLI docs. (https://github.com/solo-io/go-utils/issues/33)
+- The docs can support API or CLI docs that are not in the root of the repo. (https://github.com/solo-io/go-utils/issues/33)
+- The docs CLI library now includes the full CLI, so projects can execute docs push in 1 line. (https://github.com/solo-io/go-utils/issues/33)
+- Moves common documentation generation to a shared lib (https://github.com/solo-io/go-utils/issues/35)
+
+
+# v0.2.8
+
+**New Features**
+
+- Changelog now enabled for this repo. (https://github.com/solo-io/go-utils/issues/31)
+
+**Fixes**
+
+- Markdown generation now always ends in two new lines. (https://github.com/solo-io/go-utils/issues/30)
+`))
+
 		})
 	})
 
