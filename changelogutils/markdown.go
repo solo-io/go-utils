@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
+
+	"github.com/spf13/afero"
 
 	"github.com/solo-io/go-utils/vfsutils"
 )
@@ -21,7 +24,8 @@ closing
 */
 
 func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, sha, changelogDirPath string, w io.Writer) error {
-	mountedRepo, fs := vfsutils.NewLocalMountedRepoForFs(repoRootPath, owner, repo, sha)
+	fs := afero.NewOsFs()
+	mountedRepo := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo, sha)
 	dirContent, err := fs.Open(changelogDirPath)
 	if err != nil {
 		return err
@@ -37,13 +41,17 @@ func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owne
 
 }
 func GenerateChangelogForTags(ctx context.Context, tags []string, reader ChangelogReader, w io.Writer) error {
-	for _, tag := range tags {
-		cl, err := reader.GetChangelogForTag(ctx, tag)
-		if err != nil {
+	changelogs := make(ChangelogList, len(tags))
+	var err error
+	for i, tag := range tags {
+		if changelogs[i], err = reader.GetChangelogForTag(ctx, tag); err != nil {
 			return err
 		}
+	}
+	sort.Sort(changelogs)
+	for _, cl := range changelogs {
 		md := GenerateChangelogMarkdown(cl)
-		if _, err := fmt.Fprintf(w, "# %v\n", tag); err != nil {
+		if _, err := fmt.Fprintf(w, "# %v\n", cl.Version.String()); err != nil {
 			return err
 		}
 		if _, err := fmt.Fprint(w, md); err != nil {

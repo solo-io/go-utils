@@ -120,8 +120,7 @@ func NewLazilyMountedRepo(client *github.Client, owner, repo, sha string) Mounte
 }
 
 // Creates a mounted repo for a local filesystem
-func NewLocalMountedRepoForFs(repoRootPath, owner, repo, sha string) (MountedRepo, afero.Fs) {
-	fs := afero.NewOsFs()
+func NewLocalMountedRepoForFs(fs afero.Fs, repoRootPath, owner, repo, sha string) MountedRepo {
 	return &lazilyMountedRepo{
 		owner:        owner,
 		repo:         repo,
@@ -129,5 +128,5 @@ func NewLocalMountedRepoForFs(repoRootPath, owner, repo, sha string) (MountedRep
 		fs:           fs,
 		repoRootPath: repoRootPath,
 		client:       nil,
-	}, fs
+	}
 }
