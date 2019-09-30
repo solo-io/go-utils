@@ -25,7 +25,9 @@ var (
 		return errors.Wrapf(err, "error listing files of %s", path)
 	}
 
-	InvalidDefinitionError = errors.New("must provide a github client if not using a local filesystem")
+	InvalidDefinitionError = func(msg string) error {
+		return errors.New(msg)
+	}
 )
 
 type MountedRepo interface {
@@ -61,7 +63,7 @@ func (r *lazilyMountedRepo) GetSha() string {
 func (r *lazilyMountedRepo) ensureCodeMounted(ctx context.Context) error {
 	if r.repoRootPath == "" {
 		if r.client == nil {
-			return InvalidDefinitionError
+			return InvalidDefinitionError("must provide a github client if not using a local filesystem")
 		}
 		contextutils.LoggerFrom(ctx).Infow("downloading repo archive",
 			zap.String("owner", r.owner),
@@ -120,7 +122,10 @@ func NewLazilyMountedRepo(client *github.Client, owner, repo, sha string) Mounte
 }
 
 // Creates a mounted repo for a local filesystem
-func NewLocalMountedRepoForFs(fs afero.Fs, repoRootPath, owner, repo string) MountedRepo {
+func NewLocalMountedRepoForFs(fs afero.Fs, repoRootPath, owner, repo string) (MountedRepo, error) {
+	if repoRootPath == "" {
+		return &lazilyMountedRepo{}, InvalidDefinitionError("must provide a repoRootPath when using a local filesystem")
+	}
 	return &lazilyMountedRepo{
 		owner: owner,
 		repo:  repo,
@@ -129,5 +134,5 @@ func NewLocalMountedRepoForFs(fs afero.Fs, repoRootPath, owner, repo string) Mou
 		fs:           fs,
 		repoRootPath: repoRootPath,
 		client:       nil,
-	}
+	}, nil
 }

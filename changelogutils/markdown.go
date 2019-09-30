@@ -26,6 +26,9 @@ closing
 */
 
 var (
+	MountLocalDirectoryError = func(err error) error {
+		return errors.Wrapf(err, "unable to mount local directory")
+	}
 	OpenChangelogDirError = func(err error) error {
 		return errors.Wrapf(err, "unable to open changelog directory")
 	}
@@ -42,7 +45,10 @@ var (
 
 func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, changelogDirPath string, w io.Writer) error {
 	fs := afero.NewOsFs()
-	mountedRepo := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo)
+	mountedRepo, err := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo)
+	if err != nil {
+		return MountLocalDirectoryError(err)
+	}
 	dirContent, err := fs.Open(changelogDirPath)
 	if err != nil {
 		return OpenChangelogDirError(err)
