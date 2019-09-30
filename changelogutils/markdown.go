@@ -2,7 +2,7 @@ package changelogutils
 
 import (
 	"context"
-	"fmt"
+	"html/template"
 	"io"
 	"sort"
 	"strings"
@@ -23,23 +23,21 @@ closing
 
 */
 
-func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, sha, changelogDirPath string, w io.Writer) error {
+func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, changelogDirPath string, w io.Writer) error {
 	fs := afero.NewOsFs()
-	mountedRepo := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo, sha)
+	mountedRepo := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo)
 	dirContent, err := fs.Open(changelogDirPath)
 	if err != nil {
 		return err
 	}
-	fmt.Println(dirContent)
 	dirs, err := dirContent.Readdirnames(-1)
-	fmt.Println(dirs)
 	if err != nil {
 		return err
 	}
 	reader := NewChangelogReader(mountedRepo)
 	return GenerateChangelogForTags(ctx, dirs, reader, w)
-
 }
+
 func GenerateChangelogForTags(ctx context.Context, tags []string, reader ChangelogReader, w io.Writer) error {
 	changelogs := make(ChangelogList, len(tags))
 	var err error
@@ -48,18 +46,14 @@ func GenerateChangelogForTags(ctx context.Context, tags []string, reader Changel
 			return err
 		}
 	}
-	sort.Sort(changelogs)
-	for _, cl := range changelogs {
-		md := GenerateChangelogMarkdown(cl)
-		if _, err := fmt.Fprintf(w, "# %v\n", cl.Version.String()); err != nil {
-			return err
-		}
-		if _, err := fmt.Fprint(w, md); err != nil {
-			return err
-		}
+	sort.Sort(sort.Reverse(changelogs))
+	tmplData := changelogSummaryTmplDataFromChangelogs(changelogs)
+	if err := changelogSummaryTmpl.Execute(w, tmplData); err != nil {
+		return err
 	}
 	return nil
 }
+
 func GenerateChangelogMarkdown(changelog *Changelog) string {
 	output := changelog.Summary
 	if output != "" {
@@ -125,3 +119,29 @@ func renderChangelogEntry(entry *ChangelogEntry) string {
 	link := strings.TrimSpace(entry.IssueLink)
 	return "- " + description + " (" + link + ")"
 }
+
+type ChangelogTmplData struct {
+	ReleaseVersionString string
+	Summary              string
+}
+
+func changelogSummaryTmplDataFromChangelogs(changelogs ChangelogList) []ChangelogTmplData {
+	d := make([]ChangelogTmplData, len(changelogs))
+	for i, c := range changelogs {
+		md := GenerateChangelogMarkdown(c)
+		d[i] = ChangelogTmplData{
+			ReleaseVersionString: c.Version.String(),
+			Summary:              md,
+		}
+	}
+	return d
+}
+
+var changelogSummaryTmpl = template.Must(
+	template.New("changelog summary").Parse(`
+{{ range . }}
+# {{ .ReleaseVersionString }}
+
+{{ .Summary }}
+{{- end -}}
+`))
