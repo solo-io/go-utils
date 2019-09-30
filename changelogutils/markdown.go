@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/spf13/afero"
 
 	"github.com/solo-io/go-utils/vfsutils"
@@ -23,16 +25,31 @@ closing
 
 */
 
+var (
+	OpenChangelogDirError = func(err error) error {
+		return errors.Wrapf(err, "unable to open changelog directory")
+	}
+	ReadChangelogDirError = func(err error) error {
+		return errors.Wrapf(err, "unable to read changelog directory")
+	}
+	GetChangelogForTagError = func(err error) error {
+		return errors.Wrapf(err, "unable to get changelog for tag")
+	}
+	GenerateChangelogSummaryTemplateError = func(err error) error {
+		return errors.Wrapf(err, "unable to generate changelog summary from template")
+	}
+)
+
 func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, changelogDirPath string, w io.Writer) error {
 	fs := afero.NewOsFs()
 	mountedRepo := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo)
 	dirContent, err := fs.Open(changelogDirPath)
 	if err != nil {
-		return err
+		return OpenChangelogDirError(err)
 	}
 	dirs, err := dirContent.Readdirnames(-1)
 	if err != nil {
-		return err
+		return ReadChangelogDirError(err)
 	}
 	reader := NewChangelogReader(mountedRepo)
 	return GenerateChangelogForTags(ctx, dirs, reader, w)
@@ -43,13 +60,13 @@ func GenerateChangelogForTags(ctx context.Context, tags []string, reader Changel
 	var err error
 	for i, tag := range tags {
 		if changelogs[i], err = reader.GetChangelogForTag(ctx, tag); err != nil {
-			return err
+			return GetChangelogForTagError(err)
 		}
 	}
 	sort.Sort(sort.Reverse(changelogs))
 	tmplData := changelogSummaryTmplDataFromChangelogs(changelogs)
 	if err := changelogSummaryTmpl.Execute(w, tmplData); err != nil {
-		return err
+		return GenerateChangelogSummaryTemplateError(err)
 	}
 	return nil
 }
