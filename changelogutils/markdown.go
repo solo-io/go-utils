@@ -163,7 +163,7 @@ func changelogSummaryTmplDataFromChangelogs(changelogs ChangelogList) []Changelo
 var changelogSummaryTmpl = template.Must(
 	template.New("changelog summary").Parse(`
 {{ range . }}
-# {{ .ReleaseVersionString }}
+### {{ .ReleaseVersionString }}
 
 {{ .Summary }}
 {{- end -}}
