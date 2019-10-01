@@ -413,21 +413,21 @@ closing
 			// this substring should never change unless we change our changelog formatting
 			// it covers the sorting concern, showing that 0.2.12 is indeed greater than 0.2.8
 			Expect(w.String()).To(ContainSubstring(`
-# v0.2.12
+### v0.2.12
 
 **Fixes**
 
 - No longer create unwanted nested directory when pushing solo-kit docs for the first time. (https://github.com/solo-io/go-utils/issues/43)
 
 
-# v0.2.11
+### v0.2.11
 
 **Fixes**
 
 - Fixes the sha upload in ` + "`" + `UploadReleaseAssetsCli` + "`" + ` to upload a checksum for ` + "`" + `foo` + "`" + ` that matches the output of ` + "`" + `shasum -a 256 foo &gt; foo.sha256` + "`" + `. (https://github.com/solo-io/go-utils/issues/41)
 
 
-# v0.2.10
+### v0.2.10
 
 **New Features**
 
@@ -438,7 +438,7 @@ closing
 - PushDocsCli no longer errors on the initial push when the destination directory doesn&#39;t exist. (https://github.com/solo-io/go-utils/issues/40)
 
 
-# v0.2.9
+### v0.2.9
 
 **New Features**
 
@@ -448,7 +448,7 @@ closing
 - Moves common documentation generation to a shared lib (https://github.com/solo-io/go-utils/issues/35)
 
 
-# v0.2.8
+### v0.2.8
 
 **New Features**
 
