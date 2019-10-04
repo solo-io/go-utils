@@ -55,6 +55,9 @@ func (s *slackClient) Notify(ctx context.Context, message string) {
 func (s *slackClient) NotifyForRepo(ctx context.Context, repo, message string) {
 	slackUrl := s.getSlackUrl(repo)
 	if slackUrl == "" {
+		contextutils.LoggerFrom(ctx).Warnw("Requested notifying slack, but no URL",
+			zap.String("repo", repo),
+			zap.Any("notifications", s.notifications))
 		return
 	}
 
