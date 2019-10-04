@@ -2,6 +2,7 @@ package gcloudutils
 
 import (
 	"context"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -15,7 +16,7 @@ func NewCloudBot(ctx context.Context, projectIds []string, subscriberId string, 
 	contextutils.LoggerFrom(ctx).Infow("Creating cloud bot", zap.String("subscriberId", subscriberId))
 	var subscribers []*CloudSubscriber
 	for _, projectId := range projectIds {
-		contextutils.LoggerFrom(ctx).Infow("Adding cloud subscriber for project",
+		contextutils.LoggerFrom(ctx).Debugw("Adding cloud subscriber for project",
 			zap.String("projectId", projectId),
 			zap.String("subscriberId", subscriberId))
 		subscriber, err := NewCloudSubscriber(ctx, projectId, subscriberId)

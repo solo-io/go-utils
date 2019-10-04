@@ -25,22 +25,22 @@ var (
 )
 
 type CloudSubscriber struct {
-	buildService        *cloudbuild.Service
-	pubsubClient        *pubsub.Client
-	cloudBuildSub       *pubsub.Subscription
-	registry            *CloudBuildRegistry
-	projectId           string
+	buildService  *cloudbuild.Service
+	pubsubClient  *pubsub.Client
+	cloudBuildSub *pubsub.Subscription
+	registry      *CloudBuildRegistry
+	projectId     string
 }
 
 func NewCloudSubscriber(ctx context.Context, projectId string, subscriptionId string) (*CloudSubscriber, error) {
 	buildService, err := NewCloudBuildClient(ctx, projectId)
-	contextutils.LoggerFrom(ctx).Infow("successfully created build service for pubsub", zap.String("projectId", projectId))
+	contextutils.LoggerFrom(ctx).Debugw("successfully created build service for pubsub", zap.String("projectId", projectId))
 
 	pubsubClient, err := NewPubSubClient(ctx, projectId)
 	if err != nil {
 		return nil, err
 	}
-	contextutils.LoggerFrom(ctx).Infow("Successfully created pubsub client", zap.String("projectId", projectId))
+	contextutils.LoggerFrom(ctx).Debugw("Successfully created pubsub client", zap.String("projectId", projectId))
 
 	cloudBuildSub, err := pubsubClient.CreateSubscription(ctx, subscriptionId, pubsub.SubscriptionConfig{
 		Topic: pubsubClient.Topic(TOPIC),
@@ -57,15 +57,15 @@ func NewCloudSubscriber(ctx context.Context, projectId string, subscriptionId st
 	}
 
 	cs := &CloudSubscriber{
-		buildService:        buildService,
-		pubsubClient:        pubsubClient,
-		cloudBuildSub:       cloudBuildSub,
-		registry:            &CloudBuildRegistry{},
+		buildService:  buildService,
+		pubsubClient:  pubsubClient,
+		cloudBuildSub: cloudBuildSub,
+		registry:      &CloudBuildRegistry{},
 	}
 	cs.pubsubClient = pubsubClient
 	cs.cloudBuildSub = cloudBuildSub
 
-	contextutils.LoggerFrom(ctx).Infow("successfully setup pubsub")
+	contextutils.LoggerFrom(ctx).Debugw("successfully setup pubsub")
 
 	return cs, nil
 }
@@ -114,7 +114,7 @@ func HandleCloudBuildEvent(ctx context.Context, registry *CloudBuildRegistry, bu
 	for _, eventHandler := range registry.eventHandlers {
 		eventHandler := eventHandler
 		go func() {
-			if err := eventHandler.CloudBuild(ctx,  build); err != nil {
+			if err := eventHandler.CloudBuild(ctx, build); err != nil {
 				contextutils.LoggerFrom(ctx).Errorw("error handling build", zap.String("build_id", build.Id), zap.Error(err))
 			}
 		}()
