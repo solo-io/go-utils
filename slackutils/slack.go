@@ -35,10 +35,10 @@ type slackClient struct {
 }
 
 func (s *slackClient) getSlackUrl(repo string) string {
-	if s.notifications == nil || s.notifications.RepoUrls == nil {
+	if s.notifications == nil {
 		return ""
 	}
-	if repo == "" {
+	if repo == "" || s.notifications.RepoUrls == nil {
 		return s.notifications.DefaultUrl
 	}
 	repoUrl, ok := s.notifications.RepoUrls[repo]
