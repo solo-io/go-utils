@@ -95,7 +95,7 @@ func (r *Registry) CallCommitCommentPlugins(ctx context.Context, client *github.
 
 func (r *Registry) CallReleasePlugins(ctx context.Context, client *github.Client, event *github.ReleaseEvent) {
 	for _, pr := range r.releaseplugins {
-		contextutils.LoggerFrom(ctx).Infow("Release",
+		contextutils.LoggerFrom(ctx).Debugw("Release",
 			zap.String("tag", event.GetRelease().GetTagName()),
 			zap.String("org", event.GetRepo().GetOwner().GetLogin()),
 			zap.String("repo", event.GetRepo().GetName()))

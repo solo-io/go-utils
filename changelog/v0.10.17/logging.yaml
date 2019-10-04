@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Reduce verbosity of log messages in bot libraries.
+    issueLink: https://github.com/solo-io/go-utils/issues/312

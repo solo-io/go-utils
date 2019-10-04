@@ -3,11 +3,12 @@ package gcloudutils
 import (
 	"context"
 	"fmt"
-	"github.com/solo-io/go-utils/contextutils"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
@@ -37,7 +38,7 @@ func configFileName(projectId string) string {
 
 func credsFromProjectId(ctx context.Context, projectId string) (*google.Credentials, error) {
 	pathToCredsFile := configFileName(projectId)
-	contextutils.LoggerFrom(ctx).Infow("Looking for creds for project",
+	contextutils.LoggerFrom(ctx).Debugw("Looking for creds for project",
 		zap.String("projectId", projectId),
 		zap.String("credsFile", pathToCredsFile))
 	credByt, err := ioutil.ReadFile(pathToCredsFile)
