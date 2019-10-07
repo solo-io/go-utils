@@ -25,7 +25,7 @@ type RepoClient interface {
 	UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error)
 	GetCommit(ctx context.Context, sha string) (*github.RepositoryCommit, error)
 	FindStatus(ctx context.Context, statusLabel, sha string) (*github.RepoStatus, error)
-	CreateStatus(ctx context.Context)
+	CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error)
 }
 
 type repoClient struct {
