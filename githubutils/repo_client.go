@@ -24,6 +24,7 @@ type RepoClient interface {
 	GetPR(ctx context.Context, num int) (*github.PullRequest, error)
 	UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error)
 	GetCommit(ctx context.Context, sha string) (*github.RepositoryCommit, error)
+	FindStatus(ctx context.Context, statusLabel, sha string) (*github.RepoStatus, error)
 }
 
 type repoClient struct {
@@ -163,4 +164,13 @@ func (c *repoClient) UpdateRelease(ctx context.Context, release *github.Reposito
 func (c *repoClient) GetCommit(ctx context.Context, sha string) (*github.RepositoryCommit, error) {
 	commit, _, err := c.client.Repositories.GetCommit(ctx, c.owner, c.repo, sha)
 	return commit, err
+}
+
+func (c *repoClient) FindStatus(ctx context.Context, statusLabel, sha string) (*github.RepoStatus, error) {
+	return FindStatus(ctx, c.client, statusLabel, c.owner, c.repo, sha)
+}
+
+func (c *repoClient) CreateStatus(ctx context.Context, sha, statusDescription, statusLabel, state string) error {
+	_, err := CreateStatus(ctx, c.client, c.owner, c.repo, sha, statusDescription, statusLabel, state)
+	return err
 }

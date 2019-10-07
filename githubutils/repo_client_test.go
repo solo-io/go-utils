@@ -78,4 +78,5 @@ var _ = Describe("github utils", func() {
 		Expect(err).To(BeNil())
 		Expect(len(commit.Files)).To(Equal(3))
 	})
+
 })
