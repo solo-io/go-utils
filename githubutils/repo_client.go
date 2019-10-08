@@ -26,6 +26,7 @@ type RepoClient interface {
 	GetCommit(ctx context.Context, sha string) (*github.RepositoryCommit, error)
 	FindStatus(ctx context.Context, statusLabel, sha string) (*github.RepoStatus, error)
 	CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error)
+	CreateComment(ctx context.Context, pr int, comment *github.IssueComment) error
 }
 
 type repoClient struct {
@@ -174,4 +175,9 @@ func (c *repoClient) FindStatus(ctx context.Context, statusLabel, sha string) (*
 func (c *repoClient) CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error) {
 	st, _, err := c.client.Repositories.CreateStatus(ctx, c.owner, c.repo, sha, status)
 	return st, err
+}
+
+func (c *repoClient) CreateComment(ctx context.Context, pr int, comment *github.IssueComment) error {
+	_, _, err := c.client.Issues.CreateComment(ctx, c.owner, c.repo, pr, comment)
+	return err
 }
