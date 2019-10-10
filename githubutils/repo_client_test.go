@@ -79,4 +79,27 @@ var _ = Describe("github utils", func() {
 		Expect(len(commit.Files)).To(Equal(3))
 	})
 
+	expectStatus := func(actual, expected *github.RepoStatus) {
+		Expect(actual.State).To(BeEquivalentTo(expected.State))
+		Expect(actual.Description).To(BeEquivalentTo(expected.Description))
+		Expect(actual.Context).To(BeEquivalentTo(expected.Context))
+	}
+
+	It("can manage status", func() {
+		client = githubutils.NewRepoClient(githubClient, owner, repo)
+		// randomizing this would create a (slim) potential race
+		// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
+		status := &github.RepoStatus{
+			State:       github.String(githubutils.STATUS_SUCCESS),
+			Context:     github.String("test"),
+			Description: github.String("test"),
+		}
+		stored, err := client.CreateStatus(ctx, sha, status)
+		Expect(err).To(BeNil())
+		expectStatus(stored, status)
+		loaded, err := client.FindStatus(ctx, "test", sha)
+		Expect(err).To(BeNil())
+		expectStatus(loaded, status)
+	})
+
 })
