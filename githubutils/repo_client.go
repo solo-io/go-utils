@@ -26,7 +26,8 @@ type RepoClient interface {
 	GetCommit(ctx context.Context, sha string) (*github.RepositoryCommit, error)
 	FindStatus(ctx context.Context, statusLabel, sha string) (*github.RepoStatus, error)
 	CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error)
-	CreateComment(ctx context.Context, pr int, comment *github.IssueComment) error
+	CreateComment(ctx context.Context, pr int, comment *github.IssueComment) (*github.IssueComment, error)
+	DeleteComment(ctx context.Context, commentId int64) error
 }
 
 type repoClient struct {
@@ -177,7 +178,12 @@ func (c *repoClient) CreateStatus(ctx context.Context, sha string, status *githu
 	return st, err
 }
 
-func (c *repoClient) CreateComment(ctx context.Context, pr int, comment *github.IssueComment) error {
-	_, _, err := c.client.Issues.CreateComment(ctx, c.owner, c.repo, pr, comment)
+func (c *repoClient) CreateComment(ctx context.Context, pr int, comment *github.IssueComment) (*github.IssueComment, error) {
+	created, _, err := c.client.Issues.CreateComment(ctx, c.owner, c.repo, pr, comment)
+	return created, err
+}
+
+func (c *repoClient) DeleteComment(ctx context.Context, commentId int64) error {
+	_, err := c.client.Issues.DeleteComment(ctx, c.owner, c.repo, commentId)
 	return err
 }

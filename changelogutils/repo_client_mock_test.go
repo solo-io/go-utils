@@ -67,11 +67,12 @@ func (mr *MockRepoClientMockRecorder) CreateBranch(arg0, arg1 interface{}) *gomo
 }
 
 // CreateComment mocks base method
-func (m *MockRepoClient) CreateComment(arg0 context.Context, arg1 int, arg2 *github.IssueComment) error {
+func (m *MockRepoClient) CreateComment(arg0 context.Context, arg1 int, arg2 *github.IssueComment) (*github.IssueComment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateComment", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*github.IssueComment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateComment indicates an expected call of CreateComment
@@ -107,6 +108,20 @@ func (m *MockRepoClient) CreateStatus(arg0 context.Context, arg1 string, arg2 *g
 func (mr *MockRepoClientMockRecorder) CreateStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStatus", reflect.TypeOf((*MockRepoClient)(nil).CreateStatus), arg0, arg1, arg2)
+}
+
+// DeleteComment mocks base method
+func (m *MockRepoClient) DeleteComment(arg0 context.Context, arg1 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteComment", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteComment indicates an expected call of DeleteComment
+func (mr *MockRepoClientMockRecorder) DeleteComment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComment", reflect.TypeOf((*MockRepoClient)(nil).DeleteComment), arg0, arg1)
 }
 
 // DirectoryExists mocks base method

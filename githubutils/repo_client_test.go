@@ -2,6 +2,9 @@ package githubutils_test
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/solo-io/go-utils/randutils"
 
 	"github.com/google/go-github/github"
 	. "github.com/onsi/ginkgo"
@@ -19,6 +22,7 @@ var _ = Describe("github utils", func() {
 		repo                    = "testrepo"
 		repoWithoutReleasesName = "testrepo-noreleases"
 		sha                     = "9065a9a84e286ea7f067f4fc240944b0a4d4c82a"
+		pr                      = 62
 	)
 
 	BeforeEach(func() {
@@ -100,6 +104,18 @@ var _ = Describe("github utils", func() {
 		loaded, err := client.FindStatus(ctx, "test", sha)
 		Expect(err).To(BeNil())
 		expectStatus(loaded, status)
+	})
+
+	It("can create and delete comment", func() {
+		client = githubutils.NewRepoClient(githubClient, owner, repo)
+		body := fmt.Sprintf("test-%s", randutils.RandString(4))
+		comment := &github.IssueComment{
+			Body: github.String(body),
+		}
+		stored, err := client.CreateComment(ctx, pr, comment)
+		Expect(err).To(BeNil())
+		err = client.DeleteComment(ctx, stored.GetID())
+		Expect(err).To(BeNil())
 	})
 
 })
