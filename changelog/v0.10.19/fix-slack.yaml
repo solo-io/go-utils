@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix slack notification logic.
+    issueLink: https://github.com/solo-io/go-utils/issues/315

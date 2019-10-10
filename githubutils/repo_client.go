@@ -23,6 +23,11 @@ type RepoClient interface {
 	GetShaForTag(ctx context.Context, tag string) (string, error)
 	GetPR(ctx context.Context, num int) (*github.PullRequest, error)
 	UpdateRelease(ctx context.Context, release *github.RepositoryRelease) (*github.RepositoryRelease, error)
+	GetCommit(ctx context.Context, sha string) (*github.RepositoryCommit, error)
+	FindStatus(ctx context.Context, statusLabel, sha string) (*github.RepoStatus, error)
+	CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error)
+	CreateComment(ctx context.Context, pr int, comment *github.IssueComment) (*github.IssueComment, error)
+	DeleteComment(ctx context.Context, commentId int64) error
 }
 
 type repoClient struct {
@@ -157,4 +162,32 @@ func (c *repoClient) UpdateRelease(ctx context.Context, release *github.Reposito
 		return nil, err
 	}
 	return updatedRelease, nil
+}
+
+func (c *repoClient) GetCommit(ctx context.Context, sha string) (*github.RepositoryCommit, error) {
+	commit, _, err := c.client.Repositories.GetCommit(ctx, c.owner, c.repo, sha)
+	return commit, err
+}
+
+func (c *repoClient) FindStatus(ctx context.Context, statusLabel, sha string) (*github.RepoStatus, error) {
+	return FindStatus(ctx, c.client, statusLabel, c.owner, c.repo, sha)
+}
+
+func (c *repoClient) CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error) {
+	// truncate if necessary
+	if len(status.GetDescription()) > 140 {
+		status.Description = github.String(status.GetDescription()[:140])
+	}
+	st, _, err := c.client.Repositories.CreateStatus(ctx, c.owner, c.repo, sha, status)
+	return st, err
+}
+
+func (c *repoClient) CreateComment(ctx context.Context, pr int, comment *github.IssueComment) (*github.IssueComment, error) {
+	created, _, err := c.client.Issues.CreateComment(ctx, c.owner, c.repo, pr, comment)
+	return created, err
+}
+
+func (c *repoClient) DeleteComment(ctx context.Context, commentId int64) error {
+	_, err := c.client.Issues.DeleteComment(ctx, c.owner, c.repo, commentId)
+	return err
 }

@@ -1,10 +1,7 @@
 package slackutils
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"net/http"
 
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
@@ -25,20 +22,26 @@ type SlackClient interface {
 }
 
 func NewSlackClient(notifications *SlackNotifications) *slackClient {
+	return NewSlackClientForHttpClient(&DefaultHttpClient{}, notifications)
+}
+
+func NewSlackClientForHttpClient(httpClient HttpClient, notifications *SlackNotifications) *slackClient {
 	return &slackClient{
+		httpClient:    httpClient,
 		notifications: notifications,
 	}
 }
 
 type slackClient struct {
+	httpClient    HttpClient
 	notifications *SlackNotifications
 }
 
 func (s *slackClient) getSlackUrl(repo string) string {
-	if s.notifications == nil || s.notifications.RepoUrls == nil {
+	if s.notifications == nil {
 		return ""
 	}
-	if repo == "" {
+	if repo == "" || s.notifications.RepoUrls == nil {
 		return s.notifications.DefaultUrl
 	}
 	repoUrl, ok := s.notifications.RepoUrls[repo]
@@ -60,25 +63,5 @@ func (s *slackClient) NotifyForRepo(ctx context.Context, repo, message string) {
 			zap.Any("notifications", s.notifications))
 		return
 	}
-
-	type Payload struct {
-		Text string `json:"text"`
-	}
-
-	data := Payload{
-		Text: message,
-	}
-	payloadBytes, err := json.Marshal(data)
-	if err != nil {
-		contextutils.LoggerFrom(ctx).Errorw("Notifying slack failed", zap.Error(err))
-		return
-	}
-	body := bytes.NewReader(payloadBytes)
-
-	req, err := http.Post(slackUrl, "application/json", body)
-	defer req.Body.Close()
-	if err != nil {
-		contextutils.LoggerFrom(ctx).Errorw("Notifying slack failed", zap.Error(err))
-		return
-	}
+	s.httpClient.PostJsonContent(ctx, message, slackUrl)
 }
