@@ -174,6 +174,10 @@ func (c *repoClient) FindStatus(ctx context.Context, statusLabel, sha string) (*
 }
 
 func (c *repoClient) CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error) {
+	// truncate if necessary
+	if len(status.GetDescription()) > 140 {
+		status.Description = github.String(status.GetDescription()[:140])
+	}
 	st, _, err := c.client.Repositories.CreateStatus(ctx, c.owner, c.repo, sha, status)
 	return st, err
 }
