@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add configurable output directory to cli docs generation utility.
+    issueLink: https://github.com/solo-io/go-utils/issues/317
