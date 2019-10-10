@@ -66,6 +66,20 @@ func (mr *MockRepoClientMockRecorder) CreateBranch(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBranch", reflect.TypeOf((*MockRepoClient)(nil).CreateBranch), arg0, arg1)
 }
 
+// CreateComment mocks base method
+func (m *MockRepoClient) CreateComment(arg0 context.Context, arg1 int, arg2 *github.IssueComment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateComment", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateComment indicates an expected call of CreateComment
+func (mr *MockRepoClientMockRecorder) CreateComment(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateComment", reflect.TypeOf((*MockRepoClient)(nil).CreateComment), arg0, arg1, arg2)
+}
+
 // CreatePR mocks base method
 func (m *MockRepoClient) CreatePR(arg0 context.Context, arg1 string, arg2 githubutils.PRSpec) error {
 	m.ctrl.T.Helper()
@@ -78,6 +92,21 @@ func (m *MockRepoClient) CreatePR(arg0 context.Context, arg1 string, arg2 github
 func (mr *MockRepoClientMockRecorder) CreatePR(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePR", reflect.TypeOf((*MockRepoClient)(nil).CreatePR), arg0, arg1, arg2)
+}
+
+// CreateStatus mocks base method
+func (m *MockRepoClient) CreateStatus(arg0 context.Context, arg1 string, arg2 *github.RepoStatus) (*github.RepoStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateStatus", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*github.RepoStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateStatus indicates an expected call of CreateStatus
+func (mr *MockRepoClientMockRecorder) CreateStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStatus", reflect.TypeOf((*MockRepoClient)(nil).CreateStatus), arg0, arg1, arg2)
 }
 
 // DirectoryExists mocks base method
@@ -123,6 +152,36 @@ func (m *MockRepoClient) FindLatestReleaseTagIncudingPrerelease(arg0 context.Con
 func (mr *MockRepoClientMockRecorder) FindLatestReleaseTagIncudingPrerelease(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindLatestReleaseTagIncudingPrerelease", reflect.TypeOf((*MockRepoClient)(nil).FindLatestReleaseTagIncudingPrerelease), arg0)
+}
+
+// FindStatus mocks base method
+func (m *MockRepoClient) FindStatus(arg0 context.Context, arg1, arg2 string) (*github.RepoStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindStatus", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*github.RepoStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindStatus indicates an expected call of FindStatus
+func (mr *MockRepoClientMockRecorder) FindStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindStatus", reflect.TypeOf((*MockRepoClient)(nil).FindStatus), arg0, arg1, arg2)
+}
+
+// GetCommit mocks base method
+func (m *MockRepoClient) GetCommit(arg0 context.Context, arg1 string) (*github.RepositoryCommit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommit", arg0, arg1)
+	ret0, _ := ret[0].(*github.RepositoryCommit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommit indicates an expected call of GetCommit
+func (mr *MockRepoClientMockRecorder) GetCommit(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommit", reflect.TypeOf((*MockRepoClient)(nil).GetCommit), arg0, arg1)
 }
 
 // GetPR mocks base method
