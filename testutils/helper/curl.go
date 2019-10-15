@@ -3,6 +3,7 @@ package helper
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -67,11 +68,13 @@ func (t *testContainer) CurlEventuallyShouldOutput(opts CurlOpts, substr string,
 			res = err.Error()
 			// trigger an early exit if the pod has been deleted
 			gomega.Expect(res).NotTo(gomega.ContainSubstring(`pods "testrunner" not found`))
+			return res
 		}
 		defer close(done)
-		buf := &bytes.Buffer{}
+		var buf io.Reader
 		select {
 		case <-tick:
+			buf = bytes.NewBufferString("waiting for reply")
 		case r, ok := <-bufChan:
 			if ok {
 				buf = r
@@ -169,12 +172,12 @@ func (t *testContainer) Curl(opts CurlOpts) (string, error) {
 	return t.Exec(args...)
 }
 
-func (t *testContainer) CurlAsync(opts CurlOpts) (*bytes.Buffer, chan struct{}, error) {
+func (t *testContainer) CurlAsync(opts CurlOpts) (io.Reader, chan struct{}, error) {
 	args := t.buildCurlArgs(opts)
 	return t.TestRunnerAsync(args...)
 }
 
-func (t *testContainer) CurlAsyncChan(opts CurlOpts) (<-chan *bytes.Buffer, chan struct{}, error) {
+func (t *testContainer) CurlAsyncChan(opts CurlOpts) (<-chan io.Reader, chan struct{}, error) {
 	args := t.buildCurlArgs(opts)
 	return t.TestRunnerChan(&bytes.Buffer{}, args...)
 }

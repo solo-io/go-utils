@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/solo-io/go-utils/log"
+	"github.com/solo-io/go-utils/threadsafe"
 
 	"github.com/onsi/ginkgo"
 	"github.com/pkg/errors"
@@ -74,9 +74,9 @@ func KubectlOut(args ...string) (string, error) {
 	return string(out), err
 }
 
-func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
+func KubectlOutAsync(args ...string) (io.Reader, chan struct{}, error) {
 	cmd := kubectl(args...)
-	buf := &bytes.Buffer{}
+	buf := &threadsafe.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
 	log.Debugf("async running: %s", strings.Join(cmd.Args, " "))
@@ -94,9 +94,9 @@ func KubectlOutAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
 	return buf, done, err
 }
 
-func KubectlOutChan(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
+func KubectlOutChan(r io.Reader, args ...string) (<-chan io.Reader, chan struct{}, error) {
 	cmd := kubectl(args...)
-	buf := &bytes.Buffer{}
+	buf := &threadsafe.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
 	cmd.Stdin = r
@@ -113,7 +113,7 @@ func KubectlOutChan(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan str
 		}
 	}()
 
-	result := make(chan *bytes.Buffer)
+	result := make(chan io.Reader)
 	go func() {
 		for {
 			select {
