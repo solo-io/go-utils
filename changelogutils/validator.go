@@ -171,7 +171,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		}
 		expectedVersion = &versionutils.StableApiVersion
 	}
-	if *changelog.Version != *expectedVersion {
+	if changelog.Version.ReleaseCandidate == 0 && *changelog.Version != *expectedVersion {
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 	return nil

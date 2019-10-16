@@ -286,6 +286,40 @@ var _ = Describe("ReaderTest", func() {
 			Expect(*changelog).To(BeEquivalentTo(expected))
 		})
 
+		It("can handle v1.0.0-rc1", func() {
+			rcTag := "v1.0.0-rc1"
+			rcDir := "changelog/" + rcTag
+			files := []os.FileInfo{
+				getFileInfo("1.yaml", false),
+			}
+			mockCode.EXPECT().
+				ListFiles(ctx, rcDir).
+				Return(files, nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(rcDir, "1.yaml")).
+				Return([]byte(validChangelog3), nil)
+
+			expected := changelogutils.Changelog{
+				Files: []*changelogutils.ChangelogFile{
+					{
+						Entries: []*changelogutils.ChangelogEntry{
+							{
+								Type:            changelogutils.DEPENDENCY_BUMP,
+								DependencyOwner: "foo",
+								DependencyRepo:  "bar",
+								DependencyTag:   "baz",
+							},
+						},
+					},
+				},
+				Version: versionutils.NewRcVersion(1, 0, 0, 1),
+			}
+
+			changelog, err := reader.GetChangelogForTag(ctx, "v1.0.0-rc1")
+			Expect(err).To(BeNil())
+			Expect(*changelog).To(BeEquivalentTo(expected))
+		})
+
 		It("can handle release stable api", func() {
 			files := []os.FileInfo{
 				getFileInfo("1.yaml", false),

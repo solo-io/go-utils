@@ -16,22 +16,40 @@ const (
 	SemverMinimumVersion  = "v0.0.1"
 )
 
+var (
+	InvalidSemverVersionError = func(tag string) error {
+		return errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
+	}
+	InvalidReleaseCandidateTag = func(tagAndBuildMetadata string) error {
+		return errors.Errorf("Semver tag %s is not valid release candidate (must be 'rc' followed by int, e.g. 'rc5')", tagAndBuildMetadata)
+	}
+)
+
 type Version struct {
-	Major int
-	Minor int
-	Patch int
+	Major            int
+	Minor            int
+	Patch            int
+	ReleaseCandidate int
 }
 
 func NewVersion(major, minor, patch int) *Version {
+	return NewRcVersion(major, minor, patch, 0)
+}
+
+func NewRcVersion(major, minor, patch, rc int) *Version {
 	return &Version{
-		Major: major,
-		Minor: minor,
-		Patch: patch,
+		Major:            major,
+		Minor:            minor,
+		Patch:            patch,
+		ReleaseCandidate: rc,
 	}
 }
 
 func (v *Version) String() string {
-	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
+	if v.ReleaseCandidate == 0 {
+		return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
+	}
+	return fmt.Sprintf("v%d.%d.%d-rc%d", v.Major, v.Minor, v.Patch, v.ReleaseCandidate)
 }
 
 func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
@@ -41,7 +59,7 @@ func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
 	if lesser == nil {
 		return false, errors.Errorf("cannot compare versions, lesser version is nil")
 	}
-	if v.Patch == lesser.Patch && v.Minor == lesser.Minor && v.Major == lesser.Major {
+	if v.ReleaseCandidate == lesser.ReleaseCandidate && v.Patch == lesser.Patch && v.Minor == lesser.Minor && v.Major == lesser.Major {
 		return true, nil
 	}
 	return v.IsGreaterThan(lesser), nil
@@ -66,6 +84,12 @@ func (v *Version) IsGreaterThan(lesser *Version) bool {
 		return false
 	}
 
+	if lesser.ReleaseCandidate > 0 {
+		if v.ReleaseCandidate == 0 || v.ReleaseCandidate > lesser.ReleaseCandidate {
+			return true
+		}
+	}
+
 	return false
 }
 
@@ -74,13 +98,14 @@ func (v *Version) Equals(other *Version) bool {
 }
 
 func (v *Version) IncrementVersion(breakingChange bool) *Version {
-	newMajor := 0
-	newMinor := 0
-	newPatch := 0
-	if v.Major == 0 {
-		newMajor = v.Major
+	newMajor := v.Major
+	newMinor := v.Minor
+	newPatch := v.Patch
+	newRc := v.ReleaseCandidate
+	if v.ReleaseCandidate != 0 {
+		newRc = v.ReleaseCandidate + 1
+	} else if v.Major == 0 {
 		if !breakingChange {
-			newMinor = v.Minor
 			newPatch = v.Patch + 1
 		} else {
 			newMinor = v.Minor + 1
@@ -91,15 +116,15 @@ func (v *Version) IncrementVersion(breakingChange bool) *Version {
 			newMajor = v.Major + 1
 			newMinor = 0
 		} else {
-			newMajor = v.Major
 			newMinor = v.Minor + 1
 		}
 		newPatch = 0
 	}
 	return &Version{
-		Major: newMajor,
-		Minor: newMinor,
-		Patch: newPatch,
+		Major:            newMajor,
+		Minor:            newMinor,
+		Patch:            newPatch,
+		ReleaseCandidate: newRc,
 	}
 }
 
@@ -131,9 +156,15 @@ func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 
 func ParseVersion(tag string) (*Version, error) {
 	if !MatchesRegex(tag) {
-		return nil, errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z", tag)
+		return nil, InvalidSemverVersionError(tag)
 	}
 	versionString := tag[1:]
+	splitOnHyphen := strings.Split(versionString, "-")
+	tagAndBuildMetadata := ""
+	if len(splitOnHyphen) > 1 {
+		tagAndBuildMetadata = splitOnHyphen[1]
+		versionString = splitOnHyphen[0]
+	}
 	versionParts := strings.Split(versionString, ".")
 	if len(versionParts) != 3 {
 		return nil, errors.Errorf("Version %s is not a valid semver version", versionString)
@@ -150,11 +181,21 @@ func ParseVersion(tag string) (*Version, error) {
 	if err != nil {
 		return nil, errors.Errorf("Patch version %s is not valid", versionParts[2])
 	}
+	rc := 0
+	if tagAndBuildMetadata != "" {
+		rcString := strings.TrimPrefix(tagAndBuildMetadata, "rc")
+		parsedRc, err := strconv.Atoi(rcString)
+		if err != nil {
+			return nil, InvalidReleaseCandidateTag(tagAndBuildMetadata)
+		}
+		rc = parsedRc
+	}
 
 	version := &Version{
-		Major: major,
-		Minor: minor,
-		Patch: patch,
+		Major:            major,
+		Minor:            minor,
+		Patch:            patch,
+		ReleaseCandidate: rc,
 	}
 	isGtEq, err := version.IsGreaterThanOrEqualTo(&Zero)
 	if err != nil {
@@ -167,10 +208,10 @@ func ParseVersion(tag string) (*Version, error) {
 }
 
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-rc[0-9]+)?$)")
 	return regex.MatchString(tag)
 }
 
 func GetImageVersion(version *Version) string {
-	return fmt.Sprintf("%d.%d.%d", version.Major, version.Minor, version.Patch)
+	return version.String()[1:]
 }
