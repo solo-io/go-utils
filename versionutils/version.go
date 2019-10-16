@@ -20,6 +20,9 @@ var (
 	InvalidSemverVersionError = func(tag string) error {
 		return errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
 	}
+	InvalidReleaseCandidateTag = func(tagAndBuildMetadata string) error {
+		return errors.Errorf("Semver tag %s is not valid release candidate (must be 'rc' followed by int, e.g. 'rc5')", tagAndBuildMetadata)
+	}
 )
 
 type Version struct {
@@ -30,11 +33,7 @@ type Version struct {
 }
 
 func NewVersion(major, minor, patch int) *Version {
-	return &Version{
-		Major: major,
-		Minor: minor,
-		Patch: patch,
-	}
+	return NewRcVersion(major, minor, patch, 0)
 }
 
 func NewRcVersion(major, minor, patch, rc int) *Version {
@@ -187,7 +186,7 @@ func ParseVersion(tag string) (*Version, error) {
 		rcString := strings.TrimPrefix(tagAndBuildMetadata, "rc")
 		parsedRc, err := strconv.Atoi(rcString)
 		if err != nil {
-			return nil, errors.Errorf("Semver tag %s is not valid release candidate (must be 'rc' followed by int, i.e. 'rc5')", tagAndBuildMetadata)
+			return nil, InvalidReleaseCandidateTag(tagAndBuildMetadata)
 		}
 		rc = parsedRc
 	}

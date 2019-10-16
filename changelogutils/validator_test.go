@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	. "github.com/onsi/ginkgo/extensions/table"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-github/github"
 	. "github.com/onsi/ginkgo"
@@ -428,8 +430,8 @@ var _ = Describe("github utils", func() {
 			})
 		})
 
-		Context("rc workflow", func() {
-			canValidate := func(lastTag, nextTag, contents string) {
+		DescribeTable("rc workflow",
+			func(lastTag, nextTag, contents string) {
 				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
 				file1 := github.CommitFile{Filename: &path, Status: &added}
 				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
@@ -455,20 +457,9 @@ var _ = Describe("github utils", func() {
 				file, err := validator.ValidateChangelog(ctx)
 				Expect(err).To(BeNil())
 				Expect(file).NotTo(BeNil())
-			}
-
-			It("works for initial rc", func() {
-				canValidate("v0.20.5", "v1.0.0-rc1", validBreakingChangelog)
-			})
-
-			It("works for incrementing rc", func() {
-				canValidate("v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog)
-			})
-
-			It("works for releasing stable release after rc", func() {
-				canValidate("v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog)
-			})
-		})
-
+			},
+			Entry("initial rc", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog),
+			Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog),
+			Entry("stable release after rc", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog))
 	})
 })
