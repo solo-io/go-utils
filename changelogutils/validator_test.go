@@ -428,5 +428,47 @@ var _ = Describe("github utils", func() {
 			})
 		})
 
+		Context("rc workflow", func() {
+			canValidate := func(lastTag, nextTag, contents string) {
+				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
+				file1 := github.CommitFile{Filename: &path, Status: &added}
+				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+				repoClient.EXPECT().
+					CompareCommits(ctx, base, sha).
+					Return(&cc, nil)
+				code.EXPECT().
+					GetFileContents(ctx, path).
+					Return([]byte(validBreakingChangelog), nil)
+				repoClient.EXPECT().
+					FindLatestReleaseTagIncudingPrerelease(ctx).
+					Return(lastTag, nil)
+				code.EXPECT().
+					ListFiles(ctx, changelogutils.ChangelogDirectory).
+					Return([]os.FileInfo{getChangelogDir(nextTag)}, nil)
+				code.EXPECT().
+					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, nextTag)).
+					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
+				code.EXPECT().
+					GetFileContents(ctx, path).
+					Return([]byte(contents), nil)
+
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(err).To(BeNil())
+				Expect(file).NotTo(BeNil())
+			}
+
+			It("works for initial rc", func() {
+				canValidate("v0.20.5", "v1.0.0-rc1", validBreakingChangelog)
+			})
+
+			It("works for incrementing rc", func() {
+				canValidate("v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog)
+			})
+
+			It("works for releasing stable release after rc", func() {
+				canValidate("v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog)
+			})
+		})
+
 	})
 })
