@@ -259,6 +259,26 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(err.Error()).To(BeEquivalentTo("File v0.0.2/foo is not a valid changelog file. Error: error unmarshaling JSON: json: cannot unmarshal string into Go value of type changelogutils.ChangelogFile"))
 		})
 
+		It("releasing rc (v1.0.0-rc1) works", func() {
+			tag := "v1.0.0-rc1"
+			changelog := getChangelog(tag, "", "",
+				getChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.0.1", tag, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
+		})
+
+		It("releasing v1.0.0 after v1.0.0-rc1 works", func() {
+			tag := "v1.0.0"
+			changelog := getChangelog(tag, "", "",
+				getStableApiChangelogFile(getEntry(changelogutils.BREAKING_CHANGE, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, "v1.0.0-rc1", tag, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
+		})
+
 		It("releasing stable API (v1.0.0) works", func() {
 			tag := "v1.0.0"
 			changelog := getChangelog(tag, "", "",

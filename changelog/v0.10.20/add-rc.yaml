@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/go-utils/issues/323
+    description: >
+      Update versionutils to support a 4th digit, release candidate, on versions. Update the regex to optionally match on vX.X.X-rcX. 
+      Relax changelog incrementing validation to always allow incrementing to an rc release. Allow incrementing from 1.0.0-rc1 to 1.0.0
+      by using `releaseStableApi`. In the future, we can generalize this flag to support migrating to any non-rc release. 
