@@ -85,11 +85,10 @@ func (v *Version) IsGreaterThan(lesser *Version) bool {
 		return false
 	}
 
-	if v.ReleaseCandidate == 0 && lesser.ReleaseCandidate > 0 {
-		// special case, i.e. v1.0.0-rc1 < v1.0.0
-		return true
-	} else if lesser.ReleaseCandidate > 0 && v.ReleaseCandidate > lesser.ReleaseCandidate {
-		return true
+	if lesser.ReleaseCandidate > 0 {
+		if v.ReleaseCandidate == 0 || v.ReleaseCandidate > lesser.ReleaseCandidate {
+			return true
+		}
 	}
 
 	return false
