@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix race in TestRunner
+    issueLink: https://github.com/solo-io/go-utils/issues/320

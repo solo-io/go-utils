@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"time"
@@ -21,7 +20,7 @@ type TestRunner interface {
 	Deploy(timeout time.Duration) error
 	Terminate() error
 	Exec(command ...string) (string, error)
-	TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error)
+	TestRunnerAsync(args ...string) (io.Reader, chan struct{}, error)
 	// Checks the response of the request
 	CurlEventuallyShouldRespond(opts CurlOpts, substr string, ginkgoOffset int, timeout ...time.Duration)
 	// CHecks all of the output of the curl command
@@ -134,12 +133,12 @@ func (t *testContainer) Exec(command ...string) (string, error) {
 
 // TestContainerAsync executes a command inside the testContainer container
 // returning a buffer that can be read from as it executes
-func (t *testContainer) TestRunnerAsync(args ...string) (*bytes.Buffer, chan struct{}, error) {
+func (t *testContainer) TestRunnerAsync(args ...string) (io.Reader, chan struct{}, error) {
 	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
 	return testutils.KubectlOutAsync(args...)
 }
 
-func (t *testContainer) TestRunnerChan(r io.Reader, args ...string) (<-chan *bytes.Buffer, chan struct{}, error) {
+func (t *testContainer) TestRunnerChan(r io.Reader, args ...string) (<-chan io.Reader, chan struct{}, error) {
 	args = append([]string{"exec", "-i", t.echoName, "-n", t.namespace, "--"}, args...)
 	return testutils.KubectlOutChan(r, args...)
 }
