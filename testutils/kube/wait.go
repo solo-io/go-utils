@@ -18,8 +18,12 @@ import (
 )
 
 func WaitForNamespaceTeardown(ns string) {
+	WaitForNamespaceTeardownWithClient(ns, MustKubeClient())
+}
+
+func WaitForNamespaceTeardownWithClient(ns string, client kubernetes.Interface) {
 	EventuallyWithOffset(1, func() (bool, error) {
-		namespaces, err := MustKubeClient().CoreV1().Namespaces().List(v1.ListOptions{})
+		namespaces, err := client.CoreV1().Namespaces().List(v1.ListOptions{})
 		if err != nil {
 			// namespace is gone
 			return false, err
