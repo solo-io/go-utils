@@ -19,19 +19,7 @@ import (
 
 // Deprecated. Use WaitForNamespaceTeardownWithClient.
 func WaitForNamespaceTeardown(ns string) {
-	EventuallyWithOffset(1, func() (bool, error) {
-		namespaces, err := MustKubeClient().CoreV1().Namespaces().List(v1.ListOptions{})
-		if err != nil {
-			// namespace is gone
-			return false, err
-		}
-		for _, n := range namespaces.Items {
-			if n.Name == ns {
-				return false, nil
-			}
-		}
-		return true, nil
-	}, time.Second*180).Should(BeTrue())
+	WaitForNamespaceTeardownWithClient(ns, MustKubeClient())
 }
 
 func WaitForNamespaceTeardownWithClient(ns string, client kubernetes.Interface) {
