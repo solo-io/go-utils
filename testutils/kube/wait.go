@@ -17,7 +17,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Deprecated. Use WaitForNamespaceTeardownWithClient.
 func WaitForNamespaceTeardown(ns string) {
 	WaitForNamespaceTeardownWithClient(ns, MustKubeClient())
 }
