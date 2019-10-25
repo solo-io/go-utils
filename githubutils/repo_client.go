@@ -3,6 +3,8 @@ package githubutils
 import (
 	"context"
 
+	"github.com/solo-io/go-utils/versionutils"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
@@ -28,6 +30,7 @@ type RepoClient interface {
 	CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error)
 	CreateComment(ctx context.Context, pr int, comment *github.IssueComment) (*github.IssueComment, error)
 	DeleteComment(ctx context.Context, commentId int64) error
+	FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Context, sha string) (string, error)
 }
 
 type repoClient struct {
@@ -46,6 +49,35 @@ func NewRepoClient(client *github.Client, owner, repo string) RepoClient {
 
 func (c *repoClient) FindLatestReleaseTagIncudingPrerelease(ctx context.Context) (string, error) {
 	return FindLatestReleaseTagIncudingPrerelease(ctx, c.client, c.owner, c.repo)
+}
+
+func (c *repoClient) FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Context, sha string) (string, error) {
+	releases, _, err := c.client.Repositories.ListReleases(ctx, c.owner, c.repo, &github.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	latestBeforeSha := versionutils.NewVersion(0, 0, 1)
+	for _, release := range releases {
+		if release.GetDraft() {
+			continue
+		}
+
+		comparison, _, err := c.client.Repositories.CompareCommits(ctx, c.owner, c.repo, release.GetTagName(), sha)
+		if err != nil {
+			return "", err
+		}
+		if comparison.GetStatus() == "behind" {
+			releaseVersion, err := versionutils.ParseVersion(release.GetTagName())
+			if err != nil {
+				return "", err
+			}
+			if releaseVersion.IsGreaterThan(latestBeforeSha) {
+				latestBeforeSha = releaseVersion
+			}
+		}
+	}
+	// no release tags have been found, so the latest is "version zero"
+	return latestBeforeSha.String(), nil
 }
 
 func (c *repoClient) CompareCommits(ctx context.Context, base, sha string) (*github.CommitsComparison, error) {
