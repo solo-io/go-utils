@@ -57,6 +57,7 @@ func (c *repoClient) FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Conte
 		return "", err
 	}
 	latestBeforeSha := versionutils.NewVersion(0, 0, 1)
+	// TODO: this will eventually need to page through all releases, not just the first page
 	for _, release := range releases {
 		if release.GetDraft() {
 			continue
@@ -66,17 +67,17 @@ func (c *repoClient) FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Conte
 		if err != nil {
 			return "", err
 		}
-		if comparison.GetStatus() == "behind" {
+		if comparison.GetStatus() == "ahead" || comparison.GetStatus() == "identical" {
 			releaseVersion, err := versionutils.ParseVersion(release.GetTagName())
 			if err != nil {
 				return "", err
 			}
 			if releaseVersion.IsGreaterThan(latestBeforeSha) {
 				latestBeforeSha = releaseVersion
+				break
 			}
 		}
 	}
-	// no release tags have been found, so the latest is "version zero"
 	return latestBeforeSha.String(), nil
 }
 
