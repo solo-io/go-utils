@@ -110,21 +110,8 @@ func (c *changelogValidator) ValidateChangelog(ctx context.Context) (*ChangelogF
 	return newChangelogFile, nil
 }
 
-func (c *changelogValidator) getLatestTagForSha(ctx context.Context, client *github.Client) error {
-	tags, _, err := client.Repositories.ListTags(ctx, c.code.GetOwner(), c.code.GetRepo(), &github.ListOptions{})
-	if err != nil {
-		return err
-	}
-	latestKnown
-	for _, tag := range tags {
-
-	}
-	client.Repositories.CompareCommits(ctx, c.code.GetOwner(), c.code.GetRepo(), c.base, c.code.GetSha())
-	return nil
-}
-
 func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, error) {
-	latestTag, err := c.client.FindLatestReleaseTagIncudingPrerelease(ctx)
+	latestTag, err := c.client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, c.base)
 	if err != nil {
 		return "", ListReleasesError(err)
 	}
