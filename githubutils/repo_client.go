@@ -51,6 +51,8 @@ func NewRepoClient(client *github.Client, owner, repo string) RepoClient {
 	}
 }
 
+// Deprecated: The latest release is not guaranteed to be the largest (by semver) tag, just the
+// most recent release. Use "FindLatestTagIncludingPrereleaseBeforeSha" instead.
 func (c *repoClient) FindLatestReleaseTagIncudingPrerelease(ctx context.Context) (string, error) {
 	return FindLatestReleaseTagIncudingPrerelease(ctx, c.client, c.owner, c.repo)
 }
