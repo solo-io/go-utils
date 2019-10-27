@@ -3,6 +3,8 @@ package githubutils
 import (
 	"context"
 
+	"github.com/solo-io/go-utils/errors"
+
 	"github.com/solo-io/go-utils/versionutils"
 
 	"github.com/solo-io/go-utils/contextutils"
@@ -10,6 +12,8 @@ import (
 
 	"github.com/google/go-github/github"
 )
+
+var NoReleaseBeforeShaFound = errors.Errorf("no release found before sha")
 
 type PRSpec struct {
 	Message string
@@ -52,33 +56,33 @@ func (c *repoClient) FindLatestReleaseTagIncudingPrerelease(ctx context.Context)
 }
 
 func (c *repoClient) FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Context, sha string) (string, error) {
-	releases, _, err := c.client.Repositories.ListReleases(ctx, c.owner, c.repo, &github.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-	latestBeforeSha := versionutils.NewVersion(0, 0, 1)
-	// TODO: this will eventually need to page through all releases, not just the first page
-	for _, release := range releases {
-		if release.GetDraft() {
-			continue
-		}
-
-		comparison, _, err := c.client.Repositories.CompareCommits(ctx, c.owner, c.repo, release.GetTagName(), sha)
+	for page := 1; ; page++ {
+		opts := &github.ListOptions{Page: page}
+		releases, _, err := c.client.Repositories.ListReleases(ctx, c.owner, c.repo, opts)
 		if err != nil {
 			return "", err
 		}
-		if comparison.GetStatus() == "ahead" || comparison.GetStatus() == "identical" {
-			releaseVersion, err := versionutils.ParseVersion(release.GetTagName())
+		if len(releases) == 0 {
+			return "", NoReleaseBeforeShaFound
+		}
+		for _, release := range releases {
+			if release.GetDraft() {
+				continue
+			}
+
+			comparison, _, err := c.client.Repositories.CompareCommits(ctx, c.owner, c.repo, release.GetTagName(), sha)
 			if err != nil {
 				return "", err
 			}
-			if releaseVersion.IsGreaterThan(latestBeforeSha) {
-				latestBeforeSha = releaseVersion
-				break
+			if comparison.GetStatus() == "ahead" || comparison.GetStatus() == "identical" {
+				releaseVersion, err := versionutils.ParseVersion(release.GetTagName())
+				if err != nil {
+					return "", err
+				}
+				return releaseVersion.String(), nil
 			}
 		}
 	}
-	return latestBeforeSha.String(), nil
 }
 
 func (c *repoClient) CompareCommits(ctx context.Context, base, sha string) (*github.CommitsComparison, error) {
