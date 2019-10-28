@@ -3,11 +3,17 @@ package githubutils
 import (
 	"context"
 
+	"github.com/solo-io/go-utils/errors"
+
+	"github.com/solo-io/go-utils/versionutils"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
 	"github.com/google/go-github/github"
 )
+
+var NoReleaseBeforeShaFound = errors.Errorf("no release found before sha")
 
 type PRSpec struct {
 	Message string
@@ -28,6 +34,7 @@ type RepoClient interface {
 	CreateStatus(ctx context.Context, sha string, status *github.RepoStatus) (*github.RepoStatus, error)
 	CreateComment(ctx context.Context, pr int, comment *github.IssueComment) (*github.IssueComment, error)
 	DeleteComment(ctx context.Context, commentId int64) error
+	FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Context, sha string) (string, error)
 }
 
 type repoClient struct {
@@ -44,8 +51,40 @@ func NewRepoClient(client *github.Client, owner, repo string) RepoClient {
 	}
 }
 
+// Deprecated: The latest release is not guaranteed to be the largest (by semver) tag, just the
+// most recent release. Use "FindLatestTagIncludingPrereleaseBeforeSha" instead.
 func (c *repoClient) FindLatestReleaseTagIncudingPrerelease(ctx context.Context) (string, error) {
 	return FindLatestReleaseTagIncudingPrerelease(ctx, c.client, c.owner, c.repo)
+}
+
+func (c *repoClient) FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Context, sha string) (string, error) {
+	for page := 1; ; page++ {
+		opts := &github.ListOptions{Page: page}
+		releases, _, err := c.client.Repositories.ListReleases(ctx, c.owner, c.repo, opts)
+		if err != nil {
+			return "", err
+		}
+		if len(releases) == 0 {
+			return "", NoReleaseBeforeShaFound
+		}
+		for _, release := range releases {
+			if release.GetDraft() {
+				continue
+			}
+
+			comparison, _, err := c.client.Repositories.CompareCommits(ctx, c.owner, c.repo, release.GetTagName(), sha)
+			if err != nil {
+				return "", err
+			}
+			if comparison.GetStatus() == "ahead" || comparison.GetStatus() == "identical" {
+				releaseVersion, err := versionutils.ParseVersion(release.GetTagName())
+				if err != nil {
+					return "", err
+				}
+				return releaseVersion.String(), nil
+			}
+		}
+	}
 }
 
 func (c *repoClient) CompareCommits(ctx context.Context, base, sha string) (*github.CommitsComparison, error) {

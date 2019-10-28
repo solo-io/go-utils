@@ -136,4 +136,24 @@ var _ = Describe("github utils", func() {
 		Expect(err).To(BeNil())
 	})
 
+	It("can properly find the most recent tag before a sha", func() {
+		// This test is pretty slow, these are cumbersome calls but wanted to make sure it works, including paging when necessary
+		client = githubutils.NewRepoClient(githubClient, owner, "gloo")
+		tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "b38d03cfba74e228be02115801cacf2adc7a8a11")
+		Expect(err).To(BeNil())
+		Expect(tag).To(Equal("v0.20.10"))
+		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "bfa85ee40fce48bb448ec206356e8a723bc7fab1")
+		Expect(err).To(BeNil())
+		Expect(tag).To(Equal("v0.20.9"))
+		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "aecc817f3ebb782befdbd9ba2ea8cd0219118d1b")
+		Expect(err).To(BeNil())
+		Expect(tag).To(Equal("v1.0.0-rc1"))
+		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "5f9e50306b97d5b8a14c2baf1024637bd93323d6")
+		Expect(err).To(BeNil())
+		Expect(tag).To(Equal("v0.20.2")) // first release before feature-rc1
+		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "5f5fae36aed27e2a0db54ff848f4a8926ab5d98b")
+		Expect(err).To(BeNil())
+		Expect(tag).To(Equal("v0.18.19"))
+	})
+
 })

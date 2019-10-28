@@ -111,7 +111,7 @@ func (c *changelogValidator) ValidateChangelog(ctx context.Context) (*ChangelogF
 }
 
 func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, error) {
-	latestTag, err := c.client.FindLatestReleaseTagIncudingPrerelease(ctx)
+	latestTag, err := c.client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, c.base)
 	if err != nil {
 		return "", ListReleasesError(err)
 	}

@@ -202,7 +202,7 @@ var _ = Describe("github utils", func() {
 
 			It("propagates error listing releases", func() {
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return("", nestedErr)
 
 				expected := changelogutils.ListReleasesError(nestedErr)
@@ -213,7 +213,7 @@ var _ = Describe("github utils", func() {
 
 			It("errors when unexpected file in changelog directory", func() {
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return(tag, nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -227,7 +227,7 @@ var _ = Describe("github utils", func() {
 
 			It("errors when invalid tag in changelog directory", func() {
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return(tag, nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -241,7 +241,7 @@ var _ = Describe("github utils", func() {
 
 			It("errors when no new version", func() {
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return(tag, nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -255,7 +255,7 @@ var _ = Describe("github utils", func() {
 
 			It("errors when no too many new versions", func() {
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return(tag, nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -269,7 +269,7 @@ var _ = Describe("github utils", func() {
 
 			It("errors when added changelog to old version", func() {
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return(tag, nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -300,7 +300,7 @@ var _ = Describe("github utils", func() {
 					GetFileContents(ctx, path1).
 					Return([]byte(validChangelog1), nil)
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return("v0.5.0", nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -326,7 +326,7 @@ var _ = Describe("github utils", func() {
 					GetFileContents(ctx, path1).
 					Return([]byte(validBreakingChangelog), nil)
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return("v0.5.0", nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -355,7 +355,7 @@ var _ = Describe("github utils", func() {
 					GetFileContents(ctx, path).
 					Return([]byte(validBreakingChangelog), nil)
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return("v0.5.0", nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -383,7 +383,7 @@ var _ = Describe("github utils", func() {
 					GetFileContents(ctx, path).
 					Return([]byte(validStableReleaseChangelog), nil)
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return("v0.5.0", nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -411,7 +411,7 @@ var _ = Describe("github utils", func() {
 					GetFileContents(ctx, path).
 					Return([]byte(validStableReleaseChangelog), nil)
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return("v0.5.0", nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
@@ -442,7 +442,7 @@ var _ = Describe("github utils", func() {
 					GetFileContents(ctx, path).
 					Return([]byte(validBreakingChangelog), nil)
 				repoClient.EXPECT().
-					FindLatestReleaseTagIncudingPrerelease(ctx).
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return(lastTag, nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
