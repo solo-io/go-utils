@@ -93,6 +93,16 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 		output = output + "**Breaking Changes**\n\n" + breakingChanges + "\n"
 	}
 
+	upgradeNotes := renderChangelogEntries(changelog, UPGRADE)
+	if upgradeNotes != "" {
+		output = output + "**Upgrade Notes**\n\n" + upgradeNotes + "\n"
+	}
+
+	helmChanges := renderChangelogEntries(changelog, HELM)
+	if helmChanges != "" {
+		output = output + "**Helm Changes**\n\n" + helmChanges + "\n"
+	}
+
 	newFeatures := renderChangelogEntries(changelog, NEW_FEATURE)
 	if newFeatures != "" {
 		output = output + "**New Features**\n\n" + newFeatures + "\n"
