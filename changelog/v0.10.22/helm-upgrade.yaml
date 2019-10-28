@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Changelog now supports HELM and UPGRADE entry types, to help establish stronger conventions around communicating important release notes.
+    issueLink: https://github.com/solo-io/go-utils/issues/332
