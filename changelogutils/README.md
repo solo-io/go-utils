@@ -43,7 +43,7 @@ changelog:
   - ...
 ```
  
-Type must be one of `NEW_FEATURE`, `FIX`, `BREAKING_CHANGE`, `DEPENDENCY_BUMP`, or `NON_USER_FACING`. 
+Type must be one of `NEW_FEATURE`, `FIX`, `BREAKING_CHANGE`, `DEPENDENCY_BUMP`, `HELM`, `UPGRADE`, or `NON_USER_FACING`. 
 
 Changelog entries that are not of type `NON_USER_FACING` or `DEPENDENCY_BUMP` must have a description and an issue link. 
 Those fields are optional for `NON_USER_FACING` and `DEPENDENCY_BUMP` changes.
@@ -115,14 +115,17 @@ No manually entered description should be used (it will get overwritten).
 Changelogs for a tag are merged and rendered in the following order:
 
 - Summary
+- Dependency bumps
 - Breaking changes
+- Upgrade notes
+- Helm changes
 - New Features
 - Fixes
 - Closing
 
 If the contents for a section are empty, it is omitted. 
 
-A breaking change, new feature, or fix are rendered in the following way: `<description> (<issueLink>)`
+A breaking change, upgrade note, helm change, new feature, or fix are rendered in the following way: `<description> (<issueLink>)`
 
 Non-user facing changes are omitted from the changelog. If there are no user-facing changes in a release, 
 the rendered notes will just say: 
