@@ -214,6 +214,8 @@ var _ = Describe("ReaderTest", func() {
 				getFileInfo("1.yaml", false),
 				getFileInfo("2.yaml", false),
 				getFileInfo("3.yaml", false),
+				getFileInfo("4.yaml", false),
+				getFileInfo("5.yaml", false),
 			}
 			mockCode.EXPECT().
 				ListFiles(ctx, changelogDir).
@@ -227,6 +229,12 @@ var _ = Describe("ReaderTest", func() {
 			mockCode.EXPECT().
 				GetFileContents(ctx, filepath.Join(changelogDir, "3.yaml")).
 				Return([]byte(validChangelog3), nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "4.yaml")).
+				Return([]byte(validUpgradeChangelog), nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, filepath.Join(changelogDir, "5.yaml")).
+				Return([]byte(validHelmChangelog), nil)
 			mockCode.EXPECT().
 				GetFileContents(ctx, filepath.Join(changelogDir, "summary.md")).
 				Return([]byte("summary"), nil)
@@ -272,6 +280,24 @@ var _ = Describe("ReaderTest", func() {
 								DependencyOwner: "foo",
 								DependencyRepo:  "bar",
 								DependencyTag:   "baz",
+							},
+						},
+					},
+					{
+						Entries: []*changelogutils.ChangelogEntry{
+							{
+								Type:        changelogutils.UPGRADE,
+								Description: "foo5",
+								IssueLink:   "bar5",
+							},
+						},
+					},
+					{
+						Entries: []*changelogutils.ChangelogEntry{
+							{
+								Type:        changelogutils.HELM,
+								Description: "foo6",
+								IssueLink:   "bar6",
 							},
 						},
 					},
@@ -425,6 +451,20 @@ changelog:
 changelog:
   - type: NON_USER_FACING
 releaseStableApi: true
+`
+
+	validUpgradeChangelog = `
+changelog:
+  - type: UPGRADE
+    description: foo5
+    issueLink: bar5
+`
+
+	validHelmChangelog = `
+changelog:
+  - type: HELM
+    description: foo6
+    issueLink: bar6
 `
 )
 
