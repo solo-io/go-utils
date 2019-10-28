@@ -1,4 +1,0 @@
-changelog:
-  - type: FIX
-    description: Changelog validation now works even when a repo releases from multiple branches.
-    issueLink: https://github.com/solo-io/go-utils/issues/331
