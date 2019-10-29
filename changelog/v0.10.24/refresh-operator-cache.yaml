@@ -1,0 +1,5 @@
+changelog:
+  - type: FIX
+    description: Allow updates to a KubeInstaller cache
+    issueLink: https://github.com/solo-io/sm-marketplace/issues/802
+    resolvesIssue: false
