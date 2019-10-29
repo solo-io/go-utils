@@ -36,3 +36,7 @@ func (i *MockKubeInstaller) PurgeResources(ctx context.Context, withLabels map[s
 func (i *MockKubeInstaller) ListAllResources(ctx context.Context) kuberesource.UnstructuredResources {
 	return i.ReconcileCalledWith.Resources
 }
+
+func (i *MockKubeInstaller) RefreshResourcesCache(cache *kubeinstall.Cache) {
+	return
+}

@@ -614,7 +614,7 @@ func (r *KubeInstaller) ListAllResources(ctx context.Context) kuberesource.Unstr
 	return r.cache.List()
 }
 
-func (r *KubeInstaller) RefreshResourcesCache(ctx context.Context, cache *Cache) {
+func (r *KubeInstaller) RefreshResourcesCache(cache *Cache) {
 	r.cache = cache
 }
 
