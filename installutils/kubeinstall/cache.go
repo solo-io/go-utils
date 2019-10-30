@@ -49,6 +49,15 @@ func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuber
 	return nil
 }
 
+/*
+Refresh the cache with the snapshot of the current cluster
+*/
+func (c *Cache) Refresh(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
+	// unlock cache after sync is complete
+	c.access.Lock()
+	return c.Init(ctx, cfg, filterFuncs...)
+}
+
 func (c *Cache) List() kuberesource.UnstructuredResources {
 	c.access.RLock()
 	defer c.access.RUnlock()
