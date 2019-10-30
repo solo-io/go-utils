@@ -27,15 +27,11 @@ func NewCache() *Cache {
 	return &Cache{access: l}
 }
 
-/*
-Initialize the cache with the snapshot of the current cluster
-*/
-func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
-	// unlock cache after sync is complete
-	defer c.access.Unlock()
+func (c *Cache) getClusterResources(ctx context.Context, cfg *rest.Config,
+	filterFuncs ...kuberesource.FilterResource) (kuberesource.UnstructuredResources, error) {
 	currentResources, err := kuberesource.GetClusterResources(ctx, cfg, filterFuncs...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	currentResources = currentResources.Filter(func(resource *unstructured.Unstructured) bool {
 		installedResource, err := getInstalledResource(resource)
@@ -45,6 +41,18 @@ func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuber
 		*resource = *installedResource
 		return false
 	})
+	return currentResources, nil
+}
+/*
+Initialize the cache with the snapshot of the current cluster
+*/
+func (c *Cache) Init(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
+	// unlock cache after sync is complete
+	defer c.access.Unlock()
+	currentResources, err := c.getClusterResources(ctx, cfg, filterFuncs...)
+	if err != nil {
+		return err
+	}
 	c.resources = currentResources.ByKey()
 	return nil
 }
@@ -54,8 +62,14 @@ Refresh the cache with the snapshot of the current cluster
 */
 func (c *Cache) Refresh(ctx context.Context, cfg *rest.Config, filterFuncs ...kuberesource.FilterResource) error {
 	// unlock cache after sync is complete
+	currentResources, err := c.getClusterResources(ctx, cfg, filterFuncs...)
+	if err != nil {
+		return err
+	}
 	c.access.Lock()
-	return c.Init(ctx, cfg, filterFuncs...)
+	defer c.access.Unlock()
+	c.resources = currentResources.ByKey()
+	return nil
 }
 
 func (c *Cache) List() kuberesource.UnstructuredResources {
