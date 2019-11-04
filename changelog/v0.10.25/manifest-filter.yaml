@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  description: Allow selecting which helm manifest resources you'd like to test against
+  issueLink: https://github.com/solo-io/go-utils/issues/337
