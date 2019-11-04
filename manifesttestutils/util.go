@@ -49,8 +49,8 @@ type TestManifest interface {
 	// run this callback on all the resources contained in this TestManifest
 	ExpectAll(callback func(*unstructured.Unstructured))
 
-	// expects a function that, given a resource from the test manifest, will return true
-	// if that resource should be included in the newly-constructed TestManifest that Select returns
+	// construct a new set of resources to make assertions against by collecting
+	// all the resources for which `selector` returns true
 	SelectResources(selector func(*unstructured.Unstructured) bool) TestManifest
 }
 
