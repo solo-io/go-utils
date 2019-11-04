@@ -45,6 +45,13 @@ type TestManifest interface {
 	ExpectUnstructured(kind, namespace, name string) Assertion
 
 	ExpectPermissions(permissions *ServiceAccountPermissions)
+
+	// run this callback on all the resources contained in this TestManifest
+	ExpectAll(callback func(*unstructured.Unstructured))
+
+	// expects a function that, given a resource from the test manifest, will return true
+	// if that resource should be included in the newly-constructed TestManifest that Select returns
+	SelectResources(selector func(*unstructured.Unstructured) bool) TestManifest
 }
 
 type testManifest struct {
@@ -244,6 +251,24 @@ func (t *testManifest) ExpectPermissions(permissions *ServiceAccountPermissions)
 	Expect(err).NotTo(HaveOccurred())
 
 	Expect(string(ownYaml)).To(BeEquivalentTo(string(expectedYaml)))
+}
+
+func (t *testManifest) SelectResources(selector func(*unstructured.Unstructured) bool) TestManifest {
+	selectedResources := &testManifest{}
+
+	for _, resource := range t.resources {
+		if selector(resource) {
+			selectedResources.resources = append(selectedResources.resources, resource)
+		}
+	}
+
+	return selectedResources
+}
+
+func (t *testManifest) ExpectAll(callback func(*unstructured.Unstructured)) {
+	for _, resource := range t.resources {
+		callback(resource)
+	}
 }
 
 func (t *testManifest) findUnstructured(kind, namespace, name string) *unstructured.Unstructured {
