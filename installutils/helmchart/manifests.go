@@ -170,7 +170,7 @@ func renderManifests(ctx context.Context, c *chart.Chart, values, releaseName, n
 
 	for file, man := range renderedTemplates {
 		if IsEmptyManifest(man) {
-			contextutils.LoggerFrom(ctx).Warnf("is an empty manifest, removing %v", file)
+			contextutils.LoggerFrom(ctx).Debugf("is an empty manifest, removing %v", file)
 			delete(renderedTemplates, file)
 		}
 	}
