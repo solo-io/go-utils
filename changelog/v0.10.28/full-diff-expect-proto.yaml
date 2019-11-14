@@ -1,0 +1,4 @@
+changelog:
+  - type: NON_USER_FACING
+    description: 200 char diffs for ExpectEqualProtoMessages.
+    issueLink: https://github.com/solo-io/go-utils/issues/281
