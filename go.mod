@@ -11,7 +11,6 @@ require (
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v2.18.0+incompatible // indirect
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
-	github.com/Sirupsen/logrus v1.4.2 // indirect
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/bluekeyes/hatpear v0.0.0-20180714193905-ffb42d5bb417 // indirect
 	github.com/bradleyfalzon/ghinstallation v0.1.2 // indirect
@@ -128,8 +127,4 @@ require (
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787 // indirect
 )
 
-replace (
-	github.com/Sirupsen/logrus v1.0.5 => github.com/sirupsen/logrus v1.0.5
-	github.com/Sirupsen/logrus v1.3.0 => github.com/Sirupsen/logrus v1.0.6
-	github.com/Sirupsen/logrus v1.4.2 => github.com/sirupsen/logrus v1.0.6
-)
+replace github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.0.5
