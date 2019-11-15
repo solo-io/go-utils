@@ -469,6 +469,9 @@ changelog:
   - type: HELM
     description: foo6
     issueLink: bar6
+  - type: FIX
+    description: foo1
+    issueLink: bar1
 `
 
 	validStableReleaseChangelog = `
