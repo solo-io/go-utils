@@ -5,13 +5,14 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/solo-io/go-utils/gcloudutils"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/solo-io/go-utils/gcloudutils"
 
 	"cloud.google.com/go/storage"
 	"github.com/ghodss/yaml"

@@ -43,6 +43,7 @@ func (c *Cache) getClusterResources(ctx context.Context, cfg *rest.Config,
 	})
 	return currentResources, nil
 }
+
 /*
 Initialize the cache with the snapshot of the current cluster
 */

@@ -5,9 +5,10 @@
 package debugutils
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockResponseWrapper is a mock of ResponseWrapper interface

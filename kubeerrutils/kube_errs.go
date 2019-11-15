@@ -16,7 +16,6 @@ func IsImmutableErr(err error) bool {
 	return false
 }
 
-
 // is the error AlreadyExists && the resource is not terminating?
 func IsAlreadyExists(err error) bool {
 	if err != nil {
