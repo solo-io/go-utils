@@ -1,0 +1,7 @@
+changelog:
+- type: FIX
+  description: >
+    The version utils currently always bump the minor version for any non-breaking change. We need to update logic to
+    ensure that if a changelog entry is of type `BREAKING_CHANGE` we must bump the major version, if it is on type
+    `NEW_FEATURE` we must bump the minor version and else we have to bump the patch version.
+  issueLink: https://github.com/solo-io/go-utils/issues/345
