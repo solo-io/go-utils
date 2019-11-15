@@ -115,7 +115,6 @@ var _ = Describe("github utils", func() {
 			filename3 = "3.yaml"
 			tag       = "v0.5.1"
 			nextTag   = "v0.5.2"
-			v101Tag   = "v1.0.1"
 		)
 
 		var (
@@ -124,8 +123,7 @@ var _ = Describe("github utils", func() {
 			added          = githubutils.COMMIT_FILE_STATUS_ADDED
 			unexpectedFile = mockFileInfo{isDir: false, name: "unexpected"}
 
-			path3   = filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename3)
-			v101Dir = filepath.Join(changelogutils.ChangelogDirectory, v101Tag, filename1)
+			path3 = filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename3)
 		)
 
 		getChangelogDir := func(tag string) os.FileInfo {
@@ -302,7 +300,7 @@ var _ = Describe("github utils", func() {
 						Return(&cc, nil)
 					code.EXPECT().
 						GetFileContents(ctx, path1).
-						Return([]byte(validChangelog1), nil)
+						Return([]byte(validChangelog1), nil).Times(2)
 					repoClient.EXPECT().
 						FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 						Return("v0.5.0", nil)
@@ -312,9 +310,6 @@ var _ = Describe("github utils", func() {
 					code.EXPECT().
 						ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, tag)).
 						Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-					code.EXPECT().
-						GetFileContents(ctx, path1).
-						Return([]byte(validChangelog1), nil)
 					file, err := validator.ValidateChangelog(ctx)
 					Expect(file).NotTo(BeNil())
 					Expect(err).To(BeNil())
@@ -328,7 +323,7 @@ var _ = Describe("github utils", func() {
 						Return(&cc, nil)
 					code.EXPECT().
 						GetFileContents(ctx, path1).
-						Return([]byte(validBreakingChangelog), nil)
+						Return([]byte(validBreakingChangelog), nil).Times(2)
 					repoClient.EXPECT().
 						FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 						Return("v0.5.0", nil)
@@ -338,9 +333,6 @@ var _ = Describe("github utils", func() {
 					code.EXPECT().
 						ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, tag)).
 						Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-					code.EXPECT().
-						GetFileContents(ctx, path1).
-						Return([]byte(validBreakingChangelog), nil)
 
 					expected := changelogutils.UnexpectedProposedVersionError("v0.6.0", tag)
 					file, err := validator.ValidateChangelog(ctx)
@@ -358,7 +350,7 @@ var _ = Describe("github utils", func() {
 						Return(&cc, nil)
 					code.EXPECT().
 						GetFileContents(ctx, path).
-						Return([]byte(validBreakingChangelog), nil)
+						Return([]byte(validBreakingChangelog), nil).Times(2)
 					repoClient.EXPECT().
 						FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 						Return("v0.5.0", nil)
@@ -368,9 +360,6 @@ var _ = Describe("github utils", func() {
 					code.EXPECT().
 						ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, "v0.6.0")).
 						Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-					code.EXPECT().
-						GetFileContents(ctx, path).
-						Return([]byte(validBreakingChangelog), nil)
 
 					file, err := validator.ValidateChangelog(ctx)
 					Expect(err).To(BeNil())
@@ -440,7 +429,7 @@ var _ = Describe("github utils", func() {
 						Return(&cc, nil)
 					code.EXPECT().
 						GetFileContents(ctx, path).
-						Return([]byte(validStableReleaseChangelog), nil)
+						Return([]byte(validStableReleaseChangelog), nil).Times(2)
 					repoClient.EXPECT().
 						FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 						Return("v0.5.0", nil)
@@ -450,9 +439,6 @@ var _ = Describe("github utils", func() {
 					code.EXPECT().
 						ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, "v1.0.0")).
 						Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-					code.EXPECT().
-						GetFileContents(ctx, path).
-						Return([]byte(validStableReleaseChangelog), nil)
 
 					file, err := validator.ValidateChangelog(ctx)
 					Expect(err).To(BeNil())
@@ -468,7 +454,7 @@ var _ = Describe("github utils", func() {
 						Return(&cc, nil)
 					code.EXPECT().
 						GetFileContents(ctx, path).
-						Return([]byte(validStableReleaseChangelog), nil)
+						Return([]byte(validStableReleaseChangelog), nil).Times(2)
 					repoClient.EXPECT().
 						FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 						Return("v0.5.0", nil)
@@ -478,9 +464,6 @@ var _ = Describe("github utils", func() {
 					code.EXPECT().
 						ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, nextTag)).
 						Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-					code.EXPECT().
-						GetFileContents(ctx, path).
-						Return([]byte(validStableReleaseChangelog), nil)
 
 					expected := changelogutils.InvalidUseOfStableApiError(nextTag)
 					file, err := validator.ValidateChangelog(ctx)
