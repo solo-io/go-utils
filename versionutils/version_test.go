@@ -109,18 +109,24 @@ var _ = Describe("Version", func() {
 
 	var _ = Context("IncrementVersion", func() {
 
-		expectResult := func(start *versionutils.Version, breakingChange bool, expected *versionutils.Version) {
-			actualIncremented := start.IncrementVersion(breakingChange)
+		expectResult := func(start *versionutils.Version, breakingChange bool, newFeature bool, expected *versionutils.Version) {
+			actualIncremented := start.IncrementVersion(breakingChange, newFeature)
 			Expect(actualIncremented).To(BeEquivalentTo(expected))
 		}
 
 		It("works", func() {
-			expectResult(getVersion(0, 0, 1), true, getVersion(0, 1, 0))
-			expectResult(getVersion(0, 1, 10), true, getVersion(0, 2, 0))
-			expectResult(getVersion(1, 1, 10), true, getVersion(2, 0, 0))
-			expectResult(getVersion(0, 0, 1), false, getVersion(0, 0, 2))
-			expectResult(getVersion(0, 1, 10), false, getVersion(0, 1, 11))
-			expectResult(getVersion(1, 1, 10), false, getVersion(1, 2, 0))
+			expectResult(getVersion(0, 0, 1), true, true, getVersion(0, 1, 0))
+			expectResult(getVersion(0, 0, 1), true, false, getVersion(0, 1, 0))
+			expectResult(getVersion(0, 1, 10), true, false, getVersion(0, 2, 0))
+			expectResult(getVersion(0, 1, 10), true, true, getVersion(0, 2, 0))
+			expectResult(getVersion(1, 1, 10), true, false, getVersion(2, 0, 0))
+			expectResult(getVersion(1, 1, 10), true, true, getVersion(2, 0, 0))
+			expectResult(getVersion(0, 0, 1), false, false, getVersion(0, 0, 2))
+			expectResult(getVersion(0, 0, 1), false, true, getVersion(0, 0, 2))
+			expectResult(getVersion(0, 1, 10), false, false, getVersion(0, 1, 11))
+			expectResult(getVersion(0, 1, 10), false, true, getVersion(0, 1, 11))
+			expectResult(getVersion(1, 1, 10), false, false, getVersion(1, 1, 11))
+			expectResult(getVersion(1, 1, 10), false, true, getVersion(1, 2, 0))
 		})
 	})
 

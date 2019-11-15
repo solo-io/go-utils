@@ -155,16 +155,18 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		return err
 	}
 	breakingChanges := false
+	newFeature := false
 	releaseStableApi := false
 
 	for _, file := range changelog.Files {
 		for _, entry := range file.Entries {
 			breakingChanges = breakingChanges || entry.Type.BreakingChange()
+			newFeature = newFeature || entry.Type.NewFeature()
 		}
 		releaseStableApi = releaseStableApi || file.GetReleaseStableApi()
 	}
 
-	expectedVersion := latestVersion.IncrementVersion(breakingChanges)
+	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
 	if releaseStableApi {
 		if !changelog.Version.Equals(&versionutils.StableApiVersion) {
 			return InvalidUseOfStableApiError(changelog.Version.String())

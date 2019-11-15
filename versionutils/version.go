@@ -97,7 +97,7 @@ func (v *Version) Equals(other *Version) bool {
 	return *v == *other
 }
 
-func (v *Version) IncrementVersion(breakingChange bool) *Version {
+func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
 	newMajor := v.Major
 	newMinor := v.Minor
 	newPatch := v.Patch
@@ -115,10 +115,13 @@ func (v *Version) IncrementVersion(breakingChange bool) *Version {
 		if breakingChange {
 			newMajor = v.Major + 1
 			newMinor = 0
-		} else {
+			newPatch = 0
+		} else if newFeature {
 			newMinor = v.Minor + 1
+			newPatch = 0
+		} else {
+			newPatch = v.Patch + 1
 		}
-		newPatch = 0
 	}
 	return &Version{
 		Major:            newMajor,

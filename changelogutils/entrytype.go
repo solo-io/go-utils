@@ -47,6 +47,10 @@ func (clt ChangelogEntryType) BreakingChange() bool {
 	return clt == BREAKING_CHANGE
 }
 
+func (clt ChangelogEntryType) NewFeature() bool {
+	return clt == NEW_FEATURE
+}
+
 func (clt ChangelogEntryType) MarshalJSON() ([]byte, error) {
 	if s, ok := interface{}(clt).(fmt.Stringer); ok {
 		return json.Marshal(s.String())
