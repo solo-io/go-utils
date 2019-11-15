@@ -406,15 +406,15 @@ var _ = Describe("github utils", func() {
 							Expect(file).NotTo(BeNil())
 						}
 					},
-					Entry("initial rc", "v1.0.0", "v1.0.1", validBreakingChangelog, true),
-					Entry("initial rc", "v1.0.0", "v1.1.0", validBreakingChangelog, true),
-					Entry("initial rc", "v1.0.0", "v2.0.0", validBreakingChangelog, false),
-					Entry("initial rc", "v1.0.0", "v1.0.1", validNewFeatureChangelog, true),
-					Entry("initial rc", "v1.0.0", "v1.1.0", validNewFeatureChangelog, false),
-					Entry("initial rc", "v1.0.0", "v2.0.0", validNewFeatureChangelog, true),
-					Entry("initial rc", "v1.0.0", "v1.0.1", validNonBreakingNorNewFeatureChangelog, false),
-					Entry("initial rc", "v1.0.0", "v1.1.0", validNonBreakingNorNewFeatureChangelog, true),
-					Entry("initial rc", "v1.0.0", "v2.0.0", validNonBreakingNorNewFeatureChangelog, true),
+					Entry("breaking change with patch bump", "v1.0.0", "v1.0.1", validBreakingChangelog, true),
+					Entry("breaking change with minor bump", "v1.0.0", "v1.1.0", validBreakingChangelog, true),
+					Entry("breaking change with major bump", "v1.0.0", "v2.0.0", validBreakingChangelog, false),
+					Entry("new feature with patch bump", "v1.0.0", "v1.0.1", validNewFeatureChangelog, true),
+					Entry("new feature with minor bump", "v1.0.0", "v1.1.0", validNewFeatureChangelog, false),
+					Entry("new feature with major bump", "v1.0.0", "v2.0.0", validNewFeatureChangelog, true),
+					Entry("non-breaking with patch bump", "v1.0.0", "v1.0.1", validNonBreakingNorNewFeatureChangelog, false),
+					Entry("non-breaking with minor bump", "v1.0.0", "v1.1.0", validNonBreakingNorNewFeatureChangelog, true),
+					Entry("non-breaking with major bump", "v1.0.0", "v2.0.0", validNonBreakingNorNewFeatureChangelog, true),
 				)
 			})
 
