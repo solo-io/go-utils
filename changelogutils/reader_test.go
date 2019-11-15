@@ -423,6 +423,7 @@ changelog:
     description: foo2
     issueLink: bar2
 `
+
 	validChangelog2 = `
 changelog:
   - type: NON_USER_FACING
@@ -432,6 +433,7 @@ changelog:
     issueLink: bar4
     resolvesIssue: false
 `
+
 	validChangelog3 = `
 changelog:
   - type: DEPENDENCY_BUMP
@@ -445,6 +447,28 @@ changelog:
   - type: BREAKING_CHANGE
     description: foo
     issueLink: bar
+`
+
+	validNewFeatureChangelog = `
+changelog:
+  - type: NEW_FEATURE
+    description: cool new feature
+    issueLink: http://issue
+`
+
+	validNonBreakingNorNewFeatureChangelog = `
+changelog:
+  - type: NON_USER_FACING
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: foo
+    dependencyRepo: bar
+    dependencyTag: baz
+  - type: UPGRADE
+    description: foo5
+    issueLink: bar5
+  - type: HELM
+    description: foo6
+    issueLink: bar6
 `
 
 	validStableReleaseChangelog = `
