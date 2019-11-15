@@ -381,30 +381,7 @@ var _ = Describe("github utils", func() {
 
 			Context("major version is 1.y.z", func() {
 
-				It("allows patch version bump when no breaking changes or new features are present", func() {
-					v101DirFile := github.CommitFile{Filename: &v101Dir, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{v101DirFile}}
-					repoClient.EXPECT().
-						CompareCommits(ctx, base, sha).
-						Return(&cc, nil)
-					code.EXPECT().
-						GetFileContents(ctx, v101Dir).
-						Return([]byte(validChangelog2), nil).Times(2)
-					repoClient.EXPECT().
-						FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
-						Return("v1.0.0", nil)
-					code.EXPECT().
-						ListFiles(ctx, changelogutils.ChangelogDirectory).
-						Return([]os.FileInfo{getChangelogDir(v101Tag)}, nil)
-					code.EXPECT().
-						ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, v101Tag)).
-						Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-					file, err := validator.ValidateChangelog(ctx)
-					Expect(file).NotTo(BeNil())
-					Expect(err).To(BeNil())
-				})
-
-				DescribeTable("rc workflow",
+				DescribeTable("correctly enforces version bump rules",
 					func(lastTag, nextTag, contents string, expectFailure bool) {
 
 						nextTagFile := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
