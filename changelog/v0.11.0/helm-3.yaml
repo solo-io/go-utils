@@ -1,0 +1,8 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: helm
+    dependencyRepo: helm
+    dependencyTag: v3.0.0
+    description: Update Helm to version 3.0.0
+    issueLink: https://github.com/solo-io/gloo/issues/1732
+    resolvesIssue: false
