@@ -16,13 +16,13 @@ var _ = Describe("Manifests", func() {
 		manifests := inputs.InputGlooManifests("myns")
 		resources, err := manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(resources).To(HaveLen(135))
+		Expect(resources).To(HaveLen(41))
 	})
 	It("converts resources to a manifest without erroring", func() {
 		manifests := inputs.InputGlooManifests("myns")
 		resources, err := manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(resources).To(HaveLen(135))
+		Expect(resources).To(HaveLen(41))
 
 		recombined, err := ManifestsFromResources(resources)
 		Expect(err).NotTo(HaveOccurred())
