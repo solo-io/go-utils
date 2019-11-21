@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/solo-io/go-utils/certutils"
-	"k8s.io/kubernetes/staging/src/k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert"
 )
 
 var _ = Describe("GenCert", func() {

@@ -52,12 +52,14 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.10.0
 	gopkg.in/yaml.v2 v2.2.4
 	helm.sh/helm/v3 v3.0.0
-	k8s.io/api v0.0.0-20191016110408-35e52d86657a
+	k8s.io/api v0.0.0-20191121015604-11707872ac1c
 	k8s.io/apiextensions-apiserver v0.0.0-20191016113550-5357c4baaf65
-	k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
-	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/kubernetes v1.13.2
-	sigs.k8s.io/controller-runtime v0.4.0
+	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a
+	k8s.io/cli-runtime v0.0.0-20191016114015-74ad18325ed5
+	k8s.io/client-go v0.0.0-20191016111102-bec269661e48
+	k8s.io/klog v1.0.0
+	k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
+	sigs.k8s.io/controller-runtime v0.4.0 // indirect
 	sigs.k8s.io/yaml v1.1.0
 )
 
