@@ -42,6 +42,7 @@ import (
 
 var istioCrd = apiextensions.CustomResourceDefinition{}
 
+// these are disabled pending https://github.com/solo-io/go-utils/issues/348
 var _ = XDescribe("KubeInstaller", func() {
 	var (
 		ns         string

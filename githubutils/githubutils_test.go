@@ -11,7 +11,7 @@ import (
 	"github.com/solo-io/go-utils/versionutils"
 )
 
-var _ = XDescribe("github utils", func() {
+var _ = Describe("github utils", func() {
 	var (
 		client                  *github.Client
 		ctx                     = context.Background()

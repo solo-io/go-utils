@@ -10,9 +10,6 @@ import (
 	"github.com/solo-io/go-utils/installutils/test/inputs"
 )
 
-/*
- * TODO: These tests are (mostly) broken because Istio's 1.0.3 chart is broken for Helm 3
- */
 var _ = Describe("Manifests", func() {
 	ns := "anything"
 	It("converts resources from a manifest without erroring", func() {
