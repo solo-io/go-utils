@@ -59,7 +59,7 @@ require (
 	k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 	k8s.io/klog v1.0.0
 	k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
-	sigs.k8s.io/controller-runtime v0.4.0 // indirect
+	sigs.k8s.io/controller-runtime v0.4.0
 	sigs.k8s.io/yaml v1.1.0
 )
 
