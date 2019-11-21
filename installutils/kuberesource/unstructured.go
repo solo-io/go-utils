@@ -279,7 +279,6 @@ func zeroGeneratedValues(obj *unstructured.Unstructured) {
 	obj.SetCreationTimestamp(metav1.Time{})
 	obj.SetDeletionTimestamp(nil)
 	obj.SetDeletionGracePeriodSeconds(nil)
-	obj.SetInitializers(nil)
 	obj.SetFinalizers(nil)
 	obj.SetOwnerReferences(nil)
 	obj.SetClusterName("")

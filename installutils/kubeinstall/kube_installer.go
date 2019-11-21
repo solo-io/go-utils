@@ -380,10 +380,7 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 				logger.Infof("deleting resource %v", resKey)
 
 				if err := retry.Do(func() error {
-					return r.client.Delete(ctx, res.DeepCopy(), func(options *client.DeleteOptions) {
-						p := v1.DeletePropagationForeground
-						options.PropagationPolicy = &p
-					})
+					return r.client.Delete(ctx, res.DeepCopy(), &deleteOptionsApplier{})
 				}); err != nil && !kubeerrs.IsNotFound(err) {
 					return errors.Wrapf(err, "deleting  %v", resKey)
 				}
@@ -778,4 +775,12 @@ func (r *KubeInstaller) waitForNotExist(ctx context.Context, res *unstructured.U
 	},
 		r.retryOptions...,
 	)
+}
+
+type deleteOptionsApplier struct {
+}
+
+func (d *deleteOptionsApplier) ApplyToDelete(options *client.DeleteOptions) {
+	p := v1.DeletePropagationForeground
+	options.PropagationPolicy = &p
 }

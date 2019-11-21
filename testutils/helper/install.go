@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"time"
 
+	"helm.sh/helm/v3/pkg/repo"
+
 	"github.com/avast/retry-go"
 	"github.com/solo-io/go-utils/testutils/kube"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +15,6 @@ import (
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/testutils/exec"
-	"k8s.io/helm/pkg/repo"
 )
 
 const (

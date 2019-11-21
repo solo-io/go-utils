@@ -3,14 +3,54 @@ package kuberesource
 import (
 	"sort"
 
-	"k8s.io/helm/pkg/tiller"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// adapted from Helm 2
+// https://github.com/helm/helm/blob/release-2.16/pkg/tiller/kind_sorter.go#L113
+
+// InstallOrder is the order in which manifests should be installed (by Kind).
+//
+// Those occurring earlier in the list get installed before those occurring later in the list.
+var InstallOrder = []string{
+	"Namespace",
+	"NetworkPolicy",
+	"ResourceQuota",
+	"LimitRange",
+	"PodSecurityPolicy",
+	"PodDisruptionBudget",
+	"Secret",
+	"ConfigMap",
+	"StorageClass",
+	"PersistentVolume",
+	"PersistentVolumeClaim",
+	"ServiceAccount",
+	"CustomResourceDefinition",
+	"ClusterRole",
+	"ClusterRoleList",
+	"ClusterRoleBinding",
+	"ClusterRoleBindingList",
+	"Role",
+	"RoleList",
+	"RoleBinding",
+	"RoleBindingList",
+	"Service",
+	"DaemonSet",
+	"Pod",
+	"ReplicationController",
+	"ReplicaSet",
+	"Deployment",
+	"HorizontalPodAutoscaler",
+	"StatefulSet",
+	"Job",
+	"CronJob",
+	"Ingress",
+	"APIService",
+}
+
 var customInstallOrder = func() []string {
 	// insert MutatingWebhookConfiguration after Namespace
-	return append(tiller.InstallOrder[:1], append([]string{"MutatingWebhookConfiguration"}, tiller.InstallOrder[1:]...)...)
+	return append(InstallOrder[:1], append([]string{"MutatingWebhookConfiguration"}, InstallOrder[1:]...)...)
 }()
 
 // set the install order based on

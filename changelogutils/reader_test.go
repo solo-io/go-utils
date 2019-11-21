@@ -23,7 +23,7 @@ var _ = Describe("ReaderTest", func() {
 		reader changelogutils.ChangelogReader
 	)
 
-	Context("happypath with github", func() {
+	XContext("happypath with github", func() {
 
 		const (
 			owner = "solo-io"

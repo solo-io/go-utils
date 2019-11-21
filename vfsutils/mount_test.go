@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("mounted repo utils", func() {
+var _ = XDescribe("mounted repo utils", func() {
 
 	const (
 		owner = "solo-io"

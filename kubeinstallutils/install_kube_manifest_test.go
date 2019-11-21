@@ -30,8 +30,10 @@ var _ = Describe("InstallKubeManifest", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 	AfterEach(func() {
-		err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, namespace)
-		Expect(err).NotTo(HaveOccurred())
+		if kubeClient != nil {
+			err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, namespace)
+			Expect(err).NotTo(HaveOccurred())
+		}
 	})
 	It("installs arbitrary kube manifests", func() {
 		err := deployNginx(namespace)

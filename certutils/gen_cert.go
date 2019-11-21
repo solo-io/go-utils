@@ -6,8 +6,9 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 
+	"k8s.io/kubernetes/staging/src/k8s.io/client-go/util/cert"
+
 	"github.com/solo-io/go-utils/errors"
-	"k8s.io/client-go/util/cert"
 )
 
 type Certificates struct {

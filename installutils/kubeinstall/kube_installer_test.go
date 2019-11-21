@@ -137,7 +137,7 @@ var _ = Describe("KubeInstaller", func() {
 		})
 	})
 	Context("create manifest", func() {
-		It("creates resources from a helm chart", func() {
+		XIt("creates resources from a helm chart", func() {
 			values := `
 mixer:
   enabled: true #should install mixer
