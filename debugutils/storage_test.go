@@ -78,7 +78,7 @@ var _ = Describe("storage client tests", func() {
 
 	})
 
-	XContext("gcs client", func() {
+	Context("gcs client", func() {
 		const (
 			bucketName = "go-utils-test"
 		)

@@ -8,10 +8,10 @@ import (
 	"github.com/onsi/gomega"
 )
 
-func InputIstioManifests(ns string) helmchart.Manifests {
+func InputGlooManifests(ns string) helmchart.Manifests {
 	manifests, err := helmchart.RenderManifests(
 		context.TODO(),
-		"https://s3.amazonaws.com/supergloo.solo.io/istio-1.0.3.tgz",
+		"https://storage.googleapis.com/solo-public-helm/charts/gloo-1.0.0.tgz",
 		"",
 		"yella",
 		ns,

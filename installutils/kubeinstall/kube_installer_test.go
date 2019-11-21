@@ -42,7 +42,7 @@ import (
 
 var istioCrd = apiextensions.CustomResourceDefinition{}
 
-var _ = Describe("KubeInstaller", func() {
+var _ = XDescribe("KubeInstaller", func() {
 	var (
 		ns         string
 		lock       *clusterlock.TestClusterLocker
@@ -137,7 +137,7 @@ var _ = Describe("KubeInstaller", func() {
 		})
 	})
 	Context("create manifest", func() {
-		XIt("creates resources from a helm chart", func() {
+		It("creates resources from a helm chart", func() {
 			values := `
 mixer:
   enabled: true #should install mixer

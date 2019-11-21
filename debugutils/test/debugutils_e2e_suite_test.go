@@ -22,7 +22,7 @@ import (
 
 func TestDebugutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	//RunSpecs(t, "Debugutils Suite")
+	RunSpecs(t, "Debugutils Suite")
 }
 
 var (

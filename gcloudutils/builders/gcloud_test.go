@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = XDescribe("gcloud unit tests", func() {
+var _ = Describe("gcloud unit tests", func() {
 
 	var (
 		ctx = context.Background()
