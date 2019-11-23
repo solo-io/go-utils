@@ -25,6 +25,7 @@ import (
 )
 
 type TestManifest interface {
+	// Deprecated
 	ExpectDeployment(deployment *v1beta1.Deployment) *v1beta1.Deployment
 	ExpectDeploymentAppsV1(deployment *appsv1.Deployment)
 	ExpectServiceAccount(serviceAccount *corev1.ServiceAccount)
