@@ -13,16 +13,16 @@ import (
 var _ = Describe("Manifests", func() {
 	ns := "anything"
 	It("converts resources from a manifest without erroring", func() {
-		manifests := inputs.InputIstioManifests("myns")
+		manifests := inputs.InputGlooManifests("myns")
 		resources, err := manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(resources).To(HaveLen(135))
+		Expect(resources).To(HaveLen(41))
 	})
 	It("converts resources to a manifest without erroring", func() {
-		manifests := inputs.InputIstioManifests("myns")
+		manifests := inputs.InputGlooManifests("myns")
 		resources, err := manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(resources).To(HaveLen(135))
+		Expect(resources).To(HaveLen(41))
 
 		recombined, err := ManifestsFromResources(resources)
 		Expect(err).NotTo(HaveOccurred())
@@ -40,13 +40,14 @@ var _ = Describe("Manifests", func() {
 
 	It("handles value overrides correctly", func() {
 		values := `
-mixer:
-  enabled: false #should not install mixer
+global:
+  glooRbac:
+    create: false
 
 `
 		manifests, err := RenderManifests(
 			context.TODO(),
-			"https://s3.amazonaws.com/supergloo.solo.io/istio-1.0.3.tgz",
+			"https://storage.googleapis.com/solo-public-helm/charts/gloo-1.0.0.tgz",
 			values,
 			"yella",
 			ns,
@@ -56,59 +57,9 @@ mixer:
 
 		for _, man := range manifests {
 			// no security crds
-			Expect(man.Content).NotTo(ContainSubstring("policies.authentication.istio.io"))
-
-			// no mixer-policy
-			Expect(man.Content).NotTo(ContainSubstring(`apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: istio-policy`))
-			// no mixer-telemetry
-			Expect(man.Content).NotTo(ContainSubstring(`apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: istio-telemetry`))
+			Expect(strings.ToLower(man.Content)).NotTo(ContainSubstring("rbac"))
 		}
 
-	})
-	Context("update manifest", func() {
-		It("updates the existing deployed resources correctly", func() {
-			values := `
-mixer:
-  enabled: true #should install mixer
-
-`
-			manifests, err := RenderManifests(
-				context.TODO(),
-				"https://s3.amazonaws.com/supergloo.solo.io/istio-1.0.3.tgz",
-				values,
-				"yella",
-				ns,
-				"",
-			)
-			Expect(err).NotTo(HaveOccurred())
-
-			var foundMixerPolicy, foundMixerTelemetry bool
-			for _, man := range manifests {
-				// yes mixer-policy
-				if strings.Contains(man.Content, `apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: istio-policy`) {
-					foundMixerPolicy = true
-				}
-				if strings.Contains(man.Content, `apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: istio-telemetry`) {
-					foundMixerTelemetry = true
-				}
-			}
-
-			Expect(foundMixerPolicy).To(BeTrue())
-			Expect(foundMixerTelemetry).To(BeTrue())
-
-		})
 	})
 
 	Context("load from github", func() {

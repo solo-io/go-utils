@@ -10,13 +10,14 @@ import (
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/apis/batch"
 )
 
 //go:generate mockgen -destination mocks_test.go -self_package github.com/solo-io/go-utils/debugutils -package debugutils github.com/solo-io/go-utils/debugutils PodFinder,LogCollector,ResourceCollector,StorageClient
@@ -149,9 +150,9 @@ func handleOwnerResource(resource *unstructured.Unstructured) (map[string]string
 		matchLabels = deploymentType.Spec.Selector.MatchLabels
 	case *appsv1beta2.DaemonSet:
 		matchLabels = deploymentType.Spec.Selector.MatchLabels
-	case *batch.Job:
+	case *batchv1.Job:
 		matchLabels = deploymentType.Spec.Selector.MatchLabels
-	case *batch.CronJob:
+	case *batchv1beta1.CronJob:
 		matchLabels = deploymentType.Spec.JobTemplate.Spec.Selector.MatchLabels
 
 	default:

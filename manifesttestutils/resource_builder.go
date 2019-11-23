@@ -44,6 +44,7 @@ type PortSpec struct {
 	Port int
 }
 
+// Deprecated
 func (b *ResourceBuilder) GetDeployment() *v1beta1.Deployment {
 	return &v1beta1.Deployment{
 		TypeMeta: metav1.TypeMeta{

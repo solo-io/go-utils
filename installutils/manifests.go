@@ -2,13 +2,20 @@ package installutils
 
 import (
 	"path/filepath"
+	"regexp"
+	"strings"
+
+	"helm.sh/helm/v3/pkg/releaseutil"
 
 	"github.com/solo-io/go-utils/vfsutils"
 	"github.com/spf13/afero"
-	"k8s.io/helm/pkg/manifest"
 )
 
-func GetManifestsFromRemoteTar(tarUrl string) ([]manifest.Manifest, error) {
+var (
+	kindRegex = regexp.MustCompile("kind:(.*)\n")
+)
+
+func GetManifestsFromRemoteTar(tarUrl string) ([]releaseutil.Manifest, error) {
 	fs := afero.NewMemMapFs()
 	dir, err := vfsutils.MountTar(fs, tarUrl)
 	if err != nil {
@@ -27,5 +34,24 @@ func GetManifestsFromRemoteTar(tarUrl string) ([]manifest.Manifest, error) {
 		}
 		templates[filename] = string(contents)
 	}
-	return manifest.SplitManifests(templates), nil
+	return SplitManifests(templates), nil
+}
+
+// SplitManifests takes a map of rendered templates and splits them into the
+// detected manifests.
+// (ported from Helm 2: https://github.com/helm/helm/blob/release-2.16/pkg/manifest/splitter.go)
+func SplitManifests(templates map[string]string) []releaseutil.Manifest {
+	var listManifests []releaseutil.Manifest
+	// extract kind and name
+	for k, v := range templates {
+		match := kindRegex.FindStringSubmatch(v)
+		h := "Unknown"
+		if len(match) == 2 {
+			h = strings.TrimSpace(match[1])
+		}
+		m := releaseutil.Manifest{Name: k, Content: v, Head: &releaseutil.SimpleHead{Kind: h}}
+		listManifests = append(listManifests, m)
+	}
+
+	return listManifests
 }

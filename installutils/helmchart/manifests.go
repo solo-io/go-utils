@@ -7,37 +7,37 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
-	"k8s.io/helm/pkg/releaseutil"
+	"github.com/solo-io/go-utils/installutils"
+	"github.com/solo-io/go-utils/installutils/helmignore"
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
+	"helm.sh/helm/v3/pkg/engine"
+	"helm.sh/helm/v3/pkg/releaseutil"
+
 	"sigs.k8s.io/yaml"
 
 	"github.com/google/go-github/github"
 	"github.com/solo-io/go-utils/tarutils"
 	"github.com/solo-io/go-utils/vfsutils"
 	"github.com/spf13/afero"
-	"k8s.io/helm/pkg/ignore"
 
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/errors"
-	"k8s.io/helm/pkg/chartutil"
-	"k8s.io/helm/pkg/proto/hapi/chart"
-	"k8s.io/helm/pkg/renderutil"
-	"k8s.io/helm/pkg/timeconv"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	yaml2json "k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"k8s.io/helm/pkg/manifest"
-	"k8s.io/helm/pkg/tiller"
 )
 
-type Manifests []manifest.Manifest
+type Manifests []releaseutil.Manifest
 
-func (m Manifests) Find(name string) *manifest.Manifest {
+func (m Manifests) Find(name string) *releaseutil.Manifest {
 	for _, man := range m {
 		if man.Name == name {
 			return &man
@@ -48,7 +48,7 @@ func (m Manifests) Find(name string) *manifest.Manifest {
 
 func (m Manifests) Names() []string {
 	var names []string
-	for _, m := range tiller.SortByKind(m) {
+	for _, m := range sortByKind(m) {
 		names = append(names, m.Name)
 	}
 	return names
@@ -57,7 +57,7 @@ func (m Manifests) Names() []string {
 func (m Manifests) CombinedString() string {
 	buf := &bytes.Buffer{}
 
-	for _, m := range tiller.SortByKind(m) {
+	for _, m := range sortByKind(m) {
 		data := m.Content
 		b := filepath.Base(m.Name)
 		if b == "NOTES.txt" {
@@ -130,8 +130,6 @@ func IsEmptyManifest(manifest string) bool {
 	return removeSpaces == ""
 }
 
-var defaultKubeVersion = fmt.Sprintf("%s.%s", chartutil.DefaultKubeVersion.Major, chartutil.DefaultKubeVersion.Minor)
-
 func RenderManifests(ctx context.Context, chartUri, values, releaseName, namespace, kubeVersion string) (Manifests, error) {
 
 	file, err := tarutils.RetrieveArchive(afero.NewOsFs(), chartUri)
@@ -141,29 +139,28 @@ func RenderManifests(ctx context.Context, chartUri, values, releaseName, namespa
 	defer file.Close()
 
 	// Check chart requirements to make sure all dependencies are present in /charts
-	chart, err := chartutil.LoadArchive(file)
+	chart, err := loader.LoadArchive(file)
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading chart")
 	}
 	return renderManifests(ctx, chart, values, releaseName, namespace, kubeVersion)
 }
 
-func renderManifests(ctx context.Context, c *chart.Chart, values, releaseName, namespace, kubeVersion string) ([]manifest.Manifest, error) {
-	if kubeVersion == "" {
-		kubeVersion = defaultKubeVersion
-	}
-	renderOpts := renderutil.Options{
-		ReleaseOptions: chartutil.ReleaseOptions{
-			Name:      releaseName,
-			IsInstall: true,
-			Time:      timeconv.Now(),
-			Namespace: namespace,
-		},
-		KubeVersion: kubeVersion,
+func renderManifests(ctx context.Context, c *chart.Chart, values, releaseName, namespace, kubeVersion string) ([]releaseutil.Manifest, error) {
+	valuesYaml, err := chartutil.ReadValues([]byte(values))
+	if err != nil {
+		return nil, err
 	}
 
-	config := &chart.Config{Raw: values, Values: map[string]*chart.Value{}}
-	renderedTemplates, err := renderutil.Render(c, config, renderOpts)
+	chartValues, err := chartutil.ToRenderValues(c, valuesYaml, chartutil.ReleaseOptions{
+		Name:      releaseName,
+		Namespace: namespace,
+	}, nil)
+
+	if err != nil {
+		return nil, err
+	}
+	renderedTemplates, err := engine.Render(c, chartValues)
 	if err != nil {
 		return nil, err
 	}
@@ -174,8 +171,8 @@ func renderManifests(ctx context.Context, c *chart.Chart, values, releaseName, n
 			delete(renderedTemplates, file)
 		}
 	}
-	manifests := manifest.SplitManifests(renderedTemplates)
-	return tiller.SortByKind(manifests), nil
+	manifests := installutils.SplitManifests(renderedTemplates)
+	return sortByKind(manifests), nil
 }
 
 type GithubChartRef struct {
@@ -228,7 +225,7 @@ func RenderChartFromGithub(ctx context.Context, ref GithubChartRef) (*chart.Char
 	return loadFiles(rules, fs, chartRoot+"/")
 }
 
-func RenderManifestsFromGithub(ctx context.Context, ref GithubChartRef, values, releaseName, namespace, kubeVersion string) ([]manifest.Manifest, error) {
+func RenderManifestsFromGithub(ctx context.Context, ref GithubChartRef, values, releaseName, namespace, kubeVersion string) ([]releaseutil.Manifest, error) {
 	chart, err := RenderChartFromGithub(ctx, ref)
 	if err != nil {
 		return nil, err
@@ -236,20 +233,20 @@ func RenderManifestsFromGithub(ctx context.Context, ref GithubChartRef, values, 
 	return renderManifests(ctx, chart, values, releaseName, namespace, kubeVersion)
 }
 
-func getRulesFromArchive(fs afero.Fs, chartRoot string) (*ignore.Rules, error) {
-	rules := ignore.Empty()
-	helmignore := filepath.Join(chartRoot, ignore.HelmIgnore)
-	exists, err := afero.Exists(fs, helmignore)
+func getRulesFromArchive(fs afero.Fs, chartRoot string) (*helmignore.Rules, error) {
+	rules := helmignore.Empty()
+	helmignorePath := filepath.Join(chartRoot, helmignore.HelmIgnore)
+	exists, err := afero.Exists(fs, helmignorePath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error checking if helmignore exists")
 	}
 	if exists {
-		contents, err := afero.ReadFile(fs, helmignore)
+		contents, err := afero.ReadFile(fs, helmignorePath)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error reading helmignore")
 		}
 		reader := bytes.NewReader(contents)
-		r, err := ignore.Parse(reader)
+		r, err := helmignore.Parse(reader)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to parse .helmignore")
 		}
@@ -259,8 +256,8 @@ func getRulesFromArchive(fs afero.Fs, chartRoot string) (*ignore.Rules, error) {
 	return rules, nil
 }
 
-func loadFiles(rules *ignore.Rules, fs afero.Fs, chartDir string) (*chart.Chart, error) {
-	var files []*chartutil.BufferedFile
+func loadFiles(rules *helmignore.Rules, fs afero.Fs, chartDir string) (*chart.Chart, error) {
+	var files []*loader.BufferedFile
 	walk := func(name string, fi os.FileInfo, err error) error {
 		n := strings.TrimPrefix(name, chartDir)
 		if n == "" {
@@ -294,11 +291,73 @@ func loadFiles(rules *ignore.Rules, fs afero.Fs, chartDir string) (*chart.Chart,
 			return fmt.Errorf("error reading %s: %s", n, err)
 		}
 
-		files = append(files, &chartutil.BufferedFile{Name: n, Data: data})
+		files = append(files, &loader.BufferedFile{Name: n, Data: data})
 		return nil
 	}
 	if err := afero.Walk(fs, chartDir, walk); err != nil {
 		return nil, err
 	}
-	return chartutil.LoadFiles(files)
+	return loader.LoadFiles(files)
+}
+
+// adapted from Helm 2
+// https://github.com/helm/helm/blob/release-2.16/pkg/tiller/kind_sorter.go#L113
+
+type kindSorter struct {
+	ordering  map[string]int
+	manifests []releaseutil.Manifest
+}
+
+func newKindSorter(m []releaseutil.Manifest, s []string) *kindSorter {
+	o := make(map[string]int, len(s))
+	for v, k := range s {
+		o[k] = v
+	}
+
+	return &kindSorter{
+		manifests: m,
+		ordering:  o,
+	}
+}
+
+func (k *kindSorter) Len() int { return len(k.manifests) }
+
+func (k *kindSorter) Swap(i, j int) { k.manifests[i], k.manifests[j] = k.manifests[j], k.manifests[i] }
+
+func (k *kindSorter) Less(i, j int) bool {
+	a := k.manifests[i]
+	b := k.manifests[j]
+	first, aok := k.ordering[a.Head.Kind]
+	second, bok := k.ordering[b.Head.Kind]
+
+	if !aok && !bok {
+		// if both are unknown then sort alphabetically by kind and name
+		if a.Head.Kind != b.Head.Kind {
+			return a.Head.Kind < b.Head.Kind
+		}
+		return a.Name < b.Name
+	}
+
+	// unknown kind is last
+	if !aok {
+		return false
+	}
+	if !bok {
+		return true
+	}
+
+	// if same kind sub sort alphanumeric
+	if first == second {
+		return a.Name < b.Name
+	}
+	// sort different kinds
+	return first < second
+}
+
+// SortByKind sorts manifests in InstallOrder
+func sortByKind(manifests []releaseutil.Manifest) []releaseutil.Manifest {
+	ordering := kuberesource.InstallOrder
+	ks := newKindSorter(manifests, ordering)
+	sort.Sort(ks)
+	return ks.manifests
 }

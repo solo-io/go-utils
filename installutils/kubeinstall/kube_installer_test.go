@@ -42,7 +42,8 @@ import (
 
 var istioCrd = apiextensions.CustomResourceDefinition{}
 
-var _ = Describe("KubeInstaller", func() {
+// these are disabled pending https://github.com/solo-io/go-utils/issues/348
+var _ = XDescribe("KubeInstaller", func() {
 	var (
 		ns         string
 		lock       *clusterlock.TestClusterLocker
