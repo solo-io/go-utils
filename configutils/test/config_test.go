@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"log"
 	"os"
 
 	"github.com/solo-io/go-utils/configutils"
@@ -35,13 +36,14 @@ var _ = Describe("ConfigTest", func() {
 	}
 
 	Context("Kube Integration with config map client", func() {
+		if os.Getenv("RUN_KUBE_TESTS") != "1" {
+			log.Printf("This test creates kubernetes resources and is disabled by default. To enable, set RUN_KUBE_TESTS=1 in your env.")
+			return
+		}
 
 		var configMapClient configutils.ConfigMapClient
 
 		BeforeEach(func() {
-			if os.Getenv("RUN_KUBE_TESTS") != "1" {
-				Skip("use RUN_KUBE_TESTS to run this test")
-			}
 			rand := helpers.RandString(8)
 			configMapNamespace = "test-" + rand
 			configMapClient = configutils.NewConfigMapClient(kube2.MustKubeClient())
