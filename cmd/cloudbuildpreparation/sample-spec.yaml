@@ -1,0 +1,5 @@
+githubRepo:
+  owner: solo-io
+  repo: gloo
+  sha: master
+  outputDir: temp-demo
