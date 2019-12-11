@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/solo-io/go-utils/errors"
 
@@ -28,7 +30,7 @@ func main() {
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Fatalw("unable to complete cloud build preparation", zap.Error(err))
 	}
-	contextutils.LoggerFrom(ctx).Infow("completed without error")
+	contextutils.LoggerFrom(ctx).Infow("completed successfully")
 }
 
 const (
@@ -59,14 +61,27 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
 
 	if err := githubutils.DownloadRepoArchive(ctx, githubClient, file, spec.GithubRepo.Owner, spec.GithubRepo.Repo, spec.GithubRepo.Sha); err != nil {
 		contextutils.LoggerFrom(ctx).Warnw("could not download repo", zap.Error(err))
 		return err
 	}
 
-	err = tarutils.Untar(spec.GithubRepo.OutputDir, file.Name(), fs)
+	err = tarutils.Untar(tempDir, file.Name(), fs)
 	if err != nil {
+		return err
+	}
+	// GitHub's archives include a portion of the sha. This is nice but is harder to predict or read by scripts
+	// Rename to the repo name
+	if err := renameOutputFile(tempDir, spec.GithubRepo); err != nil {
+		return err
+	}
+	// cleanup
+	if err := os.RemoveAll(tempDir); err != nil {
 		return err
 	}
 	return nil
@@ -95,4 +110,24 @@ func validateSpec(spec *api.BuildPreparation) error {
 		return errors.New("invalid spec: spec is empty")
 	}
 	return nil
+}
+
+func renameOutputFile(tempDir string, gitHubSpec api.GithubRepo) error {
+	// find the file that was written
+	fileInfo, err := ioutil.ReadDir(tempDir)
+	if err != nil {
+		return err
+	}
+	if len(fileInfo) != 1 {
+		return errors.Errorf("expected a single entry in temp dir, found %v", len(fileInfo))
+	}
+	oldName := fileInfo[0].Name()
+
+	// rename it
+	parentDir := filepath.Join(gitHubSpec.OutputDir, gitHubSpec.Owner)
+	if err := os.MkdirAll(parentDir, os.ModePerm); err != nil {
+		return err
+	}
+	newName := filepath.Join(parentDir, gitHubSpec.Repo)
+	return os.Rename(filepath.Join(tempDir, oldName), newName)
 }

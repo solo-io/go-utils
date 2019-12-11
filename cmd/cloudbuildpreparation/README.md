@@ -29,7 +29,7 @@ This should be run in a container as the first cloud build step.
 ```
 docker run -it --entrypoint="/bin/sh" \
   -e GITHUB_TOKEN=`cat ~/.github/token` \
-  -v /Users/mitch/git/github.com/solo-io/go-utils/cmd/cloudbuildpreparation:/mnt/mydata \
+  -v $(pwd):/mnt/mydata \
   gcr.io/solo-io/cloudbuildpreparation:0.0.1
 ```
 - verify that the sample file is available in the mounted directory
