@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/go-github/github"
+
 	"github.com/solo-io/go-utils/errors"
 
 	"github.com/ghodss/yaml"
@@ -56,12 +58,20 @@ func run(ctx context.Context) error {
 		return err
 	}
 
+	return pullSourceCode(ctx, githubClient, spec)
+}
+
+func pullSourceCode(ctx context.Context, githubClient *github.Client, spec *api.BuildPreparation) error {
+
 	fs := afero.NewOsFs()
 	file, err := ioutil.TempFile("", "new-file")
 	if err != nil {
 		return err
 	}
-	tempDir, err := ioutil.TempDir("", "")
+	// need to use the designated output dir here (if any) otherwise this script will fail when
+	// we rename the github-generated unarchived directory if the output dir is on a different device.
+	// For example, if this script is run in docker and references a mounted
+	tempDir, err := ioutil.TempDir(spec.GithubRepo.OutputDir, "")
 	if err != nil {
 		return err
 	}
