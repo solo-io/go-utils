@@ -19,13 +19,16 @@ import (
 	"go.uber.org/zap"
 )
 
+const shortDescriptiveName = "cloud build preparation"
+
 func main() {
 	ctx := context.Background()
+	contextutils.LoggerFrom(ctx).Infow("starting")
 	err := run(ctx)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Fatalw("unable to complete cloud build preparation", zap.Error(err))
 	}
-
+	contextutils.LoggerFrom(ctx).Infow("completed without error")
 }
 
 const (
@@ -37,6 +40,7 @@ func run(ctx context.Context) error {
 	buildFile := ""
 	flag.StringVar(&buildFile, buildSpecFileFlagName, "", "filename of build preparation specification")
 	flag.Parse()
+	contextutils.LoggerFrom(ctx).Infow("reading config from file", zap.Any("filename", buildFile))
 
 	spec, err := ingestBuildSpec(buildFile)
 	if err != nil {
@@ -51,10 +55,6 @@ func run(ctx context.Context) error {
 	}
 
 	fs := afero.NewOsFs()
-	//err = fs.MkdirAll("tmp", 0755)
-	//if err != nil {
-	//	return err
-	//}
 	file, err := ioutil.TempFile("", "new-file")
 	if err != nil {
 		return err
