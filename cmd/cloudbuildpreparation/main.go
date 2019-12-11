@@ -4,18 +4,12 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
-	"os"
-	"path/filepath"
-
-	"github.com/google/go-github/github"
 
 	"github.com/solo-io/go-utils/errors"
 
 	"github.com/ghodss/yaml"
+	"github.com/solo-io/go-utils/cmd/cloudbuildpreparation/internal/pullsrc"
 	"github.com/solo-io/go-utils/cmd/cloudbuildpreparation/pkg/api"
-
-	"github.com/solo-io/go-utils/tarutils"
-	"github.com/spf13/afero"
 
 	"github.com/solo-io/go-utils/githubutils"
 
@@ -58,43 +52,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	return pullSourceCode(ctx, githubClient, spec)
-}
-
-func pullSourceCode(ctx context.Context, githubClient *github.Client, spec *api.BuildPreparation) error {
-
-	fs := afero.NewOsFs()
-	file, err := ioutil.TempFile("", "new-file")
-	if err != nil {
-		return err
-	}
-	// need to use the designated output dir here (if any) otherwise this script will fail when
-	// we rename the github-generated unarchived directory if the output dir is on a different device.
-	// For example, if this script is run in docker and references a mounted
-	tempDir, err := ioutil.TempDir(spec.GithubRepo.OutputDir, "")
-	if err != nil {
-		return err
-	}
-
-	if err := githubutils.DownloadRepoArchive(ctx, githubClient, file, spec.GithubRepo.Owner, spec.GithubRepo.Repo, spec.GithubRepo.Sha); err != nil {
-		contextutils.LoggerFrom(ctx).Warnw("could not download repo", zap.Error(err))
-		return err
-	}
-
-	err = tarutils.Untar(tempDir, file.Name(), fs)
-	if err != nil {
-		return err
-	}
-	// GitHub's archives include a portion of the sha. This is nice but is harder to predict or read by scripts
-	// Rename to the repo name
-	if err := renameOutputFile(tempDir, spec.GithubRepo); err != nil {
-		return err
-	}
-	// cleanup
-	if err := os.RemoveAll(tempDir); err != nil {
-		return err
-	}
-	return nil
+	return pullsrc.PullSourceCode(ctx, githubClient, spec)
 }
 
 func ingestBuildSpec(filename string) (*api.BuildPreparation, error) {
@@ -120,24 +78,4 @@ func validateSpec(spec *api.BuildPreparation) error {
 		return errors.New("invalid spec: spec is empty")
 	}
 	return nil
-}
-
-func renameOutputFile(tempDir string, gitHubSpec api.GithubRepo) error {
-	// find the file that was written
-	fileInfo, err := ioutil.ReadDir(tempDir)
-	if err != nil {
-		return err
-	}
-	if len(fileInfo) != 1 {
-		return errors.Errorf("expected a single entry in temp dir, found %v", len(fileInfo))
-	}
-	oldName := fileInfo[0].Name()
-
-	// rename it
-	parentDir := filepath.Join(gitHubSpec.OutputDir, gitHubSpec.Owner)
-	if err := os.MkdirAll(parentDir, os.ModePerm); err != nil {
-		return err
-	}
-	newName := filepath.Join(parentDir, gitHubSpec.Repo)
-	return os.Rename(filepath.Join(tempDir, oldName), newName)
 }
