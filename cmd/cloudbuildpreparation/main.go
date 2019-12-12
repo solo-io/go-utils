@@ -11,8 +11,6 @@ import (
 	"github.com/solo-io/go-utils/cmd/cloudbuildpreparation/internal/pullsrc"
 	"github.com/solo-io/go-utils/cmd/cloudbuildpreparation/pkg/api"
 
-	"github.com/solo-io/go-utils/githubutils"
-
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 )
@@ -45,14 +43,17 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	// This utility expects GITHUB_TOKEN to exist in the environment
-	githubClient, err := githubutils.GetClient(ctx)
-	if err != nil {
-		contextutils.LoggerFrom(ctx).Warnw("could not get github client", zap.Error(err))
+	if err := pullsrc.GitCloneSourceCode(ctx, spec); err != nil {
 		return err
 	}
-
-	return pullsrc.PullSourceCode(ctx, githubClient, spec)
+	if err := pullsrc.GitCheckoutSha(ctx, spec); err != nil {
+		return err
+	}
+	if err := pullsrc.GitDescribeTagsDirty(ctx, spec); err != nil {
+		return err
+	}
+	//return pullsrc.PullSourceCode(ctx, githubClient, spec)
+	return nil
 }
 
 func ingestBuildSpec(filename string) (*api.BuildPreparation, error) {

@@ -7,9 +7,11 @@ ADD . /src
 RUN cd /src && go build -o goapp
 
 # final stage
-FROM alpine
+# FROM alpine
+FROM golang:1.12.10-alpine
 RUN apk upgrade --update-cache \
     && apk add ca-certificates \
+    && apk add git \
     && rm -rf /var/cache/apk/*
 WORKDIR /app
 COPY --from=build-env /src/goapp /app/

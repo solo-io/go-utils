@@ -12,6 +12,14 @@ replace (
 )
 
 require (
-	github.com/solo-io/go-utils v0.11.0 // indirect
-	go.uber.org/zap v1.13.0 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/boltdb/bolt v1.3.1 // indirect
+	github.com/golang/dep v0.5.4 // indirect
+	github.com/google/go-github v17.0.0+incompatible
+	github.com/jmank88/nuts v0.4.0 // indirect
+	github.com/nightlyone/lockfile v0.0.0-20180618180623-0ad87eef1443 // indirect
+	github.com/sdboyer/constext v0.0.0-20170321163424-836a14457353 // indirect
+	github.com/solo-io/go-utils v0.11.0
+	github.com/spf13/afero v1.2.2
+	go.uber.org/zap v1.13.0
 )
