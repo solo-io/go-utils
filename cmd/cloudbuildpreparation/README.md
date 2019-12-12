@@ -57,3 +57,13 @@ cat /mnt/mydata/sample-spec.yaml
 ls temp-demo
 # as desired, edit sample-spec.yaml and rerun
 ```
+
+### Flags variant
+
+```
+go run main.go \
+  --repo-name gloo \
+  --repo-owner solo-io \
+  --repo-sha master \
+  --repo-output-dir test-dir
+```

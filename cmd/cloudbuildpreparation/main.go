@@ -29,16 +29,15 @@ func main() {
 
 const (
 	buildSpecFileFlagName = "spec"
+	repoShaFlagName       = "repo-sha"
+	repoOwnerFlagName     = "repo-owner"
+	repoNameFlagName      = "repo-name"
+	repoOutputDirFlagName = "repo-output-dir"
 )
 
 func run(ctx context.Context) error {
 
-	buildFile := ""
-	flag.StringVar(&buildFile, buildSpecFileFlagName, "", "filename of build preparation specification")
-	flag.Parse()
-	contextutils.LoggerFrom(ctx).Infow("reading config from file", zap.Any("filename", buildFile))
-
-	spec, err := ingestBuildSpec(buildFile)
+	spec, err := gatherCliInput(ctx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +55,33 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func ingestBuildSpec(filename string) (*api.BuildPreparation, error) {
+func gatherCliInput(ctx context.Context) (*api.BuildPreparation, error) {
+	// flags
+	buildFile := ""
+	cliFlagRepoContent := &api.GithubRepo{}
+	flag.StringVar(&buildFile, buildSpecFileFlagName, "", "optional, filename of build preparation specification - if provided, repo-* flags should be skipped")
+	flag.StringVar(&cliFlagRepoContent.Sha, repoShaFlagName, "", "sha (or tag or branch) to checkout")
+	flag.StringVar(&cliFlagRepoContent.Owner, repoOwnerFlagName, "", "repo owner")
+	flag.StringVar(&cliFlagRepoContent.Repo, repoNameFlagName, "", "repo name")
+	flag.StringVar(&cliFlagRepoContent.OutputDir, repoOutputDirFlagName, "", "directory into which to clone repo")
+	flag.Parse()
+
+	if err := validateCliInput(buildFile, cliFlagRepoContent); err != nil {
+		return nil, err
+	}
+
+	// translate flags to spec
+	if buildFile != "" {
+		contextutils.LoggerFrom(ctx).Infow("reading config from file", zap.Any("filename", buildFile))
+		return ingestBuildSpec(buildFile, cliFlagRepoContent)
+	} else {
+		return &api.BuildPreparation{
+			GithubRepo: *cliFlagRepoContent,
+		}, nil
+	}
+}
+
+func ingestBuildSpec(filename string, cliFlagRepoContent *api.GithubRepo) (*api.BuildPreparation, error) {
 	if filename == "" {
 		return nil, errors.Errorf("must provide a spec filename with flag --%v", buildSpecFileFlagName)
 	}
@@ -68,13 +93,27 @@ func ingestBuildSpec(filename string) (*api.BuildPreparation, error) {
 	if err = yaml.Unmarshal(content, spec); err != nil {
 		return nil, err
 	}
-	if err = validateSpec(spec); err != nil {
+	if err = validateSpec(spec, cliFlagRepoContent); err != nil {
 		return nil, err
 	}
 	return spec, nil
 }
 
-func validateSpec(spec *api.BuildPreparation) error {
+func validateCliInput(filename string, cliFlagRepoContent *api.GithubRepo) error {
+	if filename == "" {
+		if cliFlagRepoContent.Repo == "" {
+			return errors.Errorf("must provide a repo name with --%v", repoNameFlagName)
+		}
+		if cliFlagRepoContent.Owner == "" {
+			return errors.Errorf("must provide a repo owner with --%v", repoOwnerFlagName)
+		}
+		if cliFlagRepoContent.Sha == "" {
+			return errors.Errorf("must provide a repo sha with --%v", repoShaFlagName)
+		}
+	}
+	return nil
+}
+func validateSpec(spec *api.BuildPreparation, cliFlagRepoContent *api.GithubRepo) error {
 	if spec == nil {
 		return errors.New("invalid spec: spec is empty")
 	}
