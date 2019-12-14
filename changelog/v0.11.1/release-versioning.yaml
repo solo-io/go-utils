@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/go-utils/issues/353
+    description: Allow skipping strict version incrementing logic when validating changelogs. 
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/go-utils/issues/352
+    description: Allow rc-style workflows for any minor version, not just 1.0.0.
