@@ -55,11 +55,20 @@ type ChangelogValidator interface {
 }
 
 func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedRepo, base string) ChangelogValidator {
+	return NewChangelogValidatorWithSettings(client, code, base, ValidationSettings{})
+}
+
+func NewChangelogValidatorWithSettings(client githubutils.RepoClient, code vfsutils.MountedRepo, base string, settings ValidationSettings) ChangelogValidator {
 	return &changelogValidator{
-		client: client,
-		code:   code,
-		base:   base,
+		client:   client,
+		code:     code,
+		base:     base,
+		settings: settings,
 	}
+}
+
+type ValidationSettings struct {
+	RelaxSemverValidation bool
 }
 
 type changelogValidator struct {
@@ -67,6 +76,8 @@ type changelogValidator struct {
 	reader ChangelogReader
 	client githubutils.RepoClient
 	code   vfsutils.MountedRepo
+
+	settings ValidationSettings
 }
 
 func (c *changelogValidator) ShouldCheckChangelog(ctx context.Context) (bool, error) {
@@ -154,6 +165,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	if err != nil {
 		return err
 	}
+
 	breakingChanges := false
 	newFeature := false
 	releaseStableApi := false
@@ -166,16 +178,36 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		releaseStableApi = releaseStableApi || file.GetReleaseStableApi()
 	}
 
-	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
+	// this flag can be used in the changelog to signal a stable release, which could be 1.0.0 or 1.5.0 or X.Y.0
 	if releaseStableApi {
-		if !changelog.Version.Equals(&versionutils.StableApiVersion) {
+		// if the changelog is less than 1.0, then this isn't a stable API
+		if versionutils.StableApiVersion.IsGreaterThan(changelog.Version) {
 			return InvalidUseOfStableApiError(changelog.Version.String())
 		}
-		expectedVersion = &versionutils.StableApiVersion
+
+		// if this is supposed to be a stable release, then the patch and release candidate
+		// versions should be 0. This enables release histories like:
+		// 0.10 -> 1.0.0-rc1 -> 1.0.0-rc2 -> 1.0.0 -> 1.1.0-rc1 -> 1.1.0 -> ...
+		if changelog.Version.Patch != 0 || changelog.Version.ReleaseCandidate != 0 {
+			return InvalidUseOfStableApiError(changelog.Version.String())
+		}
+		return nil
 	}
-	if changelog.Version.ReleaseCandidate == 0 && *changelog.Version != *expectedVersion {
+
+	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
+	// if this isn't the first release candidate, then the version should match the expected version exactly
+	if changelog.Version.ReleaseCandidate > 1 && !changelog.Version.Equals(expectedVersion) {
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
+
+	if !c.settings.RelaxSemverValidation {
+		// since this isn't a release candidate or a stable release, the version should be incremented
+		// based on semver rules.
+		if changelog.Version.ReleaseCandidate == 0 && !changelog.Version.Equals(expectedVersion) {
+			return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
+		}
+	}
+
 	return nil
 }
 
