@@ -42,7 +42,10 @@ type SafeHasher interface {
 
 // hash one or more values
 // order matters
-func HashAllSafe(values ...interface{}) (uint64, error) {
+func HashAllSafe(hasher hash.Hash64, values ...interface{}) (uint64, error) {
+	if hasher == nil {
+		hasher = fnv.New64()
+	}
 	var hashes []uint64
 	for _, v := range values {
 		hashVal, err := hashValueSafe(v)
@@ -51,7 +54,6 @@ func HashAllSafe(values ...interface{}) (uint64, error) {
 		}
 		hashes = append(hashes, hashVal)
 	}
-	hasher := fnv.New64()
 	for _, v := range hashes {
 		if err := binary.Write(hasher, binary.LittleEndian, v); err != nil {
 			return 0, err
