@@ -17,6 +17,7 @@ type Hasher interface {
 
 // hash one or more values
 // order matters
+// Deprecated, use safe HashAllSafe
 func HashAll(values ...interface{}) uint64 {
 	var hashes []uint64
 	for _, v := range values {
@@ -40,8 +41,15 @@ type SafeHasher interface {
 	Hash(hasher hash.Hash64) (uint64, error)
 }
 
-// hash one or more values
-// order matters
+/*
+	hash one or more values
+	order matters
+
+	This function returns the hashed result of all values passed into it.
+	Any objects passed into it which fulfill the SafeHasher interface will be hashed this was,
+	or using reflection if not. SafeHasher should be preferred. If no hasher is provided one will be provided.
+	If a hasher is passed in, the returned hash can be ignored in favor of the hasher.
+*/
 func HashAllSafe(hasher hash.Hash64, values ...interface{}) (uint64, error) {
 	if hasher == nil {
 		hasher = fnv.New64()
@@ -57,17 +65,11 @@ func HashAllSafe(hasher hash.Hash64, values ...interface{}) (uint64, error) {
 func hashValueSafe(hasher hash.Hash64, val interface{}) error {
 	if hashObj, ok := val.(SafeHasher); ok {
 		_, err := hashObj.Hash(hasher)
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	}
 	h, err := hashstructure.Hash(val, nil)
 	if err != nil {
 		return err
 	}
-	if err = binary.Write(hasher, binary.LittleEndian, h); err != nil {
-		return err
-	}
-	return nil
+	return binary.Write(hasher, binary.LittleEndian, h)
 }
