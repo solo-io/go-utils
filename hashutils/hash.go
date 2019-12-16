@@ -46,29 +46,28 @@ func HashAllSafe(hasher hash.Hash64, values ...interface{}) (uint64, error) {
 	if hasher == nil {
 		hasher = fnv.New64()
 	}
-	var hashes []uint64
 	for _, v := range values {
-		hashVal, err := hashValueSafe(v)
-		if err != nil {
+		if err := hashValueSafe(hasher, v); err != nil {
 			return 0, nil
-		}
-		hashes = append(hashes, hashVal)
-	}
-	for _, v := range hashes {
-		if err := binary.Write(hasher, binary.LittleEndian, v); err != nil {
-			return 0, err
 		}
 	}
 	return hasher.Sum64(), nil
 }
 
-func hashValueSafe(val interface{}) (uint64, error) {
-	if hasher, ok := val.(SafeHasher); ok {
-		return hasher.Hash(nil)
+func hashValueSafe(hasher hash.Hash64, val interface{}) error {
+	if hashObj, ok := val.(SafeHasher); ok {
+		_, err := hashObj.Hash(hasher)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	h, err := hashstructure.Hash(val, nil)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return h, nil
+	if err = binary.Write(hasher, binary.LittleEndian, h); err != nil {
+		return err
+	}
+	return nil
 }
