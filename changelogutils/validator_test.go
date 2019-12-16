@@ -126,6 +126,15 @@ var _ = Describe("github utils", func() {
 			path3 = filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename3)
 		)
 
+		relaxedValidationSettingsExists := func() {
+			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil)
+			code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(validationYaml), nil)
+		}
+
+		noValidationSettingsExist := func() {
+			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(false, nil)
+		}
+
 		getChangelogDir := func(tag string) os.FileInfo {
 			return &mockFileInfo{name: tag, isDir: true}
 		}
@@ -171,7 +180,7 @@ var _ = Describe("github utils", func() {
 			repoClient.EXPECT().
 				DirectoryExists(ctx, changelogutils.MasterBranch, changelogutils.ChangelogDirectory).
 				Return(true, nil)
-			code.EXPECT().GetSha().Return(sha)
+			code.EXPECT().GetSha().Return(sha).AnyTimes()
 		})
 
 		It("propagates error comparing commits", func() {
@@ -316,6 +325,9 @@ var _ = Describe("github utils", func() {
 				code.EXPECT().
 					GetFileContents(ctx, path3).
 					Return([]byte(validChangelog2), nil)
+				repoClient.EXPECT().
+					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
+					Return(false, nil)
 				expected := changelogutils.AddedChangelogInOldVersionError(nextTag)
 				file, err := validator.ValidateChangelog(ctx)
 				Expect(file).To(BeNil())
@@ -327,6 +339,10 @@ var _ = Describe("github utils", func() {
 		Context("incrementing versions", func() {
 
 			Context("major version zero 0.y.z", func() {
+
+				BeforeEach(func() {
+					noValidationSettingsExist()
+				})
 
 				It("works on patch version bump", func() {
 					file1 := github.CommitFile{Filename: &path1, Status: &added}
@@ -405,6 +421,9 @@ var _ = Describe("github utils", func() {
 			})
 
 			Context("major version is 1.y.z", func() {
+				BeforeEach(func() {
+					noValidationSettingsExist()
+				})
 
 				DescribeTable("correctly enforces version bump rules",
 					validateVersionBump,
@@ -477,14 +496,11 @@ var _ = Describe("github utils", func() {
 
 		Context("incrementing versions with relaxed validation", func() {
 
-			BeforeEach(func() {
-				settings := changelogutils.ValidationSettings{
-					RelaxSemverValidation: true,
-				}
-				validator = changelogutils.NewChangelogValidatorWithSettings(repoClient, code, base, settings)
-			})
-
 			Context("major version zero 0.y.z", func() {
+
+				BeforeEach(func() {
+					relaxedValidationSettingsExists()
+				})
 
 				It("allows not incrementing major version", func() {
 					file1 := github.CommitFile{Filename: &path1, Status: &added}
@@ -538,6 +554,11 @@ var _ = Describe("github utils", func() {
 			})
 
 			Context("major version is 1.y.z", func() {
+
+				BeforeEach(func() {
+					relaxedValidationSettingsExists()
+				})
+
 				DescribeTable("doesn't enforce version bump rules",
 					validateVersionBump,
 					Entry("breaking change with patch bump", "v1.0.0", "v1.0.1", validBreakingChangelog, false),
@@ -608,38 +629,51 @@ var _ = Describe("github utils", func() {
 			})
 		})
 
-		DescribeTable("rc workflow",
-			func(lastTag, nextTag, contents string) {
-				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
-				file1 := github.CommitFile{Filename: &path, Status: &added}
-				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
-				repoClient.EXPECT().
-					CompareCommits(ctx, base, sha).
-					Return(&cc, nil)
-				code.EXPECT().
-					GetFileContents(ctx, path).
-					Return([]byte(validBreakingChangelog), nil)
-				repoClient.EXPECT().
-					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
-					Return(lastTag, nil)
-				code.EXPECT().
-					ListFiles(ctx, changelogutils.ChangelogDirectory).
-					Return([]os.FileInfo{getChangelogDir(nextTag)}, nil)
-				code.EXPECT().
-					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, nextTag)).
-					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-				code.EXPECT().
-					GetFileContents(ctx, path).
-					Return([]byte(contents), nil)
+		Context("rc workflow", func() {
 
-				file, err := validator.ValidateChangelog(ctx)
-				Expect(err).To(BeNil())
-				Expect(file).NotTo(BeNil())
-			},
-			Entry("initial rc", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog),
-			Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog),
-			Entry("stable release after rc for 1.0", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog),
-			Entry("stable release after rc for 1.1", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog),
-			Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog))
+			DescribeTable("rc workflow cases",
+				func(lastTag, nextTag, contents string, loadSettings bool) {
+					path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
+					file1 := github.CommitFile{Filename: &path, Status: &added}
+					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					repoClient.EXPECT().
+						CompareCommits(ctx, base, sha).
+						Return(&cc, nil)
+					code.EXPECT().
+						GetFileContents(ctx, path).
+						Return([]byte(validBreakingChangelog), nil)
+					repoClient.EXPECT().
+						FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
+						Return(lastTag, nil)
+					code.EXPECT().
+						ListFiles(ctx, changelogutils.ChangelogDirectory).
+						Return([]os.FileInfo{getChangelogDir(nextTag)}, nil)
+					code.EXPECT().
+						ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, nextTag)).
+						Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
+					code.EXPECT().
+						GetFileContents(ctx, path).
+						Return([]byte(contents), nil)
+
+					if loadSettings {
+						relaxedValidationSettingsExists()
+					}
+
+					file, err := validator.ValidateChangelog(ctx)
+					Expect(err).To(BeNil())
+					Expect(file).NotTo(BeNil())
+				},
+				Entry("initial rc", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog, true),
+				Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, true),
+				Entry("stable release after rc for 1.0", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog, false),
+				Entry("stable release after rc for 1.1", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog, false),
+				Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, true))
+		})
 	})
 })
+
+const (
+	validationYaml = `
+relaxSemverValidation: true
+`
+)
