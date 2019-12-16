@@ -142,6 +142,8 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		if !child.IsDir() {
 			if !stringutils.ContainsString(child.Name(), knownFiles) {
 				return "", UnexpectedFileInChangelogDirectoryError(child.Name())
+			} else {
+				continue
 			}
 		}
 		if !versionutils.MatchesRegex(child.Name()) {
@@ -179,6 +181,15 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	newFeature := false
 	releaseStableApi := false
 
+	// get settings now to ensure this function returns an error on invalid settings
+	settings, err := c.getValidationSettings(ctx)
+	if err != nil {
+		// validation settings should be defined in a "validation.yaml" file, or fall back to default.
+		// if an error is returned, that means there was a settings file, but it was malformed, and we
+		// propagate such an error to ensure the branch stays clean
+		return err
+	}
+
 	for _, file := range changelog.Files {
 		for _, entry := range file.Entries {
 			breakingChanges = breakingChanges || entry.Type.BreakingChange()
@@ -209,13 +220,6 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 
-	settings, err := c.getValidationSettings(ctx)
-	if err != nil {
-		// validation settings should be defined in a "validation.yaml" file, or fall back to default.
-		// if an error is returned, that means there was a settings file, but it was malformed, and we
-		// propagate such an error to ensure the branch stays clean
-		return err
-	}
 	if !settings.RelaxSemverValidation {
 		// since this isn't a release candidate or a stable release, the version should be incremented
 		// based on semver rules.
