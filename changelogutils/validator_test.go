@@ -667,6 +667,71 @@ var _ = Describe("github utils", func() {
 				Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, noValidationSettingsExist),
 				Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, relaxedValidationSettingsExists))
 		})
+
+		Context("invalid settings", func() {
+
+			setup := func() {
+				file1 := github.CommitFile{Filename: &path1, Status: &added}
+				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+				repoClient.EXPECT().
+					CompareCommits(ctx, base, sha).
+					Return(&cc, nil)
+				code.EXPECT().
+					GetFileContents(ctx, path1).
+					Return([]byte(validBreakingChangelog), nil).Times(2)
+				repoClient.EXPECT().
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
+					Return("v0.5.0", nil)
+				code.EXPECT().
+					ListFiles(ctx, changelogutils.ChangelogDirectory).
+					Return([]os.FileInfo{getChangelogDir(tag)}, nil)
+				code.EXPECT().
+					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, tag)).
+					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
+			}
+
+			It("propagates error if checking for validation.yaml existence fails", func() {
+				setup()
+				emptyErr := errors.Errorf("")
+				repoClient.EXPECT().
+					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
+					Return(false, emptyErr)
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).To(BeNil())
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal(changelogutils.UnableToGetSettingsError(emptyErr).Error()))
+			})
+
+			It("propagates error if reading validation.yaml fails", func() {
+				setup()
+				emptyErr := errors.Errorf("")
+				repoClient.EXPECT().
+					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
+					Return(true, nil)
+				code.EXPECT().
+					GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).
+					Return(nil, emptyErr)
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).To(BeNil())
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal(changelogutils.UnableToGetSettingsError(emptyErr).Error()))
+			})
+
+			It("propagates error if marshalling validation.yaml fails", func() {
+				setup()
+				emptyErr := errors.Errorf("")
+				repoClient.EXPECT().
+					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
+					Return(true, nil)
+				code.EXPECT().
+					GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).
+					Return([]byte("fakeyaml"), nil)
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).To(BeNil())
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring(changelogutils.UnableToGetSettingsError(emptyErr).Error()))
+			})
+		})
 	})
 })
 

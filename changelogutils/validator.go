@@ -269,7 +269,7 @@ func (c *changelogValidator) getValidationSettings(ctx context.Context) (*Valida
 	var settings ValidationSettings
 	bytes, err := c.code.GetFileContents(ctx, GetValidationSettingsPath())
 	if err != nil {
-		return nil, err
+		return nil, UnableToGetSettingsError(err)
 	}
 
 	if err := yaml.Unmarshal(bytes, &settings); err != nil {
