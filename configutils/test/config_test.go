@@ -6,12 +6,12 @@ import (
 	"os"
 
 	"github.com/solo-io/go-utils/configutils"
+	"github.com/solo-io/go-utils/testutils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	kube2 "github.com/solo-io/go-utils/testutils/kube"
-	"github.com/solo-io/solo-kit/test/helpers"
 	kubeerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -44,7 +44,7 @@ var _ = Describe("ConfigTest", func() {
 		var configMapClient configutils.ConfigMapClient
 
 		BeforeEach(func() {
-			rand := helpers.RandString(8)
+			rand := testutils.RandString(8)
 			configMapNamespace = "test-" + rand
 			configMapClient = configutils.NewConfigMapClient(kube2.MustKubeClient())
 			configClient = configutils.NewConfigClient(configMapClient, configMapNamespace, configMapName, configKey, getDefaultConfig())
