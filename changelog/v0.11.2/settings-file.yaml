@@ -1,4 +1,0 @@
-changelog:
-  - type: NEW_FEATURE
-    description: Changelog validator looks at a settings file to determine behavior. 
-    issueLink: https://github.com/solo-io/go-utils/issues/357 
