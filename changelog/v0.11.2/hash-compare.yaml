@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  issueLink: https://github.com/solo-io/go-utils/issues/359
+  description: Add a hash compare helper function, and some testingg
