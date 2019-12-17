@@ -77,7 +77,7 @@ func hashValueSafe(hasher hash.Hash64, val interface{}) error {
 }
 
 /*
-	This function takes in any number of resources and attempted to compare
+	This function takes in any number of resources and attempts to compare
 	them as safe hashers.
 	If any are not safe hashers it will return !ok. If they are all safe hashers,
 	it will compare the equality of all of them
