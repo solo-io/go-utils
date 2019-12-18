@@ -9,7 +9,6 @@ require (
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/bluekeyes/hatpear v0.0.0-20180714193905-ffb42d5bb417 // indirect
 	github.com/bradleyfalzon/ghinstallation v0.1.2 // indirect
-	github.com/bxcodec/faker v2.0.1+incompatible // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/ghodss/yaml v1.0.0
@@ -37,7 +36,6 @@ require (
 	github.com/rs/zerolog v1.14.3
 	github.com/shurcooL/githubv4 v0.0.0-20190625031733-ee671ab25ff0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
-	github.com/solo-io/solo-kit v0.6.3
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	go.opencensus.io v0.21.0
@@ -55,10 +53,7 @@ require (
 	k8s.io/api v0.0.0-20191121015604-11707872ac1c
 	k8s.io/apiextensions-apiserver v0.0.0-20191016113550-5357c4baaf65
 	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a
-	k8s.io/cli-runtime v0.0.0-20191016114015-74ad18325ed5
 	k8s.io/client-go v0.0.0-20191016111102-bec269661e48
-	k8s.io/klog v1.0.0
-	k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
 	sigs.k8s.io/controller-runtime v0.4.0
 	sigs.k8s.io/yaml v1.1.0
 )
