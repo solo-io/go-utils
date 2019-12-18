@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ghodss/yaml"
+	"github.com/solo-io/go-utils/stringutils"
+
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/githubutils"
@@ -15,10 +18,18 @@ import (
 //go:generate mockgen -destination repo_client_mock_test.go -self_package github.com/solo-io/go-utils/changelogutils -package changelogutils_test github.com/solo-io/go-utils/githubutils RepoClient
 
 const (
-	MasterBranch = "master"
+	MasterBranch           = "master"
+	ValidationSettingsFile = "validation.yaml"
 )
 
 var (
+	// These files are in the root "changelog" directory, and can be safely skipped during validation
+	knownFiles = []string{
+		ValidationSettingsFile,
+	}
+
+	defaultSettings = ValidationSettings{}
+
 	NoChangelogFileAddedError       = errors.Errorf("A changelog file must be added. For more information, check out https://github.com/solo-io/go-utils/tree/master/changelogutils.")
 	TooManyChangelogFilesAddedError = func(filesAdded int) error {
 		return errors.Errorf("Only one changelog file can be added in a PR, found %d.", filesAdded)
@@ -47,6 +58,9 @@ var (
 	UnexpectedProposedVersionError = func(expected, actual string) error {
 		return errors.Errorf("Expected version %s to be next changelog version, found %s", expected, actual)
 	}
+	UnableToGetSettingsError = func(err error) error {
+		return errors.Wrapf(err, "Unable to read settings file")
+	}
 )
 
 type ChangelogValidator interface {
@@ -55,20 +69,15 @@ type ChangelogValidator interface {
 }
 
 func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedRepo, base string) ChangelogValidator {
-	return NewChangelogValidatorWithSettings(client, code, base, ValidationSettings{})
-}
-
-func NewChangelogValidatorWithSettings(client githubutils.RepoClient, code vfsutils.MountedRepo, base string, settings ValidationSettings) ChangelogValidator {
 	return &changelogValidator{
-		client:   client,
-		code:     code,
-		base:     base,
-		settings: settings,
+		client: client,
+		code:   code,
+		base:   base,
 	}
 }
 
 type ValidationSettings struct {
-	RelaxSemverValidation bool
+	RelaxSemverValidation bool `json:"relaxSemverValidation"`
 }
 
 type changelogValidator struct {
@@ -76,8 +85,6 @@ type changelogValidator struct {
 	reader ChangelogReader
 	client githubutils.RepoClient
 	code   vfsutils.MountedRepo
-
-	settings ValidationSettings
 }
 
 func (c *changelogValidator) ShouldCheckChangelog(ctx context.Context) (bool, error) {
@@ -133,7 +140,11 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 	proposedVersion := ""
 	for _, child := range children {
 		if !child.IsDir() {
-			return "", UnexpectedFileInChangelogDirectoryError(child.Name())
+			if !stringutils.ContainsString(child.Name(), knownFiles) {
+				return "", UnexpectedFileInChangelogDirectoryError(child.Name())
+			} else {
+				continue
+			}
 		}
 		if !versionutils.MatchesRegex(child.Name()) {
 			return "", InvalidChangelogSubdirectoryNameError(child.Name())
@@ -170,6 +181,15 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	newFeature := false
 	releaseStableApi := false
 
+	// get settings now to ensure this function returns an error on invalid settings
+	settings, err := c.getValidationSettings(ctx)
+	if err != nil {
+		// validation settings should be defined in a "validation.yaml" file, or fall back to default.
+		// if an error is returned, that means there was a settings file, but it was malformed, and we
+		// propagate such an error to ensure the branch stays clean
+		return err
+	}
+
 	for _, file := range changelog.Files {
 		for _, entry := range file.Entries {
 			breakingChanges = breakingChanges || entry.Type.BreakingChange()
@@ -200,7 +220,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 
-	if !c.settings.RelaxSemverValidation {
+	if !settings.RelaxSemverValidation {
 		// since this isn't a release candidate or a stable release, the version should be incremented
 		// based on semver rules.
 		if changelog.Version.ReleaseCandidate == 0 && !changelog.Version.Equals(expectedVersion) {
@@ -231,4 +251,29 @@ func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github
 	}
 	parsedChangelog, err := NewChangelogReader(c.code).ReadChangelogFile(ctx, changelogFiles[0].GetFilename())
 	return &changelogFiles[0], parsedChangelog, err
+}
+
+func GetValidationSettingsPath() string {
+	return fmt.Sprintf("%s/%s", ChangelogDirectory, ValidationSettingsFile)
+}
+
+func (c *changelogValidator) getValidationSettings(ctx context.Context) (*ValidationSettings, error) {
+	exists, err := c.client.FileExists(ctx, c.code.GetSha(), GetValidationSettingsPath())
+	if err != nil {
+		return nil, UnableToGetSettingsError(err)
+	}
+	if !exists {
+		return &defaultSettings, nil
+	}
+
+	var settings ValidationSettings
+	bytes, err := c.code.GetFileContents(ctx, GetValidationSettingsPath())
+	if err != nil {
+		return nil, UnableToGetSettingsError(err)
+	}
+
+	if err := yaml.Unmarshal(bytes, &settings); err != nil {
+		return nil, UnableToGetSettingsError(err)
+	}
+	return &settings, nil
 }
