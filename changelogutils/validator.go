@@ -3,6 +3,7 @@ package changelogutils
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -23,9 +24,8 @@ const (
 )
 
 var (
-	// These files are in the root "changelog" directory, and can be safely skipped during validation
 	knownFiles = []string{
-		ValidationSettingsFile,
+		GetValidationSettingsPath(),
 	}
 
 	defaultSettings = ValidationSettings{}
@@ -140,7 +140,7 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 	proposedVersion := ""
 	for _, child := range children {
 		if !child.IsDir() {
-			if !stringutils.ContainsString(child.Name(), knownFiles) {
+			if !IsKnownChangelogFile(filepath.Join(ChangelogDirectory, child.Name())) {
 				return "", UnexpectedFileInChangelogDirectoryError(child.Name())
 			} else {
 				continue
@@ -239,7 +239,7 @@ func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github
 	var changelogFiles []github.CommitFile
 	for _, file := range commitComparison.Files {
 		if strings.HasPrefix(file.GetFilename(), fmt.Sprintf("%s/", ChangelogDirectory)) {
-			if file.GetStatus() == githubutils.COMMIT_FILE_STATUS_ADDED {
+			if !IsKnownChangelogFile(file.GetFilename()) && file.GetStatus() == githubutils.COMMIT_FILE_STATUS_ADDED {
 				changelogFiles = append(changelogFiles, file)
 			}
 		}
@@ -255,6 +255,10 @@ func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github
 
 func GetValidationSettingsPath() string {
 	return fmt.Sprintf("%s/%s", ChangelogDirectory, ValidationSettingsFile)
+}
+
+func IsKnownChangelogFile(path string) bool {
+	return stringutils.ContainsString(path, knownFiles)
 }
 
 func (c *changelogValidator) getValidationSettings(ctx context.Context) (*ValidationSettings, error) {
