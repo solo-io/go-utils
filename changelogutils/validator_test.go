@@ -732,6 +732,35 @@ var _ = Describe("github utils", func() {
 				Expect(err.Error()).To(ContainSubstring(changelogutils.UnableToGetSettingsError(emptyErr).Error()))
 			})
 		})
+
+		Context("PR adding validation settings", func() {
+
+			It("properly ignores validation when computing new changelog files", func() {
+				relaxedValidationSettingsExists()
+				validationPath := changelogutils.GetValidationSettingsPath()
+				file1 := github.CommitFile{Filename: &path1, Status: &added}
+				file2 := github.CommitFile{Filename: &validationPath, Status: &added}
+				cc := github.CommitsComparison{Files: []github.CommitFile{file1, file2}}
+				repoClient.EXPECT().
+					CompareCommits(ctx, base, sha).
+					Return(&cc, nil)
+				code.EXPECT().
+					GetFileContents(ctx, path1).
+					Return([]byte(validChangelog1), nil).Times(2)
+				repoClient.EXPECT().
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
+					Return("v0.5.0", nil)
+				code.EXPECT().
+					ListFiles(ctx, changelogutils.ChangelogDirectory).
+					Return([]os.FileInfo{getChangelogDir(tag)}, nil)
+				code.EXPECT().
+					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, tag)).
+					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).NotTo(BeNil())
+				Expect(err).To(BeNil())
+			})
+		})
 	})
 })
 

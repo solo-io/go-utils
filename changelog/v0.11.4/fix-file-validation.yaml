@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/357
+    description: Changelog validator now ignores validation.yaml when validating that exactly one changelog file was added. 
