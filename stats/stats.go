@@ -1,6 +1,8 @@
 package stats
 
 import (
+	"fmt"
+	"os"
 	"sort"
 	"text/template"
 
@@ -14,10 +16,45 @@ import (
 	"go.uber.org/zap"
 )
 
-func StartStatsServer(addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
-	StartStatsServerWithPort("9091", addhandlers...)
+const (
+	DefaultEnvVar       = "START_STATS_SERVER"
+	DefaultEnabledValue = "true"
+	DefaultPort         = 9091
+)
+
+type StartupOptions struct {
+	// only start the server if this env var is present in the environment, and it is set to the given value
+	// a StartStatsServer invocation when this is not the case is a no-op
+	// if EnvVar is not provided, then the server starts unconditionally
+	EnvVar       string
+	EnabledValue string
+
+	// listen on this port
+	Port int
 }
-func StartStatsServerWithPort(port string, addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
+
+// return options indicating that the server should:
+//	* start up only if DefaultEnvVar is set to DefaultEnabledValue
+//	* listen on DefaultPort
+func DefaultStartupOptions() StartupOptions {
+	return StartupOptions{
+		EnvVar:       DefaultEnvVar,
+		EnabledValue: DefaultEnabledValue,
+		Port:         DefaultPort,
+	}
+}
+
+// start the server with the default startup options
+func ConditionallyStartStatsServer(addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
+	StartStatsServerWithPort(DefaultStartupOptions(), addhandlers...)
+}
+
+func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
+	// if the env var was provided (i.e., startup is conditional) and the value of that env var is not the expected value, then return and do nothing
+	if startupOpts.EnvVar != "" && os.Getenv(startupOpts.EnvVar) != startupOpts.EnabledValue {
+		return
+	}
+
 	logconfig := zap.NewProductionConfig()
 
 	logger, logerr := logconfig.Build()
@@ -40,7 +77,7 @@ func StartStatsServerWithPort(port string, addhandlers ...func(mux *http.ServeMu
 
 		// add the index
 		mux.HandleFunc("/", Index)
-		http.ListenAndServe(":"+port, mux)
+		http.ListenAndServe(fmt.Sprintf(":%d", startupOpts.Port), mux)
 	}()
 }
 
