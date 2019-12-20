@@ -2,8 +2,10 @@ package hashutils
 
 import (
 	"github.com/golang/mock/gomock"
+	"github.com/mitchellh/hashstructure"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/errors"
 	mock_hashutils "github.com/solo-io/go-utils/hashutils/mocks"
 )
 
@@ -37,6 +39,26 @@ var _ = Describe("hash", func() {
 			equal, ok := HashableEqual(safeHasher1, safeHasher2)
 			Expect(ok).To(BeTrue())
 			Expect(equal).To(BeTrue())
+		})
+	})
+
+	Context("must hash", func() {
+		It("will return the hash if passed a safeHasher", func() {
+			safeHasher1.EXPECT().Hash(nil).Return(uint64(10), nil)
+			hash := MustHash(safeHasher1)
+			Expect(hash).To(Equal(uint64(10)))
+		})
+		It("will return the hash if passed a notSafeHasher", func() {
+			notSafe := notSafeHasher{}
+			compareHash, err := hashstructure.Hash(notSafe, nil)
+			Expect(err).NotTo(HaveOccurred())
+			hash := MustHash(notSafe)
+			Expect(hash).To(Equal(compareHash))
+		})
+		It("will panic if it gets an error", func() {
+			defer GinkgoRecover()
+			safeHasher1.EXPECT().Hash(nil).Return(uint64(0), errors.New("panic error"))
+			Expect(func() { MustHash(safeHasher1) }).To(Panic())
 		})
 	})
 
