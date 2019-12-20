@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  issueLink: https://github.com/solo-io/go-utils/issues/367
+  description: Add MustHash function to more easily interact with SafeHashers

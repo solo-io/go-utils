@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"hash"
 	"hash/fnv"
+	"log"
 
 	"github.com/mitchellh/hashstructure"
 )
@@ -95,4 +96,27 @@ func HashableEqual(val1 interface{}, val2 interface{}) (equal bool, ok bool) {
 		return hash1 == hash2, true
 	}
 	return false, false
+}
+
+/*
+	This function will hash anything, and panic if it fails.
+	If the object is a `SafeHasher` than it will use the generated Hasher, otherwise
+	it will use the hashstructure library.
+*/
+func MustHash(val interface{}) uint64 {
+	hasher, ok := interface{}(val).(interface {
+		Hash(hasher hash.Hash64) (uint64, error)
+	})
+	if !ok {
+		hashVal, err := hashstructure.Hash(val, nil)
+		if err != nil {
+			log.Panicf("hash err (%s) this should never happen", err)
+		}
+		return hashVal
+	}
+	hashVal, err := hasher.Hash(nil)
+	if err != nil {
+		log.Panicf("hash err (%s) this should never happen", err)
+	}
+	return hashVal
 }
