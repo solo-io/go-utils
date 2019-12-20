@@ -29,9 +29,6 @@ var (
 	MountLocalDirectoryError = func(err error) error {
 		return errors.Wrapf(err, "unable to mount local directory")
 	}
-	OpenChangelogDirError = func(err error) error {
-		return errors.Wrapf(err, "unable to open changelog directory")
-	}
 	ReadChangelogDirError = func(err error) error {
 		return errors.Wrapf(err, "unable to read changelog directory")
 	}
