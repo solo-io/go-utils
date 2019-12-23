@@ -137,7 +137,8 @@ type localFsRepo struct {
 	repoRootPath string
 }
 
-// Creates a mounted repo for a local filesystem
+// Creates a mounted repo for a local filesystem, the code must already be checked out at the correct SHA, which is
+// not known from this implementation.
 func NewLocalMountedRepoForFs(repoRootPath, owner, repo string) (MountedRepo, error) {
 	if repoRootPath == "" {
 		return nil, InvalidDefinitionError("must provide a repoRootPath when using a local filesystem")
