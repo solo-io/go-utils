@@ -424,7 +424,7 @@ closing
 			repoRootPath := ".."
 			owner := "solo-io"
 			repo := "go-utils"
-			changelogDirPath := "../changelog"
+			changelogDirPath := "changelog"
 
 			w := bytes.NewBuffer([]byte{})
 			err := changelogutils.GenerateChangelogFromLocalDirectory(ctx, repoRootPath, owner, repo, changelogDirPath, w)
