@@ -121,18 +121,52 @@ func NewLazilyMountedRepo(client *github.Client, owner, repo, sha string) Mounte
 	}
 }
 
+type localFsRepo struct {
+	owner        string
+	repo         string
+	fs           afero.Fs
+	repoRootPath string
+}
+
 // Creates a mounted repo for a local filesystem
-func NewLocalMountedRepoForFs(fs afero.Fs, repoRootPath, owner, repo string) (MountedRepo, error) {
+func NewLocalMountedRepoForFs(repoRootPath, owner, repo string) (MountedRepo, error) {
 	if repoRootPath == "" {
-		return &lazilyMountedRepo{}, InvalidDefinitionError("must provide a repoRootPath when using a local filesystem")
+		return nil, InvalidDefinitionError("must provide a repoRootPath when using a local filesystem")
 	}
-	return &lazilyMountedRepo{
-		owner: owner,
-		repo:  repo,
-		// a sha is not needed when working with a local repo
-		sha:          "n/a",
+	fs := afero.NewOsFs()
+	return &localFsRepo{
+		owner:        owner,
+		repo:         repo,
 		fs:           fs,
 		repoRootPath: repoRootPath,
-		client:       nil,
 	}, nil
+}
+
+func (l *localFsRepo) GetOwner() string {
+	return l.owner
+}
+
+func (l *localFsRepo) GetRepo() string {
+	return l.repo
+}
+
+func (l *localFsRepo) GetSha() string {
+	return "" // TODO this is an unfortunate abstraction
+}
+
+func (l *localFsRepo) GetFileContents(ctx context.Context, path string) ([]byte, error) {
+	fileContent, err := afero.ReadFile(l.fs, filepath.Join(l.repoRootPath, path))
+	if err != nil {
+		return nil, ReadFileError(err, path)
+	}
+	return fileContent, nil
+}
+
+func (l *localFsRepo) ListFiles(ctx context.Context, path string) ([]os.FileInfo, error) {
+	fsPath := filepath.Join(l.repoRootPath, path)
+	children, err := afero.ReadDir(l.fs, fsPath)
+	if err != nil {
+		return nil, ListFilesError(err, path)
+	}
+	return children, nil
 }
