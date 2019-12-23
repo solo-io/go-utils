@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/369
+    description: Support generating the changelog, used by Gloo and GlooE, now that validation.yaml can exist in the changelog directory. 
