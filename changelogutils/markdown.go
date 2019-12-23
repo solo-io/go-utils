@@ -9,8 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/spf13/afero"
-
 	"github.com/solo-io/go-utils/vfsutils"
 )
 
@@ -41,8 +39,7 @@ var (
 )
 
 func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, changelogDirPath string, w io.Writer) error {
-	fs := afero.NewOsFs()
-	mountedRepo, err := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo)
+	mountedRepo, err := vfsutils.NewLocalMountedRepoForFs(repoRootPath, owner, repo)
 	if err != nil {
 		return MountLocalDirectoryError(err)
 	}
