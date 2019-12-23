@@ -92,9 +92,14 @@ func (r *lazilyMountedRepo) GetFileContents(ctx context.Context, path string) ([
 	if err := r.ensureCodeMounted(ctx); err != nil {
 		return nil, err
 	}
-	fileContent, err := afero.ReadFile(r.fs, filepath.Join(r.repoRootPath, path))
+	fsPath := filepath.Join(r.repoRootPath, path)
+	return getFileContents(ctx, r.fs, fsPath)
+}
+
+func getFileContents(ctx context.Context, fs afero.Fs, fsPath string) ([]byte, error) {
+	fileContent, err := afero.ReadFile(fs, fsPath)
 	if err != nil {
-		return nil, ReadFileError(err, path)
+		return nil, ReadFileError(err, fsPath)
 	}
 	return fileContent, nil
 }
@@ -104,9 +109,13 @@ func (r *lazilyMountedRepo) ListFiles(ctx context.Context, path string) ([]os.Fi
 		return nil, err
 	}
 	fsPath := filepath.Join(r.repoRootPath, path)
-	children, err := afero.ReadDir(r.fs, fsPath)
+	return listFiles(ctx, r.fs, fsPath)
+}
+
+func listFiles(ctx context.Context, fs afero.Fs, fsPath string) ([]os.FileInfo, error) {
+	children, err := afero.ReadDir(fs, fsPath)
 	if err != nil {
-		return nil, ListFilesError(err, path)
+		return nil, ListFilesError(err, fsPath)
 	}
 	return children, nil
 }
@@ -155,18 +164,11 @@ func (l *localFsRepo) GetSha() string {
 }
 
 func (l *localFsRepo) GetFileContents(ctx context.Context, path string) ([]byte, error) {
-	fileContent, err := afero.ReadFile(l.fs, filepath.Join(l.repoRootPath, path))
-	if err != nil {
-		return nil, ReadFileError(err, path)
-	}
-	return fileContent, nil
+	fsPath := filepath.Join(l.repoRootPath, path)
+	return getFileContents(ctx, l.fs, fsPath)
 }
 
 func (l *localFsRepo) ListFiles(ctx context.Context, path string) ([]os.FileInfo, error) {
 	fsPath := filepath.Join(l.repoRootPath, path)
-	children, err := afero.ReadDir(l.fs, fsPath)
-	if err != nil {
-		return nil, ListFilesError(err, path)
-	}
-	return children, nil
+	return listFiles(ctx, l.fs, fsPath)
 }
