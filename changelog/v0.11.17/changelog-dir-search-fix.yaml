@@ -1,0 +1,4 @@
+changelog:
+- type: FIX
+  issueLink: https://github.com/solo-io/go-utils/issues/371
+  description: Only read directories when scanning changelog directory
