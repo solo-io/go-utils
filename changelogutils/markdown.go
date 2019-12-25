@@ -9,8 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/spf13/afero"
-
 	"github.com/solo-io/go-utils/vfsutils"
 )
 
@@ -29,9 +27,6 @@ var (
 	MountLocalDirectoryError = func(err error) error {
 		return errors.Wrapf(err, "unable to mount local directory")
 	}
-	OpenChangelogDirError = func(err error) error {
-		return errors.Wrapf(err, "unable to open changelog directory")
-	}
 	ReadChangelogDirError = func(err error) error {
 		return errors.Wrapf(err, "unable to read changelog directory")
 	}
@@ -44,21 +39,22 @@ var (
 )
 
 func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owner, repo, changelogDirPath string, w io.Writer) error {
-	fs := afero.NewOsFs()
-	mountedRepo, err := vfsutils.NewLocalMountedRepoForFs(fs, repoRootPath, owner, repo)
+	mountedRepo, err := vfsutils.NewLocalMountedRepoForFs(repoRootPath, owner, repo)
 	if err != nil {
 		return MountLocalDirectoryError(err)
 	}
-	dirContent, err := fs.Open(changelogDirPath)
-	if err != nil {
-		return OpenChangelogDirError(err)
-	}
-	dirs, err := dirContent.Readdirnames(-1)
+	files, err := mountedRepo.ListFiles(ctx, changelogDirPath)
 	if err != nil {
 		return ReadChangelogDirError(err)
 	}
+	var tags []string
+	for _, file := range files {
+		if file.IsDir() {
+			tags = append(tags, file.Name())
+		}
+	}
 	reader := NewChangelogReader(mountedRepo)
-	return GenerateChangelogForTags(ctx, dirs, reader, w)
+	return GenerateChangelogForTags(ctx, tags, reader, w)
 }
 
 func GenerateChangelogForTags(ctx context.Context, tags []string, reader ChangelogReader, w io.Writer) error {
