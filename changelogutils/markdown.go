@@ -53,9 +53,16 @@ func GenerateChangelogFromLocalDirectory(ctx context.Context, repoRootPath, owne
 	if err != nil {
 		return OpenChangelogDirError(err)
 	}
-	dirs, err := dirContent.Readdirnames(-1)
+	files, err := dirContent.Readdir(-1)
 	if err != nil {
 		return ReadChangelogDirError(err)
+	}
+	// only check directories
+	var dirs []string
+	for _, file := range files {
+		if file.IsDir() {
+			dirs = append(dirs, file.Name())
+		}
 	}
 	reader := NewChangelogReader(mountedRepo)
 	return GenerateChangelogForTags(ctx, dirs, reader, w)
