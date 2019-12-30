@@ -232,17 +232,13 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 }
 
 func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github.CommitFile, *ChangelogFile, error) {
-	return GetChangelogFileFromPR(ctx, c.client, c.code, c.base)
-}
-
-func GetChangelogFileFromPR(ctx context.Context, client githubutils.RepoClient, code vfsutils.MountedRepo, base string) (*github.CommitFile, *ChangelogFile, error) {
-	changelogFiles, err := GetChangelogFilesAdded(ctx, client, base, code.GetSha())
+	changelogFiles, err := GetChangelogFilesAdded(ctx, c.client, c.base, c.code.GetSha())
 	if len(changelogFiles) == 0 {
 		return nil, nil, NoChangelogFileAddedError
 	} else if len(changelogFiles) > 1 {
 		return nil, nil, TooManyChangelogFilesAddedError(len(changelogFiles))
 	}
-	parsedChangelog, err := NewChangelogReader(code).ReadChangelogFile(ctx, changelogFiles[0].GetFilename())
+	parsedChangelog, err := NewChangelogReader(c.code).ReadChangelogFile(ctx, changelogFiles[0].GetFilename())
 	return &changelogFiles[0], parsedChangelog, err
 }
 
