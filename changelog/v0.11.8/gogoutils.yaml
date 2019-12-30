@@ -1,4 +1,0 @@
-changelog:
-- type: NEW_FEATURE
-  issueLink: https://github.com/solo-io/go-utils/issues/365
-  description: Transfer gogoutils into go-utils
