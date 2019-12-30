@@ -14,7 +14,7 @@ import (
 	"github.com/solo-io/go-utils/versionutils"
 )
 
-var _ = Describe("github utils", func() {
+var _ = FDescribe("repo client utils", func() {
 	var (
 		githubClient            *github.Client
 		client                  githubutils.RepoClient
@@ -64,7 +64,7 @@ var _ = Describe("github utils", func() {
 		Expect(exists).To(BeFalse())
 	})
 
-	It("can do a commit comparison", func() {
+	FIt("can do a commit comparison", func() {
 		client = githubutils.NewRepoClient(githubClient, owner, repo)
 		cc, err := client.CompareCommits(ctx, "6d389bc860e1cefdcbc99d43979e62104f13092f", "9065a9a84e286ea7f067f4fc240944b0a4d4c82a")
 		Expect(err).To(BeNil())

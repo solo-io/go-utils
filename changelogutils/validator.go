@@ -233,6 +233,9 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 
 func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github.CommitFile, *ChangelogFile, error) {
 	changelogFiles, err := GetChangelogFilesAdded(ctx, c.client, c.base, c.code.GetSha())
+	if err != nil {
+		return nil, nil, err
+	}
 	if len(changelogFiles) == 0 {
 		return nil, nil, NoChangelogFileAddedError
 	} else if len(changelogFiles) > 1 {
