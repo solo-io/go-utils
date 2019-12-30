@@ -16,7 +16,7 @@ import (
 	"github.com/solo-io/go-utils/githubutils"
 )
 
-var _ = Describe("github utils", func() {
+var _ = Describe("changelog validator utils", func() {
 
 	const (
 		base = "base"

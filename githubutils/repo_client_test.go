@@ -14,7 +14,7 @@ import (
 	"github.com/solo-io/go-utils/versionutils"
 )
 
-var _ = Describe("github utils", func() {
+var _ = Describe("repo client utils", func() {
 	var (
 		githubClient            *github.Client
 		client                  githubutils.RepoClient
