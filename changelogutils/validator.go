@@ -232,9 +232,20 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 }
 
 func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github.CommitFile, *ChangelogFile, error) {
-	commitComparison, err := c.client.CompareCommits(ctx, c.base, c.code.GetSha())
+	changelogFiles, err := GetChangelogFilesAdded(ctx, c.client, c.base, c.code.GetSha())
+	if len(changelogFiles) == 0 {
+		return nil, nil, NoChangelogFileAddedError
+	} else if len(changelogFiles) > 1 {
+		return nil, nil, TooManyChangelogFilesAddedError(len(changelogFiles))
+	}
+	parsedChangelog, err := NewChangelogReader(c.code).ReadChangelogFile(ctx, changelogFiles[0].GetFilename())
+	return &changelogFiles[0], parsedChangelog, err
+}
+
+func GetChangelogFilesAdded(ctx context.Context, client githubutils.RepoClient, base, sha string) ([]github.CommitFile, error) {
+	commitComparison, err := client.CompareCommits(ctx, base, sha)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	var changelogFiles []github.CommitFile
 	for _, file := range commitComparison.Files {
@@ -244,13 +255,7 @@ func (c *changelogValidator) validateChangelogInPr(ctx context.Context) (*github
 			}
 		}
 	}
-	if len(changelogFiles) == 0 {
-		return nil, nil, NoChangelogFileAddedError
-	} else if len(changelogFiles) > 1 {
-		return nil, nil, TooManyChangelogFilesAddedError(len(changelogFiles))
-	}
-	parsedChangelog, err := NewChangelogReader(c.code).ReadChangelogFile(ctx, changelogFiles[0].GetFilename())
-	return &changelogFiles[0], parsedChangelog, err
+	return changelogFiles, nil
 }
 
 func GetValidationSettingsPath() string {
