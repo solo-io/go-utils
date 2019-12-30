@@ -262,7 +262,11 @@ func IsKnownChangelogFile(path string) bool {
 }
 
 func (c *changelogValidator) getValidationSettings(ctx context.Context) (*ValidationSettings, error) {
-	exists, err := c.client.FileExists(ctx, c.code.GetSha(), GetValidationSettingsPath())
+	return GetValidationSettings(ctx, c.code, c.client)
+}
+
+func GetValidationSettings(ctx context.Context, code vfsutils.MountedRepo, client githubutils.RepoClient) (*ValidationSettings, error) {
+	exists, err := client.FileExists(ctx, code.GetSha(), GetValidationSettingsPath())
 	if err != nil {
 		return nil, UnableToGetSettingsError(err)
 	}
@@ -271,7 +275,7 @@ func (c *changelogValidator) getValidationSettings(ctx context.Context) (*Valida
 	}
 
 	var settings ValidationSettings
-	bytes, err := c.code.GetFileContents(ctx, GetValidationSettingsPath())
+	bytes, err := code.GetFileContents(ctx, GetValidationSettingsPath())
 	if err != nil {
 		return nil, UnableToGetSettingsError(err)
 	}
