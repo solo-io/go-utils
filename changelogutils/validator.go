@@ -208,7 +208,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		// if this is supposed to be a stable release, then the patch and release candidate
 		// versions should be 0. This enables release histories like:
 		// 0.10 -> 1.0.0-rc1 -> 1.0.0-rc2 -> 1.0.0 -> 1.1.0-rc1 -> 1.1.0 -> ...
-		if changelog.Version.Patch != 0 || changelog.Version.ReleaseCandidate != 0 {
+		if changelog.Version.Patch != 0 || changelog.Version.LabelVersion != 0 {
 			return InvalidUseOfStableApiError(changelog.Version.String())
 		}
 		return nil
@@ -216,14 +216,14 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
 	// if this isn't the first release candidate, then the version should match the expected version exactly
-	if changelog.Version.ReleaseCandidate > 1 && !changelog.Version.Equals(expectedVersion) {
+	if changelog.Version.LabelVersion > 1 && !changelog.Version.Equals(expectedVersion) {
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 
 	if !settings.RelaxSemverValidation {
 		// since this isn't a release candidate or a stable release, the version should be incremented
 		// based on semver rules.
-		if changelog.Version.ReleaseCandidate == 0 && !changelog.Version.Equals(expectedVersion) {
+		if changelog.Version.LabelVersion == 0 && !changelog.Version.Equals(expectedVersion) {
 			return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 		}
 	}

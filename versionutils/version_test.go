@@ -8,14 +8,6 @@ import (
 
 var _ = Describe("Version", func() {
 
-	getVersion := func(major, minor, patch int) *versionutils.Version {
-		return &versionutils.Version{
-			Major: major,
-			Minor: minor,
-			Patch: patch,
-		}
-	}
-
 	var _ = Context("matchesRegex", func() {
 		It("works", func() {
 			Expect(versionutils.MatchesRegex("v0.1.2")).To(BeTrue())
@@ -31,21 +23,24 @@ var _ = Describe("Version", func() {
 			Expect(versionutils.MatchesRegex("vX.Y.2")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2.3-rc")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2.3-rc-1")).To(BeFalse())
-			Expect(versionutils.MatchesRegex("v1.2.3-release1")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.2.3-release1")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.2.3-beta1")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.2.3-")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.2.3-1")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2.3+rc1")).To(BeFalse())
 		})
 	})
 
 	var _ = Context("ParseVersion", func() {
-		matches := func(tag string, major, minor, patch int) bool {
+		matches := func(tag string, major, minor, patch int, label string, labelVersion int) bool {
 			parsed, err := versionutils.ParseVersion(tag)
-			return err == nil && (*parsed == *getVersion(major, minor, patch))
+			return err == nil && (*parsed == *versionutils.NewVersion(major, minor, patch, label, labelVersion))
 		}
 
 		It("works", func() {
-			Expect(matches("v0.0.0", 0, 0, 0)).To(BeTrue())
-			Expect(matches("v0.1.2", 0, 1, 2)).To(BeTrue())
-			Expect(matches("v0.1.2", 0, 1, 3)).To(BeFalse())
+			Expect(matches("v0.0.0", 0, 0, 0, "", 0)).To(BeTrue())
+			Expect(matches("v0.1.2", 0, 1, 2, "", 0)).To(BeTrue())
+			Expect(matches("v0.1.2", 0, 1, 3, "", 0)).To(BeFalse())
 		})
 
 		It("errors when invalid semver version provided", func() {
@@ -114,19 +109,37 @@ var _ = Describe("Version", func() {
 			Expect(actualIncremented).To(BeEquivalentTo(expected))
 		}
 
+		getVersion := func(major, minor, patch int) *versionutils.Version {
+			return versionutils.NewVersion(major, minor, patch, "", 0)
+		}
+
+		v0_0_1 := getVersion(0, 0, 1)
+		v0_0_2 := getVersion(0, 0, 2)
+		v0_1_0 := getVersion(0, 1, 0)
+		v0_1_10 := getVersion(0, 1, 10)
+		v0_1_11 := getVersion(0, 1, 11)
+		v0_2_0 := getVersion(0, 2, 0)
+		v1_1_10 := getVersion(1, 1, 10)
+		v1_1_11 := getVersion(1, 1, 11)
+		v1_2_0 := getVersion(1, 2, 0)
+		v2_0_0_foo_1 := versionutils.NewVersion(2, 0, 0, "foo", 1)
+		v2_0_0_foo_2 := versionutils.NewVersion(2, 0, 0, "foo", 2)
+		v2_0_0 := getVersion(2, 0, 0)
+
 		It("works", func() {
-			expectResult(getVersion(0, 0, 1), true, true, getVersion(0, 1, 0))
-			expectResult(getVersion(0, 0, 1), true, false, getVersion(0, 1, 0))
-			expectResult(getVersion(0, 1, 10), true, false, getVersion(0, 2, 0))
-			expectResult(getVersion(0, 1, 10), true, true, getVersion(0, 2, 0))
-			expectResult(getVersion(1, 1, 10), true, false, getVersion(2, 0, 0))
-			expectResult(getVersion(1, 1, 10), true, true, getVersion(2, 0, 0))
-			expectResult(getVersion(0, 0, 1), false, false, getVersion(0, 0, 2))
-			expectResult(getVersion(0, 0, 1), false, true, getVersion(0, 0, 2))
-			expectResult(getVersion(0, 1, 10), false, false, getVersion(0, 1, 11))
-			expectResult(getVersion(0, 1, 10), false, true, getVersion(0, 1, 11))
-			expectResult(getVersion(1, 1, 10), false, false, getVersion(1, 1, 11))
-			expectResult(getVersion(1, 1, 10), false, true, getVersion(1, 2, 0))
+			expectResult(v0_0_1, true, true, v0_1_0)
+			expectResult(v0_0_1, true, false, v0_1_0)
+			expectResult(v0_1_10, true, false, v0_2_0)
+			expectResult(v0_1_10, true, true, v0_2_0)
+			expectResult(v1_1_10, true, false, v2_0_0)
+			expectResult(v1_1_10, true, true, v2_0_0)
+			expectResult(v0_0_1, false, false, v0_0_2)
+			expectResult(v0_0_1, false, true, v0_0_2)
+			expectResult(v0_1_10, false, false, v0_1_11)
+			expectResult(v0_1_10, false, true, v0_1_11)
+			expectResult(v1_1_10, false, false, v1_1_11)
+			expectResult(v1_1_10, false, true, v1_2_0)
+			expectResult(v2_0_0_foo_1, false, true, v2_0_0_foo_2)
 		})
 	})
 

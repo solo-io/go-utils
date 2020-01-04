@@ -326,7 +326,7 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 		}
 		expectedVersion = &versionutils.StableApiVersion
 	}
-	if proposedVersion.ReleaseCandidate == 0 && *proposedVersion != *expectedVersion {
+	if proposedVersion.LabelVersion == 0 && *proposedVersion != *expectedVersion {
 		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
 	}
 	return changelog, nil

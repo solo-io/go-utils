@@ -14,6 +14,9 @@ import (
 const (
 	SemverNilVersionValue = "v0.0.0"
 	SemverMinimumVersion  = "v0.0.1"
+
+	RcLabel   = "rc"
+	BetaLabel = "beta"
 )
 
 var (
@@ -26,30 +29,34 @@ var (
 )
 
 type Version struct {
-	Major            int
-	Minor            int
-	Patch            int
-	ReleaseCandidate int
+	Major int
+	Minor int
+	Patch int
+
+	// optional to support a version like "1.0.0-rc1", where "rc" is the label and "1" is the label version
+	// for comparisons:
+	//  - "1.0.0-rc1" is greater than "0.X.Y" and less than "1.0.0"
+	//  - "1.0.0-a1" is not greater than or less than "1.0.0-b1", except by convention
+	//  - for simplicity, "1.0.0-a1" is less than "1.0.0-b2" and the label difference is ignored
+	Label        string
+	LabelVersion int
 }
 
-func NewVersion(major, minor, patch int) *Version {
-	return NewRcVersion(major, minor, patch, 0)
-}
-
-func NewRcVersion(major, minor, patch, rc int) *Version {
+func NewVersion(major, minor, patch int, label string, labelVersion int) *Version {
 	return &Version{
-		Major:            major,
-		Minor:            minor,
-		Patch:            patch,
-		ReleaseCandidate: rc,
+		Major:        major,
+		Minor:        minor,
+		Patch:        patch,
+		Label:        label,
+		LabelVersion: labelVersion,
 	}
 }
 
 func (v *Version) String() string {
-	if v.ReleaseCandidate == 0 {
+	if v.LabelVersion == 0 {
 		return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 	}
-	return fmt.Sprintf("v%d.%d.%d-rc%d", v.Major, v.Minor, v.Patch, v.ReleaseCandidate)
+	return fmt.Sprintf("v%d.%d.%d-%s%d", v.Major, v.Minor, v.Patch, v.Label, v.LabelVersion)
 }
 
 func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
@@ -59,7 +66,7 @@ func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
 	if lesser == nil {
 		return false, errors.Errorf("cannot compare versions, lesser version is nil")
 	}
-	if v.ReleaseCandidate == lesser.ReleaseCandidate && v.Patch == lesser.Patch && v.Minor == lesser.Minor && v.Major == lesser.Major {
+	if v.LabelVersion == lesser.LabelVersion && v.Patch == lesser.Patch && v.Minor == lesser.Minor && v.Major == lesser.Major {
 		return true, nil
 	}
 	return v.IsGreaterThan(lesser), nil
@@ -84,8 +91,8 @@ func (v *Version) IsGreaterThan(lesser *Version) bool {
 		return false
 	}
 
-	if lesser.ReleaseCandidate > 0 {
-		if v.ReleaseCandidate == 0 || v.ReleaseCandidate > lesser.ReleaseCandidate {
+	if lesser.LabelVersion > 0 {
+		if v.LabelVersion == 0 || v.LabelVersion > lesser.LabelVersion {
 			return true
 		}
 	}
@@ -101,9 +108,9 @@ func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
 	newMajor := v.Major
 	newMinor := v.Minor
 	newPatch := v.Patch
-	newRc := v.ReleaseCandidate
-	if v.ReleaseCandidate != 0 {
-		newRc = v.ReleaseCandidate + 1
+	newLabelVersion := v.LabelVersion
+	if v.LabelVersion != 0 {
+		newLabelVersion = v.LabelVersion + 1
 	} else if v.Major == 0 {
 		if !breakingChange {
 			newPatch = v.Patch + 1
@@ -124,10 +131,11 @@ func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
 		}
 	}
 	return &Version{
-		Major:            newMajor,
-		Minor:            newMinor,
-		Patch:            newPatch,
-		ReleaseCandidate: newRc,
+		Major:        newMajor,
+		Minor:        newMinor,
+		Patch:        newPatch,
+		Label:        v.Label,
+		LabelVersion: newLabelVersion,
 	}
 }
 
@@ -163,9 +171,9 @@ func ParseVersion(tag string) (*Version, error) {
 	}
 	versionString := tag[1:]
 	splitOnHyphen := strings.Split(versionString, "-")
-	tagAndBuildMetadata := ""
+	labelAndVersion := ""
 	if len(splitOnHyphen) > 1 {
-		tagAndBuildMetadata = splitOnHyphen[1]
+		labelAndVersion = splitOnHyphen[1]
 		versionString = splitOnHyphen[0]
 	}
 	versionParts := strings.Split(versionString, ".")
@@ -184,22 +192,22 @@ func ParseVersion(tag string) (*Version, error) {
 	if err != nil {
 		return nil, errors.Errorf("Patch version %s is not valid", versionParts[2])
 	}
-	rc := 0
-	if tagAndBuildMetadata != "" {
-		rcString := strings.TrimPrefix(tagAndBuildMetadata, "rc")
-		parsedRc, err := strconv.Atoi(rcString)
-		if err != nil {
-			return nil, InvalidReleaseCandidateTag(tagAndBuildMetadata)
-		}
-		rc = parsedRc
-	}
 
 	version := &Version{
-		Major:            major,
-		Minor:            minor,
-		Patch:            patch,
-		ReleaseCandidate: rc,
+		Major: major,
+		Minor: minor,
+		Patch: patch,
 	}
+
+	if labelAndVersion != "" {
+		label, labelVersion, err := parseLabelVersion(labelAndVersion)
+		if err != nil {
+			return nil, err
+		}
+		version.Label = label
+		version.LabelVersion = labelVersion
+	}
+
 	isGtEq, err := version.IsGreaterThanOrEqualTo(&Zero)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not compare versions")
@@ -210,8 +218,24 @@ func ParseVersion(tag string) (*Version, error) {
 	return version, nil
 }
 
+func parseLabelVersion(labelAndVersion string) (string, int, error) {
+	regex := regexp.MustCompile("([a-z]+)([0-9]+)")
+	// should be like ["foo1", "foo", "1"]
+	matches := regex.FindStringSubmatch(labelAndVersion)
+	if len(matches) != 3 {
+		return "", 0, errors.Errorf("invalid label and version %s", labelAndVersion)
+	}
+	label := matches[1]
+	labelVersionToParse := matches[2]
+	labelVersion, err := strconv.Atoi(labelVersionToParse)
+	if err != nil {
+		return "", 0, errors.Wrapf(err, "invalid label version %s", labelVersionToParse)
+	}
+	return label, labelVersion, nil
+}
+
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-rc[0-9]+)?$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?$)")
 	return regex.MatchString(tag)
 }
 
