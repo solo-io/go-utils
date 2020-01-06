@@ -14,9 +14,6 @@ import (
 const (
 	SemverNilVersionValue = "v0.0.0"
 	SemverMinimumVersion  = "v0.0.1"
-
-	RcLabel   = "rc"
-	BetaLabel = "beta"
 )
 
 var (

@@ -4,4 +4,4 @@ changelog:
     description: Remove `ReleaseCandidate` in lieu of more general uses of labels on versions, so versions like `1.3.0-beta1` are valid.
   - type: NEW_FEATURE
     issueLink: https://github.com/solo-io/go-utils/issues/376
-    description: Added `allowedLabels` as an option to `validation.yaml` for changelogs, to enforce the label used is allowed during changelog validation. 
+    description: Added `allowedLabels` as an option to `validation.yaml` for changelogs, to enforce the label used is allowed during changelog validation.
