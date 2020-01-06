@@ -1,4 +1,4 @@
 changelog:
   - type: BREAKING_CHANGE
     issueLink: https://github.com/solo-io/go-utils/issues/376
-    description: Remove `ReleaseCandidate` in lieu of more general uses of labels on versions, so versions like `1.3.0-beta1` are valid. 
+    description: Remove `ReleaseCandidate` in lieu of more general uses of labels on versions, so versions like `1.3.0-beta1` are valid.

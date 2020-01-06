@@ -36,8 +36,8 @@ type Version struct {
 	// optional to support a version like "1.0.0-rc1", where "rc" is the label and "1" is the label version
 	// for comparisons:
 	//  - "1.0.0-rc1" is greater than "0.X.Y" and less than "1.0.0"
-	//  - "1.0.0-a1" is not greater than or less than "1.0.0-b1", except by convention
-	//  - for simplicity, "1.0.0-a1" is less than "1.0.0-b2" and the label difference is ignored
+	//  - "1.0.0-rc5" is greater than "1.0.0-rc1"
+	//  - "1.0.0-aX" is not greater than or less than "1.0.0-bY", except by convention
 	Label        string
 	LabelVersion int
 }
@@ -66,7 +66,7 @@ func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
 	if lesser == nil {
 		return false, errors.Errorf("cannot compare versions, lesser version is nil")
 	}
-	if v.LabelVersion == lesser.LabelVersion && v.Patch == lesser.Patch && v.Minor == lesser.Minor && v.Major == lesser.Major {
+	if v.Equals(lesser) {
 		return true, nil
 	}
 	return v.IsGreaterThan(lesser), nil
@@ -92,7 +92,12 @@ func (v *Version) IsGreaterThan(lesser *Version) bool {
 	}
 
 	if lesser.LabelVersion > 0 {
-		if v.LabelVersion == 0 || v.LabelVersion > lesser.LabelVersion {
+		if v.LabelVersion == 0 {
+			return true
+		} else if lesser.Label != v.Label {
+			// 1.0.0-fooX is not greater than or less than 1.0.0-barY
+			return false
+		} else if v.LabelVersion > lesser.LabelVersion {
 			return true
 		}
 	}

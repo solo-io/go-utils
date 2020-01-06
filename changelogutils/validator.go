@@ -61,6 +61,9 @@ var (
 	UnableToGetSettingsError = func(err error) error {
 		return errors.Wrapf(err, "Unable to read settings file")
 	}
+	InvalidLabelError = func(label string, allowed []string) error {
+		return errors.Errorf("Changelog version has label %s, which isn't in the list of allowed labels: %v", label, allowed)
+	}
 )
 
 type ChangelogValidator interface {
@@ -77,7 +80,12 @@ func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedR
 }
 
 type ValidationSettings struct {
+	// If true, then the validator will skip checks to enforce how version numbers are incremented, allowing for more flexible
+	// versioning for new features or breaking changes
 	RelaxSemverValidation bool `json:"relaxSemverValidation"`
+
+	// If non-empty, then the validator will reject a changelog if the version's label is not contained in this slice
+	AllowedLabels []string `json:"allowedLabels"`
 }
 
 type changelogValidator struct {
@@ -190,6 +198,13 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		return err
 	}
 
+	// If the settings contain specific allowed labels, ensure the label used here, if any, is in the list
+	if changelog.Version.Label != "" && len(settings.AllowedLabels) > 0 {
+		if !stringutils.ContainsString(changelog.Version.Label, settings.AllowedLabels) {
+			return InvalidLabelError(changelog.Version.Label, settings.AllowedLabels)
+		}
+	}
+
 	for _, file := range changelog.Files {
 		for _, entry := range file.Entries {
 			breakingChanges = breakingChanges || entry.Type.BreakingChange()
@@ -221,7 +236,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	}
 
 	if !settings.RelaxSemverValidation {
-		// since this isn't a release candidate or a stable release, the version should be incremented
+		// since this isn't a labeled release or a stable release, the version should be incremented
 		// based on semver rules.
 		if changelog.Version.LabelVersion == 0 && !changelog.Version.Equals(expectedVersion) {
 			return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())

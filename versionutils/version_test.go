@@ -91,6 +91,9 @@ var _ = Describe("Version", func() {
 			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, "")
 			expectResult("v1.0.0-rc1", "v1.0.0", false, "")
 			expectResult("v1.0.0", "v1.0.0-rc1", true, "")
+			expectResult("v1.0.0-rc1", "v1.0.0-beta2", false, "")
+			expectResult("v1.0.0-rc2", "v1.0.0-beta1", false, "")
+			expectResult("v1.0.0-rc1", "v1.0.0-beta1", false, "")
 		})
 	})
 
