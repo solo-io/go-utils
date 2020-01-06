@@ -20,9 +20,6 @@ var (
 	InvalidSemverVersionError = func(tag string) error {
 		return errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
 	}
-	InvalidReleaseCandidateTag = func(tagAndBuildMetadata string) error {
-		return errors.Errorf("Semver tag %s is not valid release candidate (must be 'rc' followed by int, e.g. 'rc5')", tagAndBuildMetadata)
-	}
 )
 
 type Version struct {
