@@ -1,0 +1,6 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: sirupsen
+    dependencyRepo: logrus
+    dependencyTag: v1.4.2
+    description: Update logrus to version v1.4.2.

@@ -59,7 +59,7 @@ require (
 )
 
 replace (
-	github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.0.5
+	github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.4.2
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
 
 	//kube 1.16
