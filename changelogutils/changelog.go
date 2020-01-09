@@ -187,8 +187,13 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 			return "", newErrorInvalidDirectoryName(subDir.Name())
 		}
 		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
+
 		if err != nil {
-			return "", err
+			if err.Error() == versionutils.UnableToCompareVersionError(subDir.Name(), latestTag).Error() && proposedVersion == "" {
+				proposedVersion = subDir.Name()
+			} else {
+				return "", err
+			}
 		}
 		if greaterThan {
 			if proposedVersion != "" {
