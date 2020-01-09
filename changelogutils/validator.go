@@ -164,7 +164,7 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		}
 		if greaterThan || (err != nil && err.Error() == versionutils.UnableToCompareVersionError(child.Name(), latestTag).Error()) {
 			if proposedVersion != "" {
-				return "", newErrorMultipleVersionsFound(child.Name(), proposedVersion, latestTag)
+				return "", MultipleNewVersionsFoundError(latestTag, proposedVersion, child.Name())
 			}
 			proposedVersion = child.Name()
 		}
