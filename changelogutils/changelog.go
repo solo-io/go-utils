@@ -368,7 +368,7 @@ func (l ChangelogList) Less(i, j int) bool {
 	isGreaterOrEqual, err := l[i].Version.IsGreaterThanOrEqualTo(l[j].Version)
 	if err != nil {
 		// if we can't compare versions (i.e., different labels) then arbitrarily default to alphanumeric sort
-	  return l[i].Version.Label < l[j].Version.Label
+		return l[i].Version.Label < l[j].Version.Label
 	}
 	return !isGreaterOrEqual
 }
