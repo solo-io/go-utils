@@ -301,7 +301,7 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 		return nil, err
 	}
 	isGreater, err := proposedVersion.IsGreaterThan(latestVersion)
-	if err != nil {
+	if err != nil && err.Error() != versionutils.UnableToCompareVersionError(proposedTag, latestTag).Error() {
 		return nil, err
 	}
 	if !isGreater {
