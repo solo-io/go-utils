@@ -20,6 +20,9 @@ var (
 	InvalidSemverVersionError = func(tag string) error {
 		return errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
 	}
+	UnableToCompareVersionError = func(v1 string, v2 string) error {
+		return errors.Errorf("Unable to compare version %s to %s.", v1, v2)
+	}
 )
 
 type Version struct {
@@ -53,6 +56,8 @@ func (v *Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d-%s%d", v.Major, v.Minor, v.Patch, v.Label, v.LabelVersion)
 }
 
+// users may want to handle UnableToCompareVersionError
+// this is for versions that cannot be compared because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
 func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
 	if v == nil {
 		return false, errors.Errorf("cannot compare versions, greater version is nil")
@@ -63,40 +68,47 @@ func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
 	if v.Equals(lesser) {
 		return true, nil
 	}
-	return v.IsGreaterThan(lesser), nil
+	return v.IsGreaterThan(lesser)
 }
 
-func (v *Version) IsGreaterThan(lesser *Version) bool {
+// users may want to handle UnableToCompareVersionError
+// this is for versions that cannot be compared because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+func (v *Version) IsGreaterThan(lesser *Version) (bool, error) {
 	if v.Major > lesser.Major {
-		return true
+		return true, nil
 	} else if v.Major < lesser.Major {
-		return false
+		return false, nil
 	}
 
 	if v.Minor > lesser.Minor {
-		return true
+		return true, nil
 	} else if v.Minor < lesser.Minor {
-		return false
+		return false, nil
 	}
 
 	if v.Patch > lesser.Patch {
-		return true
+		return true, nil
 	} else if v.Patch < lesser.Patch {
-		return false
+		return false, nil
 	}
 
-	if lesser.LabelVersion > 0 {
-		if v.LabelVersion == 0 {
-			return true
-		} else if lesser.Label != v.Label {
-			// 1.0.0-fooX is not greater than or less than 1.0.0-barY
-			return false
-		} else if v.LabelVersion > lesser.LabelVersion {
-			return true
-		}
+	if len(v.Label) == 0 && len(lesser.Label) > 0 {
+		return true, nil
+	} else if len(v.Label) > 0 && len(lesser.Label) == 0 {
+		return false, nil
 	}
 
-	return false
+	if v.Label != lesser.Label {
+		return false, UnableToCompareVersionError(v.String(), lesser.String())
+	}
+
+	if v.LabelVersion > lesser.LabelVersion {
+		return true, nil
+	} else if v.LabelVersion < lesser.LabelVersion {
+		return false, nil
+	}
+
+	return false, nil
 }
 
 func (v *Version) Equals(other *Version) bool {
@@ -161,7 +173,7 @@ func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return greaterVersion.IsGreaterThan(lesserVersion), nil
+	return greaterVersion.IsGreaterThan(lesserVersion)
 }
 
 func ParseVersion(tag string) (*Version, error) {
@@ -209,7 +221,7 @@ func ParseVersion(tag string) (*Version, error) {
 
 	isGtEq, err := version.IsGreaterThanOrEqualTo(&Zero)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not compare versions")
+		return nil, err
 	}
 	if !isGtEq {
 		return nil, errors.Errorf("Version %s is not greater than or equal to v0.0.0", tag)

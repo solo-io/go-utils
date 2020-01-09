@@ -54,21 +54,18 @@ var _ = Describe("Version", func() {
 
 	var _ = Context("IsGreaterThanTag", func() {
 
-		expectResult := func(greater, lesser string, worked bool, err string) {
+		expectResult := func(greater, lesser string, isGreaterThanOrEqualTo bool, err string) {
 			actualWorked, actualErr := versionutils.IsGreaterThanTag(greater, lesser)
-			Expect(actualWorked).To(BeEquivalentTo(worked))
+			Expect(actualWorked).To(BeEquivalentTo(isGreaterThanOrEqualTo))
 			greaterVersion, parseGreaterErr := versionutils.ParseVersion(greater)
 			lesserVersion, parseLesserErr := versionutils.ParseVersion(lesser)
 			gteResult, gteError := greaterVersion.IsGreaterThanOrEqualTo(lesserVersion)
 			if err == "" {
 				Expect(actualErr).To(BeNil())
-				Expect(gteResult).To(BeEquivalentTo(worked))
+				Expect(gteResult).To(BeEquivalentTo(isGreaterThanOrEqualTo))
 				Expect(gteError).To(BeNil())
 			} else {
 				Expect(actualErr.Error()).To(BeEquivalentTo(err))
-			}
-			if parseGreaterErr == nil && parseLesserErr == nil {
-				Expect(greaterVersion.IsGreaterThanOrEqualTo(lesserVersion)).To(BeEquivalentTo(worked))
 			}
 			if parseGreaterErr != nil {
 				Expect(parseGreaterErr.Error()).To(BeEquivalentTo(err))
@@ -91,9 +88,10 @@ var _ = Describe("Version", func() {
 			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, "")
 			expectResult("v1.0.0-rc1", "v1.0.0", false, "")
 			expectResult("v1.0.0", "v1.0.0-rc1", true, "")
-			expectResult("v1.0.0-rc1", "v1.0.0-beta2", false, "")
-			expectResult("v1.0.0-rc2", "v1.0.0-beta1", false, "")
-			expectResult("v1.0.0-rc1", "v1.0.0-beta1", false, "")
+			expectResult("v1.0.0-rc1", "v1.0.0-beta2", false, versionutils.UnableToCompareVersionError("v1.0.0-rc1", "v1.0.0-beta2").Error())
+			expectResult("v1.0.0-rc2", "v1.0.0-beta1", false, versionutils.UnableToCompareVersionError("v1.0.0-rc2", "v1.0.0-beta1").Error())
+			expectResult("v1.0.0-rc1", "v1.0.0-rc2", false, "")
+			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, "")
 		})
 	})
 

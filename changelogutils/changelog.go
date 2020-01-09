@@ -299,7 +299,11 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 	if err != nil {
 		return nil, err
 	}
-	if !proposedVersion.IsGreaterThan(latestVersion) {
+	isGreater, err := proposedVersion.IsGreaterThan(latestVersion)
+	if err != nil {
+		return nil, err
+	}
+	if !isGreater {
 		return nil, errors.Errorf("Proposed version %s must be greater than latest version %s", proposedVersion, latestVersion)
 	}
 
@@ -361,7 +365,12 @@ func (l ChangelogList) Len() int {
 }
 
 func (l ChangelogList) Less(i, j int) bool {
-	return !l[i].Version.IsGreaterThan(l[j].Version)
+	isGreaterOrEqual, err := l[i].Version.IsGreaterThanOrEqualTo(l[j].Version)
+	if err != nil {
+		// if we can't compare versions (i.e., different labels) then arbitrarily default to alphanumeric sort
+	  return l[i].Version.Label < l[j].Version.Label
+	}
+	return !isGreaterOrEqual
 }
 
 func (l ChangelogList) Swap(i, j int) {

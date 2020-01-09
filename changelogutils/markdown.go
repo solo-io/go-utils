@@ -16,7 +16,10 @@ import (
 Changelog markdown:
 
 summary
+dependency bumps
 breaking changes
+upgrade
+helm
 new features
 fixes
 closing
