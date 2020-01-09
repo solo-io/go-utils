@@ -157,13 +157,14 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		if !versionutils.MatchesRegex(child.Name()) {
 			return "", InvalidChangelogSubdirectoryNameError(child.Name())
 		}
+
 		greaterThan, err := versionutils.IsGreaterThanTag(child.Name(), latestTag)
-		if err != nil {
+		if err != nil && err.Error() != versionutils.UnableToCompareVersionError(child.Name(), latestTag).Error() {
 			return "", err
 		}
-		if greaterThan {
+		if greaterThan || (err != nil && err.Error() == versionutils.UnableToCompareVersionError(child.Name(), latestTag).Error()) {
 			if proposedVersion != "" {
-				return "", MultipleNewVersionsFoundError(latestTag, proposedVersion, child.Name())
+				return "", newErrorMultipleVersionsFound(child.Name(), proposedVersion, latestTag)
 			}
 			proposedVersion = child.Name()
 		}

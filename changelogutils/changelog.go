@@ -147,11 +147,12 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 		if !versionutils.MatchesRegex(changelogFile.GetName()) {
 			return "", newErrorInvalidDirectoryName(changelogFile.GetName())
 		}
+
 		greaterThan, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
-		if err != nil {
+		if err != nil && err.Error() != versionutils.UnableToCompareVersionError(changelogFile.GetName(), latestTag).Error() {
 			return "", err
 		}
-		if greaterThan {
+		if greaterThan || (err != nil && err.Error() == versionutils.UnableToCompareVersionError(changelogFile.GetName(), latestTag).Error()) {
 			if proposedVersion != "" {
 				return "", newErrorMultipleVersionsFound(changelogFile.GetName(), proposedVersion, latestTag)
 			}
@@ -187,15 +188,10 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 			return "", newErrorInvalidDirectoryName(subDir.Name())
 		}
 		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
-
-		if err != nil {
-			if err.Error() == versionutils.UnableToCompareVersionError(subDir.Name(), latestTag).Error() && proposedVersion == "" {
-				proposedVersion = subDir.Name()
-			} else {
-				return "", err
-			}
+		if err != nil && err.Error() != versionutils.UnableToCompareVersionError(subDir.Name(), latestTag).Error() {
+			return "", err
 		}
-		if greaterThan {
+		if greaterThan || (err != nil && err.Error() == versionutils.UnableToCompareVersionError(subDir.Name(), latestTag).Error()) {
 			if proposedVersion != "" {
 				return "", newErrorMultipleVersionsFound(subDir.Name(), proposedVersion, latestTag)
 			}
