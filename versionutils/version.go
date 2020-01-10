@@ -20,77 +20,136 @@ var (
 	InvalidSemverVersionError = func(tag string) error {
 		return errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
 	}
-	InvalidReleaseCandidateTag = func(tagAndBuildMetadata string) error {
-		return errors.Errorf("Semver tag %s is not valid release candidate (must be 'rc' followed by int, e.g. 'rc5')", tagAndBuildMetadata)
-	}
 )
 
 type Version struct {
-	Major            int
-	Minor            int
-	Patch            int
-	ReleaseCandidate int
+	Major int
+	Minor int
+	Patch int
+
+	// optional to support a version like "1.0.0-rc1", where "rc" is the label and "1" is the label version
+	// for comparisons:
+	//  - "1.0.0-rc1" is greater than "0.X.Y" and less than "1.0.0"
+	//  - "1.0.0-rc5" is greater than "1.0.0-rc1"
+	//  - "1.0.0-aX" is not greater than or less than "1.0.0-bY", except by convention
+	Label        string
+	LabelVersion int
 }
 
-func NewVersion(major, minor, patch int) *Version {
-	return NewRcVersion(major, minor, patch, 0)
-}
-
-func NewRcVersion(major, minor, patch, rc int) *Version {
+func NewVersion(major, minor, patch int, label string, labelVersion int) *Version {
 	return &Version{
-		Major:            major,
-		Minor:            minor,
-		Patch:            patch,
-		ReleaseCandidate: rc,
+		Major:        major,
+		Minor:        minor,
+		Patch:        patch,
+		Label:        label,
+		LabelVersion: labelVersion,
 	}
 }
 
 func (v *Version) String() string {
-	if v.ReleaseCandidate == 0 {
+	if v.LabelVersion == 0 {
 		return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 	}
-	return fmt.Sprintf("v%d.%d.%d-rc%d", v.Major, v.Minor, v.Patch, v.ReleaseCandidate)
+	return fmt.Sprintf("v%d.%d.%d-%s%d", v.Major, v.Minor, v.Patch, v.Label, v.LabelVersion)
 }
 
-func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
+// In order, returns isGreaterThanOrEqualTo, isDeterminable, err
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThanOrEqualTo
+func (v *Version) IsGreaterThanOrEqualToPtr(lesser *Version) (bool, bool, error) {
 	if v == nil {
-		return false, errors.Errorf("cannot compare versions, greater version is nil")
+		return false, true, errors.Errorf("cannot compare versions, greater version is nil")
 	}
 	if lesser == nil {
-		return false, errors.Errorf("cannot compare versions, lesser version is nil")
+		return false, true, errors.Errorf("cannot compare versions, lesser version is nil")
 	}
-	if v.ReleaseCandidate == lesser.ReleaseCandidate && v.Patch == lesser.Patch && v.Minor == lesser.Minor && v.Major == lesser.Major {
-		return true, nil
-	}
-	return v.IsGreaterThan(lesser), nil
+	isGtrEq, determinable := v.IsGreaterThanOrEqualTo(*lesser)
+	return isGtrEq, determinable, nil
 }
 
-func (v *Version) IsGreaterThan(lesser *Version) bool {
+// In order, returns isGreaterThanOrEqualTo, isDeterminable
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThanOrEqualTo
+func (v Version) IsGreaterThanOrEqualTo(lesser Version) (bool, bool) {
+	if v.Equals(&lesser) {
+		return true, false
+	}
+	return v.IsGreaterThan(lesser)
+}
+
+// In order, returns isGreaterThanOrEqualTo, isDeterminable, err
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThan
+func (v *Version) IsGreaterThanPtr(lesser *Version) (bool, bool, error) {
+	if v == nil {
+		return false, true, errors.Errorf("cannot compare versions, greater version is nil")
+	}
+	if lesser == nil {
+		return false, true, errors.Errorf("cannot compare versions, lesser version is nil")
+	}
+	isGreater, determinable := v.IsGreaterThan(*lesser)
+	return isGreater, determinable, nil
+}
+
+// In order, returns isGreaterThanOrEqualTo, isDeterminable
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThan
+func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 	if v.Major > lesser.Major {
-		return true
+		return true, true
 	} else if v.Major < lesser.Major {
-		return false
+		return false, true
 	}
 
 	if v.Minor > lesser.Minor {
-		return true
+		return true, true
 	} else if v.Minor < lesser.Minor {
-		return false
+		return false, true
 	}
 
 	if v.Patch > lesser.Patch {
-		return true
+		return true, true
 	} else if v.Patch < lesser.Patch {
-		return false
+		return false, true
 	}
 
-	if lesser.ReleaseCandidate > 0 {
-		if v.ReleaseCandidate == 0 || v.ReleaseCandidate > lesser.ReleaseCandidate {
-			return true
-		}
+	if len(v.Label) == 0 && lesser.Label != "" {
+		return true, true
+	} else if len(v.Label) > 0 && len(lesser.Label) == 0 {
+		return false, true
 	}
 
-	return false
+	if v.Label != lesser.Label {
+		return false, false
+	}
+
+	if v.LabelVersion > lesser.LabelVersion {
+		return true, true
+	} else if v.LabelVersion < lesser.LabelVersion {
+		return false, true
+	}
+
+	return false, true
+}
+
+// for incomparable versions, default to alphanumeric sort on label
+// e.g. 1.0.0-bar1 > 1.0.0-foo2
+func (v Version) MustIsGreaterThanOrEqualTo(lesser Version) bool {
+	if v.Equals(&lesser) {
+		return true
+	}
+	return v.MustIsGreaterThan(lesser)
+}
+
+// for incomparable versions, default to alphanumeric sort on label
+// e.g. 1.0.0-bar1 > 1.0.0-foo2
+func (v Version) MustIsGreaterThan(lesser Version) bool {
+	isGtr, determinable := v.IsGreaterThan(lesser)
+	if determinable {
+		return isGtr
+	}
+	// if we can't compare versions (i.e., different labels) then default to alphanumeric sort
+	return v.Label > lesser.Label
 }
 
 func (v *Version) Equals(other *Version) bool {
@@ -101,9 +160,9 @@ func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
 	newMajor := v.Major
 	newMinor := v.Minor
 	newPatch := v.Patch
-	newRc := v.ReleaseCandidate
-	if v.ReleaseCandidate != 0 {
-		newRc = v.ReleaseCandidate + 1
+	newLabelVersion := v.LabelVersion
+	if v.LabelVersion != 0 {
+		newLabelVersion = v.LabelVersion + 1
 	} else if v.Major == 0 {
 		if !breakingChange {
 			newPatch = v.Patch + 1
@@ -124,37 +183,40 @@ func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
 		}
 	}
 	return &Version{
-		Major:            newMajor,
-		Minor:            newMinor,
-		Patch:            newPatch,
-		ReleaseCandidate: newRc,
+		Major:        newMajor,
+		Minor:        newMinor,
+		Patch:        newPatch,
+		Label:        v.Label,
+		LabelVersion: newLabelVersion,
 	}
 }
 
-var (
-	Zero = Version{
+func Zero() Version {
+	return Version{
 		Major: 0,
 		Minor: 0,
 		Patch: 0,
 	}
+}
 
-	StableApiVersion = Version{
+func StableApiVersion() Version {
+	return Version{
 		Major: 1,
 		Minor: 0,
 		Patch: 0,
 	}
-)
+}
 
-func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
+func IsGreaterThanTag(greaterTag, lesserTag string) (bool, bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	lesserVersion, err := ParseVersion(lesserTag)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
-	return greaterVersion.IsGreaterThan(lesserVersion), nil
+	return greaterVersion.IsGreaterThanPtr(lesserVersion)
 }
 
 func ParseVersion(tag string) (*Version, error) {
@@ -163,9 +225,9 @@ func ParseVersion(tag string) (*Version, error) {
 	}
 	versionString := tag[1:]
 	splitOnHyphen := strings.Split(versionString, "-")
-	tagAndBuildMetadata := ""
+	labelAndVersion := ""
 	if len(splitOnHyphen) > 1 {
-		tagAndBuildMetadata = splitOnHyphen[1]
+		labelAndVersion = splitOnHyphen[1]
 		versionString = splitOnHyphen[0]
 	}
 	versionParts := strings.Split(versionString, ".")
@@ -184,34 +246,47 @@ func ParseVersion(tag string) (*Version, error) {
 	if err != nil {
 		return nil, errors.Errorf("Patch version %s is not valid", versionParts[2])
 	}
-	rc := 0
-	if tagAndBuildMetadata != "" {
-		rcString := strings.TrimPrefix(tagAndBuildMetadata, "rc")
-		parsedRc, err := strconv.Atoi(rcString)
-		if err != nil {
-			return nil, InvalidReleaseCandidateTag(tagAndBuildMetadata)
-		}
-		rc = parsedRc
-	}
 
 	version := &Version{
-		Major:            major,
-		Minor:            minor,
-		Patch:            patch,
-		ReleaseCandidate: rc,
+		Major: major,
+		Minor: minor,
+		Patch: patch,
 	}
-	isGtEq, err := version.IsGreaterThanOrEqualTo(&Zero)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not compare versions")
+
+	if labelAndVersion != "" {
+		label, labelVersion, err := parseLabelVersion(labelAndVersion)
+		if err != nil {
+			return nil, err
+		}
+		version.Label = label
+		version.LabelVersion = labelVersion
 	}
+
+	isGtEq, _ := version.IsGreaterThanOrEqualTo(Zero())
 	if !isGtEq {
 		return nil, errors.Errorf("Version %s is not greater than or equal to v0.0.0", tag)
 	}
 	return version, nil
 }
 
+func parseLabelVersion(labelAndVersion string) (string, int, error) {
+	regex := regexp.MustCompile("([a-z]+)([0-9]+)")
+	// should be like ["foo1", "foo", "1"]
+	matches := regex.FindStringSubmatch(labelAndVersion)
+	if len(matches) != 3 {
+		return "", 0, errors.Errorf("invalid label and version %s", labelAndVersion)
+	}
+	label := matches[1]
+	labelVersionToParse := matches[2]
+	labelVersion, err := strconv.Atoi(labelVersionToParse)
+	if err != nil {
+		return "", 0, errors.Wrapf(err, "invalid label version %s", labelVersionToParse)
+	}
+	return label, labelVersion, nil
+}
+
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-rc[0-9]+)?$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?$)")
 	return regex.MatchString(tag)
 }
 

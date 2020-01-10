@@ -147,11 +147,11 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 		if !versionutils.MatchesRegex(changelogFile.GetName()) {
 			return "", newErrorInvalidDirectoryName(changelogFile.GetName())
 		}
-		greaterThan, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
+		greaterThan, determinable, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
 		if err != nil {
 			return "", err
 		}
-		if greaterThan {
+		if greaterThan || !determinable {
 			if proposedVersion != "" {
 				return "", newErrorMultipleVersionsFound(changelogFile.GetName(), proposedVersion, latestTag)
 			}
@@ -186,11 +186,11 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 		if !versionutils.MatchesRegex(subDir.Name()) {
 			return "", newErrorInvalidDirectoryName(subDir.Name())
 		}
-		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
+		greaterThan, determinable, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
 		if err != nil {
 			return "", err
 		}
-		if greaterThan {
+		if greaterThan || !determinable {
 			if proposedVersion != "" {
 				return "", newErrorMultipleVersionsFound(subDir.Name(), proposedVersion, latestTag)
 			}
@@ -299,7 +299,11 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 	if err != nil {
 		return nil, err
 	}
-	if !proposedVersion.IsGreaterThan(latestVersion) {
+	isGreater, determinable, err := proposedVersion.IsGreaterThanPtr(latestVersion)
+	if err != nil {
+		return nil, err
+	}
+	if !isGreater && determinable {
 		return nil, errors.Errorf("Proposed version %s must be greater than latest version %s", proposedVersion, latestVersion)
 	}
 
@@ -321,12 +325,13 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
 	if releaseStableApi {
-		if !proposedVersion.Equals(&versionutils.StableApiVersion) {
+		stableApiVer := versionutils.StableApiVersion()
+		if !proposedVersion.Equals(&stableApiVer) {
 			return nil, errors.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", proposedVersion)
 		}
-		expectedVersion = &versionutils.StableApiVersion
+		expectedVersion = &stableApiVer
 	}
-	if proposedVersion.ReleaseCandidate == 0 && *proposedVersion != *expectedVersion {
+	if proposedVersion.LabelVersion == 0 && *proposedVersion != *expectedVersion {
 		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
 	}
 	return changelog, nil
@@ -360,8 +365,9 @@ func (l ChangelogList) Len() int {
 	return len(l)
 }
 
+// it is a bug to pass a changelog list containing a nil version to this function
 func (l ChangelogList) Less(i, j int) bool {
-	return !l[i].Version.IsGreaterThan(l[j].Version)
+	return !l[i].Version.MustIsGreaterThanOrEqualTo(*l[j].Version)
 }
 
 func (l ChangelogList) Swap(i, j int) {

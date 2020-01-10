@@ -61,7 +61,7 @@ var _ = Describe("ReaderTest", func() {
 			Expect(err).NotTo(HaveOccurred())
 			expected := changelogutils.Changelog{
 				Files:   []*changelogutils.ChangelogFile{&file},
-				Version: versionutils.NewVersion(0, 1, 1),
+				Version: versionutils.NewVersion(0, 1, 1, "", 0),
 			}
 			Expect(*changelog).To(BeEquivalentTo(expected))
 		})
@@ -302,7 +302,7 @@ var _ = Describe("ReaderTest", func() {
 						},
 					},
 				},
-				Version: versionutils.NewVersion(0, 0, 1),
+				Version: versionutils.NewVersion(0, 0, 1, "", 0),
 				Summary: "summary",
 				Closing: "closing",
 			}
@@ -338,7 +338,7 @@ var _ = Describe("ReaderTest", func() {
 						},
 					},
 				},
-				Version: versionutils.NewRcVersion(1, 0, 0, 1),
+				Version: versionutils.NewVersion(1, 0, 0, "rc", 1),
 			}
 
 			changelog, err := reader.GetChangelogForTag(ctx, "v1.0.0-rc1")
@@ -369,7 +369,7 @@ var _ = Describe("ReaderTest", func() {
 						ReleaseStableApi: &releaseStableApiTrue,
 					},
 				},
-				Version: versionutils.NewVersion(0, 0, 1),
+				Version: versionutils.NewVersion(0, 0, 1, "", 0),
 			}
 
 			changelog, err := reader.GetChangelogForTag(ctx, tag)

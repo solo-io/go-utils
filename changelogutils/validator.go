@@ -61,6 +61,9 @@ var (
 	UnableToGetSettingsError = func(err error) error {
 		return errors.Wrapf(err, "Unable to read settings file")
 	}
+	InvalidLabelError = func(label string, allowed []string) error {
+		return errors.Errorf("Changelog version has label %s, which isn't in the list of allowed labels: %v", label, allowed)
+	}
 )
 
 type ChangelogValidator interface {
@@ -77,7 +80,12 @@ func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedR
 }
 
 type ValidationSettings struct {
+	// If true, then the validator will skip checks to enforce how version numbers are incremented, allowing for more flexible
+	// versioning for new features or breaking changes
 	RelaxSemverValidation bool `json:"relaxSemverValidation"`
+
+	// If non-empty, then the validator will reject a changelog if the version's label is not contained in this slice
+	AllowedLabels []string `json:"allowedLabels"`
 }
 
 type changelogValidator struct {
@@ -149,11 +157,11 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		if !versionutils.MatchesRegex(child.Name()) {
 			return "", InvalidChangelogSubdirectoryNameError(child.Name())
 		}
-		greaterThan, err := versionutils.IsGreaterThanTag(child.Name(), latestTag)
+		greaterThan, determinable, err := versionutils.IsGreaterThanTag(child.Name(), latestTag)
 		if err != nil {
 			return "", err
 		}
-		if greaterThan {
+		if greaterThan || !determinable {
 			if proposedVersion != "" {
 				return "", MultipleNewVersionsFoundError(latestTag, proposedVersion, child.Name())
 			}
@@ -190,6 +198,13 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		return err
 	}
 
+	// If the settings contain specific allowed labels, ensure the label used here, if any, is in the list
+	if changelog.Version.Label != "" && len(settings.AllowedLabels) > 0 {
+		if !stringutils.ContainsString(changelog.Version.Label, settings.AllowedLabels) {
+			return InvalidLabelError(changelog.Version.Label, settings.AllowedLabels)
+		}
+	}
+
 	for _, file := range changelog.Files {
 		for _, entry := range file.Entries {
 			breakingChanges = breakingChanges || entry.Type.BreakingChange()
@@ -201,29 +216,31 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	// this flag can be used in the changelog to signal a stable release, which could be 1.0.0 or 1.5.0 or X.Y.0
 	if releaseStableApi {
 		// if the changelog is less than 1.0, then this isn't a stable API
-		if versionutils.StableApiVersion.IsGreaterThan(changelog.Version) {
+		stableApiVer := versionutils.StableApiVersion()
+		if !changelog.Version.MustIsGreaterThanOrEqualTo(stableApiVer) {
 			return InvalidUseOfStableApiError(changelog.Version.String())
 		}
 
 		// if this is supposed to be a stable release, then the patch and release candidate
 		// versions should be 0. This enables release histories like:
 		// 0.10 -> 1.0.0-rc1 -> 1.0.0-rc2 -> 1.0.0 -> 1.1.0-rc1 -> 1.1.0 -> ...
-		if changelog.Version.Patch != 0 || changelog.Version.ReleaseCandidate != 0 {
+		if changelog.Version.Patch != 0 || changelog.Version.LabelVersion != 0 {
 			return InvalidUseOfStableApiError(changelog.Version.String())
 		}
 		return nil
 	}
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
-	// if this isn't the first release candidate, then the version should match the expected version exactly
-	if changelog.Version.ReleaseCandidate > 1 && !changelog.Version.Equals(expectedVersion) {
+	// if this isn't the first labeled version, and we aren't switching label versions (e.g. 1.0.0-beta1 -> 1.0.0-rc1)
+	// then the version should match the expected version exactly
+	if changelog.Version.LabelVersion > 1 && changelog.Version.Label == expectedVersion.Label && !changelog.Version.Equals(expectedVersion) {
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 
-	if !settings.RelaxSemverValidation {
-		// since this isn't a release candidate or a stable release, the version should be incremented
+	if changelog.Version.Label == "" && !settings.RelaxSemverValidation {
+		// since this isn't a labeled release or a stable release, the version should be incremented
 		// based on semver rules.
-		if changelog.Version.ReleaseCandidate == 0 && !changelog.Version.Equals(expectedVersion) {
+		if changelog.Version.LabelVersion == 0 && !changelog.Version.Equals(expectedVersion) {
 			return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 		}
 	}

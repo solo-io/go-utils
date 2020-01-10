@@ -622,9 +622,9 @@ var _ = Describe("changelog validator utils", func() {
 			})
 		})
 
-		Context("rc workflow", func() {
+		Context("label workflow", func() {
 
-			rcWorkflow := func(lastTag, nextTag, contents string, settingsFunc func()) {
+			labelWorkflow := func(lastTag, nextTag, contents string, settingsFunc func()) {
 				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
 				file1 := github.CommitFile{Filename: &path, Status: &added}
 				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
@@ -654,18 +654,69 @@ var _ = Describe("changelog validator utils", func() {
 				Expect(file).NotTo(BeNil())
 			}
 
-			DescribeTable("rc workflow cases",
-				rcWorkflow,
+			DescribeTable("label workflow cases",
+				labelWorkflow,
 				Entry("initial rc", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog, noValidationSettingsExist),
 				Entry("initial rc relaxed", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog, relaxedValidationSettingsExists),
 				Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, noValidationSettingsExist),
-				Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, relaxedValidationSettingsExists),
+				Entry("incrementing rc relaxed", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, relaxedValidationSettingsExists),
 				Entry("stable release after rc for 1.0", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog, noValidationSettingsExist),
-				Entry("stable release after rc for 1.0", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
+				Entry("stable release after rc for 1.0 relaxed", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
 				Entry("stable release after rc for 1.1", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog, noValidationSettingsExist),
-				Entry("stable release after rc for 1.1", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
+				Entry("stable release after rc for 1.1 relaxed", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
 				Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, noValidationSettingsExist),
-				Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, relaxedValidationSettingsExists))
+				Entry("initial rc after for 1.1 relaxed", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, relaxedValidationSettingsExists),
+				Entry("foo3 to bar1", "v1.0.0-foo3", "v1.0.0-bar1", validNewFeatureChangelog, noValidationSettingsExist),
+				Entry("foo3 to bar1 relaxed", "v1.0.0-foo3", "v1.0.0-bar1", validNewFeatureChangelog, relaxedValidationSettingsExists),
+				Entry("foo1 to bar1", "v1.0.0-foo1", "v1.0.0-bar1", validNewFeatureChangelog, noValidationSettingsExist),
+				Entry("foo1 to bar1 relaxed", "v1.0.0-foo1", "v1.0.0-bar1", validNewFeatureChangelog, relaxedValidationSettingsExists),
+				Entry("foo1 to bar3", "v1.0.0-foo1", "v1.0.0-bar3", validNewFeatureChangelog, noValidationSettingsExist),
+				Entry("foo1 to bar3 relaxed", "v1.0.0-foo1", "v1.0.0-bar3", validNewFeatureChangelog, relaxedValidationSettingsExists))
+		})
+
+		Context("settings with allowed labels", func() {
+
+			setup := func(setupTag string) {
+				path := filepath.Join(changelogutils.ChangelogDirectory, setupTag, filename1)
+				file1 := github.CommitFile{Filename: &path, Status: &added}
+				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+				repoClient.EXPECT().
+					CompareCommits(ctx, base, sha).
+					Return(&cc, nil)
+				code.EXPECT().
+					GetFileContents(ctx, path).
+					Return([]byte(validBreakingChangelog), nil).Times(2)
+				repoClient.EXPECT().
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
+					Return("v0.5.0", nil)
+				code.EXPECT().
+					ListFiles(ctx, changelogutils.ChangelogDirectory).
+					Return([]os.FileInfo{getChangelogDir(setupTag)}, nil)
+				code.EXPECT().
+					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, setupTag)).
+					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
+			}
+
+			allowedLabelsSettingsExists := func() {
+				repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil)
+				code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(allowedLabelsYaml), nil)
+			}
+
+			It("accepts a label in allowed labels", func() {
+				setup("v0.5.1-beta1")
+				allowedLabelsSettingsExists()
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).NotTo(BeNil())
+				Expect(err).To(BeNil())
+			})
+
+			It("rejects a label not in allowed labels", func() {
+				setup("v0.5.1-foo1")
+				allowedLabelsSettingsExists()
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).To(BeNil())
+				Expect(err.Error()).To(Equal(changelogutils.InvalidLabelError("foo", []string{"beta", "rc"}).Error()))
+			})
 		})
 
 		Context("invalid settings", func() {
@@ -767,5 +818,10 @@ var _ = Describe("changelog validator utils", func() {
 const (
 	validationYaml = `
 relaxSemverValidation: true
+`
+	allowedLabelsYaml = `
+allowedLabels:
+- beta
+- rc
 `
 )
