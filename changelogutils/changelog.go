@@ -325,10 +325,11 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
 	if releaseStableApi {
-		if !proposedVersion.Equals(&versionutils.StableApiVersion) {
+		stableApiVer := versionutils.StableApiVersion()
+		if !proposedVersion.Equals(&stableApiVer) {
 			return nil, errors.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", proposedVersion)
 		}
-		expectedVersion = &versionutils.StableApiVersion
+		expectedVersion = &stableApiVer
 	}
 	if proposedVersion.LabelVersion == 0 && *proposedVersion != *expectedVersion {
 		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)

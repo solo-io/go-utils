@@ -194,19 +194,21 @@ func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
 	}
 }
 
-var (
-	//TODO(kdorosh)
-	Zero = Version{
+func Zero() Version {
+	return Version{
 		Major: 0,
 		Minor: 0,
 		Patch: 0,
 	}
-	StableApiVersion = Version{
+}
+
+func StableApiVersion() Version {
+	return Version{
 		Major: 1,
 		Minor: 0,
 		Patch: 0,
 	}
-)
+}
 
 func IsGreaterThanTag(greaterTag, lesserTag string) (bool, bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
@@ -263,7 +265,7 @@ func ParseVersion(tag string) (*Version, error) {
 		version.LabelVersion = labelVersion
 	}
 
-	isGtEq, _ := version.IsGreaterThanOrEqualTo(Zero) //TODO(kdorosh)
+	isGtEq, _ := version.IsGreaterThanOrEqualTo(Zero())
 	if !isGtEq {
 		return nil, errors.Errorf("Version %s is not greater than or equal to v0.0.0", tag)
 	}

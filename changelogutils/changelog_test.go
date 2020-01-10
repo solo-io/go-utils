@@ -44,6 +44,7 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(createSubdirs(changelogDir, "v1.0.0-rc1")).To(BeNil())
 			Expect(getProposedTag("v1.0.0-beta2", tmpDir, "v1.0.0-rc1")).To(BeNil())
 
+			Expect(createSubdirs(changelogDir, "1.0.0-beta3")).To(BeNil()) //TODO(kdorosh) figure out why removing this fixes test
 			Expect(changelogutils.IsInvalidDirectoryNameError(getProposedTag("v0.0.5", tmpDir, ""))).To(BeTrue())
 		})
 	})
