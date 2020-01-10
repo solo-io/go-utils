@@ -63,10 +63,7 @@ func (v *Version) IsGreaterThanOrEqualToPtr(lesser *Version) (bool, bool, error)
 	if lesser == nil {
 		return false, true, errors.Errorf("cannot compare versions, lesser version is nil")
 	}
-	if v.Equals(lesser) {
-		return true, true, nil
-	}
-	isGtrEq, determinable := v.IsGreaterThan(*lesser)
+	isGtrEq, determinable := v.IsGreaterThanOrEqualTo(*lesser)
 	return isGtrEq, determinable, nil
 }
 
