@@ -2,12 +2,13 @@ package helmignore
 
 import (
 	"bufio"
-	"errors"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rotisserie/eris"
 )
 
 /**
@@ -128,7 +129,7 @@ func (r *Rules) parseRule(rule string) error {
 
 	// Fail any rules that contain **
 	if strings.Contains(rule, "**") {
-		return errors.New("double-star (**) syntax is not supported")
+		return eris.New("double-star (**) syntax is not supported")
 	}
 
 	// Fail any patterns that can't compile. A non-empty string must be

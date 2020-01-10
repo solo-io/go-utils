@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
@@ -38,19 +38,19 @@ type resourceCollector struct {
 func DefaultResourceCollector() (*resourceCollector, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
-		return nil, errors.InitializationError(err, resourceCollectorStr)
+		return nil, eris.Wrapf(err, "unable to initialize %s", resourceCollectorStr)
 	}
 	dynamicClient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
-		return nil, errors.InitializationError(err, resourceCollectorStr)
+		return nil, eris.Wrapf(err, "unable to initialize %s", resourceCollectorStr)
 	}
 	restMapper, err := apiutil.NewDiscoveryRESTMapper(cfg)
 	if err != nil {
-		return nil, errors.InitializationError(err, resourceCollectorStr)
+		return nil, eris.Wrapf(err, "unable to initialize %s", resourceCollectorStr)
 	}
 	podFinder, err := DefaultLabelPodFinder()
 	if err != nil {
-		return nil, errors.InitializationError(err, resourceCollectorStr)
+		return nil, eris.Wrapf(err, "unable to initialize %s", resourceCollectorStr)
 	}
 	return &resourceCollector{
 		dynamicClient: dynamicClient,
@@ -124,7 +124,7 @@ func (rc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstruc
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to retrieve resources for kind %v", kind)
+		return nil, eris.Wrapf(err, "unable to retrieve resources for kind %v", kind)
 	}
 	result := make(kuberesource.UnstructuredResources, len(list.Items))
 	for idx, val := range list.Items {
@@ -146,7 +146,7 @@ func (rc *resourceCollector) getResource(resource *unstructured.Unstructured) (k
 
 	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to retrieve resources for kind %v", kind)
+		return nil, eris.Wrapf(err, "unable to retrieve resources for kind %v", kind)
 	}
 	return kuberesource.UnstructuredResources{res}, nil
 }

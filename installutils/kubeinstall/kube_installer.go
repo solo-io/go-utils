@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/kubeerrutils"
 
 	"go.uber.org/zap"
@@ -17,8 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	"github.com/avast/retry-go"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
@@ -278,7 +279,7 @@ func getInstalledResources(resources kuberesource.UnstructuredResources) (kubere
 func getInstalledResource(res *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 	installedConfiguration, ok := res.GetAnnotations()[installerAnnotationKey]
 	if !ok {
-		return nil, errors.Errorf("resource %v missing installer annotation %v", kuberesource.Key(res), installerAnnotationKey)
+		return nil, eris.Errorf("resource %v missing installer annotation %v", kuberesource.Key(res), installerAnnotationKey)
 	}
 	var installedObject map[string]interface{}
 	if err := json.Unmarshal([]byte(installedConfiguration), &installedObject); err != nil {
@@ -447,7 +448,7 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 				key := kuberesource.Key(desired)
 				original, ok := cachedResources[key]
 				if !ok {
-					return errors.Errorf("internal error: could not find original resource for desired key %v", key)
+					return eris.Errorf("internal error: could not find original resource for desired key %v", key)
 				}
 				// don't update the object if there is a match
 				if kuberesource.Match(ctx, original, desired) {
@@ -669,7 +670,7 @@ func (r *KubeInstaller) waitForCrd(ctx context.Context, crdName string) error {
 		}
 
 		if !established {
-			return errors.Errorf("crd %v exists but not yet established by kube", crdName)
+			return eris.Errorf("crd %v exists but not yet established by kube", crdName)
 		}
 
 		// attempt to do a list on the crd's resources. the above can still give false positives
@@ -713,7 +714,7 @@ func (r *KubeInstaller) waitForDeploymentReplica(ctx context.Context, name, name
 			if len(deployment.Status.Conditions) > 0 {
 				condition = deployment.Status.Conditions[0]
 			}
-			return errors.Errorf("no ready replicas for deployment %v.%v with condition %#v", namespace, name,
+			return eris.Errorf("no ready replicas for deployment %v.%v with condition %#v", namespace, name,
 				condition)
 		}
 
@@ -752,7 +753,7 @@ func (r *KubeInstaller) waitForJobComplete(ctx context.Context, name, namespace 
 		if len(job.Status.Conditions) > 0 {
 			condition = job.Status.Conditions[0]
 		}
-		return errors.Errorf("no successful runs of job %v.%v with condition %#v", namespace, name, condition)
+		return eris.Errorf("no successful runs of job %v.%v with condition %#v", namespace, name, condition)
 	},
 		r.retryOptions...,
 	)
@@ -767,7 +768,7 @@ func (r *KubeInstaller) waitForNotExist(ctx context.Context, res *unstructured.U
 		}
 		objectKey := client.ObjectKey{Namespace: res.GetNamespace(), Name: res.GetName()}
 		if err := r.client.Get(ctx, objectKey, res); err == nil {
-			return errors.Errorf("resource %v still exists", res.GetName())
+			return eris.Errorf("resource %v still exists", res.GetName())
 		} else if !kubeerrs.IsNotFound(err) {
 			return err
 		}

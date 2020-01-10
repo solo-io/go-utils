@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"github.com/spf13/afero"
 )
 
@@ -137,7 +138,7 @@ func RetrieveArchive(fs afero.Fs, uri string) (io.ReadCloser, error) {
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, errors.Errorf("http GET returned status %d", resp.StatusCode)
+			return nil, eris.Errorf("http GET returned status %d", resp.StatusCode)
 		}
 
 		file = resp.Body

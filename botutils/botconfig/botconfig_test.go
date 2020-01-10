@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-githubapp/githubapp"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/botutils/botconfig"
-	"github.com/solo-io/go-utils/errors"
 )
 
 var _ = Describe("BotconfigTest", func() {
@@ -15,7 +15,7 @@ var _ = Describe("BotconfigTest", func() {
 	var (
 		os        *MockOsClient
 		reader    botconfig.ConfigReader
-		nestedErr = errors.Errorf("")
+		nestedErr = eris.Errorf("")
 		ctrl      *gomock.Controller
 	)
 

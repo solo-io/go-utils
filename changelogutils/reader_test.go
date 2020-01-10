@@ -9,8 +9,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/changelogutils"
-	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
@@ -77,7 +77,7 @@ var _ = Describe("ReaderTest", func() {
 		var (
 			ctrl      *gomock.Controller
 			mockCode  *MockMountedRepo
-			nestedErr = errors.Errorf("")
+			nestedErr = eris.Errorf("")
 		)
 
 		BeforeEach(func() {

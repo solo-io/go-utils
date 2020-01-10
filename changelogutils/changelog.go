@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/google/go-github/github"
+	"github.com/rotisserie/eris"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -181,7 +182,7 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 	proposedVersion := ""
 	for _, subDir := range subDirs {
 		if !subDir.IsDir() {
-			return "", errors.Errorf("Unexpected entry %s in changelog directory", subDir.Name())
+			return "", eris.Errorf("Unexpected entry %s in changelog directory", subDir.Name())
 		}
 		if !versionutils.MatchesRegex(subDir.Name()) {
 			return "", newErrorInvalidDirectoryName(subDir.Name())
@@ -212,28 +213,28 @@ func ReadChangelogFile(fs afero.Fs, path string) (*ChangelogFile, error) {
 	}
 
 	if err := yaml.Unmarshal(bytes, &changelog); err != nil {
-		return nil, errors.Errorf("File %s is not a valid changelog file. Error: %v",
+		return nil, eris.Errorf("File %s is not a valid changelog file. Error: %v",
 			filepath.Join(filepath.Base(filepath.Dir(path)), filepath.Base(path)), err)
 	}
 
 	for _, entry := range changelog.Entries {
 		if entry.Type != NON_USER_FACING && entry.Type != DEPENDENCY_BUMP {
 			if entry.IssueLink == "" {
-				return nil, errors.Errorf("Changelog entries must have an issue link")
+				return nil, eris.Errorf("Changelog entries must have an issue link")
 			}
 			if entry.Description == "" {
-				return nil, errors.Errorf("Changelog entries must have a description")
+				return nil, eris.Errorf("Changelog entries must have a description")
 			}
 		}
 		if entry.Type == DEPENDENCY_BUMP {
 			if entry.DependencyOwner == "" {
-				return nil, errors.Errorf("Dependency bumps must have an owner")
+				return nil, eris.Errorf("Dependency bumps must have an owner")
 			}
 			if entry.DependencyRepo == "" {
-				return nil, errors.Errorf("Dependency bumps must have a repo")
+				return nil, eris.Errorf("Dependency bumps must have a repo")
 			}
 			if entry.DependencyTag == "" {
-				return nil, errors.Errorf("Dependency bumps must have a tag")
+				return nil, eris.Errorf("Dependency bumps must have a tag")
 			}
 		}
 	}
@@ -262,7 +263,7 @@ func ComputeChangelogForTag(fs afero.Fs, tag, changelogParentPath string) (*Chan
 	}
 	for _, changelogFileInfo := range files {
 		if changelogFileInfo.IsDir() {
-			return nil, errors.Errorf("Unexpected directory %s in changelog directory %s", changelogFileInfo.Name(), changelogPath)
+			return nil, eris.Errorf("Unexpected directory %s in changelog directory %s", changelogFileInfo.Name(), changelogPath)
 		}
 		changelogFilePath := filepath.Join(changelogPath, changelogFileInfo.Name())
 		if changelogFileInfo.Name() == SummaryFile {
@@ -304,7 +305,7 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 		return nil, err
 	}
 	if !isGreater && determinable {
-		return nil, errors.Errorf("Proposed version %s must be greater than latest version %s", proposedVersion, latestVersion)
+		return nil, eris.Errorf("Proposed version %s must be greater than latest version %s", proposedVersion, latestVersion)
 	}
 
 	changelog, err := ComputeChangelogForTag(fs, proposedTag, changelogParentPath)
@@ -327,12 +328,12 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 	if releaseStableApi {
 		stableApiVer := versionutils.StableApiVersion()
 		if !proposedVersion.Equals(&stableApiVer) {
-			return nil, errors.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", proposedVersion)
+			return nil, eris.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", proposedVersion)
 		}
 		expectedVersion = &stableApiVer
 	}
 	if proposedVersion.LabelVersion == 0 && *proposedVersion != *expectedVersion {
-		return nil, errors.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
+		return nil, eris.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
 	}
 	return changelog, nil
 }

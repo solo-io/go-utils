@@ -5,7 +5,7 @@ import (
 	"github.com/mitchellh/hashstructure"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/errors"
+	"github.com/rotisserie/eris"
 	mock_hashutils "github.com/solo-io/go-utils/hashutils/mocks"
 )
 
@@ -57,7 +57,7 @@ var _ = Describe("hash", func() {
 		})
 		It("will panic if it gets an error", func() {
 			defer GinkgoRecover()
-			safeHasher1.EXPECT().Hash(nil).Return(uint64(0), errors.New("panic error"))
+			safeHasher1.EXPECT().Hash(nil).Return(uint64(0), eris.New("panic error"))
 			Expect(func() { MustHash(safeHasher1) }).To(Panic())
 		})
 	})

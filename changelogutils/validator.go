@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/stringutils"
 
 	"github.com/google/go-github/github"
@@ -30,39 +31,39 @@ var (
 
 	defaultSettings = ValidationSettings{}
 
-	NoChangelogFileAddedError       = errors.Errorf("A changelog file must be added. For more information, check out https://github.com/solo-io/go-utils/tree/master/changelogutils.")
+	NoChangelogFileAddedError       = eris.Errorf("A changelog file must be added. For more information, check out https://github.com/solo-io/go-utils/tree/master/changelogutils.")
 	TooManyChangelogFilesAddedError = func(filesAdded int) error {
-		return errors.Errorf("Only one changelog file can be added in a PR, found %d.", filesAdded)
+		return eris.Errorf("Only one changelog file can be added in a PR, found %d.", filesAdded)
 	}
 	UnexpectedFileInChangelogDirectoryError = func(name string) error {
-		return errors.Errorf("Found unexpected file %s in changelog directory.", name)
+		return eris.Errorf("Found unexpected file %s in changelog directory.", name)
 	}
 	InvalidChangelogSubdirectoryNameError = func(name string) error {
-		return errors.Errorf("%s is not a valid changelog directory name, must be a semver version.", name)
+		return eris.Errorf("%s is not a valid changelog directory name, must be a semver version.", name)
 	}
 	ListReleasesError = func(err error) error {
 		return errors.Wrapf(err, "Error listing releases")
 	}
 	MultipleNewVersionsFoundError = func(latest, version1, version2 string) error {
-		return errors.Errorf("Only one version greater than the latest release %s valid, found %s and %s.", latest, version1, version2)
+		return eris.Errorf("Only one version greater than the latest release %s valid, found %s and %s.", latest, version1, version2)
 	}
 	NoNewVersionsFoundError = func(latest string) error {
-		return errors.Errorf("No new versions greater than the latest release %s found.", latest)
+		return eris.Errorf("No new versions greater than the latest release %s found.", latest)
 	}
 	AddedChangelogInOldVersionError = func(latest string) error {
-		return errors.Errorf("Can only add changelog to unreleased version (currently %s)", latest)
+		return eris.Errorf("Can only add changelog to unreleased version (currently %s)", latest)
 	}
 	InvalidUseOfStableApiError = func(tag string) error {
-		return errors.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", tag)
+		return eris.Errorf("Changelog indicates this is a stable API release, which should be used only to indicate the release of v1.0.0, not %s", tag)
 	}
 	UnexpectedProposedVersionError = func(expected, actual string) error {
-		return errors.Errorf("Expected version %s to be next changelog version, found %s", expected, actual)
+		return eris.Errorf("Expected version %s to be next changelog version, found %s", expected, actual)
 	}
 	UnableToGetSettingsError = func(err error) error {
 		return errors.Wrapf(err, "Unable to read settings file")
 	}
 	InvalidLabelError = func(label string, allowed []string) error {
-		return errors.Errorf("Changelog version has label %s, which isn't in the list of allowed labels: %v", label, allowed)
+		return eris.Errorf("Changelog version has label %s, which isn't in the list of allowed labels: %v", label, allowed)
 	}
 )
 

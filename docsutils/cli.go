@@ -10,8 +10,9 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/onsi/ginkgo"
+	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/changelogutils"
-	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/randutils"
@@ -101,16 +102,16 @@ func CreateDocsPR(owner, repo, product, changelogPrefix, tag string, apiPaths ..
 
 func validateSpec(spec *DocsPRSpec) error {
 	if spec.Owner == "" {
-		return errors.Errorf("Owner must not be empty")
+		return eris.Errorf("Owner must not be empty")
 	}
 	if spec.Repo == "" {
-		return errors.Errorf("Repo must not be empty")
+		return eris.Errorf("Repo must not be empty")
 	}
 	if spec.Tag == "" {
-		return errors.Errorf("Tag must not be empty")
+		return eris.Errorf("Tag must not be empty")
 	}
 	if spec.Product == "" {
-		return errors.Errorf("Product must not be empty")
+		return eris.Errorf("Product must not be empty")
 	}
 	return nil
 }
@@ -129,7 +130,7 @@ func CreateDocsPRFromSpec(spec *DocsPRSpec) error {
 		return err
 	}
 	if exists {
-		return errors.Errorf("Cannot clone because %s already exists", DocsRepo)
+		return eris.Errorf("Cannot clone because %s already exists", DocsRepo)
 	}
 
 	// setup repo
@@ -250,7 +251,7 @@ func updateChangelogIfNecessary(fs afero.Fs, tag, product, changelogPrefix strin
 	}
 	if exists {
 		if changelogPrefix == "" {
-			return errors.Errorf("ChangelogPrefix must be set.")
+			return eris.Errorf("ChangelogPrefix must be set.")
 		}
 		changelog, err := changelogutils.ComputeChangelogForTag(fs, tag, "")
 		if err != nil {
@@ -289,7 +290,7 @@ func updateChangelogFile(fs afero.Fs, product, changelogPrefix, markdown, tag st
 		if err != nil {
 			return err
 		} else if !dirExists {
-			return errors.Errorf("Directory %s must be set up for changelogs first", changelogDir)
+			return eris.Errorf("Directory %s must be set up for changelogs first", changelogDir)
 		}
 	} else {
 		bytes, err := afero.ReadFile(fs, changelogFile)

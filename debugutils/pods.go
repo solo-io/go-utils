@@ -3,7 +3,7 @@ package debugutils
 import (
 	"sync"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/solo-io/go-utils/stringutils"
@@ -42,11 +42,11 @@ func NewLabelPodFinder(client kubernetes.Interface) *LabelPodFinder {
 func DefaultLabelPodFinder() (*LabelPodFinder, error) {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
-		return nil, errors.InitializationError(err, labelPodFinderStr)
+		return nil, eris.Wrapf(err, "unable to initialize %s", labelPodFinderStr)
 	}
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return nil, errors.InitializationError(err, labelPodFinderStr)
+		return nil, eris.Wrapf(err, "unable to initialize %s", labelPodFinderStr)
 	}
 	return &LabelPodFinder{
 		client: client,
@@ -156,7 +156,7 @@ func handleOwnerResource(resource *unstructured.Unstructured) (map[string]string
 		matchLabels = deploymentType.Spec.JobTemplate.Spec.Selector.MatchLabels
 
 	default:
-		return nil, errors.Errorf("unable to determine the type of resource %v", obj)
+		return nil, eris.Errorf("unable to determine the type of resource %v", obj)
 	}
 	return matchLabels, nil
 }

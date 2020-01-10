@@ -3,7 +3,7 @@ package githubutils
 import (
 	"context"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/rotisserie/eris"
 
 	"github.com/solo-io/go-utils/versionutils"
 
@@ -13,7 +13,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
-var NoReleaseBeforeShaFound = errors.Errorf("no release found before sha")
+var NoReleaseBeforeShaFound = eris.Errorf("no release found before sha")
 
 type PRSpec struct {
 	Message string

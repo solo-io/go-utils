@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/errors"
 )
 
 // PullIfNotPresent will pull an image if it is not present locally

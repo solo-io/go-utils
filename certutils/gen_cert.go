@@ -16,7 +16,8 @@ import (
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 )
 
 const (
@@ -90,10 +91,10 @@ func NewSignedCert(cfg *cert.Config, key crypto.Signer, caCert *x509.Certificate
 		return nil, err
 	}
 	if len(cfg.CommonName) == 0 {
-		return nil, errors.New("must specify a CommonName")
+		return nil, eris.New("must specify a CommonName")
 	}
 	if len(cfg.Usages) == 0 {
-		return nil, errors.New("must specify at least one ExtKeyUsage")
+		return nil, eris.New("must specify at least one ExtKeyUsage")
 	}
 
 	certTmpl := x509.Certificate{

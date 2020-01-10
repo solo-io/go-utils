@@ -10,6 +10,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/protoutils"
 )
 
@@ -92,7 +93,7 @@ func PrintJSONList(data interface{}, w io.Writer) error {
 	for i := 0; i < list.Len(); i++ {
 		v, ok := list.Index(i).Interface().(proto.Message)
 		if !ok {
-			return errors.New("unable to convert to proto message")
+			return eris.New("unable to convert to proto message")
 		}
 		if i != 0 {
 			_, err = fmt.Fprintln(w, ",")
@@ -115,7 +116,7 @@ func PrintYAMLList(data interface{}, w io.Writer) error {
 	for i := 0; i < list.Len(); i++ {
 		v, ok := list.Index(i).Interface().(proto.Message)
 		if !ok {
-			return errors.New("unable to convert to proto message")
+			return eris.New("unable to convert to proto message")
 		}
 		if _, err := fmt.Fprintln(w, "---"); err != nil {
 			return errors.Wrap(err, "unable to print YAML list")

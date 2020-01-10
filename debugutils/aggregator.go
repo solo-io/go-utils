@@ -4,7 +4,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/installutils/helmchart"
 	"github.com/solo-io/go-utils/tarutils"
 	"github.com/spf13/afero"
@@ -36,11 +36,11 @@ func DefaultAggregator() (*Aggregator, error) {
 	storageClient := NewFileStorageClient(fs)
 	resourceCollector, err := DefaultResourceCollector()
 	if err != nil {
-		return nil, errors.InitializationError(err, aggregatorName)
+		return nil, eris.Wrapf(err, "unable to initialize %s", aggregatorName)
 	}
 	logCollector, err := DefaultLogCollector()
 	if err != nil {
-		return nil, errors.InitializationError(err, aggregatorName)
+		return nil, eris.Wrapf(err, "unable to initialize %s", aggregatorName)
 	}
 	tmpd, err := afero.TempDir(fs, "", "")
 	if err != nil {

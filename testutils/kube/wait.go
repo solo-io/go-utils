@@ -7,7 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/kubeutils"
 	corev1 "k8s.io/api/core/v1"
 	apiexts "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -99,7 +99,7 @@ func DeleteSuperglooPods(kube kubernetes.Interface, superglooNamespace string) {
 		}
 		for _, p := range pods.Items {
 			if strings.HasPrefix(p.Name, "supergloo") {
-				return errors.Errorf("supergloo pods still exist")
+				return eris.Errorf("supergloo pods still exist")
 			}
 		}
 		return nil
@@ -121,7 +121,7 @@ func WaitUntilPodsRunning(timeout time.Duration, namespace string, podPrefixes .
 			}
 		}
 		if len(podsWithPrefix) == 0 {
-			return false, errors.Errorf("no pods found with prefix %v", prefix)
+			return false, eris.Errorf("no pods found with prefix %v", prefix)
 		}
 		for _, pod := range podsWithPrefix {
 			var podReady bool
@@ -142,7 +142,7 @@ func WaitUntilPodsRunning(timeout time.Duration, namespace string, podPrefixes .
 	for {
 		select {
 		case <-failed:
-			return errors.Errorf("timed out waiting for pods to come online: %v", notYetRunning)
+			return eris.Errorf("timed out waiting for pods to come online: %v", notYetRunning)
 		case <-time.After(time.Second / 2):
 			notYetRunning = make(map[string]struct{})
 			for _, prefix := range podPrefixes {

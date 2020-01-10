@@ -10,8 +10,8 @@ import (
 
 	"github.com/solo-io/go-utils/versionutils"
 
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/errors"
 	"go.uber.org/zap"
 
 	"github.com/google/go-github/github"
@@ -37,7 +37,7 @@ const (
 func GetGithubToken() (string, error) {
 	token, found := os.LookupEnv(GITHUB_TOKEN)
 	if !found {
-		return "", errors.Errorf("Could not find %s in environment.", GITHUB_TOKEN)
+		return "", eris.Errorf("Could not find %s in environment.", GITHUB_TOKEN)
 	}
 	return token, nil
 }

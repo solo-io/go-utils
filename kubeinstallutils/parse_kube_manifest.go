@@ -5,6 +5,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -93,7 +94,7 @@ func convertYamlToResource(objectYaml string) (KubeObjectList, error) {
 		case "apps/v1beta2":
 			obj = &appsv1beta2.Deployment{TypeMeta: typeMeta}
 		default:
-			return nil, errors.Errorf("unknown api version for deployment: %v", typeMeta.APIVersion)
+			return nil, eris.Errorf("unknown api version for deployment: %v", typeMeta.APIVersion)
 		}
 	case "DaemonSet":
 		switch typeMeta.APIVersion {
@@ -104,7 +105,7 @@ func convertYamlToResource(objectYaml string) (KubeObjectList, error) {
 		case "apps/v1beta2":
 			obj = &appsv1beta2.DaemonSet{TypeMeta: typeMeta}
 		default:
-			return nil, errors.Errorf("unknown api version for daemon set: %v", typeMeta.APIVersion)
+			return nil, eris.Errorf("unknown api version for daemon set: %v", typeMeta.APIVersion)
 		}
 	case "CustomResourceDefinition":
 		obj = &apiextensions.CustomResourceDefinition{TypeMeta: typeMeta}
@@ -113,7 +114,7 @@ func convertYamlToResource(objectYaml string) (KubeObjectList, error) {
 	case "HorizontalPodAutoscaler":
 		obj = &autoscaling.HorizontalPodAutoscaler{TypeMeta: typeMeta}
 	default:
-		return nil, errors.Errorf("unsupported kind %v", kind)
+		return nil, eris.Errorf("unsupported kind %v", kind)
 	}
 	if err := yaml.Unmarshal([]byte(objectYaml), obj); err != nil {
 		return nil, errors.Wrapf(err, "parsing raw yaml as %+v", obj)
@@ -124,11 +125,11 @@ func convertYamlToResource(objectYaml string) (KubeObjectList, error) {
 func convertUntypedList(untyped UntypedKubeObject) (KubeObjectList, error) {
 	itemsValue, ok := untyped["items"]
 	if !ok {
-		return nil, errors.Errorf("list object missing items")
+		return nil, eris.Errorf("list object missing items")
 	}
 	items, ok := itemsValue.([]interface{})
 	if !ok {
-		return nil, errors.Errorf("items must be an array")
+		return nil, eris.Errorf("items must be an array")
 	}
 
 	var returnList KubeObjectList

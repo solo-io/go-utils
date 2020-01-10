@@ -1,7 +1,7 @@
 package kubeinstallutils
 
 import (
-	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -101,7 +101,7 @@ func (k *kubeInstaller) Create(obj runtime.Object) error {
 		_, err := kube.AutoscalingV1().HorizontalPodAutoscalers(namespace).Create(obj)
 		return err
 	}
-	return errors.Errorf("no implementation for type %v", obj)
+	return eris.Errorf("no implementation for type %v", obj)
 }
 
 // resource version should be ignored / not matter
@@ -252,7 +252,7 @@ func (k *kubeInstaller) Update(obj runtime.Object) error {
 		_, err = client.Update(obj)
 		return err
 	}
-	return errors.Errorf("no implementation for type %v", obj)
+	return eris.Errorf("no implementation for type %v", obj)
 }
 
 // this can be just an empty object of the correct type w/ the name and namespace (if applicable) set
@@ -298,5 +298,5 @@ func (k *kubeInstaller) Delete(obj runtime.Object) error {
 	case *autoscaling.HorizontalPodAutoscaler:
 		return kube.AutoscalingV1().HorizontalPodAutoscalers(namespace).Delete(obj.Name, nil)
 	}
-	return errors.Errorf("no implementation for type %v", obj)
+	return eris.Errorf("no implementation for type %v", obj)
 }

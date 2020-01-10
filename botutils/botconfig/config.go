@@ -3,6 +3,7 @@ package botconfig
 import (
 	"strconv"
 
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/osutils"
 
 	"github.com/palantir/go-baseapp/baseapp"
@@ -37,7 +38,7 @@ var (
 	}
 
 	MissingBotConfigValueError = func(name string) error {
-		return errors.Errorf("missing important bot config, use %s to provide it or include in config map", name)
+		return eris.Errorf("missing important bot config, use %s to provide it or include in config map", name)
 	}
 )
 

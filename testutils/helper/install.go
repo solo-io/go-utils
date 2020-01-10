@@ -9,10 +9,11 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 
 	"github.com/avast/retry-go"
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/testutils/kube"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/testutils/exec"
 )
@@ -219,9 +220,9 @@ func getChartVersion(config TestConfig) (string, error) {
 
 	// Read and return version from helm index file
 	if chartVersions, ok := helmIndex.Entries[config.HelmChartName]; !ok {
-		return "", errors.Errorf("index file does not contain entry with key: %s", config.HelmChartName)
+		return "", eris.Errorf("index file does not contain entry with key: %s", config.HelmChartName)
 	} else if len(chartVersions) == 0 || len(chartVersions) > 1 {
-		return "", errors.Errorf("expected a single entry with name [%s], found: %v", config.HelmChartName, len(chartVersions))
+		return "", eris.Errorf("expected a single entry with name [%s], found: %v", config.HelmChartName, len(chartVersions))
 	} else {
 		version := chartVersions[0].Version
 		log.Printf("version of [%s] Helm chart is: %s", config.HelmChartName, version)
@@ -246,7 +247,7 @@ func validateDir(dir string) error {
 	if stat, err := os.Stat(dir); err != nil {
 		return errors.Wrapf(err, "finding directory: %s", dir)
 	} else if !stat.IsDir() {
-		return errors.Errorf("expected a directory. Got: %s", dir)
+		return eris.Errorf("expected a directory. Got: %s", dir)
 	}
 	return nil
 }

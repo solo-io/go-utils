@@ -5,8 +5,8 @@ import (
 	"os"
 
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/kubeutils"
 	"go.uber.org/zap"
 	kubev1 "k8s.io/api/core/v1"

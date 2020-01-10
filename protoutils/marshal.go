@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 
 	"github.com/ghodss/yaml"
+	"github.com/rotisserie/eris"
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -42,7 +43,7 @@ func MarshalStructEmitZeroValues(m proto.Message) (*types.Struct, error) {
 
 func UnmarshalStruct(structuredData *types.Struct, into interface{}) error {
 	if structuredData == nil {
-		return errors.New("cannot unmarshal nil proto struct")
+		return eris.New("cannot unmarshal nil proto struct")
 	}
 	strData, err := jsonpbMarshaler.MarshalToString(structuredData)
 	if err != nil {
@@ -123,7 +124,7 @@ func MapStringStringToMapStringInterface(stringMap map[string]string) (map[strin
 	for k, strVal := range stringMap {
 		var interfaceVal interface{}
 		if err := yaml.Unmarshal([]byte(strVal), &interfaceVal); err != nil {
-			return nil, errors.Errorf("%v cannot be parsed as yaml", strVal)
+			return nil, eris.Errorf("%v cannot be parsed as yaml", strVal)
 		} else {
 			interfaceMap[k] = interfaceVal
 		}
