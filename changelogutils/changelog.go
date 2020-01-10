@@ -188,7 +188,7 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 			return "", newErrorInvalidDirectoryName(subDir.Name())
 		}
 		greaterThan, determinable, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
-		if err != nil  {
+		if err != nil {
 			return "", err
 		}
 		if greaterThan || !determinable {
@@ -365,8 +365,9 @@ func (l ChangelogList) Len() int {
 	return len(l)
 }
 
+// is it a bug to pass a nil version to this function
 func (l ChangelogList) Less(i, j int) bool {
-	return !l[i].Version.MustIsGreaterThanOrEqualTo(*l[j].Version) //TODO(kdorosh)
+	return !l[i].Version.MustIsGreaterThanOrEqualTo(*l[j].Version)
 }
 
 func (l ChangelogList) Swap(i, j int) {
