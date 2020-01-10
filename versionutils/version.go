@@ -20,9 +20,6 @@ var (
 	InvalidSemverVersionError = func(tag string) error {
 		return errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
 	}
-	UnableToCompareVersionError = func(v1 string, v2 string) error {
-		return errors.Errorf("Unable to compare version %s to %s.", v1, v2)
-	}
 )
 
 type Version struct {
@@ -56,59 +53,106 @@ func (v *Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d-%s%d", v.Major, v.Minor, v.Patch, v.Label, v.LabelVersion)
 }
 
-// users may want to handle UnableToCompareVersionError
-// this is for versions that cannot be compared because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
-func (v *Version) IsGreaterThanOrEqualTo(lesser *Version) (bool, error) {
+// In order, returns isGreaterThanOrEqualTo, isDeterminable, err
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThanOrEqualTo
+func (v *Version) IsGreaterThanOrEqualToPtr(lesser *Version) (bool, bool, error) {
 	if v == nil {
-		return false, errors.Errorf("cannot compare versions, greater version is nil")
+		return false, true, errors.Errorf("cannot compare versions, greater version is nil")
 	}
 	if lesser == nil {
-		return false, errors.Errorf("cannot compare versions, lesser version is nil")
+		return false, true, errors.Errorf("cannot compare versions, lesser version is nil")
 	}
 	if v.Equals(lesser) {
-		return true, nil
+		return true, true, nil
+	}
+	isGtrEq, determinable := v.IsGreaterThan(*lesser)
+	return isGtrEq, determinable, nil
+}
+
+// In order, returns isGreaterThanOrEqualTo, isDeterminable
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThanOrEqualTo
+func (v Version) IsGreaterThanOrEqualTo(lesser Version) (bool, bool) {
+	if v.Equals(&lesser) {
+		return true, false
 	}
 	return v.IsGreaterThan(lesser)
 }
 
-// users may want to handle UnableToCompareVersionError
-// this is for versions that cannot be compared because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
-func (v *Version) IsGreaterThan(lesser *Version) (bool, error) {
+// In order, returns isGreaterThanOrEqualTo, isDeterminable, err
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThan
+func (v *Version) IsGreaterThanPtr(lesser *Version) (bool, bool, error) {
+	if v == nil {
+		return false, true, errors.Errorf("cannot compare versions, greater version is nil")
+	}
+	if lesser == nil {
+		return false, true, errors.Errorf("cannot compare versions, lesser version is nil")
+	}
+	isGreater, determinable := v.IsGreaterThan(*lesser)
+	return isGreater, determinable, nil
+}
+
+// In order, returns isGreaterThanOrEqualTo, isDeterminable
+// isDeterminable is for incomparable versions because they have different labels, e.g. 1.0.0-foo1 vs 1.0.0-bar2
+// If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThan
+func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 	if v.Major > lesser.Major {
-		return true, nil
+		return true, true
 	} else if v.Major < lesser.Major {
-		return false, nil
+		return false, true
 	}
 
 	if v.Minor > lesser.Minor {
-		return true, nil
+		return true, true
 	} else if v.Minor < lesser.Minor {
-		return false, nil
+		return false, true
 	}
 
 	if v.Patch > lesser.Patch {
-		return true, nil
+		return true, true
 	} else if v.Patch < lesser.Patch {
-		return false, nil
+		return false, true
 	}
 
 	if len(v.Label) == 0 && len(lesser.Label) > 0 {
-		return true, nil
+		return true, true
 	} else if len(v.Label) > 0 && len(lesser.Label) == 0 {
-		return false, nil
+		return false, true
 	}
 
 	if v.Label != lesser.Label {
-		return false, UnableToCompareVersionError(v.String(), lesser.String())
+		return false, false
 	}
 
 	if v.LabelVersion > lesser.LabelVersion {
-		return true, nil
+		return true, true
 	} else if v.LabelVersion < lesser.LabelVersion {
-		return false, nil
+		return false, true
 	}
 
-	return false, nil
+	return false, true
+}
+
+// for incomparable versions, default to alphanumeric sort on label
+// e.g. 1.0.0-bar1 > 1.0.0-foo2
+func (v Version) MustIsGreaterThanOrEqualTo(lesser Version) bool {
+	if v.Equals(&lesser) {
+		return true
+	}
+	return v.MustIsGreaterThan(lesser)
+}
+
+// for incomparable versions, default to alphanumeric sort on label
+// e.g. 1.0.0-bar1 > 1.0.0-foo2
+func (v Version) MustIsGreaterThan(lesser Version) bool {
+	isGtr, determinable := v.IsGreaterThan(lesser)
+	if determinable {
+		return isGtr
+	}
+	// if we can't compare versions (i.e., different labels) then default to alphanumeric sort
+	return v.Label > lesser.Label
 }
 
 func (v *Version) Equals(other *Version) bool {
@@ -151,12 +195,12 @@ func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
 }
 
 var (
+	//TODO(kdorosh)
 	Zero = Version{
 		Major: 0,
 		Minor: 0,
 		Patch: 0,
 	}
-
 	StableApiVersion = Version{
 		Major: 1,
 		Minor: 0,
@@ -164,16 +208,16 @@ var (
 	}
 )
 
-func IsGreaterThanTag(greaterTag, lesserTag string) (bool, error) {
+func IsGreaterThanTag(greaterTag, lesserTag string) (bool, bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	lesserVersion, err := ParseVersion(lesserTag)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
-	return greaterVersion.IsGreaterThan(lesserVersion)
+	return greaterVersion.IsGreaterThanPtr(lesserVersion)
 }
 
 func ParseVersion(tag string) (*Version, error) {
@@ -219,10 +263,7 @@ func ParseVersion(tag string) (*Version, error) {
 		version.LabelVersion = labelVersion
 	}
 
-	isGtEq, err := version.IsGreaterThanOrEqualTo(&Zero)
-	if err != nil {
-		return nil, err
-	}
+	isGtEq, _ := version.IsGreaterThanOrEqualTo(Zero) //TODO(kdorosh)
 	if !isGtEq {
 		return nil, errors.Errorf("Version %s is not greater than or equal to v0.0.0", tag)
 	}

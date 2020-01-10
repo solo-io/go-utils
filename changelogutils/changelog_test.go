@@ -28,6 +28,7 @@ var _ = Describe("ChangelogTest", func() {
 			return actualErr
 		}
 
+		// TODO(kdorosh) cleanup
 		It("works", func() {
 			tmpDir := mustWriteTestDir()
 			defer os.RemoveAll(tmpDir)
@@ -38,11 +39,13 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(getProposedTag("v0.0.3", tmpDir, "v0.0.4")).To(BeNil())
 			Expect(changelogutils.IsMultipleVersionsFoundError(getProposedTag("v0.0.2", tmpDir, ""))).To(BeTrue())
 			Expect(changelogutils.IsNoVersionFoundError(getProposedTag("v0.0.4", tmpDir, ""))).To(BeTrue())
+
 			Expect(createSubdirs(changelogDir, "v1.0.0-beta1", "v1.0.0-beta2")).To(BeNil())
 			Expect(getProposedTag("v1.0.0-beta1", tmpDir, "v1.0.0-beta2")).To(BeNil())
 			Expect(createSubdirs(changelogDir, "v1.0.0-rc1")).To(BeNil())
 			Expect(getProposedTag("v1.0.0-beta2", tmpDir, "v1.0.0-rc1")).To(BeNil())
 			Expect(createSubdirs(changelogDir, "1.0.0-beta3")).To(BeNil())
+
 			Expect(changelogutils.IsInvalidDirectoryNameError(getProposedTag("v0.0.5", tmpDir, ""))).To(BeTrue())
 		})
 	})
@@ -293,6 +296,7 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
 		})
 
+		// TODO(kdorosh) this is no longer true!
 		It("releasing stable API must happen in v1.0.0 release", func() {
 			tag := "v1.1.0"
 			changelog := getChangelog(tag, "", "",

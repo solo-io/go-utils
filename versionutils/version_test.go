@@ -54,12 +54,12 @@ var _ = Describe("Version", func() {
 
 	var _ = Context("IsGreaterThanTag", func() {
 
-		expectResult := func(greater, lesser string, isGreaterThanOrEqualTo bool, err string) {
-			actualWorked, actualErr := versionutils.IsGreaterThanTag(greater, lesser)
+		expectResult := func(greater, lesser string, isGreaterThanOrEqualTo, determinable bool, err string) {
+			actualWorked, determinable, actualErr := versionutils.IsGreaterThanTag(greater, lesser)
 			Expect(actualWorked).To(BeEquivalentTo(isGreaterThanOrEqualTo))
 			greaterVersion, parseGreaterErr := versionutils.ParseVersion(greater)
 			lesserVersion, parseLesserErr := versionutils.ParseVersion(lesser)
-			gteResult, gteError := greaterVersion.IsGreaterThanOrEqualTo(lesserVersion)
+			gteResult, determinable, gteError := greaterVersion.IsGreaterThanOrEqualToPtr(lesserVersion)
 			if err == "" {
 				Expect(actualErr).To(BeNil())
 				Expect(gteResult).To(BeEquivalentTo(isGreaterThanOrEqualTo))
@@ -78,20 +78,20 @@ var _ = Describe("Version", func() {
 		}
 
 		It("works", func() {
-			expectResult("v0.1.2", "v0.0.1", true, "")
-			expectResult("v0.0.1", "v0.1.2", false, "")
-			expectResult("v0.0.1", "v0.0.0", true, "")
-			expectResult("0.0.2", "v0.0.1", false, versionutils.InvalidSemverVersionError("0.0.2").Error())
-			expectResult("v0.0.2", "0.0.1", false, versionutils.InvalidSemverVersionError("0.0.1").Error())
-			expectResult("v1.0.0", "v0.0.1-rc1", true, "")
-			expectResult("v1.0.0-rc1", "v1.0.0-rc2", false, "")
-			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, "")
-			expectResult("v1.0.0-rc1", "v1.0.0", false, "")
-			expectResult("v1.0.0", "v1.0.0-rc1", true, "")
-			expectResult("v1.0.0-rc1", "v1.0.0-beta2", false, versionutils.UnableToCompareVersionError("v1.0.0-rc1", "v1.0.0-beta2").Error())
-			expectResult("v1.0.0-rc2", "v1.0.0-beta1", false, versionutils.UnableToCompareVersionError("v1.0.0-rc2", "v1.0.0-beta1").Error())
-			expectResult("v1.0.0-rc1", "v1.0.0-rc2", false, "")
-			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, "")
+			expectResult("v0.1.2", "v0.0.1", true, true, "")
+			expectResult("v0.0.1", "v0.1.2", false, true, "")
+			expectResult("v0.0.1", "v0.0.0", true, true, "")
+			expectResult("0.0.2", "v0.0.1", false, true, versionutils.InvalidSemverVersionError("0.0.2").Error())
+			expectResult("v0.0.2", "0.0.1", false, true, versionutils.InvalidSemverVersionError("0.0.1").Error())
+			expectResult("v1.0.0", "v0.0.1-rc1", true, true, "")
+			expectResult("v1.0.0-rc1", "v1.0.0-rc2", false, true, "")
+			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, true, "")
+			expectResult("v1.0.0-rc1", "v1.0.0", false, true, "")
+			expectResult("v1.0.0", "v1.0.0-rc1", true, true, "")
+			expectResult("v1.0.0-rc1", "v1.0.0-beta2", false, false, "")
+			expectResult("v1.0.0-rc2", "v1.0.0-beta1", false, false, "")
+			expectResult("v1.0.0-rc1", "v1.0.0-rc2", false, true, "")
+			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, true, "")
 		})
 	})
 

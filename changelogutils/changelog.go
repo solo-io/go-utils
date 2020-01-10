@@ -148,11 +148,11 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 			return "", newErrorInvalidDirectoryName(changelogFile.GetName())
 		}
 
-		greaterThan, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
-		if err != nil && err.Error() != versionutils.UnableToCompareVersionError(changelogFile.GetName(), latestTag).Error() {
+		greaterThan, determinable, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
+		if err != nil {
 			return "", err
 		}
-		if greaterThan || (err != nil && err.Error() == versionutils.UnableToCompareVersionError(changelogFile.GetName(), latestTag).Error()) {
+		if greaterThan || !determinable {
 			if proposedVersion != "" {
 				return "", newErrorMultipleVersionsFound(changelogFile.GetName(), proposedVersion, latestTag)
 			}
@@ -187,11 +187,11 @@ func GetProposedTag(fs afero.Fs, latestTag, changelogParentPath string) (string,
 		if !versionutils.MatchesRegex(subDir.Name()) {
 			return "", newErrorInvalidDirectoryName(subDir.Name())
 		}
-		greaterThan, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
-		if err != nil && err.Error() != versionutils.UnableToCompareVersionError(subDir.Name(), latestTag).Error() {
+		greaterThan, determinable, err := versionutils.IsGreaterThanTag(subDir.Name(), latestTag)
+		if err != nil  {
 			return "", err
 		}
-		if greaterThan || (err != nil && err.Error() == versionutils.UnableToCompareVersionError(subDir.Name(), latestTag).Error()) {
+		if greaterThan || !determinable {
 			if proposedVersion != "" {
 				return "", newErrorMultipleVersionsFound(subDir.Name(), proposedVersion, latestTag)
 			}
@@ -300,11 +300,11 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 	if err != nil {
 		return nil, err
 	}
-	isGreater, err := proposedVersion.IsGreaterThan(latestVersion)
-	if err != nil && err.Error() != versionutils.UnableToCompareVersionError(proposedTag, latestTag).Error() {
+	isGreater, determinable, err := proposedVersion.IsGreaterThanPtr(latestVersion)
+	if err != nil {
 		return nil, err
 	}
-	if !isGreater {
+	if !isGreater && determinable {
 		return nil, errors.Errorf("Proposed version %s must be greater than latest version %s", proposedVersion, latestVersion)
 	}
 
@@ -366,12 +366,7 @@ func (l ChangelogList) Len() int {
 }
 
 func (l ChangelogList) Less(i, j int) bool {
-	isGreaterOrEqual, err := l[i].Version.IsGreaterThanOrEqualTo(l[j].Version)
-	if err != nil {
-		// if we can't compare versions (i.e., different labels) then arbitrarily default to alphanumeric sort
-		return l[i].Version.Label < l[j].Version.Label
-	}
-	return !isGreaterOrEqual
+	return !l[i].Version.MustIsGreaterThanOrEqualTo(*l[j].Version) //TODO(kdorosh)
 }
 
 func (l ChangelogList) Swap(i, j int) {
