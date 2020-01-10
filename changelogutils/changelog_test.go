@@ -39,13 +39,15 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(changelogutils.IsMultipleVersionsFoundError(getProposedTag("v0.0.2", tmpDir, ""))).To(BeTrue())
 			Expect(changelogutils.IsNoVersionFoundError(getProposedTag("v0.0.4", tmpDir, ""))).To(BeTrue())
 
+			// test that we can switch between beta and rc releases
 			Expect(createSubdirs(changelogDir, "v1.0.0-beta1", "v1.0.0-beta2")).To(BeNil())
 			Expect(getProposedTag("v1.0.0-beta1", tmpDir, "v1.0.0-beta2")).To(BeNil())
 			Expect(createSubdirs(changelogDir, "v1.0.0-rc1")).To(BeNil())
 			Expect(getProposedTag("v1.0.0-beta2", tmpDir, "v1.0.0-rc1")).To(BeNil())
 
-			Expect(createSubdirs(changelogDir, "1.0.0-beta3")).To(BeNil()) //TODO(kdorosh) figure out why removing this fixes test
-			Expect(changelogutils.IsInvalidDirectoryNameError(getProposedTag("v0.0.5", tmpDir, ""))).To(BeTrue())
+			// add a directory without 'v' prefix, which should be parsed as invalid
+			Expect(createSubdirs(changelogDir, "1.0.0-beta3")).To(BeNil())
+			Expect(changelogutils.IsInvalidDirectoryNameError(getProposedTag("v1.0.0-beta2", tmpDir, ""))).To(BeTrue())
 		})
 	})
 
