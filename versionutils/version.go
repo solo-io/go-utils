@@ -116,7 +116,7 @@ func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 		return false, true
 	}
 
-	if len(v.Label) == 0 && len(lesser.Label) > 0 {
+	if len(v.Label) == 0 && lesser.Label == "" {
 		return true, true
 	} else if len(v.Label) > 0 && len(lesser.Label) == 0 {
 		return false, true

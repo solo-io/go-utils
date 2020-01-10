@@ -28,6 +28,7 @@ var _ = Describe("Version", func() {
 			Expect(versionutils.MatchesRegex("v1.2.3-")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2.3-1")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2.3+rc1")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.2.3-beta")).To(BeFalse())
 		})
 	})
 
