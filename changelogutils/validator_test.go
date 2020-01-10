@@ -624,7 +624,7 @@ var _ = Describe("changelog validator utils", func() {
 
 		Context("label workflow", func() {
 
-			rcWorkflow := func(lastTag, nextTag, contents string, settingsFunc func()) {
+			labelWorkflow := func(lastTag, nextTag, contents string, settingsFunc func()) {
 				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
 				file1 := github.CommitFile{Filename: &path, Status: &added}
 				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
@@ -655,7 +655,7 @@ var _ = Describe("changelog validator utils", func() {
 			}
 
 			DescribeTable("label workflow cases",
-				rcWorkflow,
+				labelWorkflow,
 				Entry("initial rc", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog, noValidationSettingsExist),
 				Entry("initial rc relaxed", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog, relaxedValidationSettingsExists),
 				Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, noValidationSettingsExist),

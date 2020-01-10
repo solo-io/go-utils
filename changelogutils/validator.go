@@ -157,7 +157,6 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		if !versionutils.MatchesRegex(child.Name()) {
 			return "", InvalidChangelogSubdirectoryNameError(child.Name())
 		}
-
 		greaterThan, determinable, err := versionutils.IsGreaterThanTag(child.Name(), latestTag)
 		if err != nil {
 			return "", err
