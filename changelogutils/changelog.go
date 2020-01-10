@@ -365,7 +365,7 @@ func (l ChangelogList) Len() int {
 	return len(l)
 }
 
-// is it a bug to pass a nil version to this function
+// it is a bug to pass a nil version to this function
 func (l ChangelogList) Less(i, j int) bool {
 	return !l[i].Version.MustIsGreaterThanOrEqualTo(*l[j].Version)
 }
