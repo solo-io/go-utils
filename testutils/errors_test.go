@@ -1,4 +1,4 @@
-package errors
+package testutils_test
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rotisserie/eris"
+	. "github.com/solo-io/go-utils/testutils"
 )
 
 var _ = Describe("eris errors", func() {
