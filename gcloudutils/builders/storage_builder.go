@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/gcloudutils"
 
 	"cloud.google.com/go/storage"
 	"github.com/ghodss/yaml"
 	"github.com/google/go-github/github"
 	"github.com/rs/zerolog"
-	"github.com/solo-io/go-utils/errors"
 	"google.golang.org/api/cloudbuild/v1"
 )
 

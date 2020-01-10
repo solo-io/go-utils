@@ -1,13 +1,14 @@
 package debugutils
 
 import (
+	"errors"
 	"os"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/debugutils/test"
-	"github.com/solo-io/go-utils/errors"
 	corev1 "k8s.io/api/core/v1"
 	fakecorev1 "k8s.io/client-go/kubernetes/typed/core/v1/fake"
 	"k8s.io/client-go/testing"
@@ -43,7 +44,7 @@ var _ = Describe("logs unit tests", func() {
 		It("fails if pod list fails", func() {
 			resources, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
-			fakeErr := errors.New("this is a fake error")
+			fakeErr := eris.New("this is a fake error")
 			podFinder.EXPECT().GetPods(resources).Return(nil, fakeErr).Times(1)
 			_, err = requestBuilder.LogsFromUnstructured(resources)
 			Expect(err).To(HaveOccurred())
@@ -91,7 +92,7 @@ var _ = Describe("logs unit tests", func() {
 		})
 
 		It("fails to save logs if a single request fails", func() {
-			fakeErr := errors.New("this is a fake error")
+			fakeErr := eris.New("this is a fake error")
 			sucessfulRequest, failingRequest := NewMockResponseWrapper(ctrl), NewMockResponseWrapper(ctrl)
 			sucessfulRequest.EXPECT().Stream().Times(2).Return(&os.File{}, nil)
 			failingRequest.EXPECT().Stream().Times(1).Return(nil, fakeErr)

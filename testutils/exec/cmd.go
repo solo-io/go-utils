@@ -7,7 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/onsi/ginkgo"
-	"github.com/solo-io/go-utils/errors"
+	"github.com/pkg/errors"
 )
 
 func RunCommand(workingDir string, verbose bool, args ...string) error {

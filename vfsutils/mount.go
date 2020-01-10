@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
@@ -26,7 +27,7 @@ var (
 	}
 
 	InvalidDefinitionError = func(msg string) error {
-		return errors.New(msg)
+		return eris.New(msg)
 	}
 )
 

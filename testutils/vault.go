@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/onsi/ginkgo"
-	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 )
 
 const defaultVaultDockerImage = "vault:0.9.2"
@@ -131,7 +131,7 @@ func (i *VaultInstance) RunWithPort() error {
 
 	tokenSlice := regexp.MustCompile("Root Token: ([\\-[:word:]]+)").FindAllString(buf.String(), 1)
 	if len(tokenSlice) < 1 {
-		return errors.Errorf("%s did not contain root token", buf.String())
+		return eris.Errorf("%s did not contain root token", buf.String())
 	}
 
 	i.token = strings.TrimPrefix(tokenSlice[0], "Root Token: ")

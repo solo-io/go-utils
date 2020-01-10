@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
-	"github.com/solo-io/go-utils/errors"
+	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
 )
@@ -17,7 +18,7 @@ var (
 		return errors.Wrapf(err, "Unable to list files in directory %s", directory)
 	}
 	UnexpectedDirectoryError = func(name, directory string) error {
-		return errors.Errorf("Unexpected directory %s in changelog directory %s", name, directory)
+		return eris.Errorf("Unexpected directory %s in changelog directory %s", name, directory)
 	}
 	UnableToReadSummaryFileError = func(err error, path string) error {
 		return errors.Wrapf(err, "Unable to read summary file %s", path)
@@ -26,16 +27,16 @@ var (
 		return errors.Wrapf(err, "Unable to read closing file %s", path)
 	}
 	NoEntriesInChangelogError = func(filename string) error {
-		return errors.Errorf("No changelog entries found in file %s.", filename)
+		return eris.Errorf("No changelog entries found in file %s.", filename)
 	}
 	UnableToParseChangelogError = func(err error, path string) error {
 		return errors.Wrapf(err, "File %s is not a valid changelog file.", path)
 	}
-	MissingIssueLinkError   = errors.Errorf("Changelog entries must have an issue link")
-	MissingDescriptionError = errors.Errorf("Changelog entries must have a description")
-	MissingOwnerError       = errors.Errorf("Dependency bumps must have an owner")
-	MissingRepoError        = errors.Errorf("Dependency bumps must have a repo")
-	MissingTagError         = errors.Errorf("Dependency bumps must have a tag")
+	MissingIssueLinkError   = eris.Errorf("Changelog entries must have an issue link")
+	MissingDescriptionError = eris.Errorf("Changelog entries must have a description")
+	MissingOwnerError       = eris.Errorf("Dependency bumps must have an owner")
+	MissingRepoError        = eris.Errorf("Dependency bumps must have a repo")
+	MissingTagError         = eris.Errorf("Dependency bumps must have a tag")
 )
 
 type ChangelogReader interface {

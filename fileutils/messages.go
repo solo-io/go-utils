@@ -5,7 +5,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gogo/protobuf/proto"
-	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/protoutils"
 )
 
@@ -24,7 +24,7 @@ func WriteToFile(filename string, pb proto.Message) error {
 func ReadFileInto(filename string, v proto.Message) error {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return errors.Errorf("error reading file: %v", err)
+		return eris.Errorf("error reading file: %v", err)
 	}
 	jsn, err := yaml.YAMLToJSON(data)
 	if err != nil {

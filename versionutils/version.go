@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 )
 
 // SemverLowerBound is the "nil" value for changelog versions
@@ -18,7 +19,7 @@ const (
 
 var (
 	InvalidSemverVersionError = func(tag string) error {
-		return errors.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
+		return eris.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
 	}
 )
 
@@ -58,10 +59,10 @@ func (v *Version) String() string {
 // If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThanOrEqualTo
 func (v *Version) IsGreaterThanOrEqualToPtr(lesser *Version) (bool, bool, error) {
 	if v == nil {
-		return false, true, errors.Errorf("cannot compare versions, greater version is nil")
+		return false, true, eris.Errorf("cannot compare versions, greater version is nil")
 	}
 	if lesser == nil {
-		return false, true, errors.Errorf("cannot compare versions, lesser version is nil")
+		return false, true, eris.Errorf("cannot compare versions, lesser version is nil")
 	}
 	isGtrEq, determinable := v.IsGreaterThanOrEqualTo(*lesser)
 	return isGtrEq, determinable, nil
@@ -82,10 +83,10 @@ func (v Version) IsGreaterThanOrEqualTo(lesser Version) (bool, bool) {
 // If you want to tiebreak indeterminate comparisons using alphanumeric ordering, try MustIsGreaterThan
 func (v *Version) IsGreaterThanPtr(lesser *Version) (bool, bool, error) {
 	if v == nil {
-		return false, true, errors.Errorf("cannot compare versions, greater version is nil")
+		return false, true, eris.Errorf("cannot compare versions, greater version is nil")
 	}
 	if lesser == nil {
-		return false, true, errors.Errorf("cannot compare versions, lesser version is nil")
+		return false, true, eris.Errorf("cannot compare versions, lesser version is nil")
 	}
 	isGreater, determinable := v.IsGreaterThan(*lesser)
 	return isGreater, determinable, nil
@@ -232,19 +233,19 @@ func ParseVersion(tag string) (*Version, error) {
 	}
 	versionParts := strings.Split(versionString, ".")
 	if len(versionParts) != 3 {
-		return nil, errors.Errorf("Version %s is not a valid semver version", versionString)
+		return nil, eris.Errorf("Version %s is not a valid semver version", versionString)
 	}
 	major, err := strconv.Atoi(versionParts[0])
 	if err != nil {
-		return nil, errors.Errorf("Major version %s is not valid", versionParts[0])
+		return nil, eris.Errorf("Major version %s is not valid", versionParts[0])
 	}
 	minor, err := strconv.Atoi(versionParts[1])
 	if err != nil {
-		return nil, errors.Errorf("Minor version %s is not valid", versionParts[1])
+		return nil, eris.Errorf("Minor version %s is not valid", versionParts[1])
 	}
 	patch, err := strconv.Atoi(versionParts[2])
 	if err != nil {
-		return nil, errors.Errorf("Patch version %s is not valid", versionParts[2])
+		return nil, eris.Errorf("Patch version %s is not valid", versionParts[2])
 	}
 
 	version := &Version{
@@ -264,7 +265,7 @@ func ParseVersion(tag string) (*Version, error) {
 
 	isGtEq, _ := version.IsGreaterThanOrEqualTo(Zero())
 	if !isGtEq {
-		return nil, errors.Errorf("Version %s is not greater than or equal to v0.0.0", tag)
+		return nil, eris.Errorf("Version %s is not greater than or equal to v0.0.0", tag)
 	}
 	return version, nil
 }
@@ -274,7 +275,7 @@ func parseLabelVersion(labelAndVersion string) (string, int, error) {
 	// should be like ["foo1", "foo", "1"]
 	matches := regex.FindStringSubmatch(labelAndVersion)
 	if len(matches) != 3 {
-		return "", 0, errors.Errorf("invalid label and version %s", labelAndVersion)
+		return "", 0, eris.Errorf("invalid label and version %s", labelAndVersion)
 	}
 	label := matches[1]
 	labelVersionToParse := matches[2]

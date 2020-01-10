@@ -5,17 +5,17 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/vfsutils"
 	"go.uber.org/zap"
 )
 
 var (
-	RefNotSetError           = errors.Errorf("Must initialize with set ref before updating files.")
-	RefAlreadySetError       = errors.Errorf("Ref was already set.")
+	RefNotSetError           = eris.Errorf("Must initialize with set ref before updating files.")
+	RefAlreadySetError       = eris.Errorf("Ref was already set.")
 	CouldNotFindFileToRename = func(oldPath string) error {
-		return errors.Errorf("Could not find file %s in tree", oldPath)
+		return eris.Errorf("Could not find file %s in tree", oldPath)
 	}
 )
 

@@ -3,7 +3,6 @@ package pkgmgmtutils
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"gopkg.in/src-d/go-git.v4"
@@ -152,12 +152,12 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 }
 
 var (
-	ErrAlreadyUpdated               = errors.New("pkgmgmtutils: formula already updated")
-	ErrMissingRequiredVersion       = errors.New("pkgmgmtutils: missing required version")
-	ErrMissingRequiredVersionTagSha = errors.New("pkgmgmtutils: missing required version tag sha")
-	ErrMissingRequiredDarwinSha     = errors.New("pkgmgmtutils: missing required sha for darwin binary")
-	ErrMissingRequiredLinuxSha      = errors.New("pkgmgmtutils: missing required sha for linux binary")
-	ErrMissingRequiredWindowsSha    = errors.New("pkgmgmtutils: missing required sha for windows binary")
+	ErrAlreadyUpdated               = eris.New("pkgmgmtutils: formula already updated")
+	ErrMissingRequiredVersion       = eris.New("pkgmgmtutils: missing required version")
+	ErrMissingRequiredVersionTagSha = eris.New("pkgmgmtutils: missing required version tag sha")
+	ErrMissingRequiredDarwinSha     = eris.New("pkgmgmtutils: missing required sha for darwin binary")
+	ErrMissingRequiredLinuxSha      = eris.New("pkgmgmtutils: missing required sha for linux binary")
+	ErrMissingRequiredWindowsSha    = eris.New("pkgmgmtutils: missing required sha for windows binary")
 )
 
 func updateFormula(byt []byte, version string, versionSha string, shas *sha256Outputs, fOpt *FormulaOptions) ([]byte, error) {

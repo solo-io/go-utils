@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/solo-io/go-utils/errors"
 	"google.golang.org/api/cloudbuild/v1"
 	"google.golang.org/grpc/status"
 )

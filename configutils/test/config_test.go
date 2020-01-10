@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/configutils"
 	"github.com/solo-io/go-utils/testutils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pkg/errors"
 	kube2 "github.com/solo-io/go-utils/testutils/kube"
 	kubeerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -73,7 +73,7 @@ var _ = Describe("ConfigTest", func() {
 	Context("Unit tests for errors", func() {
 
 		var mockConfigMapClient configutils.MockConfigMapClient
-		testErr := errors.Errorf("test")
+		testErr := eris.Errorf("test")
 
 		BeforeEach(func() {
 			configMapNamespace = "test"
@@ -96,7 +96,7 @@ var _ = Describe("ConfigTest", func() {
 		It("errors on get when config map contains invalid data", func() {
 			mockConfigMapClient.Data = map[string]string{configKey: "dummy"}
 			err := configClient.GetConfig(context.TODO(), &GetApplicationDetailsRequest{})
-			unmarshalErr := errors.Errorf("json: cannot unmarshal string into Go value of type map[string]json.RawMessage")
+			unmarshalErr := eris.Errorf("json: cannot unmarshal string into Go value of type map[string]json.RawMessage")
 			Expect(err.Error()).To(BeEquivalentTo(configutils.ErrorUnmarshallingConfig(unmarshalErr).Error()))
 		})
 

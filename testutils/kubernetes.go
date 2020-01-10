@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/threadsafe"
 
@@ -169,11 +170,11 @@ func WaitPodStatus(ctx context.Context, interval time.Duration, namespace, label
 			}
 			if strings.Contains(out, "CrashLoopBackOff") {
 				out = KubeLogs(label)
-				return errors.Errorf("%v in crash loop with logs %v", label, out)
+				return eris.Errorf("%v in crash loop with logs %v", label, out)
 			}
 			if strings.Contains(out, "ErrImagePull") || strings.Contains(out, "ImagePullBackOff") {
 				out, _ = KubectlOut("describe", "pod", "-l", label)
-				return errors.Errorf("%v in ErrImagePull with description %v", label, out)
+				return eris.Errorf("%v in ErrImagePull with description %v", label, out)
 			}
 			if finished(out) {
 				return nil

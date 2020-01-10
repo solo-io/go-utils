@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/consul/api"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -146,15 +145,15 @@ func (c *KubeClusterLockClient) Delete(name string) error {
 }
 
 func ExistsError(name string) error {
-	return errors.NewAlreadyExists(v1.Resource("key-value-pair"), name)
+	return eris.NewAlreadyExists(v1.Resource("key-value-pair"), name)
 }
 
 func NotFoundError(name string) error {
-	return errors.NewNotFound(v1.Resource("key-value-pair"), name)
+	return eris.NewNotFound(v1.Resource("key-value-pair"), name)
 }
 
 func ConflictError(name string) error {
-	return errors.NewConflict(v1.Resource("key-value-pair"), name, fmt.Errorf(""))
+	return eris.NewConflict(v1.Resource("key-value-pair"), name, fmt.Errorf(""))
 }
 
 type ConsulClusterLockClient struct {

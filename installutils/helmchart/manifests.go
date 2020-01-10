@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/installutils"
 	"github.com/solo-io/go-utils/installutils/helmignore"
 	"helm.sh/helm/v3/pkg/chart"
@@ -26,7 +27,6 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/solo-io/go-utils/contextutils"
-	"github.com/solo-io/go-utils/errors"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	yaml2json "k8s.io/apimachinery/pkg/util/yaml"

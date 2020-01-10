@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
 
 	"github.com/pkg/errors"
@@ -181,7 +182,7 @@ func ConvertUnstructured(res *unstructured.Unstructured) (runtime.Object, error)
 		case "apps/v1beta2":
 			obj = &appsv1beta2.Deployment{TypeMeta: typeMeta}
 		default:
-			return nil, errors.Errorf("unknown api version for deployment: %v", typeMeta.APIVersion)
+			return nil, eris.Errorf("unknown api version for deployment: %v", typeMeta.APIVersion)
 		}
 	case "DaemonSet":
 		switch typeMeta.APIVersion {
@@ -192,7 +193,7 @@ func ConvertUnstructured(res *unstructured.Unstructured) (runtime.Object, error)
 		case "apps/v1beta2":
 			obj = &appsv1beta2.DaemonSet{TypeMeta: typeMeta}
 		default:
-			return nil, errors.Errorf("unknown api version for daemon set: %v", typeMeta.APIVersion)
+			return nil, eris.Errorf("unknown api version for daemon set: %v", typeMeta.APIVersion)
 		}
 	case "CustomResourceDefinition":
 		obj = &apiextensions.CustomResourceDefinition{TypeMeta: typeMeta}
@@ -201,7 +202,7 @@ func ConvertUnstructured(res *unstructured.Unstructured) (runtime.Object, error)
 	case "HorizontalPodAutoscaler":
 		obj = &autoscaling.HorizontalPodAutoscaler{TypeMeta: typeMeta}
 	default:
-		return nil, errors.Errorf("cannot convert kind %v", kind)
+		return nil, eris.Errorf("cannot convert kind %v", kind)
 	}
 	if err := json.Unmarshal(rawJson, obj); err != nil {
 		return nil, errors.Wrapf(err, "parsing raw yaml as %+v", obj)
@@ -263,7 +264,7 @@ func Patch(obj *unstructured.Unstructured, patchJson []byte) error {
 	}
 	res, ok := uncastObj.(*unstructured.Unstructured)
 	if !ok {
-		return errors.Errorf("%T expected to be type *unstructured.Unstructured", uncastObj)
+		return eris.Errorf("%T expected to be type *unstructured.Unstructured", uncastObj)
 	}
 
 	*obj = *res

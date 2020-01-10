@@ -8,14 +8,15 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/solo-io/go-utils/errors"
+	"github.com/pkg/errors"
+	"github.com/rotisserie/eris"
 )
 
 var (
 	FailedCommandError = func(err error, args []string, output string) error {
 		return errors.Wrapf(err, "%v failed: %s", args, output)
 	}
-	UnexpectedGitBranchOutputError = errors.New("unexpected 'git branch' output. " +
+	UnexpectedGitBranchOutputError = eris.New("unexpected 'git branch' output. " +
 		"Current branch line should consist of 2 or more space-separated tokens")
 )
 

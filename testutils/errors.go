@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"errors"
 	"fmt"
 
 	gomegatypes "github.com/onsi/gomega/types"
@@ -32,7 +31,7 @@ func (e *errorChainMatcher) Match(actual interface{}) (success bool, err error) 
 
 	actualError, ok := actual.(error)
 	if !ok {
-		return false, errors.New("could not convert actual value to error type")
+		return false, eris.New("could not convert actual value to error type")
 	}
 	return eris.Is(actualError, e.expected), nil
 }

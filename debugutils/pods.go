@@ -3,6 +3,7 @@ package debugutils
 import (
 	"sync"
 
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/installutils/kuberesource"
 	"github.com/solo-io/go-utils/kubeutils"
@@ -156,7 +157,7 @@ func handleOwnerResource(resource *unstructured.Unstructured) (map[string]string
 		matchLabels = deploymentType.Spec.JobTemplate.Spec.Selector.MatchLabels
 
 	default:
-		return nil, errors.Errorf("unable to determine the type of resource %v", obj)
+		return nil, eris.Errorf("unable to determine the type of resource %v", obj)
 	}
 	return matchLabels, nil
 }

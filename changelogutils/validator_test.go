@@ -11,8 +11,8 @@ import (
 	"github.com/google/go-github/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/changelogutils"
-	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/githubutils"
 )
 
@@ -29,7 +29,7 @@ var _ = Describe("changelog validator utils", func() {
 		code       *MockMountedRepo
 		validator  changelogutils.ChangelogValidator
 		ctx        = context.Background()
-		nestedErr  = errors.Errorf("")
+		nestedErr  = eris.Errorf("")
 	)
 
 	BeforeEach(func() {
@@ -743,7 +743,7 @@ var _ = Describe("changelog validator utils", func() {
 
 			It("propagates error if checking for validation.yaml existence fails", func() {
 				setup()
-				emptyErr := errors.Errorf("")
+				emptyErr := eris.Errorf("")
 				repoClient.EXPECT().
 					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
 					Return(false, emptyErr)
@@ -755,7 +755,7 @@ var _ = Describe("changelog validator utils", func() {
 
 			It("propagates error if reading validation.yaml fails", func() {
 				setup()
-				emptyErr := errors.Errorf("")
+				emptyErr := eris.Errorf("")
 				repoClient.EXPECT().
 					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
 					Return(true, nil)
@@ -770,7 +770,7 @@ var _ = Describe("changelog validator utils", func() {
 
 			It("propagates error if marshalling validation.yaml fails", func() {
 				setup()
-				emptyErr := errors.Errorf("")
+				emptyErr := eris.Errorf("")
 				repoClient.EXPECT().
 					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
 					Return(true, nil)

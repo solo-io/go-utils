@@ -5,9 +5,9 @@ import (
 	"io"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/log"
 
-	"github.com/solo-io/go-utils/errors"
 	"github.com/solo-io/go-utils/kubeutils"
 	"github.com/solo-io/go-utils/testutils"
 

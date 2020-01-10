@@ -2,7 +2,6 @@ package pkgmgmtutils
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,12 +10,13 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
+	"github.com/rotisserie/eris"
 )
 
 var (
-	ErrNoSha256sFound         = errors.New("pkgmgmtutils: did not find any sha256 data")
-	ErrNoShaDataFound         = errors.New("pkgmgmtutils: no data in SHA256 file")
-	ErrNoShaOutputDirProvided = errors.New("pkgmgmtutils: required sha256 output directory not provided")
+	ErrNoSha256sFound         = eris.New("pkgmgmtutils: did not find any sha256 data")
+	ErrNoShaDataFound         = eris.New("pkgmgmtutils: no data in SHA256 file")
+	ErrNoShaOutputDirProvided = eris.New("pkgmgmtutils: required sha256 output directory not provided")
 )
 
 type sha256Outputs struct {
