@@ -231,12 +231,13 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	}
 
 	expectedVersion := latestVersion.IncrementVersion(breakingChanges, newFeature)
-	// if this isn't the first release candidate, then the version should match the expected version exactly
-	if changelog.Version.LabelVersion > 1 && !changelog.Version.Equals(expectedVersion) {
+	// if this isn't the first labeled version, and we aren't switching label versions (e.g. 1.0.0-beta1 -> 1.0.0-rc1)
+	// then the version should match the expected version exactly
+	if changelog.Version.LabelVersion > 1 && changelog.Version.Label == expectedVersion.Label && !changelog.Version.Equals(expectedVersion) {
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 
-	if !settings.RelaxSemverValidation {
+	if changelog.Version.Label == "" && !settings.RelaxSemverValidation {
 		// since this isn't a labeled release or a stable release, the version should be incremented
 		// based on semver rules.
 		if changelog.Version.LabelVersion == 0 && !changelog.Version.Equals(expectedVersion) {

@@ -622,7 +622,7 @@ var _ = Describe("changelog validator utils", func() {
 			})
 		})
 
-		Context("rc workflow", func() {
+		Context("label workflow", func() {
 
 			rcWorkflow := func(lastTag, nextTag, contents string, settingsFunc func()) {
 				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
@@ -654,22 +654,24 @@ var _ = Describe("changelog validator utils", func() {
 				Expect(file).NotTo(BeNil())
 			}
 
-			DescribeTable("rc workflow cases",
+			DescribeTable("label workflow cases",
 				rcWorkflow,
 				Entry("initial rc", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog, noValidationSettingsExist),
 				Entry("initial rc relaxed", "v0.20.5", "v1.0.0-rc1", validBreakingChangelog, relaxedValidationSettingsExists),
 				Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, noValidationSettingsExist),
-				Entry("incrementing rc", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, relaxedValidationSettingsExists),
+				Entry("incrementing rc relaxed", "v1.0.0-rc1", "v1.0.0-rc2", validBreakingChangelog, relaxedValidationSettingsExists),
 				Entry("stable release after rc for 1.0", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog, noValidationSettingsExist),
-				Entry("stable release after rc for 1.0", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
+				Entry("stable release after rc for 1.0 relaxed", "v1.0.0-rc2", "v1.0.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
 				Entry("stable release after rc for 1.1", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog, noValidationSettingsExist),
-				Entry("stable release after rc for 1.1", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
+				Entry("stable release after rc for 1.1 relaxed", "v1.1.0-rc2", "v1.1.0", validStableReleaseChangelog, relaxedValidationSettingsExists),
 				Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, noValidationSettingsExist),
-				Entry("initial rc after for 1.1", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, relaxedValidationSettingsExists),
-				Entry("beta5 before rc1", "v1.0.0-beta5", "v1.1.0-rc1", validNewFeatureChangelog, noValidationSettingsExist),
-				Entry("beta5 before rc1", "v1.0.0-beta5", "v1.1.0-rc1", validNewFeatureChangelog, relaxedValidationSettingsExists),
-				Entry("beta1 before rc1", "v1.0.0-beta1", "v1.1.0-rc1", validNewFeatureChangelog, noValidationSettingsExist),
-				Entry("beta1 before rc1", "v1.0.0-beta1", "v1.1.0-rc1", validNewFeatureChangelog, relaxedValidationSettingsExists))
+				Entry("initial rc after for 1.1 relaxed", "v1.0.0", "v1.1.0-rc1", validNewFeatureChangelog, relaxedValidationSettingsExists),
+				Entry("foo3 to bar1", "v1.0.0-foo3", "v1.0.0-bar1", validNewFeatureChangelog, noValidationSettingsExist),
+				Entry("foo3 to bar1 relaxed", "v1.0.0-foo3", "v1.0.0-bar1", validNewFeatureChangelog, relaxedValidationSettingsExists),
+				Entry("foo1 to bar1", "v1.0.0-foo1", "v1.0.0-bar1", validNewFeatureChangelog, noValidationSettingsExist),
+				Entry("foo1 to bar1 relaxed", "v1.0.0-foo1", "v1.0.0-bar1", validNewFeatureChangelog, relaxedValidationSettingsExists),
+				Entry("foo1 to bar3", "v1.0.0-foo1", "v1.0.0-bar3", validNewFeatureChangelog, noValidationSettingsExist),
+				Entry("foo1 to bar3 relaxed", "v1.0.0-foo1", "v1.0.0-bar3", validNewFeatureChangelog, relaxedValidationSettingsExists))
 		})
 
 		Context("settings with allowed labels", func() {
