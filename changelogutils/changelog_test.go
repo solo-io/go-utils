@@ -294,7 +294,8 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
 		})
 
-		// TODO(kdorosh) this is no longer true!
+		// tests a deprecated version of the function that enforces stable releases in v1.0.0
+		// the new changelog validator only enforces that stable APIs are released in versions >= v1.0.0
 		It("releasing stable API must happen in v1.0.0 release", func() {
 			tag := "v1.1.0"
 			changelog := getChangelog(tag, "", "",
