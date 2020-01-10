@@ -1,0 +1,4 @@
+changelog:
+- type: BREAKING_CHANGE
+  issueLink: https://github.com/solo-io/go-utils/issues/378
+  description: Remove our existing errors utils in favor of a new, readable gomega expectation using github.com/rotisserie/eris

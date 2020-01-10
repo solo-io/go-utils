@@ -33,6 +33,7 @@ require (
 	github.com/pelletier/go-toml v1.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
+	github.com/rotisserie/eris v0.1.1
 	github.com/rs/zerolog v1.14.3
 	github.com/shurcooL/githubv4 v0.0.0-20190625031733-ee671ab25ff0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
