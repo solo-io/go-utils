@@ -147,7 +147,6 @@ func GetProposedTagForRepo(ctx context.Context, client *github.Client, owner, re
 		if !versionutils.MatchesRegex(changelogFile.GetName()) {
 			return "", newErrorInvalidDirectoryName(changelogFile.GetName())
 		}
-
 		greaterThan, determinable, err := versionutils.IsGreaterThanTag(changelogFile.GetName(), latestTag)
 		if err != nil {
 			return "", err
