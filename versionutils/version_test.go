@@ -2,13 +2,14 @@ package versionutils_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/versionutils"
 )
 
 var _ = Describe("Version", func() {
 
-	var _ = Context("matchesRegex", func() {
+	Context("matchesRegex", func() {
 		It("works", func() {
 			Expect(versionutils.MatchesRegex("v0.1.2")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v0.0.0")).To(BeTrue())
@@ -32,7 +33,7 @@ var _ = Describe("Version", func() {
 		})
 	})
 
-	var _ = Context("ParseVersion", func() {
+	Context("ParseVersion", func() {
 		matches := func(tag string, major, minor, patch int, label string, labelVersion int) bool {
 			parsed, err := versionutils.ParseVersion(tag)
 			return err == nil && (*parsed == *versionutils.NewVersion(major, minor, patch, label, labelVersion))
@@ -53,7 +54,7 @@ var _ = Describe("Version", func() {
 
 	})
 
-	var _ = Context("IsGreaterThanTag", func() {
+	Context("IsGreaterThanTag", func() {
 
 		expectResult := func(greater, lesser string, isGreaterThanOrEqualTo, determinable bool, err string) {
 			actualWorked, determinable, actualErr := versionutils.IsGreaterThanTag(greater, lesser)
@@ -96,15 +97,29 @@ var _ = Describe("Version", func() {
 		})
 	})
 
-	var _ = Context("GetVersionFromTag", func() {
+	Describe("MustIsGreaterThan", func() {
+		DescribeTable("it works", func(greater, lesser string, expected bool) {
+			greaterVer, err := versionutils.ParseVersion(greater)
+			Expect(err).NotTo(HaveOccurred())
+			lesserVer, err := versionutils.ParseVersion(lesser)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(greaterVer.MustIsGreaterThan(*lesserVer)).To(Equal(expected))
+		},
+			Entry("rc1 is greater than beta1", "v1.0.0-rc1", "v1.0.0-beta1", true),
+			Entry("rc1 is greater than beta8", "v1.0.0-rc1", "v1.0.0-beta8", true),
+			Entry("alpha is less than beta", "v1.0.0-alpha1", "v1.0.0-beta1", false),
+			Entry("rc1 is not greater than itself", "v1.0.0-rc1", "v1.0.0-rc1", false),
+		)
+	})
 
+	Context("GetVersionFromTag", func() {
 		It("works", func() {
 			Expect(versionutils.GetVersionFromTag("v0.1.2")).To(Equal("0.1.2"))
 			Expect(versionutils.GetVersionFromTag("0.1.2")).To(Equal("0.1.2"))
 		})
 	})
 
-	var _ = Context("IncrementVersion", func() {
+	Context("IncrementVersion", func() {
 
 		expectResult := func(start *versionutils.Version, breakingChange bool, newFeature bool, expected *versionutils.Version) {
 			actualIncremented := start.IncrementVersion(breakingChange, newFeature)
