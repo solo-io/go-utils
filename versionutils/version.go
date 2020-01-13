@@ -19,7 +19,7 @@ const (
 
 var (
 	InvalidSemverVersionError = func(tag string) error {
-		return eris.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-rc#]", tag)
+		return eris.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-<label>#]", tag)
 	}
 )
 
@@ -134,7 +134,7 @@ func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 }
 
 // for incomparable versions, default to alphanumeric sort on label
-// e.g. 1.0.0-bar1 > 1.0.0-foo2
+// e.g. 1.0.0-foo1 > 1.0.0-bar2
 func (v Version) MustIsGreaterThanOrEqualTo(lesser Version) bool {
 	if v.Equals(&lesser) {
 		return true
@@ -143,7 +143,7 @@ func (v Version) MustIsGreaterThanOrEqualTo(lesser Version) bool {
 }
 
 // for incomparable versions, default to alphanumeric sort on label
-// e.g. 1.0.0-bar1 > 1.0.0-foo2
+// e.g. 1.0.0-foo1 > 1.0.0-bar2
 func (v Version) MustIsGreaterThan(lesser Version) bool {
 	isGtr, determinable := v.IsGreaterThan(lesser)
 	if determinable {
