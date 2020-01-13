@@ -108,6 +108,7 @@ var _ = Describe("Version", func() {
 			Entry("rc1 is greater than beta1", "v1.0.0-rc1", "v1.0.0-beta1", true),
 			Entry("rc1 is greater than beta8", "v1.0.0-rc1", "v1.0.0-beta8", true),
 			Entry("alpha is less than beta", "v1.0.0-alpha1", "v1.0.0-beta1", false),
+			Entry("rc1 is not greater than itself", "v1.0.0-rc1", "v1.0.0-rc1", false),
 		)
 	})
 
