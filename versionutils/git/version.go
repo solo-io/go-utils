@@ -78,7 +78,7 @@ type gitRepo struct {
 }
 
 func (g gitRepo) getTag() (string, error) {
-	cmd := exec.Command("git", "describe", "--tags", "--dirty", "always")
+	cmd := exec.Command("git", "describe", "--tags", "--dirty", "--always")
 	cmd.Dir = g.relativeDir
 	output, err := cmd.Output()
 	if err != nil {
