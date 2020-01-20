@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Prefer `git describe` with the `--always` flag in case repo has no prior tags.
+    issueLink: https://github.com/solo-io/go-utils/issues/381
