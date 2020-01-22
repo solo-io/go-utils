@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Added network utility to get IP address of service, used across Gloo and Service Mesh Hub.
+    issueLink: https://github.com/solo-io/go-utils/issues/383
