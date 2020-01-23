@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Bring in utilities from Gloo to load network resources and interact with Helm charts.
+    issueLink: https://github.com/solo-io/go-utils/issues/385
