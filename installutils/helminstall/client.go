@@ -19,12 +19,6 @@ const (
 	helmNamespaceEnvVar      = "HELM_NAMESPACE"
 )
 
-var verbose bool
-
-func setVerbose(b bool) {
-	verbose = b
-}
-
 // This interface implements the Helm CLI actions. The implementation relies on the Helm 3 libraries.
 type HelmClient interface {
 	// Prepare an installation object that can then be .Run() with a chart object
@@ -99,7 +93,6 @@ func (d *defaultHelmClient) NewInstall(namespace, releaseName string, dryRun boo
 	if err != nil {
 		return nil, nil, err
 	}
-	settings.Debug = verbose
 
 	client := action.NewInstall(actionConfig)
 	client.ReleaseName = releaseName
@@ -158,7 +151,7 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 		return nil, err
 	}
 
-	chartFile, err := afero.TempFile(d.fs, "", "gloo-helm-chart")
+	chartFile, err := afero.TempFile(d.fs, "", "temp-helm-chart")
 	if err != nil {
 		return nil, err
 	}

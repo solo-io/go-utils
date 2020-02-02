@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+//go:generate mockgen -destination mocks/mock_helm_installer.go -source ./installer.go
+
 var (
 	ReleaseAlreadyInstalledErr = func(err error, name, namespace string) error {
 		return eris.Wrapf(err, "the helm release you are trying to install (%s) appears"+
@@ -152,18 +154,18 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 func (i *installer) createNamespace(namespace string) {
 	_, err := i.kubeNsClient.Get(namespace, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		fmt.Printf("Creating namespace %s... ", namespace)
+		fmt.Fprintf(i.out, "Creating namespace %s... ", namespace)
 		if _, err := i.kubeNsClient.Create(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespace,
 			},
 		}); err != nil {
-			fmt.Printf("\nUnable to create namespace %s. Continuing...\n", namespace)
+			fmt.Fprintf(i.out, "\nUnable to create namespace %s. Continuing...\n", namespace)
 		} else {
-			fmt.Printf("Done.\n")
+			fmt.Fprintf(i.out, "Done.\n")
 		}
 	} else {
-		fmt.Printf("\nUnable to check if namespace %s exists. Continuing...\n", namespace)
+		fmt.Fprintf(i.out, "\nUnable to check if namespace %s exists. Continuing...\n", namespace)
 	}
 
 }
