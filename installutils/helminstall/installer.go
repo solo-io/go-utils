@@ -65,6 +65,7 @@ func MustInstaller() Installer {
 	return NewInstaller(DefaultHelmClient(), client.CoreV1().Namespaces(), os.Stdout)
 }
 
+// visible for testing
 func NewInstaller(helmClient HelmClient, kubeNsClient NamespaceCLient, outputWriter io.Writer) Installer {
 	return &installer{
 		helmClient:   helmClient,
@@ -88,7 +89,7 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 		}
 	}
 
-	if installerConfig.PreInstallMessage != nil {
+	if !installerConfig.DryRun && installerConfig.PreInstallMessage != nil {
 		fmt.Fprintf(i.out, installerConfig.PreInstallMessage())
 	} else {
 		i.preInstallMessage(installerConfig)
@@ -133,7 +134,7 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 	}
 
 	rel, err := helmInstall.Run(chartObj, completeValues)
-	if installerConfig.PostInstallMessage != nil && !installerConfig.DryRun {
+	if !installerConfig.DryRun && installerConfig.PostInstallMessage != nil {
 		fmt.Fprintf(i.out, installerConfig.PostInstallMessage(rel, err))
 	}
 	if err != nil {

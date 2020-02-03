@@ -37,7 +37,7 @@ type HelmClient interface {
 	ReleaseExists(namespace, releaseName string) (releaseExists bool, err error)
 }
 
-// slim interface on top of loader to avoid unecessary FS calls
+// slim interface on top of loader to avoid unnecessary FS calls
 type HelmLoader interface {
 	Load(name string) (*chart.Chart, error)
 }
