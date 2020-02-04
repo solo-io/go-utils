@@ -12,7 +12,6 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
-	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,8 +45,8 @@ type InstallerConfig struct {
 	ValuesFiles []string
 	ExtraValues map[string]interface{}
 
-	PreInstallMessage  func() string
-	PostInstallMessage func(release *release.Release, err error) string
+	PreInstallMessage  string
+	PostInstallMessage string
 }
 
 type installer struct {
@@ -89,8 +88,8 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 		}
 	}
 
-	if !installerConfig.DryRun && installerConfig.PreInstallMessage != nil {
-		fmt.Fprintf(i.out, installerConfig.PreInstallMessage())
+	if !installerConfig.DryRun && installerConfig.PreInstallMessage != "" {
+		fmt.Fprintf(i.out, installerConfig.PreInstallMessage)
 	} else {
 		i.preInstallMessage(installerConfig)
 	}
@@ -134,8 +133,8 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 	}
 
 	rel, err := helmInstall.Run(chartObj, completeValues)
-	if !installerConfig.DryRun && installerConfig.PostInstallMessage != nil {
-		fmt.Fprintf(i.out, installerConfig.PostInstallMessage(rel, err))
+	if !installerConfig.DryRun && installerConfig.PostInstallMessage != "" {
+		fmt.Fprintf(i.out, installerConfig.PostInstallMessage)
 	}
 	if err != nil {
 		return err
