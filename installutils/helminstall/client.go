@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
 )
@@ -15,7 +14,8 @@ import (
 //go:generate mockgen -destination mocks/mock_helm_client.go -source ./client.go
 
 const (
-	tempChartFilePermissions = 0644
+	TempChartFilePermissions = os.FileMode(0644)
+	TempChartPrefix          = "temp-helm-chart"
 	helmNamespaceEnvVar      = "HELM_NAMESPACE"
 )
 
@@ -28,18 +28,13 @@ type HelmClient interface {
 	NewUninstall(namespace string) (HelmUninstall, error)
 
 	// List the already-existing releases in the given namespace
-	ReleaseList(namespace string) (HelmReleaseListRunner, error)
+	ReleaseList(namespace string) (ReleaseListRunner, error)
 
 	// Returns the Helm chart archive located at the given URI (can be either an http(s) address or a file path)
 	DownloadChart(chartArchiveUri string) (*chart.Chart, error)
 
 	// Returns true if the release with the given name exists in the given namespace
 	ReleaseExists(namespace, releaseName string) (releaseExists bool, err error)
-}
-
-// slim interface on top of loader to avoid unnecessary FS calls
-type HelmLoader interface {
-	Load(name string) (*chart.Chart, error)
 }
 
 // an interface around Helm's action.Install struct
@@ -55,41 +50,58 @@ type HelmUninstall interface {
 var _ HelmInstall = &action.Install{}
 var _ HelmUninstall = &action.Uninstall{}
 
-// an interface around Helm's action.List struct
-type HelmReleaseListRunner interface {
-	Run() ([]*release.Release, error)
-	SetFilter(filter string)
+// interface around needed afero functions
+type TempFile interface {
+	NewTempFile(fs afero.Fs, dir, prefix string) (f afero.File, err error)
+	WriteFile(fs afero.Fs, filename string, data []byte, perm os.FileMode) error
 }
 
-type helmLoader struct{}
+type tempFile struct{}
 
-func (h *helmLoader) Load(name string) (*chart.Chart, error) {
-	return loader.Load(name)
+func NewTempFile() TempFile {
+	return &tempFile{}
 }
 
-func NewHelmLoader() HelmLoader {
-	return &helmLoader{}
+func (a *tempFile) NewTempFile(fs afero.Fs, dir, prefix string) (f afero.File, err error) {
+	return afero.TempFile(fs, dir, prefix)
+}
+
+func (a *tempFile) WriteFile(fs afero.Fs, filename string, data []byte, perm os.FileMode) error {
+	return afero.WriteFile(fs, filename, data, perm)
 }
 
 // a HelmClient that talks to the kube api server and creates resources
 func DefaultHelmClient() HelmClient {
 	return &defaultHelmClient{
-		fs:     afero.NewOsFs(),
-		loader: NewHelmLoader(),
+		fs:              afero.NewOsFs(),
+		tempFile:        NewTempFile(),
+		resourceFetcher: NewDefaultResourceFetcher(),
+		helmLoaders:     NewHelmLoaders(),
 	}
 }
 
 type defaultHelmClient struct {
-	fs     afero.Fs
-	loader HelmLoader
+	fs              afero.Fs
+	tempFile        TempFile
+	resourceFetcher ResourceFetcher
+	helmLoaders     HelmLoaders
 }
 
-func NewDefaultHelmClient(fs afero.Fs, loader HelmLoader) *defaultHelmClient {
-	return &defaultHelmClient{fs: fs, loader: loader}
+func NewDefaultHelmClient(
+	fs afero.Fs,
+	tempFile TempFile,
+	resourceFetcher ResourceFetcher,
+	helmLoaders HelmLoaders) *defaultHelmClient {
+	return &defaultHelmClient{
+		fs:              fs,
+		tempFile:        tempFile,
+		resourceFetcher: resourceFetcher,
+		helmLoaders:     helmLoaders,
+	}
 }
 
 func (d *defaultHelmClient) NewInstall(namespace, releaseName string, dryRun bool) (HelmInstall, *cli.EnvSettings, error) {
-	actionConfig, settings, err := newActionConfig(namespace)
+	actionConfig, settings, err := d.helmLoaders.ActionConfigLoader.NewActionConfig(namespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -107,39 +119,17 @@ func (d *defaultHelmClient) NewInstall(namespace, releaseName string, dryRun boo
 }
 
 func (d *defaultHelmClient) NewUninstall(namespace string) (HelmUninstall, error) {
-	actionConfig, _, err := newActionConfig(namespace)
+	actionConfig, _, err := d.helmLoaders.ActionConfigLoader.NewActionConfig(namespace)
 	if err != nil {
 		return nil, err
 	}
 	return action.NewUninstall(actionConfig), nil
 }
 
-type helmReleaseListRunner struct {
-	list *action.List
-}
-
-func (h *helmReleaseListRunner) Run() ([]*release.Release, error) {
-	return h.list.Run()
-}
-
-func (h *helmReleaseListRunner) SetFilter(filter string) {
-	h.list.Filter = filter
-}
-
-func (d *defaultHelmClient) ReleaseList(namespace string) (HelmReleaseListRunner, error) {
-	actionConfig, _, err := newActionConfig(namespace)
-	if err != nil {
-		return nil, err
-	}
-	return &helmReleaseListRunner{
-		list: action.NewList(actionConfig),
-	}, nil
-}
-
 func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart, error) {
 
 	// 1. Get a reader to the chart file (remote URL or local file path)
-	chartFileReader, err := GetResource(chartArchiveUri)
+	chartFileReader, err := d.resourceFetcher.GetResource(chartArchiveUri)
 	if err != nil {
 		return nil, err
 	}
@@ -151,19 +141,19 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 		return nil, err
 	}
 
-	chartFile, err := afero.TempFile(d.fs, "", "temp-helm-chart")
+	chartFile, err := d.tempFile.NewTempFile(d.fs, "", TempChartPrefix)
 	if err != nil {
 		return nil, err
 	}
-	charFilePath := chartFile.Name()
-	defer func() { _ = d.fs.RemoveAll(charFilePath) }()
+	chartFilePath := chartFile.Name()
+	defer func() { _ = d.fs.RemoveAll(chartFilePath) }()
 
-	if err := afero.WriteFile(d.fs, charFilePath, chartBytes, tempChartFilePermissions); err != nil {
+	if err := d.tempFile.WriteFile(d.fs, chartFilePath, chartBytes, TempChartFilePermissions); err != nil {
 		return nil, err
 	}
 
 	// 3. Load the chart file
-	chartObj, err := d.loader.Load(charFilePath)
+	chartObj, err := d.helmLoaders.ChartLoader.Load(chartFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +161,11 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 	return chartObj, nil
 }
 
-func (d *defaultHelmClient) ReleaseExists(namespace, releaseName string) (releaseExists bool, err error) {
+func (d *defaultHelmClient) ReleaseList(namespace string) (ReleaseListRunner, error) {
+	return d.helmLoaders.ActionListLoader.ReleaseList(d.helmLoaders.ActionConfigLoader, namespace)
+}
+
+func (d *defaultHelmClient) ReleaseExists(namespace, releaseName string) (bool, error) {
 	list, err := d.ReleaseList(namespace)
 	if err != nil {
 		return false, err
@@ -183,6 +177,7 @@ func (d *defaultHelmClient) ReleaseExists(namespace, releaseName string) (releas
 		return false, err
 	}
 
+	releaseExists := false
 	for _, r := range releases {
 		releaseExists = releaseExists || r.Name == releaseName
 	}
@@ -207,18 +202,4 @@ func NewCLISettings(namespace string) *cli.EnvSettings {
 	}
 
 	return cli.New()
-}
-
-func noOpDebugLog(_ string, _ ...interface{}) {}
-
-// Returns an action configuration that can be used to create Helm actions and the Helm env settings.
-// We currently get the Helm storage driver from the standard HELM_DRIVER env (defaults to 'secret').
-func newActionConfig(namespace string) (*action.Configuration, *cli.EnvSettings, error) {
-	settings := NewCLISettings(namespace)
-	actionConfig := new(action.Configuration)
-
-	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), noOpDebugLog); err != nil {
-		return nil, nil, err
-	}
-	return actionConfig, settings, nil
 }

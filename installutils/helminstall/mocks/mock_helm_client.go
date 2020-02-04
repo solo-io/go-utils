@@ -5,10 +5,12 @@
 package mock_helminstall
 
 import (
+	os "os"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
 	helminstall "github.com/solo-io/go-utils/installutils/helminstall"
+	afero "github.com/spf13/afero"
 	chart "helm.sh/helm/v3/pkg/chart"
 	cli "helm.sh/helm/v3/pkg/cli"
 	release "helm.sh/helm/v3/pkg/release"
@@ -69,10 +71,10 @@ func (mr *MockHelmClientMockRecorder) NewUninstall(namespace interface{}) *gomoc
 }
 
 // ReleaseList mocks base method
-func (m *MockHelmClient) ReleaseList(namespace string) (helminstall.HelmReleaseListRunner, error) {
+func (m *MockHelmClient) ReleaseList(namespace string) (helminstall.ReleaseListRunner, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReleaseList", namespace)
-	ret0, _ := ret[0].(helminstall.HelmReleaseListRunner)
+	ret0, _ := ret[0].(helminstall.ReleaseListRunner)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -189,52 +191,54 @@ func (mr *MockHelmUninstallMockRecorder) Run(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockHelmUninstall)(nil).Run), name)
 }
 
-// MockHelmReleaseListRunner is a mock of HelmReleaseListRunner interface
-type MockHelmReleaseListRunner struct {
+// MockTempFile is a mock of TempFile interface
+type MockTempFile struct {
 	ctrl     *gomock.Controller
-	recorder *MockHelmReleaseListRunnerMockRecorder
+	recorder *MockTempFileMockRecorder
 }
 
-// MockHelmReleaseListRunnerMockRecorder is the mock recorder for MockHelmReleaseListRunner
-type MockHelmReleaseListRunnerMockRecorder struct {
-	mock *MockHelmReleaseListRunner
+// MockTempFileMockRecorder is the mock recorder for MockTempFile
+type MockTempFileMockRecorder struct {
+	mock *MockTempFile
 }
 
-// NewMockHelmReleaseListRunner creates a new mock instance
-func NewMockHelmReleaseListRunner(ctrl *gomock.Controller) *MockHelmReleaseListRunner {
-	mock := &MockHelmReleaseListRunner{ctrl: ctrl}
-	mock.recorder = &MockHelmReleaseListRunnerMockRecorder{mock}
+// NewMockTempFile creates a new mock instance
+func NewMockTempFile(ctrl *gomock.Controller) *MockTempFile {
+	mock := &MockTempFile{ctrl: ctrl}
+	mock.recorder = &MockTempFileMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockHelmReleaseListRunner) EXPECT() *MockHelmReleaseListRunnerMockRecorder {
+func (m *MockTempFile) EXPECT() *MockTempFileMockRecorder {
 	return m.recorder
 }
 
-// Run mocks base method
-func (m *MockHelmReleaseListRunner) Run() ([]*release.Release, error) {
+// NewTempFile mocks base method
+func (m *MockTempFile) NewTempFile(fs afero.Fs, dir, prefix string) (afero.File, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Run")
-	ret0, _ := ret[0].([]*release.Release)
+	ret := m.ctrl.Call(m, "NewTempFile", fs, dir, prefix)
+	ret0, _ := ret[0].(afero.File)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Run indicates an expected call of Run
-func (mr *MockHelmReleaseListRunnerMockRecorder) Run() *gomock.Call {
+// NewTempFile indicates an expected call of NewTempFile
+func (mr *MockTempFileMockRecorder) NewTempFile(fs, dir, prefix interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockHelmReleaseListRunner)(nil).Run))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTempFile", reflect.TypeOf((*MockTempFile)(nil).NewTempFile), fs, dir, prefix)
 }
 
-// SetFilter mocks base method
-func (m *MockHelmReleaseListRunner) SetFilter(filter string) {
+// WriteFile mocks base method
+func (m *MockTempFile) WriteFile(fs afero.Fs, filename string, data []byte, perm os.FileMode) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetFilter", filter)
+	ret := m.ctrl.Call(m, "WriteFile", fs, filename, data, perm)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// SetFilter indicates an expected call of SetFilter
-func (mr *MockHelmReleaseListRunnerMockRecorder) SetFilter(filter interface{}) *gomock.Call {
+// WriteFile indicates an expected call of WriteFile
+func (mr *MockTempFileMockRecorder) WriteFile(fs, filename, data, perm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFilter", reflect.TypeOf((*MockHelmReleaseListRunner)(nil).SetFilter), filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteFile", reflect.TypeOf((*MockTempFile)(nil).WriteFile), fs, filename, data, perm)
 }

@@ -10,9 +10,21 @@ import (
 	"github.com/rotisserie/eris"
 )
 
+//go:generate mockgen -destination mocks/mock_resource_fetcher.go -source ./get_resource.go
+
+type ResourceFetcher interface {
+	GetResource(uri string) (io.ReadCloser, error)
+}
+
+func NewDefaultResourceFetcher() ResourceFetcher {
+	return &resourceFetcher{}
+}
+
+type resourceFetcher struct{}
+
 // Get the resource identified by the given URI.
 // The URI can either be an http(s) address or a relative/absolute file path.
-func GetResource(uri string) (io.ReadCloser, error) {
+func (r *resourceFetcher) GetResource(uri string) (io.ReadCloser, error) {
 	var file io.ReadCloser
 	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
 		resp, err := http.Get(uri)
