@@ -24,8 +24,8 @@ import (
 //go:generate mockgen -destination mocks/mock_helm_installer.go -source ./installer.go
 
 var (
-	ReleaseAlreadyInstalledErr = func(err error, name, namespace string) error {
-		return eris.Wrapf(err, "the helm release you are trying to install (%s) appears"+
+	ReleaseAlreadyInstalledErr = func(name, namespace string) error {
+		return eris.Errorf("The helm release you are trying to install (%s) appears"+
 			" to already exist in %s", name, namespace)
 	}
 )
@@ -80,7 +80,7 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 		if releaseExists, err := i.helmClient.ReleaseExists(namespace, releaseName); err != nil {
 			return err
 		} else if releaseExists {
-			return ReleaseAlreadyInstalledErr(err, releaseName, namespace)
+			return ReleaseAlreadyInstalledErr(releaseName, namespace)
 		}
 		if installerConfig.CreateNamespace {
 			// Create the namespace if it doesn't exist. Helm3 no longer does this.
@@ -91,7 +91,7 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 	if !installerConfig.DryRun && installerConfig.PreInstallMessage != "" {
 		fmt.Fprintf(i.out, installerConfig.PreInstallMessage)
 	} else {
-		i.preInstallMessage(installerConfig)
+		i.defaultPreInstallMessage(installerConfig)
 	}
 
 	helmInstall, helmEnv, err := i.helmClient.NewInstall(namespace, releaseName, installerConfig.DryRun)
@@ -170,12 +170,11 @@ func (i *installer) createNamespace(namespace string) {
 
 }
 
-func (i *installer) preInstallMessage(config *InstallerConfig) {
+func (i *installer) defaultPreInstallMessage(config *InstallerConfig) {
 	if config.DryRun {
 		return
 	}
-
-	fmt.Fprintf(i.out, "starting helm installation")
+	fmt.Fprintf(i.out, "Starting helm installation")
 }
 
 type NamespaceCLient interface {
