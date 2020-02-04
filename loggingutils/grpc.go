@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func LoggerInterceptor(logger *zap.SugaredLogger) grpc.UnaryServerInterceptor {
+func GrpcUnaryServerLoggerInterceptor(logger *zap.SugaredLogger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		ctx = contextutils.WithExistingLogger(ctx, logger)
 		return handler(ctx, req)

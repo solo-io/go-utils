@@ -17,7 +17,7 @@ var _ = Describe("Grpc", func() {
 		var logger zap.SugaredLogger
 		var receivedLogger *zap.SugaredLogger
 
-		f := LoggerInterceptor(&logger)
+		f := GrpcUnaryServerLoggerInterceptor(&logger)
 		f(context.Background(), "foo", nil, func(ctx context.Context, req interface{}) (interface{}, error) {
 			receivedLogger = contextutils.LoggerFrom(ctx)
 			return nil, nil
