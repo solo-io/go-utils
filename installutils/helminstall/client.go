@@ -51,7 +51,7 @@ var _ HelmInstaller = &action.Install{}
 var _ HelmUninstaller = &action.Uninstall{}
 
 // interface around needed afero functions
-type Fs interface {
+type FsHelper interface {
 	NewTempFile(dir, prefix string) (f afero.File, err error)
 	WriteFile(filename string, data []byte, perm os.FileMode) error
 	RemoveAll(path string) error
@@ -61,7 +61,7 @@ type tempFile struct {
 	fs afero.Fs
 }
 
-func NewFs(fs afero.Fs) Fs {
+func NewFs(fs afero.Fs) FsHelper {
 	return &tempFile{fs: fs}
 }
 
@@ -87,13 +87,13 @@ func DefaultHelmClient() HelmClient {
 }
 
 type defaultHelmClient struct {
-	fs              Fs
+	fs              FsHelper
 	resourceFetcher ResourceFetcher
 	helmLoaders     HelmFactories
 }
 
 func NewDefaultHelmClient(
-	fs Fs,
+	fs FsHelper,
 	resourceFetcher ResourceFetcher,
 	helmLoaders HelmFactories) *defaultHelmClient {
 	return &defaultHelmClient{
@@ -149,7 +149,7 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 		return nil, err
 	}
 	chartFilePath := chartFile.Name()
-	defer func() { _ = d.fs.RemoveAll(chartFilePath) }()
+	defer func() { d.fs.RemoveAll(chartFilePath) }()
 
 	if err := d.fs.WriteFile(chartFilePath, chartBytes, TempChartFilePermissions); err != nil {
 		return nil, err

@@ -135,6 +135,8 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 	rel, err := helmInstall.Run(chartObj, completeValues)
 	if !installerConfig.DryRun && installerConfig.PostInstallMessage != "" {
 		fmt.Fprintf(i.out, installerConfig.PostInstallMessage)
+	} else {
+		i.defaultPostInstallMessage(installerConfig)
 	}
 	if err != nil {
 		return err
@@ -181,7 +183,7 @@ func (i *installer) defaultPostInstallMessage(config *InstallerConfig) {
 	if config.DryRun {
 		return
 	}
-	fmt.Fprintf(i.out, "Starting helm installation")
+	fmt.Fprintf(i.out, fmt.Sprintf("Successful installation!"))
 }
 
 type NamespaceCLient interface {

@@ -191,7 +191,7 @@ func (mr *MockHelmUninstallMockRecorder) Run(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockHelmUninstall)(nil).Run), name)
 }
 
-// MockFs is a mock of Fs interface
+// MockFs is a mock of FsHelper interface
 type MockFs struct {
 	ctrl     *gomock.Controller
 	recorder *MockFsMockRecorder
