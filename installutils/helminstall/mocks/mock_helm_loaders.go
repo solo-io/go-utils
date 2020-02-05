@@ -15,7 +15,7 @@ import (
 	release "helm.sh/helm/v3/pkg/release"
 )
 
-// MockActionConfigLoader is a mock of ActionConfigLoader interface
+// MockActionConfigLoader is a mock of ActionConfigFactory interface
 type MockActionConfigLoader struct {
 	ctrl     *gomock.Controller
 	recorder *MockActionConfigLoaderMockRecorder
@@ -54,7 +54,7 @@ func (mr *MockActionConfigLoaderMockRecorder) NewActionConfig(namespace interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewActionConfig", reflect.TypeOf((*MockActionConfigLoader)(nil).NewActionConfig), namespace)
 }
 
-// MockActionListLoader is a mock of ActionListLoader interface
+// MockActionListLoader is a mock of ActionListFactory interface
 type MockActionListLoader struct {
 	ctrl     *gomock.Controller
 	recorder *MockActionListLoaderMockRecorder
@@ -78,18 +78,18 @@ func (m *MockActionListLoader) EXPECT() *MockActionListLoaderMockRecorder {
 }
 
 // ReleaseList mocks base method
-func (m *MockActionListLoader) ReleaseList(helmActionConfigLoader helminstall.ActionConfigLoader, namespace string) (helminstall.ReleaseListRunner, error) {
+func (m *MockActionListLoader) ReleaseList(namespace string) (helminstall.ReleaseListRunner, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReleaseList", helmActionConfigLoader, namespace)
+	ret := m.ctrl.Call(m, "ReleaseList", namespace)
 	ret0, _ := ret[0].(helminstall.ReleaseListRunner)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReleaseList indicates an expected call of ReleaseList
-func (mr *MockActionListLoaderMockRecorder) ReleaseList(helmActionConfigLoader, namespace interface{}) *gomock.Call {
+func (mr *MockActionListLoaderMockRecorder) ReleaseList(namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseList", reflect.TypeOf((*MockActionListLoader)(nil).ReleaseList), helmActionConfigLoader, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseList", reflect.TypeOf((*MockActionListLoader)(nil).ReleaseList), namespace)
 }
 
 // MockReleaseListRunner is a mock of ReleaseListRunner interface

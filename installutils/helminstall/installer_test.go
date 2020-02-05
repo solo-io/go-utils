@@ -62,6 +62,7 @@ var _ = Describe("Helm Installer", func() {
 			DryRun:           false,
 		}
 		os.Setenv("HELM_NAMESPACE", "helm-namespace")
+		defer os.Unsetenv("HELM_NAMESPACE")
 		mockHelmClient.
 			EXPECT().
 			ReleaseExists(installerConfig.InstallNamespace, installerConfig.ReleaseName).

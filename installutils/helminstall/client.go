@@ -22,10 +22,10 @@ const (
 // This interface implements the Helm CLI actions. The implementation relies on the Helm 3 libraries.
 type HelmClient interface {
 	// Prepare an installation object that can then be .Run() with a chart object
-	NewInstall(namespace, releaseName string, dryRun bool) (HelmInstall, *cli.EnvSettings, error)
+	NewInstall(namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error)
 
 	// Prepare an un-installation object that can then be .Run() with a release name
-	NewUninstall(namespace string) (HelmUninstall, error)
+	NewUninstall(namespace string) (HelmUninstaller, error)
 
 	// List the already-existing releases in the given namespace
 	ReleaseList(namespace string) (ReleaseListRunner, error)
@@ -38,70 +38,73 @@ type HelmClient interface {
 }
 
 // an interface around Helm's action.Install struct
-type HelmInstall interface {
+type HelmInstaller interface {
 	Run(chrt *chart.Chart, vals map[string]interface{}) (*release.Release, error)
 }
 
 // an interface around Helm's action.Uninstall struct
-type HelmUninstall interface {
+type HelmUninstaller interface {
 	Run(name string) (*release.UninstallReleaseResponse, error)
 }
 
-var _ HelmInstall = &action.Install{}
-var _ HelmUninstall = &action.Uninstall{}
+var _ HelmInstaller = &action.Install{}
+var _ HelmUninstaller = &action.Uninstall{}
 
 // interface around needed afero functions
-type TempFile interface {
-	NewTempFile(fs afero.Fs, dir, prefix string) (f afero.File, err error)
-	WriteFile(fs afero.Fs, filename string, data []byte, perm os.FileMode) error
+type Fs interface {
+	NewTempFile(dir, prefix string) (f afero.File, err error)
+	WriteFile(filename string, data []byte, perm os.FileMode) error
+	RemoveAll(path string) error
 }
 
-type tempFile struct{}
-
-func NewTempFile() TempFile {
-	return &tempFile{}
+type tempFile struct {
+	fs afero.Fs
 }
 
-func (a *tempFile) NewTempFile(fs afero.Fs, dir, prefix string) (f afero.File, err error) {
-	return afero.TempFile(fs, dir, prefix)
+func NewFs(fs afero.Fs) Fs {
+	return &tempFile{fs: fs}
 }
 
-func (a *tempFile) WriteFile(fs afero.Fs, filename string, data []byte, perm os.FileMode) error {
-	return afero.WriteFile(fs, filename, data, perm)
+func (t *tempFile) NewTempFile(dir, prefix string) (f afero.File, err error) {
+	return afero.TempFile(t.fs, dir, prefix)
+}
+
+func (t *tempFile) WriteFile(filename string, data []byte, perm os.FileMode) error {
+	return afero.WriteFile(t.fs, filename, data, perm)
+}
+
+func (t *tempFile) RemoveAll(path string) error {
+	return t.fs.RemoveAll(path)
 }
 
 // a HelmClient that talks to the kube api server and creates resources
 func DefaultHelmClient() HelmClient {
 	return &defaultHelmClient{
-		fs:              afero.NewOsFs(),
-		tempFile:        NewTempFile(),
+		fs:              NewFs(afero.NewOsFs()),
 		resourceFetcher: NewDefaultResourceFetcher(),
-		helmLoaders:     NewHelmLoaders(),
+		helmLoaders:     NewHelmFactories(),
 	}
 }
 
 type defaultHelmClient struct {
-	fs              afero.Fs
-	tempFile        TempFile
+	fs              Fs
 	resourceFetcher ResourceFetcher
-	helmLoaders     HelmLoaders
+	helmLoaders     HelmFactories
 }
 
 func NewDefaultHelmClient(
-	fs afero.Fs,
-	tempFile TempFile,
+	fs Fs,
 	resourceFetcher ResourceFetcher,
-	helmLoaders HelmLoaders) *defaultHelmClient {
+	helmLoaders HelmFactories) *defaultHelmClient {
 	return &defaultHelmClient{
 		fs:              fs,
-		tempFile:        tempFile,
 		resourceFetcher: resourceFetcher,
 		helmLoaders:     helmLoaders,
 	}
 }
 
-func (d *defaultHelmClient) NewInstall(namespace, releaseName string, dryRun bool) (HelmInstall, *cli.EnvSettings, error) {
-	actionConfig, settings, err := d.helmLoaders.ActionConfigLoader.NewActionConfig(namespace)
+func (d *defaultHelmClient) NewInstall(namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error) {
+	actionConfig, settings, err := d.helmLoaders.ActionConfigFactory.NewActionConfig(namespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,8 +121,8 @@ func (d *defaultHelmClient) NewInstall(namespace, releaseName string, dryRun boo
 	return client, settings, nil
 }
 
-func (d *defaultHelmClient) NewUninstall(namespace string) (HelmUninstall, error) {
-	actionConfig, _, err := d.helmLoaders.ActionConfigLoader.NewActionConfig(namespace)
+func (d *defaultHelmClient) NewUninstall(namespace string) (HelmUninstaller, error) {
+	actionConfig, _, err := d.helmLoaders.ActionConfigFactory.NewActionConfig(namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +136,7 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = chartFileReader.Close() }()
+	defer func() { chartFileReader.Close() }()
 
 	// 2. Write chart to a temporary file
 	chartBytes, err := ioutil.ReadAll(chartFileReader)
@@ -141,14 +144,14 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 		return nil, err
 	}
 
-	chartFile, err := d.tempFile.NewTempFile(d.fs, "", TempChartPrefix)
+	chartFile, err := d.fs.NewTempFile("", TempChartPrefix)
 	if err != nil {
 		return nil, err
 	}
 	chartFilePath := chartFile.Name()
 	defer func() { _ = d.fs.RemoveAll(chartFilePath) }()
 
-	if err := d.tempFile.WriteFile(d.fs, chartFilePath, chartBytes, TempChartFilePermissions); err != nil {
+	if err := d.fs.WriteFile(chartFilePath, chartBytes, TempChartFilePermissions); err != nil {
 		return nil, err
 	}
 
@@ -162,7 +165,7 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 }
 
 func (d *defaultHelmClient) ReleaseList(namespace string) (ReleaseListRunner, error) {
-	return d.helmLoaders.ActionListLoader.ReleaseList(d.helmLoaders.ActionConfigLoader, namespace)
+	return d.helmLoaders.ActionListFactory.ReleaseList(namespace)
 }
 
 func (d *defaultHelmClient) ReleaseExists(namespace, releaseName string) (bool, error) {

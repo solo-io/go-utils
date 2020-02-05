@@ -40,10 +40,10 @@ func (m *MockHelmClient) EXPECT() *MockHelmClientMockRecorder {
 }
 
 // NewInstall mocks base method
-func (m *MockHelmClient) NewInstall(namespace, releaseName string, dryRun bool) (helminstall.HelmInstall, *cli.EnvSettings, error) {
+func (m *MockHelmClient) NewInstall(namespace, releaseName string, dryRun bool) (helminstall.HelmInstaller, *cli.EnvSettings, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewInstall", namespace, releaseName, dryRun)
-	ret0, _ := ret[0].(helminstall.HelmInstall)
+	ret0, _ := ret[0].(helminstall.HelmInstaller)
 	ret1, _ := ret[1].(*cli.EnvSettings)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -56,10 +56,10 @@ func (mr *MockHelmClientMockRecorder) NewInstall(namespace, releaseName, dryRun 
 }
 
 // NewUninstall mocks base method
-func (m *MockHelmClient) NewUninstall(namespace string) (helminstall.HelmUninstall, error) {
+func (m *MockHelmClient) NewUninstall(namespace string) (helminstall.HelmUninstaller, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewUninstall", namespace)
-	ret0, _ := ret[0].(helminstall.HelmUninstall)
+	ret0, _ := ret[0].(helminstall.HelmUninstaller)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -115,7 +115,7 @@ func (mr *MockHelmClientMockRecorder) ReleaseExists(namespace, releaseName inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseExists", reflect.TypeOf((*MockHelmClient)(nil).ReleaseExists), namespace, releaseName)
 }
 
-// MockHelmInstall is a mock of HelmInstall interface
+// MockHelmInstall is a mock of HelmInstaller interface
 type MockHelmInstall struct {
 	ctrl     *gomock.Controller
 	recorder *MockHelmInstallMockRecorder
@@ -153,7 +153,7 @@ func (mr *MockHelmInstallMockRecorder) Run(chrt, vals interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockHelmInstall)(nil).Run), chrt, vals)
 }
 
-// MockHelmUninstall is a mock of HelmUninstall interface
+// MockHelmUninstall is a mock of HelmUninstaller interface
 type MockHelmUninstall struct {
 	ctrl     *gomock.Controller
 	recorder *MockHelmUninstallMockRecorder
@@ -191,54 +191,68 @@ func (mr *MockHelmUninstallMockRecorder) Run(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockHelmUninstall)(nil).Run), name)
 }
 
-// MockTempFile is a mock of TempFile interface
-type MockTempFile struct {
+// MockFs is a mock of Fs interface
+type MockFs struct {
 	ctrl     *gomock.Controller
-	recorder *MockTempFileMockRecorder
+	recorder *MockFsMockRecorder
 }
 
-// MockTempFileMockRecorder is the mock recorder for MockTempFile
-type MockTempFileMockRecorder struct {
-	mock *MockTempFile
+// MockFsMockRecorder is the mock recorder for MockFs
+type MockFsMockRecorder struct {
+	mock *MockFs
 }
 
-// NewMockTempFile creates a new mock instance
-func NewMockTempFile(ctrl *gomock.Controller) *MockTempFile {
-	mock := &MockTempFile{ctrl: ctrl}
-	mock.recorder = &MockTempFileMockRecorder{mock}
+// NewMockFs creates a new mock instance
+func NewMockFs(ctrl *gomock.Controller) *MockFs {
+	mock := &MockFs{ctrl: ctrl}
+	mock.recorder = &MockFsMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockTempFile) EXPECT() *MockTempFileMockRecorder {
+func (m *MockFs) EXPECT() *MockFsMockRecorder {
 	return m.recorder
 }
 
 // NewTempFile mocks base method
-func (m *MockTempFile) NewTempFile(fs afero.Fs, dir, prefix string) (afero.File, error) {
+func (m *MockFs) NewTempFile(dir, prefix string) (afero.File, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewTempFile", fs, dir, prefix)
+	ret := m.ctrl.Call(m, "NewTempFile", dir, prefix)
 	ret0, _ := ret[0].(afero.File)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewTempFile indicates an expected call of NewTempFile
-func (mr *MockTempFileMockRecorder) NewTempFile(fs, dir, prefix interface{}) *gomock.Call {
+func (mr *MockFsMockRecorder) NewTempFile(dir, prefix interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTempFile", reflect.TypeOf((*MockTempFile)(nil).NewTempFile), fs, dir, prefix)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTempFile", reflect.TypeOf((*MockFs)(nil).NewTempFile), dir, prefix)
 }
 
 // WriteFile mocks base method
-func (m *MockTempFile) WriteFile(fs afero.Fs, filename string, data []byte, perm os.FileMode) error {
+func (m *MockFs) WriteFile(filename string, data []byte, perm os.FileMode) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WriteFile", fs, filename, data, perm)
+	ret := m.ctrl.Call(m, "WriteFile", filename, data, perm)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // WriteFile indicates an expected call of WriteFile
-func (mr *MockTempFileMockRecorder) WriteFile(fs, filename, data, perm interface{}) *gomock.Call {
+func (mr *MockFsMockRecorder) WriteFile(filename, data, perm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteFile", reflect.TypeOf((*MockTempFile)(nil).WriteFile), fs, filename, data, perm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteFile", reflect.TypeOf((*MockFs)(nil).WriteFile), filename, data, perm)
+}
+
+// RemoveAll mocks base method
+func (m *MockFs) RemoveAll(path string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveAll", path)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveAll indicates an expected call of RemoveAll
+func (mr *MockFsMockRecorder) RemoveAll(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAll", reflect.TypeOf((*MockFs)(nil).RemoveAll), path)
 }

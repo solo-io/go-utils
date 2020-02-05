@@ -10,7 +10,6 @@ import (
 	"github.com/solo-io/go-utils/installutils/helminstall"
 	mock_helminstall "github.com/solo-io/go-utils/installutils/helminstall/mocks"
 	mock_afero "github.com/solo-io/go-utils/testutils/mocks/afero"
-	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
@@ -23,14 +22,13 @@ var _ = Describe("helm install client", func() {
 
 	var (
 		ctrl                       *gomock.Controller
-		fs                         afero.Fs
 		mockFile                   *mock_afero.MockFile
-		mockTempFile               *mock_helminstall.MockTempFile
+		mockFs                     *mock_helminstall.MockFs
 		mockResourceFetcher        *mock_helminstall.MockResourceFetcher
 		mockHelmActionConfigLoader *mock_helminstall.MockActionConfigLoader
 		mockHelmActionListLoader   *mock_helminstall.MockActionListLoader
 		mockHelmChartLoader        *mock_helminstall.MockChartLoader
-		mockHelmLoaders            helminstall.HelmLoaders
+		mockHelmLoaders            helminstall.HelmFactories
 		mockHelmReleaseListRunner  *mock_helminstall.MockReleaseListRunner
 		helmClient                 helminstall.HelmClient
 	)
@@ -38,21 +36,19 @@ var _ = Describe("helm install client", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockFile = mock_afero.NewMockFile(ctrl)
-		mockTempFile = mock_helminstall.NewMockTempFile(ctrl)
+		mockFs = mock_helminstall.NewMockFs(ctrl)
 		mockResourceFetcher = mock_helminstall.NewMockResourceFetcher(ctrl)
 		mockHelmActionConfigLoader = mock_helminstall.NewMockActionConfigLoader(ctrl)
 		mockHelmChartLoader = mock_helminstall.NewMockChartLoader(ctrl)
 		mockHelmActionListLoader = mock_helminstall.NewMockActionListLoader(ctrl)
 		mockHelmReleaseListRunner = mock_helminstall.NewMockReleaseListRunner(ctrl)
-		mockHelmLoaders = helminstall.HelmLoaders{
-			ActionConfigLoader: mockHelmActionConfigLoader,
-			ActionListLoader:   mockHelmActionListLoader,
-			ChartLoader:        mockHelmChartLoader,
+		mockHelmLoaders = helminstall.HelmFactories{
+			ActionConfigFactory: mockHelmActionConfigLoader,
+			ActionListFactory:   mockHelmActionListLoader,
+			ChartLoader:         mockHelmChartLoader,
 		}
-		fs = afero.NewMemMapFs()
 		helmClient = helminstall.NewDefaultHelmClient(
-			fs,
-			mockTempFile,
+			mockFs,
 			mockResourceFetcher,
 			mockHelmLoaders)
 	})
@@ -84,22 +80,26 @@ var _ = Describe("helm install client", func() {
 			EXPECT().
 			GetResource(chartUri).
 			Return(chartFile, nil)
-		mockTempFile.
+		mockFs.
 			EXPECT().
-			NewTempFile(fs, "", helminstall.TempChartPrefix).
+			NewTempFile("", helminstall.TempChartPrefix).
 			Return(mockFile, nil)
 		mockFile.
 			EXPECT().
 			Name().
 			Return(chartTempFilePath)
-		mockTempFile.
+		mockFs.
 			EXPECT().
-			WriteFile(fs, chartTempFilePath, []byte(chartFileContents), helminstall.TempChartFilePermissions).
+			WriteFile(chartTempFilePath, []byte(chartFileContents), helminstall.TempChartFilePermissions).
 			Return(nil)
 		mockHelmChartLoader.
 			EXPECT().
 			Load(chartTempFilePath).
 			Return(expectedChart, nil)
+		mockFs.
+			EXPECT().
+			RemoveAll(chartTempFilePath).
+			Return(nil)
 		chart, err := helmClient.DownloadChart(chartUri)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart).To(BeIdenticalTo(expectedChart))
@@ -123,7 +123,7 @@ var _ = Describe("helm install client", func() {
 			Return(actionConfig, nil, nil)
 		mockHelmActionListLoader.
 			EXPECT().
-			ReleaseList(mockHelmActionConfigLoader, namespace).
+			ReleaseList(namespace).
 			Return(mockHelmReleaseListRunner, nil)
 		mockHelmReleaseListRunner.
 			EXPECT().
@@ -151,7 +151,7 @@ var _ = Describe("helm install client", func() {
 			Return(actionConfig, nil, nil)
 		mockHelmActionListLoader.
 			EXPECT().
-			ReleaseList(mockHelmActionConfigLoader, namespace).
+			ReleaseList(namespace).
 			Return(mockHelmReleaseListRunner, nil)
 		mockHelmReleaseListRunner.
 			EXPECT().

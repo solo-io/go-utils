@@ -177,6 +177,13 @@ func (i *installer) defaultPreInstallMessage(config *InstallerConfig) {
 	fmt.Fprintf(i.out, "Starting helm installation")
 }
 
+func (i *installer) defaultPostInstallMessage(config *InstallerConfig) {
+	if config.DryRun {
+		return
+	}
+	fmt.Fprintf(i.out, "Starting helm installation")
+}
+
 type NamespaceCLient interface {
 	Create(ns *corev1.Namespace) (*corev1.Namespace, error)
 	Delete(name string, options *metav1.DeleteOptions) error

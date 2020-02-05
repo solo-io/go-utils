@@ -12,33 +12,34 @@ import (
 
 //go:generate mockgen -destination mocks/mock_helm_loaders.go -source ./helm_loaders.go
 
-type HelmLoaders struct {
-	ActionConfigLoader ActionConfigLoader
-	ActionListLoader   ActionListLoader
-	ChartLoader        ChartLoader
+type HelmFactories struct {
+	ActionConfigFactory ActionConfigFactory
+	ActionListFactory   ActionListFactory
+	ChartLoader         ChartLoader
 }
 
-func NewHelmLoaders() HelmLoaders {
-	return HelmLoaders{
-		ActionConfigLoader: NewActionConfigLoader(),
-		ActionListLoader:   NewActionListLoader(),
-		ChartLoader:        NewChartLoader(),
+func NewHelmFactories() HelmFactories {
+	actionConfigFactory := NewActionConfigFactory()
+	return HelmFactories{
+		ActionConfigFactory: actionConfigFactory,
+		ActionListFactory:   NewActionListFactory(actionConfigFactory),
+		ChartLoader:         NewChartLoader(),
 	}
 }
 
-type ActionConfigLoader interface {
+type ActionConfigFactory interface {
 	NewActionConfig(namespace string) (*action.Configuration, *cli.EnvSettings, error)
 }
 
-type actionConfigLoader struct{}
+type actionConfigFactory struct{}
 
-func NewActionConfigLoader() ActionConfigLoader {
-	return &actionConfigLoader{}
+func NewActionConfigFactory() ActionConfigFactory {
+	return &actionConfigFactory{}
 }
 
 // Returns an action configuration that can be used to create Helm actions and the Helm env settings.
 // We currently get the Helm storage driver from the standard HELM_DRIVER env (defaults to 'secret').
-func (a *actionConfigLoader) NewActionConfig(namespace string) (*action.Configuration, *cli.EnvSettings, error) {
+func (a *actionConfigFactory) NewActionConfig(namespace string) (*action.Configuration, *cli.EnvSettings, error) {
 	settings := NewCLISettings(namespace)
 	actionConfig := new(action.Configuration)
 
@@ -51,18 +52,20 @@ func (a *actionConfigLoader) NewActionConfig(namespace string) (*action.Configur
 func noOpDebugLog(_ string, _ ...interface{}) {}
 
 // Returns a ReleaseListRunner
-type ActionListLoader interface {
-	ReleaseList(helmActionConfigLoader ActionConfigLoader, namespace string) (ReleaseListRunner, error)
+type ActionListFactory interface {
+	ReleaseList(namespace string) (ReleaseListRunner, error)
 }
 
-type actionListLoader struct{}
-
-func NewActionListLoader() ActionListLoader {
-	return &actionListLoader{}
+type actionListFactory struct {
+	actionConfigFactory ActionConfigFactory
 }
 
-func (h *actionListLoader) ReleaseList(actionConfigLoader ActionConfigLoader, namespace string) (ReleaseListRunner, error) {
-	actionConfig, _, err := actionConfigLoader.NewActionConfig(namespace)
+func NewActionListFactory(actionConfigFactory ActionConfigFactory) ActionListFactory {
+	return &actionListFactory{actionConfigFactory: actionConfigFactory}
+}
+
+func (a *actionListFactory) ReleaseList(namespace string) (ReleaseListRunner, error) {
+	actionConfig, _, err := a.actionConfigFactory.NewActionConfig(namespace)
 	if err != nil {
 		return nil, err
 	}
