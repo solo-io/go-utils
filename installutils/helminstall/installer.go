@@ -183,7 +183,7 @@ func (i *installer) defaultPostInstallMessage(config *InstallerConfig) {
 	if config.DryRun {
 		return
 	}
-	fmt.Fprintf(i.out, fmt.Sprintf("Successful installation!"))
+	fmt.Fprintf(i.out, "Successful installation!")
 }
 
 type NamespaceCLient interface {
