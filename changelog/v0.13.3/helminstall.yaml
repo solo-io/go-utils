@@ -1,4 +1,4 @@
 changelog:
-  - type: NEW_FEATURE
-    description: Add library for performing Helm 3 installs.
-    issueLink: https://github.com/solo-io/go-utils/issues/385
+  - type: FIX
+    description: Do not output post install message if installation error occurred. Separate install output with newlines.
+    issueLink: https://github.com/solo-io/go-utils/issues/389
