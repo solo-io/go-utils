@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add library for performing Helm 3 installs.
+    issueLink: https://github.com/solo-io/go-utils/issues/385
