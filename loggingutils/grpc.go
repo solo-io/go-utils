@@ -2,6 +2,7 @@ package loggingutils
 
 import (
 	"context"
+
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

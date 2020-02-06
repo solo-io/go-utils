@@ -133,13 +133,13 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 	}
 
 	rel, err := helmInstall.Run(chartObj, completeValues)
+	if err != nil {
+		return err
+	}
 	if !installerConfig.DryRun && installerConfig.PostInstallMessage != "" {
 		fmt.Fprintf(i.out, installerConfig.PostInstallMessage)
 	} else {
 		i.defaultPostInstallMessage(installerConfig)
-	}
-	if err != nil {
-		return err
 	}
 
 	if installerConfig.Verbose {
@@ -176,14 +176,14 @@ func (i *installer) defaultPreInstallMessage(config *InstallerConfig) {
 	if config.DryRun {
 		return
 	}
-	fmt.Fprintf(i.out, "Starting helm installation")
+	fmt.Fprintf(i.out, "Starting helm installation\n")
 }
 
 func (i *installer) defaultPostInstallMessage(config *InstallerConfig) {
 	if config.DryRun {
 		return
 	}
-	fmt.Fprintf(i.out, "Successful installation!")
+	fmt.Fprintf(i.out, "Successful installation!\n")
 }
 
 type NamespaceCLient interface {
