@@ -1,5 +1,5 @@
 changelog:
-  - type: BUGFIX
+  - type: FIX
     description: If the stats server was started up, we set our context's fallbackLogger to a default logger with an epoch timestamp. Now, we set it to the zapcore.ISO8601TimeEncoder format instead.
     issueLink: https://github.com/solo-io/solo-projects/issues/1246
     resolvesIssue: false
