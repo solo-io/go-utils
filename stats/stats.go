@@ -2,6 +2,7 @@ package stats
 
 import (
 	"fmt"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"sort"
 	"text/template"
@@ -56,6 +57,7 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 	}
 
 	logconfig := zap.NewProductionConfig()
+	logconfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	logger, logerr := logconfig.Build()
 	contextutils.SetFallbackLogger(logger.Sugar())
