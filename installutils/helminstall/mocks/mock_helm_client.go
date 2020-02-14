@@ -40,9 +40,9 @@ func (m *MockHelmClient) EXPECT() *MockHelmClientMockRecorder {
 }
 
 // NewInstall mocks base method
-func (m *MockHelmClient) NewInstall(kubeContext, namespace, releaseName string, dryRun bool) (helminstall.HelmInstaller, *cli.EnvSettings, error) {
+func (m *MockHelmClient) NewInstall(kubeConfig, kubeContext, namespace, releaseName string, dryRun bool) (helminstall.HelmInstaller, *cli.EnvSettings, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewInstall", kubeContext, namespace, releaseName, dryRun)
+	ret := m.ctrl.Call(m, "NewInstall", kubeConfig, kubeContext, namespace, releaseName, dryRun)
 	ret0, _ := ret[0].(helminstall.HelmInstaller)
 	ret1, _ := ret[1].(*cli.EnvSettings)
 	ret2, _ := ret[2].(error)
@@ -50,39 +50,39 @@ func (m *MockHelmClient) NewInstall(kubeContext, namespace, releaseName string, 
 }
 
 // NewInstall indicates an expected call of NewInstall
-func (mr *MockHelmClientMockRecorder) NewInstall(kubeContext, namespace, releaseName, dryRun interface{}) *gomock.Call {
+func (mr *MockHelmClientMockRecorder) NewInstall(kubeConfig, kubeContext, namespace, releaseName, dryRun interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewInstall", reflect.TypeOf((*MockHelmClient)(nil).NewInstall), kubeContext, namespace, releaseName, dryRun)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewInstall", reflect.TypeOf((*MockHelmClient)(nil).NewInstall), kubeConfig, kubeContext, namespace, releaseName, dryRun)
 }
 
 // NewUninstall mocks base method
-func (m *MockHelmClient) NewUninstall(helmKubeContext, namespace string) (helminstall.HelmUninstaller, error) {
+func (m *MockHelmClient) NewUninstall(kubeConfig, kubeContext, namespace string) (helminstall.HelmUninstaller, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewUninstall", helmKubeContext, namespace)
+	ret := m.ctrl.Call(m, "NewUninstall", kubeConfig, kubeContext, namespace)
 	ret0, _ := ret[0].(helminstall.HelmUninstaller)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewUninstall indicates an expected call of NewUninstall
-func (mr *MockHelmClientMockRecorder) NewUninstall(helmKubeContext, namespace interface{}) *gomock.Call {
+func (mr *MockHelmClientMockRecorder) NewUninstall(kubeConfig, kubeContext, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewUninstall", reflect.TypeOf((*MockHelmClient)(nil).NewUninstall), helmKubeContext, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewUninstall", reflect.TypeOf((*MockHelmClient)(nil).NewUninstall), kubeConfig, kubeContext, namespace)
 }
 
 // ReleaseList mocks base method
-func (m *MockHelmClient) ReleaseList(helmKubeContext, namespace string) (helminstall.ReleaseListRunner, error) {
+func (m *MockHelmClient) ReleaseList(kubeConfig, kubeContext, namespace string) (helminstall.ReleaseListRunner, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReleaseList", helmKubeContext, namespace)
+	ret := m.ctrl.Call(m, "ReleaseList", kubeConfig, kubeContext, namespace)
 	ret0, _ := ret[0].(helminstall.ReleaseListRunner)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReleaseList indicates an expected call of ReleaseList
-func (mr *MockHelmClientMockRecorder) ReleaseList(helmKubeContext, namespace interface{}) *gomock.Call {
+func (mr *MockHelmClientMockRecorder) ReleaseList(kubeConfig, kubeContext, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseList", reflect.TypeOf((*MockHelmClient)(nil).ReleaseList), helmKubeContext, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseList", reflect.TypeOf((*MockHelmClient)(nil).ReleaseList), kubeConfig, kubeContext, namespace)
 }
 
 // DownloadChart mocks base method
@@ -101,18 +101,18 @@ func (mr *MockHelmClientMockRecorder) DownloadChart(chartArchiveUri interface{})
 }
 
 // ReleaseExists mocks base method
-func (m *MockHelmClient) ReleaseExists(helmKubeContext, namespace, releaseName string) (bool, error) {
+func (m *MockHelmClient) ReleaseExists(kubeConfig, kubeContext, namespace, releaseName string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReleaseExists", helmKubeContext, namespace, releaseName)
+	ret := m.ctrl.Call(m, "ReleaseExists", kubeConfig, kubeContext, namespace, releaseName)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReleaseExists indicates an expected call of ReleaseExists
-func (mr *MockHelmClientMockRecorder) ReleaseExists(helmKubeContext, namespace, releaseName interface{}) *gomock.Call {
+func (mr *MockHelmClientMockRecorder) ReleaseExists(kubeConfig, kubeContext, namespace, releaseName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseExists", reflect.TypeOf((*MockHelmClient)(nil).ReleaseExists), helmKubeContext, namespace, releaseName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseExists", reflect.TypeOf((*MockHelmClient)(nil).ReleaseExists), kubeConfig, kubeContext, namespace, releaseName)
 }
 
 // MockHelmInstaller is a mock of HelmInstaller interface

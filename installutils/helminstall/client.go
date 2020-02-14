@@ -23,19 +23,19 @@ const (
 // This interface implements the Helm CLI actions. The implementation relies on the Helm 3 libraries.
 type HelmClient interface {
 	// Prepare an installation object that can then be .Run() with a chart object
-	NewInstall(kubeContext, namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error)
+	NewInstall(kubeConfig, kubeContext, namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error)
 
 	// Prepare an un-installation object that can then be .Run() with a release name
-	NewUninstall(helmKubeContext, namespace string) (HelmUninstaller, error)
+	NewUninstall(kubeConfig, kubeContext, namespace string) (HelmUninstaller, error)
 
 	// List the already-existing releases in the given namespace
-	ReleaseList(helmKubeContext, namespace string) (ReleaseListRunner, error)
+	ReleaseList(kubeConfig, kubeContext, namespace string) (ReleaseListRunner, error)
 
 	// Returns the Helm chart archive located at the given URI (can be either an http(s) address or a file path)
 	DownloadChart(chartArchiveUri string) (*chart.Chart, error)
 
 	// Returns true if the release with the given name exists in the given namespace
-	ReleaseExists(helmKubeContext, namespace, releaseName string) (releaseExists bool, err error)
+	ReleaseExists(kubeConfig, kubeContext, namespace, releaseName string) (releaseExists bool, err error)
 }
 
 // an interface around Helm's action.Install struct
@@ -104,8 +104,8 @@ func NewDefaultHelmClient(
 	}
 }
 
-func (d *defaultHelmClient) NewInstall(helmKubeContext, namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error) {
-	actionConfig, settings, err := d.helmLoaders.ActionConfigFactory.NewActionConfig(helmKubeContext, namespace)
+func (d *defaultHelmClient) NewInstall(kubeConfig, kubeContext, namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error) {
+	actionConfig, settings, err := d.helmLoaders.ActionConfigFactory.NewActionConfig(kubeConfig, kubeContext, namespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -122,8 +122,8 @@ func (d *defaultHelmClient) NewInstall(helmKubeContext, namespace, releaseName s
 	return client, settings, nil
 }
 
-func (d *defaultHelmClient) NewUninstall(helmKubeContext, namespace string) (HelmUninstaller, error) {
-	actionConfig, _, err := d.helmLoaders.ActionConfigFactory.NewActionConfig(helmKubeContext, namespace)
+func (d *defaultHelmClient) NewUninstall(kubeConfig, kubeContext, namespace string) (HelmUninstaller, error) {
+	actionConfig, _, err := d.helmLoaders.ActionConfigFactory.NewActionConfig(kubeConfig, kubeContext, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -165,12 +165,12 @@ func (d *defaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 	return chartObj, nil
 }
 
-func (d *defaultHelmClient) ReleaseList(helmKubeContext, namespace string) (ReleaseListRunner, error) {
-	return d.helmLoaders.ActionListFactory.ReleaseList(helmKubeContext, namespace)
+func (d *defaultHelmClient) ReleaseList(kubeConfig, kubeContext, namespace string) (ReleaseListRunner, error) {
+	return d.helmLoaders.ActionListFactory.ReleaseList(kubeConfig, kubeContext, namespace)
 }
 
-func (d *defaultHelmClient) ReleaseExists(helmKubeContext, namespace, releaseName string) (bool, error) {
-	list, err := d.ReleaseList(helmKubeContext, namespace)
+func (d *defaultHelmClient) ReleaseExists(kubeConfig, kubeContext, namespace, releaseName string) (bool, error) {
+	list, err := d.ReleaseList(kubeConfig, kubeContext, namespace)
 	if err != nil {
 		return false, err
 	}
@@ -191,7 +191,7 @@ func (d *defaultHelmClient) ReleaseExists(helmKubeContext, namespace, releaseNam
 
 // Build a Helm EnvSettings struct
 // basically, abstracted cli.New() into our own function call because of the weirdness described in the big comment below
-func NewCLISettings(helmKubeContext, namespace string) *cli.EnvSettings {
+func NewCLISettings(kubeConfig, kubeContext, namespace string) *cli.EnvSettings {
 	// The installation namespace is expressed as a "config override" in the Helm internals
 	// It's normally set by the --namespace flag when invoking the Helm binary, which ends up
 	// setting a non-exported field in the Helm settings struct (https://github.com/helm/helm/blob/v3.0.1/pkg/cli/environment.go#L77)
@@ -205,8 +205,10 @@ func NewCLISettings(helmKubeContext, namespace string) *cli.EnvSettings {
 		defer os.Setenv(helmNamespaceEnvVar, "")
 	}
 	if os.Getenv(helmKubeContextEnvVar) == "" {
-		os.Setenv(helmKubeContextEnvVar, helmKubeContext)
+		os.Setenv(helmKubeContextEnvVar, kubeContext)
 		defer os.Setenv(helmNamespaceEnvVar, "")
 	}
-	return cli.New()
+	settings := cli.New()
+	settings.KubeConfig = kubeConfig
+	return settings
 }

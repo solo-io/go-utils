@@ -28,7 +28,7 @@ func NewHelmFactories() HelmFactories {
 }
 
 type ActionConfigFactory interface {
-	NewActionConfig(helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error)
+	NewActionConfig(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error)
 }
 
 type actionConfigFactory struct{}
@@ -39,8 +39,8 @@ func NewActionConfigFactory() ActionConfigFactory {
 
 // Returns an action configuration that can be used to create Helm actions and the Helm env settings.
 // We currently get the Helm storage driver from the standard HELM_DRIVER env (defaults to 'secret').
-func (a *actionConfigFactory) NewActionConfig(helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error) {
-	settings := NewCLISettings(helmKubeContext, namespace)
+func (a *actionConfigFactory) NewActionConfig(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error) {
+	settings := NewCLISettings(kubeConfig, helmKubeContext, namespace)
 	actionConfig := new(action.Configuration)
 
 	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), noOpDebugLog); err != nil {
@@ -53,7 +53,7 @@ func noOpDebugLog(_ string, _ ...interface{}) {}
 
 // Returns a ReleaseListRunner
 type ActionListFactory interface {
-	ReleaseList(helmKubeContext, namespace string) (ReleaseListRunner, error)
+	ReleaseList(kubeConfig, helmKubeContext, namespace string) (ReleaseListRunner, error)
 }
 
 type actionListFactory struct {
@@ -64,8 +64,8 @@ func NewActionListFactory(actionConfigFactory ActionConfigFactory) ActionListFac
 	return &actionListFactory{actionConfigFactory: actionConfigFactory}
 }
 
-func (a *actionListFactory) ReleaseList(helmKubeContext, namespace string) (ReleaseListRunner, error) {
-	actionConfig, _, err := a.actionConfigFactory.NewActionConfig(helmKubeContext, namespace)
+func (a *actionListFactory) ReleaseList(kubeConfig, helmKubeContext, namespace string) (ReleaseListRunner, error) {
+	actionConfig, _, err := a.actionConfigFactory.NewActionConfig(kubeConfig, helmKubeContext, namespace)
 	if err != nil {
 		return nil, err
 	}
