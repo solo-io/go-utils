@@ -21,30 +21,31 @@ var _ = Describe("helm install client", func() {
 	)
 
 	var (
-		ctrl                       *gomock.Controller
-		mockFile                   *mock_afero.MockFile
-		mockFs                     *mock_helminstall.MockFs
-		mockResourceFetcher        *mock_helminstall.MockResourceFetcher
-		mockHelmActionConfigLoader *mock_helminstall.MockActionConfigLoader
-		mockHelmActionListLoader   *mock_helminstall.MockActionListLoader
-		mockHelmChartLoader        *mock_helminstall.MockChartLoader
-		mockHelmLoaders            helminstall.HelmFactories
-		mockHelmReleaseListRunner  *mock_helminstall.MockReleaseListRunner
-		helmClient                 helminstall.HelmClient
+		ctrl                        *gomock.Controller
+		mockFile                    *mock_afero.MockFile
+		mockFs                      *mock_helminstall.MockFsHelper
+		mockResourceFetcher         *mock_helminstall.MockResourceFetcher
+		mockHelmActionConfigFactory *mock_helminstall.MockActionConfigFactory
+		mockHelmActionListFactory   *mock_helminstall.MockActionListFactory
+		mockHelmChartLoader         *mock_helminstall.MockChartLoader
+		mockHelmLoaders             helminstall.HelmFactories
+		mockHelmReleaseListRunner   *mock_helminstall.MockReleaseListRunner
+		helmClient                  helminstall.HelmClient
+		helmKubeContext             = "helm-kube-context"
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockFile = mock_afero.NewMockFile(ctrl)
-		mockFs = mock_helminstall.NewMockFs(ctrl)
+		mockFs = mock_helminstall.NewMockFsHelper(ctrl)
 		mockResourceFetcher = mock_helminstall.NewMockResourceFetcher(ctrl)
-		mockHelmActionConfigLoader = mock_helminstall.NewMockActionConfigLoader(ctrl)
+		mockHelmActionConfigFactory = mock_helminstall.NewMockActionConfigFactory(ctrl)
 		mockHelmChartLoader = mock_helminstall.NewMockChartLoader(ctrl)
-		mockHelmActionListLoader = mock_helminstall.NewMockActionListLoader(ctrl)
+		mockHelmActionListFactory = mock_helminstall.NewMockActionListFactory(ctrl)
 		mockHelmReleaseListRunner = mock_helminstall.NewMockReleaseListRunner(ctrl)
 		mockHelmLoaders = helminstall.HelmFactories{
-			ActionConfigFactory: mockHelmActionConfigLoader,
-			ActionListFactory:   mockHelmActionListLoader,
+			ActionConfigFactory: mockHelmActionConfigFactory,
+			ActionListFactory:   mockHelmActionListFactory,
 			ChartLoader:         mockHelmChartLoader,
 		}
 		helmClient = helminstall.NewDefaultHelmClient(
@@ -57,11 +58,11 @@ var _ = Describe("helm install client", func() {
 		namespace := "namespace"
 		releaseName := "releaseName"
 		dryRun := true
-		mockHelmActionConfigLoader.
+		mockHelmActionConfigFactory.
 			EXPECT().
-			NewActionConfig(namespace).
+			NewActionConfig(helmKubeContext, namespace).
 			Return(&action.Configuration{}, nil, nil)
-		install, _, err := helmClient.NewInstall(namespace, releaseName, dryRun)
+		install, _, err := helmClient.NewInstall(helmKubeContext, namespace, releaseName, dryRun)
 		helmInstall := install.(*action.Install)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(helmInstall.Namespace).To(Equal(namespace))
@@ -106,7 +107,7 @@ var _ = Describe("helm install client", func() {
 	})
 
 	It("can properly set cli env settings with namespace", func() {
-		settings := helminstall.NewCLISettings(namespace)
+		settings := helminstall.NewCLISettings(helmKubeContext, namespace)
 		Expect(settings.Namespace()).To(Equal(namespace))
 	})
 
@@ -117,13 +118,13 @@ var _ = Describe("helm install client", func() {
 		releases := []*release.Release{
 			{Name: releaseName},
 		}
-		mockHelmActionConfigLoader.
+		mockHelmActionConfigFactory.
 			EXPECT().
-			NewActionConfig(namespace).
+			NewActionConfig(helmKubeContext, namespace).
 			Return(actionConfig, nil, nil)
-		mockHelmActionListLoader.
+		mockHelmActionListFactory.
 			EXPECT().
-			ReleaseList(namespace).
+			ReleaseList(helmKubeContext, namespace).
 			Return(mockHelmReleaseListRunner, nil)
 		mockHelmReleaseListRunner.
 			EXPECT().
@@ -133,7 +134,7 @@ var _ = Describe("helm install client", func() {
 			EXPECT().
 			Run().
 			Return(releases, nil)
-		exists, err := helmClient.ReleaseExists(namespace, releaseName)
+		exists, err := helmClient.ReleaseExists(helmKubeContext, namespace, releaseName)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exists).To(BeTrue())
 	})
@@ -145,13 +146,13 @@ var _ = Describe("helm install client", func() {
 		releases := []*release.Release{
 			{Name: ""},
 		}
-		mockHelmActionConfigLoader.
+		mockHelmActionConfigFactory.
 			EXPECT().
-			NewActionConfig(namespace).
+			NewActionConfig(helmKubeContext, namespace).
 			Return(actionConfig, nil, nil)
-		mockHelmActionListLoader.
+		mockHelmActionListFactory.
 			EXPECT().
-			ReleaseList(namespace).
+			ReleaseList(helmKubeContext, namespace).
 			Return(mockHelmReleaseListRunner, nil)
 		mockHelmReleaseListRunner.
 			EXPECT().
@@ -161,7 +162,7 @@ var _ = Describe("helm install client", func() {
 			EXPECT().
 			Run().
 			Return(releases, nil)
-		exists, err := helmClient.ReleaseExists(namespace, releaseName)
+		exists, err := helmClient.ReleaseExists(helmKubeContext, namespace, releaseName)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exists).To(BeFalse())
 	})
