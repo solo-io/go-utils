@@ -35,6 +35,7 @@ type Installer interface {
 }
 
 type InstallerConfig struct {
+	// kube config containing the context of cluster to install on
 	KubeConfig string
 	// kube context of cluster to install on
 	KubeContext      string

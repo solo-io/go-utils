@@ -191,6 +191,7 @@ func (d *defaultHelmClient) ReleaseExists(kubeConfig, kubeContext, namespace, re
 
 // Build a Helm EnvSettings struct
 // basically, abstracted cli.New() into our own function call because of the weirdness described in the big comment below
+// also configure the Helm client with the Kube config/context of the cluster to perform installation on
 func NewCLISettings(kubeConfig, kubeContext, namespace string) *cli.EnvSettings {
 	// The installation namespace is expressed as a "config override" in the Helm internals
 	// It's normally set by the --namespace flag when invoking the Helm binary, which ends up
