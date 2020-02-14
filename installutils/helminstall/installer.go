@@ -35,6 +35,10 @@ type Installer interface {
 }
 
 type InstallerConfig struct {
+	// kube config containing the context of cluster to install on
+	KubeConfig string
+	// kube context of cluster to install on
+	KubeContext      string
 	DryRun           bool
 	CreateNamespace  bool
 	Verbose          bool
@@ -77,7 +81,7 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 	namespace := installerConfig.InstallNamespace
 	releaseName := installerConfig.ReleaseName
 	if !installerConfig.DryRun {
-		if releaseExists, err := i.helmClient.ReleaseExists(namespace, releaseName); err != nil {
+		if releaseExists, err := i.helmClient.ReleaseExists(installerConfig.KubeConfig, installerConfig.KubeContext, namespace, releaseName); err != nil {
 			return err
 		} else if releaseExists {
 			return ReleaseAlreadyInstalledErr(releaseName, namespace)
@@ -94,7 +98,7 @@ func (i *installer) Install(installerConfig *InstallerConfig) error {
 		i.defaultPreInstallMessage(installerConfig)
 	}
 
-	helmInstall, helmEnv, err := i.helmClient.NewInstall(namespace, releaseName, installerConfig.DryRun)
+	helmInstall, helmEnv, err := i.helmClient.NewInstall(installerConfig.KubeConfig, installerConfig.KubeContext, namespace, releaseName, installerConfig.DryRun)
 	if err != nil {
 		return err
 	}

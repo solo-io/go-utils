@@ -1,0 +1,4 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: Allow passing in Helm kube context and config during installation.
+    issueLink: https://github.com/solo-io/go-utils/issues/392

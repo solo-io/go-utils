@@ -24,29 +24,33 @@ var _ = Describe("Helm Installer", func() {
 		ctrl                *gomock.Controller
 		mockHelmClient      *mock_helminstall.MockHelmClient
 		mockNamespaceClient *mock_helminstall.MockNamespaceCLient
-		mockHelmInstall     *mock_helminstall.MockHelmInstall
+		mockHelmInstaller   *mock_helminstall.MockHelmInstaller
 		outputWriter        *bytes.Buffer
 		installer           helminstall.Installer
+		helmKubeconfig      = "path/to/kubeconfig"
+		helmKubeContext     = "helm-kube-context"
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockHelmClient = mock_helminstall.NewMockHelmClient(ctrl)
 		mockNamespaceClient = mock_helminstall.NewMockNamespaceCLient(ctrl)
-		mockHelmInstall = mock_helminstall.NewMockHelmInstall(ctrl)
+		mockHelmInstaller = mock_helminstall.NewMockHelmInstaller(ctrl)
 		outputWriter = &bytes.Buffer{}
 		installer = helminstall.NewInstaller(mockHelmClient, mockNamespaceClient, outputWriter)
 	})
 
 	It("should error if release already exists", func() {
 		installerConfig := &helminstall.InstallerConfig{
+			KubeConfig:       helmKubeconfig,
+			KubeContext:      helmKubeContext,
 			InstallNamespace: "namespace",
 			ReleaseName:      "release-name",
 			DryRun:           false,
 		}
 		mockHelmClient.
 			EXPECT().
-			ReleaseExists(installerConfig.InstallNamespace, installerConfig.ReleaseName).
+			ReleaseExists(helmKubeconfig, helmKubeContext, installerConfig.InstallNamespace, installerConfig.ReleaseName).
 			Return(true, nil)
 		err := installer.Install(installerConfig)
 		Expect(err).To(testutils.HaveInErrorChain(
@@ -55,6 +59,8 @@ var _ = Describe("Helm Installer", func() {
 
 	It("should install correctly", func() {
 		installerConfig := &helminstall.InstallerConfig{
+			KubeConfig:       helmKubeconfig,
+			KubeContext:      helmKubeContext,
 			InstallNamespace: "namespace",
 			ReleaseName:      "release-name",
 			ReleaseUri:       "release-uri",
@@ -65,7 +71,7 @@ var _ = Describe("Helm Installer", func() {
 		defer os.Unsetenv("HELM_NAMESPACE")
 		mockHelmClient.
 			EXPECT().
-			ReleaseExists(installerConfig.InstallNamespace, installerConfig.ReleaseName).
+			ReleaseExists(helmKubeconfig, helmKubeContext, installerConfig.InstallNamespace, installerConfig.ReleaseName).
 			Return(false, nil)
 		statusError := errors.StatusError{ErrStatus: metav1.Status{Reason: metav1.StatusReasonNotFound}}
 		mockNamespaceClient.
@@ -82,14 +88,14 @@ var _ = Describe("Helm Installer", func() {
 			Return(nil, nil)
 		mockHelmClient.
 			EXPECT().
-			NewInstall(installerConfig.InstallNamespace, installerConfig.ReleaseName, installerConfig.DryRun).
-			Return(mockHelmInstall, cli.New(), nil)
+			NewInstall(helmKubeconfig, helmKubeContext, installerConfig.InstallNamespace, installerConfig.ReleaseName, installerConfig.DryRun).
+			Return(mockHelmInstaller, cli.New(), nil)
 		chartObj := &chart.Chart{}
 		mockHelmClient.
 			EXPECT().
 			DownloadChart(installerConfig.ReleaseUri).
 			Return(chartObj, nil)
-		mockHelmInstall.
+		mockHelmInstaller.
 			EXPECT().
 			Run(chartObj, map[string]interface{}{}).
 			Return(&release.Release{}, nil)

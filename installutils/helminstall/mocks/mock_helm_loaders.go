@@ -15,33 +15,33 @@ import (
 	release "helm.sh/helm/v3/pkg/release"
 )
 
-// MockActionConfigLoader is a mock of ActionConfigFactory interface
-type MockActionConfigLoader struct {
+// MockActionConfigFactory is a mock of ActionConfigFactory interface
+type MockActionConfigFactory struct {
 	ctrl     *gomock.Controller
-	recorder *MockActionConfigLoaderMockRecorder
+	recorder *MockActionConfigFactoryMockRecorder
 }
 
-// MockActionConfigLoaderMockRecorder is the mock recorder for MockActionConfigLoader
-type MockActionConfigLoaderMockRecorder struct {
-	mock *MockActionConfigLoader
+// MockActionConfigFactoryMockRecorder is the mock recorder for MockActionConfigFactory
+type MockActionConfigFactoryMockRecorder struct {
+	mock *MockActionConfigFactory
 }
 
-// NewMockActionConfigLoader creates a new mock instance
-func NewMockActionConfigLoader(ctrl *gomock.Controller) *MockActionConfigLoader {
-	mock := &MockActionConfigLoader{ctrl: ctrl}
-	mock.recorder = &MockActionConfigLoaderMockRecorder{mock}
+// NewMockActionConfigFactory creates a new mock instance
+func NewMockActionConfigFactory(ctrl *gomock.Controller) *MockActionConfigFactory {
+	mock := &MockActionConfigFactory{ctrl: ctrl}
+	mock.recorder = &MockActionConfigFactoryMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockActionConfigLoader) EXPECT() *MockActionConfigLoaderMockRecorder {
+func (m *MockActionConfigFactory) EXPECT() *MockActionConfigFactoryMockRecorder {
 	return m.recorder
 }
 
 // NewActionConfig mocks base method
-func (m *MockActionConfigLoader) NewActionConfig(namespace string) (*action.Configuration, *cli.EnvSettings, error) {
+func (m *MockActionConfigFactory) NewActionConfig(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewActionConfig", namespace)
+	ret := m.ctrl.Call(m, "NewActionConfig", kubeConfig, helmKubeContext, namespace)
 	ret0, _ := ret[0].(*action.Configuration)
 	ret1, _ := ret[1].(*cli.EnvSettings)
 	ret2, _ := ret[2].(error)
@@ -49,47 +49,47 @@ func (m *MockActionConfigLoader) NewActionConfig(namespace string) (*action.Conf
 }
 
 // NewActionConfig indicates an expected call of NewActionConfig
-func (mr *MockActionConfigLoaderMockRecorder) NewActionConfig(namespace interface{}) *gomock.Call {
+func (mr *MockActionConfigFactoryMockRecorder) NewActionConfig(kubeConfig, helmKubeContext, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewActionConfig", reflect.TypeOf((*MockActionConfigLoader)(nil).NewActionConfig), namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewActionConfig", reflect.TypeOf((*MockActionConfigFactory)(nil).NewActionConfig), kubeConfig, helmKubeContext, namespace)
 }
 
-// MockActionListLoader is a mock of ActionListFactory interface
-type MockActionListLoader struct {
+// MockActionListFactory is a mock of ActionListFactory interface
+type MockActionListFactory struct {
 	ctrl     *gomock.Controller
-	recorder *MockActionListLoaderMockRecorder
+	recorder *MockActionListFactoryMockRecorder
 }
 
-// MockActionListLoaderMockRecorder is the mock recorder for MockActionListLoader
-type MockActionListLoaderMockRecorder struct {
-	mock *MockActionListLoader
+// MockActionListFactoryMockRecorder is the mock recorder for MockActionListFactory
+type MockActionListFactoryMockRecorder struct {
+	mock *MockActionListFactory
 }
 
-// NewMockActionListLoader creates a new mock instance
-func NewMockActionListLoader(ctrl *gomock.Controller) *MockActionListLoader {
-	mock := &MockActionListLoader{ctrl: ctrl}
-	mock.recorder = &MockActionListLoaderMockRecorder{mock}
+// NewMockActionListFactory creates a new mock instance
+func NewMockActionListFactory(ctrl *gomock.Controller) *MockActionListFactory {
+	mock := &MockActionListFactory{ctrl: ctrl}
+	mock.recorder = &MockActionListFactoryMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockActionListLoader) EXPECT() *MockActionListLoaderMockRecorder {
+func (m *MockActionListFactory) EXPECT() *MockActionListFactoryMockRecorder {
 	return m.recorder
 }
 
 // ReleaseList mocks base method
-func (m *MockActionListLoader) ReleaseList(namespace string) (helminstall.ReleaseListRunner, error) {
+func (m *MockActionListFactory) ReleaseList(kubeConfig, helmKubeContext, namespace string) (helminstall.ReleaseListRunner, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReleaseList", namespace)
+	ret := m.ctrl.Call(m, "ReleaseList", kubeConfig, helmKubeContext, namespace)
 	ret0, _ := ret[0].(helminstall.ReleaseListRunner)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReleaseList indicates an expected call of ReleaseList
-func (mr *MockActionListLoaderMockRecorder) ReleaseList(namespace interface{}) *gomock.Call {
+func (mr *MockActionListFactoryMockRecorder) ReleaseList(kubeConfig, helmKubeContext, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseList", reflect.TypeOf((*MockActionListLoader)(nil).ReleaseList), namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseList", reflect.TypeOf((*MockActionListFactory)(nil).ReleaseList), kubeConfig, helmKubeContext, namespace)
 }
 
 // MockReleaseListRunner is a mock of ReleaseListRunner interface
