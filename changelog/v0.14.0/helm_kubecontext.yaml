@@ -1,4 +1,4 @@
 changelog:
-  - type: NEW_FEATURE
+  - type: BREAKING_CHANGE
     description: Allow passing in Helm kube context during installation.
     issueLink: https://github.com/solo-io/go-utils/issues/392
