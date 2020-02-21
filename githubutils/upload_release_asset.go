@@ -80,7 +80,7 @@ func uploadFileOrExit(ctx context.Context, client *github.Client, release *githu
 
 func tryUploadAsset(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name string, path string) error {
 
-	// we need to open/close the file in the here because it's in the retry loop
+	// we need to open/close the file here because it's in the retry loop
 	// we have seen when github is down and returns http 500 that it also closes the file we were trying to upload
 	// hence we need to ensure that the file is open before we attempt uploading the asset
 	file, err := os.Open(path)
