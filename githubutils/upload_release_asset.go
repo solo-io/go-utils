@@ -68,15 +68,9 @@ func uploadShaOrExit(ctx context.Context, client *github.Client, release *github
 }
 
 func uploadFileOrExit(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name, path string) {
-	file, err := os.Open(path)
-	defer file.Close()
-	if err != nil {
-		contextutils.LoggerFrom(ctx).Fatalf("Error reading file %s: %s", path, err.Error())
-	}
-
 	// Using default retry settings for now, 10 attempts, 100ms delay with backoff
-	err = retry.Do(func() error {
-		return tryUploadAsset(ctx, client, release, spec, name, file)
+	err := retry.Do(func() error {
+		return tryUploadAsset(ctx, client, release, spec, name, path)
 	})
 
 	if err != nil {
@@ -84,11 +78,22 @@ func uploadFileOrExit(ctx context.Context, client *github.Client, release *githu
 	}
 }
 
-func tryUploadAsset(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name string, file *os.File) error {
+func tryUploadAsset(ctx context.Context, client *github.Client, release *github.RepositoryRelease, spec *UploadReleaseAssetSpec, name string, path string) error {
+
+	// we need to open/close the file in the here because it's in the retry loop
+	// we have seen when github is down and returns http 500 that it also closes the file we were trying to upload
+	// hence we need to ensure that the file is open before we attempt uploading the asset
+	file, err := os.Open(path)
+	defer file.Close()
+	if err != nil {
+		contextutils.LoggerFrom(ctx).Fatalf("Error reading file %s: %s", path, err.Error())
+	}
+
 	opts := &github.UploadOptions{
 		Name: name,
 	}
-	_, _, err := client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, file)
+
+	_, _, err = client.Repositories.UploadReleaseAsset(ctx, spec.Owner, spec.Repo, release.GetID(), opts, file)
 	if err != nil {
 		loadedRelease, _, _ := client.Repositories.GetRelease(ctx, spec.Owner, spec.Repo, release.GetID())
 		if loadedRelease != nil {
