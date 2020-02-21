@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix github release asset upload logic to handle github 500 errors
+    issueLink: https://github.com/solo-io/go-utils/issues/394
