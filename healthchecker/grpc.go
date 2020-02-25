@@ -1,6 +1,10 @@
 package healthchecker
 
 import (
+	"context"
+	"github.com/solo-io/go-utils/contextutils"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -45,4 +49,24 @@ func (hc *grpcHealthChecker) Fail() {
 
 func (hc *grpcHealthChecker) GetServer() *health.Server {
 	return hc.srv
+}
+
+func GrpcUnaryServerHealthCheckerInterceptor(sigs chan os.Signal, failedHealthCheck chan struct{}) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		logger := contextutils.LoggerFrom(ctx)
+
+		select {
+		case x, ok := <-sigs:
+			if ok {
+				logger.Debugf("Received signal %v", x)
+				header := metadata.Pairs("x-envoy-immediate-health-check-fail", "")
+				grpc.SendHeader(ctx, header)
+				logger.Debugf("extauth server sending header %v", header)
+				failedHealthCheck <- struct{}{}
+			}
+		default:
+		}
+
+		return handler(ctx, req)
+	}
 }
