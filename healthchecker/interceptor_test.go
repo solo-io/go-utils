@@ -16,7 +16,9 @@ var _ = Describe("grpc healthchecker interceptor", func() {
 		sigs := make(chan os.Signal, 1)
 		sigs<-syscall.SIGINT
 
-		f := healthchecker.GrpcUnaryServerHealthCheckerInterceptor(sigs, madeHealthCheckFail)
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		f := healthchecker.GrpcUnaryServerHealthCheckerInterceptor(ctx, madeHealthCheckFail)
 		f(context.Background(), "foo", nil, func(ctx context.Context, req interface{}) (interface{}, error) {
 			x, ok := <-madeHealthCheckFail
 			Expect(ok).To(BeTrue())
