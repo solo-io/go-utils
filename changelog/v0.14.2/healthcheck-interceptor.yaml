@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      Add a health check interceptor to send a "x-envoy-immediate-health-check-fail" header
+      to envoy.
+    issueLink: https://github.com/solo-io/gloo/issues/2489
+    resolvesIssue: false

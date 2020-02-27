@@ -1,6 +1,11 @@
 package healthchecker
 
 import (
+	"context"
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -45,4 +50,26 @@ func (hc *grpcHealthChecker) Fail() {
 
 func (hc *grpcHealthChecker) GetServer() *health.Server {
 	return hc.srv
+}
+
+func GrpcUnaryServerHealthCheckerInterceptor(callerCtx context.Context, failedHealthCheck chan struct{}) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		logger := contextutils.LoggerFrom(ctx)
+		logger.Debugw("Intercepted request: ", zap.Any("req", req))
+		logger.Debugw("Intercepted request info: ", zap.Any("info", info))
+
+		select {
+		case <-callerCtx.Done():
+			header := metadata.Pairs("x-envoy-immediate-health-check-fail", "")
+			grpc.SendHeader(ctx, header)
+			logger.Debugf("received signal that caller context has been canceled. Sending header %v", header)
+			failedHealthCheck <- struct{}{}
+		default:
+		}
+
+		resp, err := handler(ctx, req)
+		logger.Debugw("Intercepted response: ", zap.Any("resp", resp))
+		logger.Debugw("Intercepted response error: ", zap.Error(err))
+		return resp, err
+	}
 }
