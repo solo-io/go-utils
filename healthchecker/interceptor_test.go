@@ -11,7 +11,7 @@ import (
 
 
 var _ = Describe("grpc healthchecker interceptor", func() {
-	It("should inject log to context", func() {
+	It("should make the health check fail", func() {
 		madeHealthCheckFail := make(chan struct{}, 1)
 		sigs := make(chan os.Signal, 1)
 		sigs<-syscall.SIGINT

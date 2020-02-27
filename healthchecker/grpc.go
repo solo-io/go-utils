@@ -3,6 +3,7 @@ package healthchecker
 import (
 	"context"
 	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"os"
@@ -54,6 +55,8 @@ func (hc *grpcHealthChecker) GetServer() *health.Server {
 func GrpcUnaryServerHealthCheckerInterceptor(callerCtx context.Context, failedHealthCheck chan struct{}) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		logger := contextutils.LoggerFrom(ctx)
+		logger.Debugw("Intercepted request: ", zap.Any("req", req))
+		logger.Debugw("Intercepted request info: ", zap.Any("info", info))
 
 		select {
 		case <-callerCtx.Done():
@@ -64,6 +67,9 @@ func GrpcUnaryServerHealthCheckerInterceptor(callerCtx context.Context, failedHe
 		default:
 		}
 
-		return handler(ctx, req)
+		resp, err := handler(ctx, req)
+		logger.Debugw("Intercepted response: ", zap.Any("resp", resp))
+		logger.Debugw("Intercepted response error: ", zap.Error(err))
+		return resp, err
 	}
 }
