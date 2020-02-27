@@ -20,9 +20,9 @@ var _ = Describe("grpc healthchecker interceptor", func() {
 		cancel()
 		f := healthchecker.GrpcUnaryServerHealthCheckerInterceptor(ctx, madeHealthCheckFail)
 		f(context.Background(), "foo", nil, func(ctx context.Context, req interface{}) (interface{}, error) {
-			x, ok := <-madeHealthCheckFail
+			failSignal, ok := <-madeHealthCheckFail
 			Expect(ok).To(BeTrue())
-			Expect(x).To(Equal(struct{}{}))
+			Expect(failSignal).To(Equal(struct{}{}))
 			return nil, nil
 		})
 	})
