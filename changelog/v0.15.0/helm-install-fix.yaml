@@ -1,0 +1,4 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: Clean up the helminstall package, as well as fix a confusing message when the namespace exists already.
+    issueLink: https://github.com/solo-io/go-utils/issues/399
