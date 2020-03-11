@@ -2,19 +2,19 @@ package healthchecker_test
 
 import (
 	"context"
+	"os"
+	"syscall"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/healthchecker"
-	"os"
-	"syscall"
 )
-
 
 var _ = Describe("grpc healthchecker interceptor", func() {
 	It("should make the health check fail", func() {
 		madeHealthCheckFail := make(chan struct{}, 1)
 		sigs := make(chan os.Signal, 1)
-		sigs<-syscall.SIGINT
+		sigs <- syscall.SIGINT
 
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()

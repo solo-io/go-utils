@@ -30,32 +30,9 @@ var (
 	}
 )
 
-type Installer interface {
-	Install(installerConfig *InstallerConfig) error
-}
-
-type InstallerConfig struct {
-	// kube config containing the context of cluster to install on
-	KubeConfig string
-	// kube context of cluster to install on
-	KubeContext      string
-	DryRun           bool
-	CreateNamespace  bool
-	Verbose          bool
-	InstallNamespace string
-	ReleaseName      string
-	// the uri to the helm chart, can either be a local file or a valid http/https link
-	ReleaseUri  string
-	ValuesFiles []string
-	ExtraValues map[string]interface{}
-
-	PreInstallMessage  string
-	PostInstallMessage string
-}
-
 type installer struct {
 	helmClient   HelmClient
-	kubeNsClient NamespaceCLient
+	kubeNsClient NamespaceClient
 	out          io.Writer
 }
 
@@ -69,7 +46,7 @@ func MustInstaller() Installer {
 }
 
 // visible for testing
-func NewInstaller(helmClient HelmClient, kubeNsClient NamespaceCLient, outputWriter io.Writer) Installer {
+func NewInstaller(helmClient HelmClient, kubeNsClient NamespaceClient, outputWriter io.Writer) Installer {
 	return &installer{
 		helmClient:   helmClient,
 		kubeNsClient: kubeNsClient,
@@ -166,12 +143,12 @@ func (i *installer) createNamespace(namespace string) {
 				Name: namespace,
 			},
 		}); err != nil {
-			fmt.Fprintf(i.out, "\nUnable to create namespace %s. Continuing...\n", namespace)
+			fmt.Fprintf(i.out, "\nUnable to create namespace %s (%s). Continuing...\n", namespace, err.Error())
 		} else {
 			fmt.Fprintf(i.out, "Done.\n")
 		}
-	} else {
-		fmt.Fprintf(i.out, "\nUnable to check if namespace %s exists. Continuing...\n", namespace)
+	} else if err != nil {
+		fmt.Fprintf(i.out, "\nUnable to check if namespace %s exists (%s). Continuing...\n", namespace, err.Error())
 	}
 
 }
@@ -190,7 +167,7 @@ func (i *installer) defaultPostInstallMessage(config *InstallerConfig) {
 	fmt.Fprintf(i.out, "Successful installation!\n")
 }
 
-type NamespaceCLient interface {
+type NamespaceClient interface {
 	Create(ns *corev1.Namespace) (*corev1.Namespace, error)
 	Delete(name string, options *metav1.DeleteOptions) error
 	Get(name string, options metav1.GetOptions) (*corev1.Namespace, error)
