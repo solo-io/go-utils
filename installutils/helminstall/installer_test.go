@@ -24,7 +24,7 @@ var _ = Describe("Helm Installer", func() {
 	var (
 		ctrl                *gomock.Controller
 		mockHelmClient      *mock_internal.MockHelmClient
-		mockNamespaceClient *mock_helminstall.MockNamespaceCLient
+		mockNamespaceClient *mock_helminstall.MockNamespaceClient
 		mockHelmInstaller   *mock_internal.MockHelmInstaller
 		outputWriter        *bytes.Buffer
 		installer           helminstall.Installer
@@ -35,7 +35,7 @@ var _ = Describe("Helm Installer", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockHelmClient = mock_internal.NewMockHelmClient(ctrl)
-		mockNamespaceClient = mock_helminstall.NewMockNamespaceCLient(ctrl)
+		mockNamespaceClient = mock_helminstall.NewMockNamespaceClient(ctrl)
 		mockHelmInstaller = mock_internal.NewMockHelmInstaller(ctrl)
 		outputWriter = &bytes.Buffer{}
 		installer = helminstall.NewInstaller(mockHelmClient, mockNamespaceClient, outputWriter)
