@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 
+	mock_internal "github.com/solo-io/go-utils/installutils/helminstall/internal/mocks"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
@@ -22,9 +23,9 @@ import (
 var _ = Describe("Helm Installer", func() {
 	var (
 		ctrl                *gomock.Controller
-		mockHelmClient      *mock_helminstall.MockHelmClient
-		mockNamespaceClient *mock_helminstall.MockNamespaceCLient
-		mockHelmInstaller   *mock_helminstall.MockHelmInstaller
+		mockHelmClient      *mock_internal.MockHelmClient
+		mockNamespaceClient *mock_helminstall.MockNamespaceClient
+		mockHelmInstaller   *mock_internal.MockHelmInstaller
 		outputWriter        *bytes.Buffer
 		installer           helminstall.Installer
 		helmKubeconfig      = "path/to/kubeconfig"
@@ -33,9 +34,9 @@ var _ = Describe("Helm Installer", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockHelmClient = mock_helminstall.NewMockHelmClient(ctrl)
-		mockNamespaceClient = mock_helminstall.NewMockNamespaceCLient(ctrl)
-		mockHelmInstaller = mock_helminstall.NewMockHelmInstaller(ctrl)
+		mockHelmClient = mock_internal.NewMockHelmClient(ctrl)
+		mockNamespaceClient = mock_helminstall.NewMockNamespaceClient(ctrl)
+		mockHelmInstaller = mock_internal.NewMockHelmInstaller(ctrl)
 		outputWriter = &bytes.Buffer{}
 		installer = helminstall.NewInstaller(mockHelmClient, mockNamespaceClient, outputWriter)
 	})

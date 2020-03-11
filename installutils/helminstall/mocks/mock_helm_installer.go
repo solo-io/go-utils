@@ -8,73 +8,35 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	helminstall "github.com/solo-io/go-utils/installutils/helminstall"
 	v1 "k8s.io/api/core/v1"
 	v10 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// MockInstaller is a mock of Installer interface
-type MockInstaller struct {
+// MockNamespaceClient is a mock of NamespaceClient interface
+type MockNamespaceClient struct {
 	ctrl     *gomock.Controller
-	recorder *MockInstallerMockRecorder
+	recorder *MockNamespaceClientMockRecorder
 }
 
-// MockInstallerMockRecorder is the mock recorder for MockInstaller
-type MockInstallerMockRecorder struct {
-	mock *MockInstaller
+// MockNamespaceClientMockRecorder is the mock recorder for MockNamespaceClient
+type MockNamespaceClientMockRecorder struct {
+	mock *MockNamespaceClient
 }
 
-// NewMockInstaller creates a new mock instance
-func NewMockInstaller(ctrl *gomock.Controller) *MockInstaller {
-	mock := &MockInstaller{ctrl: ctrl}
-	mock.recorder = &MockInstallerMockRecorder{mock}
+// NewMockNamespaceClient creates a new mock instance
+func NewMockNamespaceClient(ctrl *gomock.Controller) *MockNamespaceClient {
+	mock := &MockNamespaceClient{ctrl: ctrl}
+	mock.recorder = &MockNamespaceClientMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockInstaller) EXPECT() *MockInstallerMockRecorder {
-	return m.recorder
-}
-
-// Install mocks base method
-func (m *MockInstaller) Install(installerConfig *helminstall.InstallerConfig) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Install", installerConfig)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Install indicates an expected call of Install
-func (mr *MockInstallerMockRecorder) Install(installerConfig interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Install", reflect.TypeOf((*MockInstaller)(nil).Install), installerConfig)
-}
-
-// MockNamespaceCLient is a mock of NamespaceCLient interface
-type MockNamespaceCLient struct {
-	ctrl     *gomock.Controller
-	recorder *MockNamespaceCLientMockRecorder
-}
-
-// MockNamespaceCLientMockRecorder is the mock recorder for MockNamespaceCLient
-type MockNamespaceCLientMockRecorder struct {
-	mock *MockNamespaceCLient
-}
-
-// NewMockNamespaceCLient creates a new mock instance
-func NewMockNamespaceCLient(ctrl *gomock.Controller) *MockNamespaceCLient {
-	mock := &MockNamespaceCLient{ctrl: ctrl}
-	mock.recorder = &MockNamespaceCLientMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockNamespaceCLient) EXPECT() *MockNamespaceCLientMockRecorder {
+func (m *MockNamespaceClient) EXPECT() *MockNamespaceClientMockRecorder {
 	return m.recorder
 }
 
 // Create mocks base method
-func (m *MockNamespaceCLient) Create(ns *v1.Namespace) (*v1.Namespace, error) {
+func (m *MockNamespaceClient) Create(ns *v1.Namespace) (*v1.Namespace, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ns)
 	ret0, _ := ret[0].(*v1.Namespace)
@@ -83,13 +45,13 @@ func (m *MockNamespaceCLient) Create(ns *v1.Namespace) (*v1.Namespace, error) {
 }
 
 // Create indicates an expected call of Create
-func (mr *MockNamespaceCLientMockRecorder) Create(ns interface{}) *gomock.Call {
+func (mr *MockNamespaceClientMockRecorder) Create(ns interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockNamespaceCLient)(nil).Create), ns)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockNamespaceClient)(nil).Create), ns)
 }
 
 // Delete mocks base method
-func (m *MockNamespaceCLient) Delete(name string, options *v10.DeleteOptions) error {
+func (m *MockNamespaceClient) Delete(name string, options *v10.DeleteOptions) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", name, options)
 	ret0, _ := ret[0].(error)
@@ -97,13 +59,13 @@ func (m *MockNamespaceCLient) Delete(name string, options *v10.DeleteOptions) er
 }
 
 // Delete indicates an expected call of Delete
-func (mr *MockNamespaceCLientMockRecorder) Delete(name, options interface{}) *gomock.Call {
+func (mr *MockNamespaceClientMockRecorder) Delete(name, options interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockNamespaceCLient)(nil).Delete), name, options)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockNamespaceClient)(nil).Delete), name, options)
 }
 
 // Get mocks base method
-func (m *MockNamespaceCLient) Get(name string, options v10.GetOptions) (*v1.Namespace, error) {
+func (m *MockNamespaceClient) Get(name string, options v10.GetOptions) (*v1.Namespace, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", name, options)
 	ret0, _ := ret[0].(*v1.Namespace)
@@ -112,13 +74,13 @@ func (m *MockNamespaceCLient) Get(name string, options v10.GetOptions) (*v1.Name
 }
 
 // Get indicates an expected call of Get
-func (mr *MockNamespaceCLientMockRecorder) Get(name, options interface{}) *gomock.Call {
+func (mr *MockNamespaceClientMockRecorder) Get(name, options interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNamespaceCLient)(nil).Get), name, options)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNamespaceClient)(nil).Get), name, options)
 }
 
 // List mocks base method
-func (m *MockNamespaceCLient) List(opts v10.ListOptions) (*v1.NamespaceList, error) {
+func (m *MockNamespaceClient) List(opts v10.ListOptions) (*v1.NamespaceList, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", opts)
 	ret0, _ := ret[0].(*v1.NamespaceList)
@@ -127,7 +89,7 @@ func (m *MockNamespaceCLient) List(opts v10.ListOptions) (*v1.NamespaceList, err
 }
 
 // List indicates an expected call of List
-func (mr *MockNamespaceCLientMockRecorder) List(opts interface{}) *gomock.Call {
+func (mr *MockNamespaceClientMockRecorder) List(opts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockNamespaceCLient)(nil).List), opts)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockNamespaceClient)(nil).List), opts)
 }
