@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/rotisserie/eris"
+	"github.com/solo-io/go-utils/installutils/helminstall/types"
 	"github.com/solo-io/go-utils/kubeutils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli/values"
@@ -31,12 +32,12 @@ var (
 )
 
 type installer struct {
-	helmClient   HelmClient
+	helmClient   types.HelmClient
 	kubeNsClient NamespaceClient
 	out          io.Writer
 }
 
-func MustInstaller() Installer {
+func MustInstaller() types.Installer {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		log.Fatal(err)
@@ -46,7 +47,7 @@ func MustInstaller() Installer {
 }
 
 // visible for testing
-func NewInstaller(helmClient HelmClient, kubeNsClient NamespaceClient, outputWriter io.Writer) Installer {
+func NewInstaller(helmClient types.HelmClient, kubeNsClient NamespaceClient, outputWriter io.Writer) types.Installer {
 	return &installer{
 		helmClient:   helmClient,
 		kubeNsClient: kubeNsClient,
@@ -54,7 +55,7 @@ func NewInstaller(helmClient HelmClient, kubeNsClient NamespaceClient, outputWri
 	}
 }
 
-func (i *installer) Install(installerConfig *InstallerConfig) error {
+func (i *installer) Install(installerConfig *types.InstallerConfig) error {
 	namespace := installerConfig.InstallNamespace
 	releaseName := installerConfig.ReleaseName
 	if !installerConfig.DryRun {
@@ -153,14 +154,14 @@ func (i *installer) createNamespace(namespace string) {
 
 }
 
-func (i *installer) defaultPreInstallMessage(config *InstallerConfig) {
+func (i *installer) defaultPreInstallMessage(config *types.InstallerConfig) {
 	if config.DryRun {
 		return
 	}
 	fmt.Fprintf(i.out, "Starting helm installation\n")
 }
 
-func (i *installer) defaultPostInstallMessage(config *InstallerConfig) {
+func (i *installer) defaultPostInstallMessage(config *types.InstallerConfig) {
 	if config.DryRun {
 		return
 	}

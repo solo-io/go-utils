@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"os"
 
-	mock_internal "github.com/solo-io/go-utils/installutils/helminstall/internal/mocks"
+	"github.com/solo-io/go-utils/installutils/helminstall/types"
+	mock_types "github.com/solo-io/go-utils/installutils/helminstall/types/mocks"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
@@ -23,26 +24,26 @@ import (
 var _ = Describe("Helm Installer", func() {
 	var (
 		ctrl                *gomock.Controller
-		mockHelmClient      *mock_internal.MockHelmClient
+		mockHelmClient      *mock_types.MockHelmClient
 		mockNamespaceClient *mock_helminstall.MockNamespaceClient
-		mockHelmInstaller   *mock_internal.MockHelmInstaller
+		mockHelmInstaller   *mock_types.MockHelmInstaller
 		outputWriter        *bytes.Buffer
-		installer           helminstall.Installer
+		installer           types.Installer
 		helmKubeconfig      = "path/to/kubeconfig"
 		helmKubeContext     = "helm-kube-context"
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockHelmClient = mock_internal.NewMockHelmClient(ctrl)
+		mockHelmClient = mock_types.NewMockHelmClient(ctrl)
 		mockNamespaceClient = mock_helminstall.NewMockNamespaceClient(ctrl)
-		mockHelmInstaller = mock_internal.NewMockHelmInstaller(ctrl)
+		mockHelmInstaller = mock_types.NewMockHelmInstaller(ctrl)
 		outputWriter = &bytes.Buffer{}
 		installer = helminstall.NewInstaller(mockHelmClient, mockNamespaceClient, outputWriter)
 	})
 
 	It("should error if release already exists", func() {
-		installerConfig := &helminstall.InstallerConfig{
+		installerConfig := &types.InstallerConfig{
 			KubeConfig:       helmKubeconfig,
 			KubeContext:      helmKubeContext,
 			InstallNamespace: "namespace",
@@ -59,7 +60,7 @@ var _ = Describe("Helm Installer", func() {
 	})
 
 	It("should install correctly", func() {
-		installerConfig := &helminstall.InstallerConfig{
+		installerConfig := &types.InstallerConfig{
 			KubeConfig:       helmKubeconfig,
 			KubeContext:      helmKubeContext,
 			InstallNamespace: "namespace",
