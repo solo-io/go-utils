@@ -3,6 +3,7 @@ package internal
 import (
 	"os"
 
+	"github.com/solo-io/go-utils/installutils/helminstall/types"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -53,7 +54,7 @@ func noOpDebugLog(_ string, _ ...interface{}) {}
 
 // Returns a ReleaseListRunner
 type ActionListFactory interface {
-	ReleaseList(kubeConfig, helmKubeContext, namespace string) (ReleaseListRunner, error)
+	ReleaseList(kubeConfig, helmKubeContext, namespace string) (types.ReleaseListRunner, error)
 }
 
 type actionListFactory struct {
@@ -64,7 +65,7 @@ func NewActionListFactory(actionConfigFactory ActionConfigFactory) ActionListFac
 	return &actionListFactory{actionConfigFactory: actionConfigFactory}
 }
 
-func (a *actionListFactory) ReleaseList(kubeConfig, helmKubeContext, namespace string) (ReleaseListRunner, error) {
+func (a *actionListFactory) ReleaseList(kubeConfig, helmKubeContext, namespace string) (types.ReleaseListRunner, error) {
 	actionConfig, _, err := a.actionConfigFactory.NewActionConfig(kubeConfig, helmKubeContext, namespace)
 	if err != nil {
 		return nil, err
@@ -72,12 +73,6 @@ func (a *actionListFactory) ReleaseList(kubeConfig, helmKubeContext, namespace s
 	return &releaseListRunner{
 		list: action.NewList(actionConfig),
 	}, nil
-}
-
-// an interface around Helm's action.List struct
-type ReleaseListRunner interface {
-	Run() ([]*release.Release, error)
-	SetFilter(filter string)
 }
 
 type releaseListRunner struct {

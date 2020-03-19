@@ -7,9 +7,10 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/installutils/helminstall"
 	"github.com/solo-io/go-utils/installutils/helminstall/internal"
 	mock_internal "github.com/solo-io/go-utils/installutils/helminstall/internal/mocks"
+	"github.com/solo-io/go-utils/installutils/helminstall/types"
+	mock_types "github.com/solo-io/go-utils/installutils/helminstall/types/mocks"
 	mock_afero "github.com/solo-io/go-utils/testutils/mocks/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -30,8 +31,8 @@ var _ = Describe("helm install client", func() {
 		mockHelmActionListFactory   *mock_internal.MockActionListFactory
 		mockHelmChartLoader         *mock_internal.MockChartLoader
 		mockHelmLoaders             internal.HelmFactories
-		mockHelmReleaseListRunner   *mock_internal.MockReleaseListRunner
-		helmClient                  helminstall.HelmClient
+		mockHelmReleaseListRunner   *mock_types.MockReleaseListRunner
+		helmClient                  types.HelmClient
 		helmKubeConfig              = "path/to/kubeconfig"
 		helmKubeContext             = "helm-kube-context"
 	)
@@ -44,7 +45,7 @@ var _ = Describe("helm install client", func() {
 		mockHelmActionConfigFactory = mock_internal.NewMockActionConfigFactory(ctrl)
 		mockHelmChartLoader = mock_internal.NewMockChartLoader(ctrl)
 		mockHelmActionListFactory = mock_internal.NewMockActionListFactory(ctrl)
-		mockHelmReleaseListRunner = mock_internal.NewMockReleaseListRunner(ctrl)
+		mockHelmReleaseListRunner = mock_types.NewMockReleaseListRunner(ctrl)
 		mockHelmLoaders = internal.HelmFactories{
 			ActionConfigFactory: mockHelmActionConfigFactory,
 			ActionListFactory:   mockHelmActionListFactory,

@@ -4,11 +4,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/solo-io/go-utils/installutils/helminstall/types"
 	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/release"
 )
 
 //go:generate mockgen -destination mocks/mock_helm_client.go -source ./client.go
@@ -19,19 +19,6 @@ const (
 	helmNamespaceEnvVar      = "HELM_NAMESPACE"
 	helmKubeContextEnvVar    = "HELM_KUBECONTEXT"
 )
-
-// an interface around Helm's action.Install struct
-type HelmInstaller interface {
-	Run(chrt *chart.Chart, vals map[string]interface{}) (*release.Release, error)
-}
-
-// an interface around Helm's action.Uninstall struct
-type HelmUninstaller interface {
-	Run(name string) (*release.UninstallReleaseResponse, error)
-}
-
-var _ HelmInstaller = &action.Install{}
-var _ HelmUninstaller = &action.Uninstall{}
 
 // interface around needed afero functions
 type FsHelper interface {
@@ -77,7 +64,7 @@ func NewDefaultHelmClient(
 	}
 }
 
-func (d *DefaultHelmClient) NewInstall(kubeConfig, kubeContext, namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error) {
+func (d *DefaultHelmClient) NewInstall(kubeConfig, kubeContext, namespace, releaseName string, dryRun bool) (types.HelmInstaller, *cli.EnvSettings, error) {
 	actionConfig, settings, err := d.HelmLoaders.ActionConfigFactory.NewActionConfig(kubeConfig, kubeContext, namespace)
 	if err != nil {
 		return nil, nil, err
@@ -95,7 +82,7 @@ func (d *DefaultHelmClient) NewInstall(kubeConfig, kubeContext, namespace, relea
 	return client, settings, nil
 }
 
-func (d *DefaultHelmClient) NewUninstall(kubeConfig, kubeContext, namespace string) (HelmUninstaller, error) {
+func (d *DefaultHelmClient) NewUninstall(kubeConfig, kubeContext, namespace string) (types.HelmUninstaller, error) {
 	actionConfig, _, err := d.HelmLoaders.ActionConfigFactory.NewActionConfig(kubeConfig, kubeContext, namespace)
 	if err != nil {
 		return nil, err
@@ -138,7 +125,7 @@ func (d *DefaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart,
 	return chartObj, nil
 }
 
-func (d *DefaultHelmClient) ReleaseList(kubeConfig, kubeContext, namespace string) (ReleaseListRunner, error) {
+func (d *DefaultHelmClient) ReleaseList(kubeConfig, kubeContext, namespace string) (types.ReleaseListRunner, error) {
 	return d.HelmLoaders.ActionListFactory.ReleaseList(kubeConfig, kubeContext, namespace)
 }
 

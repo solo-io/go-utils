@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix some types that were too aggressivley moved into internal
+    issueLink: https://github.com/solo-io/go-utils/issues/399
