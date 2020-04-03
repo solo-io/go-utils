@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/rotisserie/eris"
+	"github.com/solo-io/go-utils/installutils/helminstall/types"
 	"github.com/solo-io/go-utils/kubeutils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli/values"
@@ -30,36 +31,13 @@ var (
 	}
 )
 
-type Installer interface {
-	Install(installerConfig *InstallerConfig) error
-}
-
-type InstallerConfig struct {
-	// kube config containing the context of cluster to install on
-	KubeConfig string
-	// kube context of cluster to install on
-	KubeContext      string
-	DryRun           bool
-	CreateNamespace  bool
-	Verbose          bool
-	InstallNamespace string
-	ReleaseName      string
-	// the uri to the helm chart, can either be a local file or a valid http/https link
-	ReleaseUri  string
-	ValuesFiles []string
-	ExtraValues map[string]interface{}
-
-	PreInstallMessage  string
-	PostInstallMessage string
-}
-
 type installer struct {
-	helmClient   HelmClient
-	kubeNsClient NamespaceCLient
+	helmClient   types.HelmClient
+	kubeNsClient NamespaceClient
 	out          io.Writer
 }
 
-func MustInstaller() Installer {
+func MustInstaller() types.Installer {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		log.Fatal(err)
@@ -69,7 +47,7 @@ func MustInstaller() Installer {
 }
 
 // visible for testing
-func NewInstaller(helmClient HelmClient, kubeNsClient NamespaceCLient, outputWriter io.Writer) Installer {
+func NewInstaller(helmClient types.HelmClient, kubeNsClient NamespaceClient, outputWriter io.Writer) types.Installer {
 	return &installer{
 		helmClient:   helmClient,
 		kubeNsClient: kubeNsClient,
@@ -77,7 +55,7 @@ func NewInstaller(helmClient HelmClient, kubeNsClient NamespaceCLient, outputWri
 	}
 }
 
-func (i *installer) Install(installerConfig *InstallerConfig) error {
+func (i *installer) Install(installerConfig *types.InstallerConfig) error {
 	namespace := installerConfig.InstallNamespace
 	releaseName := installerConfig.ReleaseName
 	if !installerConfig.DryRun {
@@ -166,31 +144,31 @@ func (i *installer) createNamespace(namespace string) {
 				Name: namespace,
 			},
 		}); err != nil {
-			fmt.Fprintf(i.out, "\nUnable to create namespace %s. Continuing...\n", namespace)
+			fmt.Fprintf(i.out, "\nUnable to create namespace %s (%s). Continuing...\n", namespace, err.Error())
 		} else {
 			fmt.Fprintf(i.out, "Done.\n")
 		}
-	} else {
-		fmt.Fprintf(i.out, "\nUnable to check if namespace %s exists. Continuing...\n", namespace)
+	} else if err != nil {
+		fmt.Fprintf(i.out, "\nUnable to check if namespace %s exists (%s). Continuing...\n", namespace, err.Error())
 	}
 
 }
 
-func (i *installer) defaultPreInstallMessage(config *InstallerConfig) {
+func (i *installer) defaultPreInstallMessage(config *types.InstallerConfig) {
 	if config.DryRun {
 		return
 	}
 	fmt.Fprintf(i.out, "Starting helm installation\n")
 }
 
-func (i *installer) defaultPostInstallMessage(config *InstallerConfig) {
+func (i *installer) defaultPostInstallMessage(config *types.InstallerConfig) {
 	if config.DryRun {
 		return
 	}
 	fmt.Fprintf(i.out, "Successful installation!\n")
 }
 
-type NamespaceCLient interface {
+type NamespaceClient interface {
 	Create(ns *corev1.Namespace) (*corev1.Namespace, error)
 	Delete(name string, options *metav1.DeleteOptions) error
 	Get(name string, options metav1.GetOptions) (*corev1.Namespace, error)

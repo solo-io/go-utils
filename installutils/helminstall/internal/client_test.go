@@ -1,4 +1,4 @@
-package helminstall_test
+package internal_test
 
 import (
 	"bytes"
@@ -7,8 +7,10 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/installutils/helminstall"
-	mock_helminstall "github.com/solo-io/go-utils/installutils/helminstall/mocks"
+	"github.com/solo-io/go-utils/installutils/helminstall/internal"
+	mock_internal "github.com/solo-io/go-utils/installutils/helminstall/internal/mocks"
+	"github.com/solo-io/go-utils/installutils/helminstall/types"
+	mock_types "github.com/solo-io/go-utils/installutils/helminstall/types/mocks"
 	mock_afero "github.com/solo-io/go-utils/testutils/mocks/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -23,14 +25,14 @@ var _ = Describe("helm install client", func() {
 	var (
 		ctrl                        *gomock.Controller
 		mockFile                    *mock_afero.MockFile
-		mockFs                      *mock_helminstall.MockFsHelper
-		mockResourceFetcher         *mock_helminstall.MockResourceFetcher
-		mockHelmActionConfigFactory *mock_helminstall.MockActionConfigFactory
-		mockHelmActionListFactory   *mock_helminstall.MockActionListFactory
-		mockHelmChartLoader         *mock_helminstall.MockChartLoader
-		mockHelmLoaders             helminstall.HelmFactories
-		mockHelmReleaseListRunner   *mock_helminstall.MockReleaseListRunner
-		helmClient                  helminstall.HelmClient
+		mockFs                      *mock_internal.MockFsHelper
+		mockResourceFetcher         *mock_internal.MockResourceFetcher
+		mockHelmActionConfigFactory *mock_internal.MockActionConfigFactory
+		mockHelmActionListFactory   *mock_internal.MockActionListFactory
+		mockHelmChartLoader         *mock_internal.MockChartLoader
+		mockHelmLoaders             internal.HelmFactories
+		mockHelmReleaseListRunner   *mock_types.MockReleaseListRunner
+		helmClient                  types.HelmClient
 		helmKubeConfig              = "path/to/kubeconfig"
 		helmKubeContext             = "helm-kube-context"
 	)
@@ -38,18 +40,18 @@ var _ = Describe("helm install client", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockFile = mock_afero.NewMockFile(ctrl)
-		mockFs = mock_helminstall.NewMockFsHelper(ctrl)
-		mockResourceFetcher = mock_helminstall.NewMockResourceFetcher(ctrl)
-		mockHelmActionConfigFactory = mock_helminstall.NewMockActionConfigFactory(ctrl)
-		mockHelmChartLoader = mock_helminstall.NewMockChartLoader(ctrl)
-		mockHelmActionListFactory = mock_helminstall.NewMockActionListFactory(ctrl)
-		mockHelmReleaseListRunner = mock_helminstall.NewMockReleaseListRunner(ctrl)
-		mockHelmLoaders = helminstall.HelmFactories{
+		mockFs = mock_internal.NewMockFsHelper(ctrl)
+		mockResourceFetcher = mock_internal.NewMockResourceFetcher(ctrl)
+		mockHelmActionConfigFactory = mock_internal.NewMockActionConfigFactory(ctrl)
+		mockHelmChartLoader = mock_internal.NewMockChartLoader(ctrl)
+		mockHelmActionListFactory = mock_internal.NewMockActionListFactory(ctrl)
+		mockHelmReleaseListRunner = mock_types.NewMockReleaseListRunner(ctrl)
+		mockHelmLoaders = internal.HelmFactories{
 			ActionConfigFactory: mockHelmActionConfigFactory,
 			ActionListFactory:   mockHelmActionListFactory,
 			ChartLoader:         mockHelmChartLoader,
 		}
-		helmClient = helminstall.NewDefaultHelmClient(
+		helmClient = internal.NewDefaultHelmClient(
 			mockFs,
 			mockResourceFetcher,
 			mockHelmLoaders)
@@ -84,7 +86,7 @@ var _ = Describe("helm install client", func() {
 			Return(chartFile, nil)
 		mockFs.
 			EXPECT().
-			NewTempFile("", helminstall.TempChartPrefix).
+			NewTempFile("", internal.TempChartPrefix).
 			Return(mockFile, nil)
 		mockFile.
 			EXPECT().
@@ -92,7 +94,7 @@ var _ = Describe("helm install client", func() {
 			Return(chartTempFilePath)
 		mockFs.
 			EXPECT().
-			WriteFile(chartTempFilePath, []byte(chartFileContents), helminstall.TempChartFilePermissions).
+			WriteFile(chartTempFilePath, []byte(chartFileContents), internal.TempChartFilePermissions).
 			Return(nil)
 		mockHelmChartLoader.
 			EXPECT().
@@ -108,7 +110,7 @@ var _ = Describe("helm install client", func() {
 	})
 
 	It("can properly set cli env settings with namespace", func() {
-		settings := helminstall.NewCLISettings(helmKubeConfig, helmKubeContext, namespace)
+		settings := internal.NewCLISettings(helmKubeConfig, helmKubeContext, namespace)
 		Expect(settings.Namespace()).To(Equal(namespace))
 	})
 
