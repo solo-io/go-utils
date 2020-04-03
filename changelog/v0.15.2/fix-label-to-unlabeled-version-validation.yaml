@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix label to unlabeled version validation (e.g., 1.1.0-beta1 -> 1.1.0)
+    issueLink: https://github.com/solo-io/go-utils/issues/401
