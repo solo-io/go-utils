@@ -217,8 +217,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	// this flag can be used in the changelog to signal a stable release, which could be 1.0.0 or 1.5.0 or X.Y.0
 	if releaseStableApi {
 		// if the changelog is less than 1.0, then this isn't a stable API
-		stableApiVer := versionutils.StableApiVersion()
-		if !changelog.Version.MustIsGreaterThanOrEqualTo(stableApiVer) {
+		if !changelog.Version.MustIsGreaterThanOrEqualTo(versionutils.StableApiVersion()) {
 			return InvalidUseOfStableApiError(changelog.Version.String())
 		}
 
@@ -238,7 +237,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 
-	if changelog.Version.Label == "" && !settings.RelaxSemverValidation {
+	if changelog.Version.Label == "" && expectedVersion.Label == "" && !settings.RelaxSemverValidation {
 		// since this isn't a labeled release or a stable release, the version should be incremented
 		// based on semver rules.
 		if changelog.Version.LabelVersion == 0 && !changelog.Version.Equals(expectedVersion) {

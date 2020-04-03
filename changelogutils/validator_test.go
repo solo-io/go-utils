@@ -671,7 +671,9 @@ var _ = Describe("changelog validator utils", func() {
 				Entry("foo1 to bar1", "v1.0.0-foo1", "v1.0.0-bar1", validNewFeatureChangelog, noValidationSettingsExist),
 				Entry("foo1 to bar1 relaxed", "v1.0.0-foo1", "v1.0.0-bar1", validNewFeatureChangelog, relaxedValidationSettingsExists),
 				Entry("foo1 to bar3", "v1.0.0-foo1", "v1.0.0-bar3", validNewFeatureChangelog, noValidationSettingsExist),
-				Entry("foo1 to bar3 relaxed", "v1.0.0-foo1", "v1.0.0-bar3", validNewFeatureChangelog, relaxedValidationSettingsExists))
+				Entry("foo1 to bar3 relaxed", "v1.0.0-foo1", "v1.0.0-bar3", validNewFeatureChangelog, relaxedValidationSettingsExists),
+				Entry("foo1 to next minor", "v1.1.0-foo1", "v1.1.0", validNewFeatureChangelog, noValidationSettingsExist),
+				Entry("foo1 to next minor relaxed", "v1.1.0-foo1", "v1.1.0", validNewFeatureChangelog, relaxedValidationSettingsExists))
 		})
 
 		Context("settings with allowed labels", func() {
