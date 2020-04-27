@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add a function for getting clientcmd config with context.
+    issueLink: https://github.com/solo-io/go-utils/issues/403
