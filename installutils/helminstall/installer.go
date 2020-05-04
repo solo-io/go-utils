@@ -4,19 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
-	"os"
 
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/installutils/helminstall/types"
-	"github.com/solo-io/go-utils/kubeutils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/yaml"
@@ -37,16 +33,14 @@ type installer struct {
 	out          io.Writer
 }
 
-func MustInstaller() types.Installer {
-	cfg, err := kubeutils.GetConfig("", "")
-	if err != nil {
-		log.Fatal(err)
+type InstallerFactory func(helmClient types.HelmClient) types.Installer
+
+func NewInstallerFactory(kubeNsClient NamespaceClient, outputWriter io.Writer) InstallerFactory {
+	return func(helmClient types.HelmClient) types.Installer {
+		return NewInstaller(helmClient, kubeNsClient, outputWriter)
 	}
-	client := kubernetes.NewForConfigOrDie(cfg)
-	return NewInstaller(DefaultHelmClient(), client.CoreV1().Namespaces(), os.Stdout)
 }
 
-// visible for testing
 func NewInstaller(helmClient types.HelmClient, kubeNsClient NamespaceClient, outputWriter io.Writer) types.Installer {
 	return &installer{
 		helmClient:   helmClient,
@@ -59,7 +53,7 @@ func (i *installer) Install(installerConfig *types.InstallerConfig) error {
 	namespace := installerConfig.InstallNamespace
 	releaseName := installerConfig.ReleaseName
 	if !installerConfig.DryRun {
-		if releaseExists, err := i.helmClient.ReleaseExists(installerConfig.KubeConfig, installerConfig.KubeContext, namespace, releaseName); err != nil {
+		if releaseExists, err := i.helmClient.ReleaseExists(namespace, releaseName); err != nil {
 			return err
 		} else if releaseExists {
 			return ReleaseAlreadyInstalledErr(releaseName, namespace)
@@ -76,7 +70,7 @@ func (i *installer) Install(installerConfig *types.InstallerConfig) error {
 		i.defaultPreInstallMessage(installerConfig)
 	}
 
-	helmInstall, helmEnv, err := i.helmClient.NewInstall(installerConfig.KubeConfig, installerConfig.KubeContext, namespace, releaseName, installerConfig.DryRun)
+	helmInstall, helmEnv, err := i.helmClient.NewInstall(namespace, releaseName, installerConfig.DryRun)
 	if err != nil {
 		return err
 	}

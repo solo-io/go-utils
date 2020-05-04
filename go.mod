@@ -54,6 +54,7 @@ require (
 	k8s.io/api v0.0.0-20191121015604-11707872ac1c
 	k8s.io/apiextensions-apiserver v0.0.0-20191016113550-5357c4baaf65
 	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a
+	k8s.io/cli-runtime v0.0.0-20191016114015-74ad18325ed5
 	k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 	sigs.k8s.io/controller-runtime v0.4.0
 	sigs.k8s.io/yaml v1.1.0

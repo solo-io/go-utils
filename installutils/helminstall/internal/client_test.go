@@ -51,7 +51,7 @@ var _ = Describe("helm install client", func() {
 			ActionListFactory:   mockHelmActionListFactory,
 			ChartLoader:         mockHelmChartLoader,
 		}
-		helmClient = internal.NewDefaultHelmClient(
+		helmClient = internal.NewHelmClientForFileConfig(
 			mockFs,
 			mockResourceFetcher,
 			mockHelmLoaders)
@@ -65,7 +65,7 @@ var _ = Describe("helm install client", func() {
 			EXPECT().
 			NewActionConfig(helmKubeConfig, helmKubeContext, namespace).
 			Return(&action.Configuration{}, nil, nil)
-		install, _, err := helmClient.NewInstall(helmKubeConfig, helmKubeContext, namespace, releaseName, dryRun)
+		install, _, err := helmClient.NewInstall(namespace, releaseName, dryRun)
 		helmInstall := install.(*action.Install)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(helmInstall.Namespace).To(Equal(namespace))
@@ -137,7 +137,7 @@ var _ = Describe("helm install client", func() {
 			EXPECT().
 			Run().
 			Return(releases, nil)
-		exists, err := helmClient.ReleaseExists(helmKubeConfig, helmKubeContext, namespace, releaseName)
+		exists, err := helmClient.ReleaseExists(namespace, releaseName)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exists).To(BeTrue())
 	})
@@ -165,7 +165,7 @@ var _ = Describe("helm install client", func() {
 			EXPECT().
 			Run().
 			Return(releases, nil)
-		exists, err := helmClient.ReleaseExists(helmKubeConfig, helmKubeContext, namespace, releaseName)
+		exists, err := helmClient.ReleaseExists(namespace, releaseName)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exists).To(BeFalse())
 	})

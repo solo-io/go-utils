@@ -37,20 +37,20 @@ func (m *MockActionConfigFactory) EXPECT() *MockActionConfigFactoryMockRecorder 
 	return m.recorder
 }
 
-// NewActionConfig mocks base method
+// NewActionConfigFromFile mocks base method
 func (m *MockActionConfigFactory) NewActionConfig(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewActionConfig", kubeConfig, helmKubeContext, namespace)
+	ret := m.ctrl.Call(m, "NewActionConfigFromFile", kubeConfig, helmKubeContext, namespace)
 	ret0, _ := ret[0].(*action.Configuration)
 	ret1, _ := ret[1].(*cli.EnvSettings)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// NewActionConfig indicates an expected call of NewActionConfig
+// NewActionConfigFromFile indicates an expected call of NewActionConfigFromFile
 func (mr *MockActionConfigFactoryMockRecorder) NewActionConfig(kubeConfig, helmKubeContext, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewActionConfig", reflect.TypeOf((*MockActionConfigFactory)(nil).NewActionConfig), kubeConfig, helmKubeContext, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewActionConfigFromFile", reflect.TypeOf((*MockActionConfigFactory)(nil).NewActionConfig), kubeConfig, helmKubeContext, namespace)
 }
 
 // MockActionListFactory is a mock of ActionListFactory interface

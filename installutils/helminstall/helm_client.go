@@ -6,11 +6,18 @@ import (
 	"github.com/spf13/afero"
 )
 
-// a HelmClient that talks to the kube api server and creates resources
-func DefaultHelmClient() types.HelmClient {
-	return &internal.DefaultHelmClient{
-		Fs:              internal.NewFs(afero.NewOsFs()),
-		ResourceFetcher: internal.NewDefaultResourceFetcher(),
-		HelmLoaders:     internal.NewHelmFactories(),
-	}
+// HelmClient factory that accepts kubeconfig as a file.
+func DefaultHelmClientFileConfigFactory() types.HelmClientForFileConfigFactory {
+	return internal.NewHelmClientForFileConfigFactory(
+		internal.NewFs(afero.NewOsFs()),
+		internal.NewDefaultResourceFetcher(),
+		internal.NewHelmFactories())
+}
+
+// HelmClient factory that accepts kubeconfig in memory.
+func DefaultHelmClientMemoryConfigFactory() types.HelmClientForMemoryConfigFactory {
+	return internal.NewHelmClientForMemoryConfigFactory(
+		internal.NewFs(afero.NewOsFs()),
+		internal.NewDefaultResourceFetcher(),
+		internal.NewHelmFactories())
 }

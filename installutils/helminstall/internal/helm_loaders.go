@@ -9,6 +9,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 //go:generate mockgen -destination mocks/mock_helm_loaders.go -source ./helm_loaders.go
@@ -29,7 +30,8 @@ func NewHelmFactories() HelmFactories {
 }
 
 type ActionConfigFactory interface {
-	NewActionConfig(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error)
+	NewActionConfigFromFile(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error)
+	NewActionConfigFromMemory(config clientcmd.ClientConfig, namespace string) (*action.Configuration, *cli.EnvSettings, error)
 }
 
 type actionConfigFactory struct{}
@@ -40,7 +42,7 @@ func NewActionConfigFactory() ActionConfigFactory {
 
 // Returns an action configuration that can be used to create Helm actions and the Helm env settings.
 // We currently get the Helm storage driver from the standard HELM_DRIVER env (defaults to 'secret').
-func (a *actionConfigFactory) NewActionConfig(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error) {
+func (a *actionConfigFactory) NewActionConfigFromFile(kubeConfig, helmKubeContext, namespace string) (*action.Configuration, *cli.EnvSettings, error) {
 	settings := NewCLISettings(kubeConfig, helmKubeContext, namespace)
 	actionConfig := new(action.Configuration)
 
@@ -50,11 +52,21 @@ func (a *actionConfigFactory) NewActionConfig(kubeConfig, helmKubeContext, names
 	return actionConfig, settings, nil
 }
 
+func (a *actionConfigFactory) NewActionConfigFromMemory(config clientcmd.ClientConfig, namespace string) (*action.Configuration, *cli.EnvSettings, error) {
+	settings := NewCLISettings("", "", namespace)
+	restClientGetter := NewInMemoryRESTClientGetter(config)
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(restClientGetter, namespace, os.Getenv("HELM_DRIVER"), noOpDebugLog); err != nil {
+		return nil, nil, err
+	}
+	return actionConfig, settings, nil
+}
+
 func noOpDebugLog(_ string, _ ...interface{}) {}
 
 // Returns a ReleaseListRunner
 type ActionListFactory interface {
-	ReleaseList(kubeConfig, helmKubeContext, namespace string) (types.ReleaseListRunner, error)
+	ReleaseList(actionConfig *action.Configuration, namespace string) types.ReleaseListRunner
 }
 
 type actionListFactory struct {
@@ -65,14 +77,10 @@ func NewActionListFactory(actionConfigFactory ActionConfigFactory) ActionListFac
 	return &actionListFactory{actionConfigFactory: actionConfigFactory}
 }
 
-func (a *actionListFactory) ReleaseList(kubeConfig, helmKubeContext, namespace string) (types.ReleaseListRunner, error) {
-	actionConfig, _, err := a.actionConfigFactory.NewActionConfig(kubeConfig, helmKubeContext, namespace)
-	if err != nil {
-		return nil, err
-	}
+func (a *actionListFactory) ReleaseList(actionConfig *action.Configuration, namespace string) types.ReleaseListRunner {
 	return &releaseListRunner{
 		list: action.NewList(actionConfig),
-	}, nil
+	}
 }
 
 type releaseListRunner struct {
