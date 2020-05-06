@@ -33,14 +33,6 @@ type installer struct {
 	out          io.Writer
 }
 
-type InstallerFactory func(helmClient types.HelmClient) types.Installer
-
-func NewInstallerFactory(kubeNsClient NamespaceClient, outputWriter io.Writer) InstallerFactory {
-	return func(helmClient types.HelmClient) types.Installer {
-		return NewInstaller(helmClient, kubeNsClient, outputWriter)
-	}
-}
-
 func NewInstaller(helmClient types.HelmClient, kubeNsClient NamespaceClient, outputWriter io.Writer) types.Installer {
 	return &installer{
 		helmClient:   helmClient,
