@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"bytes"
-	"io/ioutil"
 	"os"
 
 	"github.com/solo-io/go-utils/installutils/helminstall/types"
@@ -83,11 +81,7 @@ func (d *helmClient) DownloadChart(chartArchiveUri string) (*chart.Chart, error)
 		return nil, err
 	}
 	defer func() { chartFileReader.Close() }()
-	chartBytes, err := ioutil.ReadAll(chartFileReader)
-	if err != nil {
-		return nil, err
-	}
-	chartObj, err := d.helmLoaders.ChartLoader.Load(bytes.NewReader(chartBytes))
+	chartObj, err := d.helmLoaders.ChartLoader.Load(chartFileReader)
 	if err != nil {
 		return nil, err
 	}

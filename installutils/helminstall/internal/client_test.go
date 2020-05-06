@@ -11,7 +11,6 @@ import (
 	mock_internal "github.com/solo-io/go-utils/installutils/helminstall/internal/mocks"
 	"github.com/solo-io/go-utils/installutils/helminstall/types"
 	mock_types "github.com/solo-io/go-utils/installutils/helminstall/types/mocks"
-	mock_afero "github.com/solo-io/go-utils/testutils/mocks/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
@@ -25,8 +24,6 @@ var _ = Describe("helm install client", func() {
 
 	var (
 		ctrl                        *gomock.Controller
-		mockFile                    *mock_afero.MockFile
-		mockFs                      *mock_internal.MockFsHelper
 		mockResourceFetcher         *mock_internal.MockResourceFetcher
 		mockHelmActionConfigFactory *mock_internal.MockActionConfigFactory
 		mockHelmActionListFactory   *mock_internal.MockActionListFactory
@@ -42,8 +39,6 @@ var _ = Describe("helm install client", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockFile = mock_afero.NewMockFile(ctrl)
-		mockFs = mock_internal.NewMockFsHelper(ctrl)
 		mockResourceFetcher = mock_internal.NewMockResourceFetcher(ctrl)
 		mockHelmActionConfigFactory = mock_internal.NewMockActionConfigFactory(ctrl)
 		mockHelmChartLoader = mock_internal.NewMockChartLoader(ctrl)
@@ -55,14 +50,12 @@ var _ = Describe("helm install client", func() {
 			ChartLoader:         mockHelmChartLoader,
 		}
 		helmClientFromFileConfig = internal.NewHelmClientForFileConfig(
-			mockFs,
 			mockResourceFetcher,
 			mockHelmLoaders,
 			helmKubeConfigPath,
 			helmKubeContext,
 		)
 		helmClientFromMemoryConfig = internal.NewHelmClientForMemoryConfig(
-			mockFs,
 			mockResourceFetcher,
 			mockHelmLoaders,
 			helmKubeConfig,
@@ -116,32 +109,15 @@ var _ = Describe("helm install client", func() {
 		chartUri := "chartUri.tgz"
 		chartFileContents := "test chart file"
 		chartFile := ioutil.NopCloser(bytes.NewBufferString(chartFileContents))
-		chartTempFilePath := "/tmp/temp-filename"
 		expectedChart := &chart.Chart{}
 		mockResourceFetcher.
 			EXPECT().
 			GetResource(chartUri).
 			Return(chartFile, nil)
-		mockFs.
-			EXPECT().
-			NewTempFile("", internal.TempChartPrefix).
-			Return(mockFile, nil)
-		mockFile.
-			EXPECT().
-			Name().
-			Return(chartTempFilePath)
-		mockFs.
-			EXPECT().
-			WriteFile(chartTempFilePath, []byte(chartFileContents), internal.TempChartFilePermissions).
-			Return(nil)
 		mockHelmChartLoader.
 			EXPECT().
-			Load(chartTempFilePath).
+			Load(chartFile).
 			Return(expectedChart, nil)
-		mockFs.
-			EXPECT().
-			RemoveAll(chartTempFilePath).
-			Return(nil)
 		chart, err := helmClientFromFileConfig.DownloadChart(chartUri)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart).To(BeIdenticalTo(expectedChart))

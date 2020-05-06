@@ -5,6 +5,7 @@
 package mock_internal
 
 import (
+	io "io"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -131,16 +132,16 @@ func (m *MockChartLoader) EXPECT() *MockChartLoaderMockRecorder {
 }
 
 // Load mocks base method.
-func (m *MockChartLoader) Load(name string) (*chart.Chart, error) {
+func (m *MockChartLoader) Load(archiveFile io.Reader) (*chart.Chart, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", name)
+	ret := m.ctrl.Call(m, "Load", archiveFile)
 	ret0, _ := ret[0].(*chart.Chart)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Load indicates an expected call of Load.
-func (mr *MockChartLoaderMockRecorder) Load(name interface{}) *gomock.Call {
+func (mr *MockChartLoaderMockRecorder) Load(archiveFile interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockChartLoader)(nil).Load), name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockChartLoader)(nil).Load), archiveFile)
 }
