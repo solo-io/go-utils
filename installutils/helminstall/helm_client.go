@@ -8,7 +8,7 @@ import (
 )
 
 // HelmClient factory that accepts kubeconfig as a file.
-func NewHelmClientFileConfig(kubeConfig, kubeContext string) types.HelmClient {
+func DefaultHelmClientFileConfig(kubeConfig, kubeContext string) types.HelmClient {
 	return internal.NewHelmClientForFileConfig(
 		internal.NewFs(afero.NewOsFs()),
 		internal.NewDefaultResourceFetcher(),
