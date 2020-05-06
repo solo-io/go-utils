@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 
@@ -19,7 +20,6 @@ const (
 )
 
 type helmClient struct {
-	fs              FsHelper
 	resourceFetcher ResourceFetcher
 	helmLoaders     HelmFactories
 	kubeConfig      string
@@ -29,13 +29,11 @@ type helmClient struct {
 
 // Accepts kubeconfig from memory.
 func NewHelmClientForMemoryConfig(
-	fs FsHelper,
 	resourceFetcher ResourceFetcher,
 	helmLoaders HelmFactories,
 	config clientcmd.ClientConfig,
 ) types.HelmClient {
 	return &helmClient{
-		fs:              fs,
 		resourceFetcher: resourceFetcher,
 		helmLoaders:     helmLoaders,
 		config:          config,
@@ -44,13 +42,11 @@ func NewHelmClientForMemoryConfig(
 
 // Accepts kubeconfig persisted on disk.
 func NewHelmClientForFileConfig(
-	fs FsHelper,
 	resourceFetcher ResourceFetcher,
 	helmLoaders HelmFactories,
 	kubeConfig, kubeContext string,
 ) types.HelmClient {
 	return &helmClient{
-		fs:              fs,
 		resourceFetcher: resourceFetcher,
 		helmLoaders:     helmLoaders,
 		kubeConfig:      kubeConfig,
@@ -82,37 +78,19 @@ func (d *helmClient) NewUninstall(namespace string) (types.HelmUninstaller, erro
 }
 
 func (d *helmClient) DownloadChart(chartArchiveUri string) (*chart.Chart, error) {
-
-	// 1. Get a reader to the chart file (remote URL or local file path)
 	chartFileReader, err := d.resourceFetcher.GetResource(chartArchiveUri)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { chartFileReader.Close() }()
-
-	// 2. Write chart to a temporary file
 	chartBytes, err := ioutil.ReadAll(chartFileReader)
 	if err != nil {
 		return nil, err
 	}
-
-	chartFile, err := d.fs.NewTempFile("", TempChartPrefix)
+	chartObj, err := d.helmLoaders.ChartLoader.Load(bytes.NewReader(chartBytes))
 	if err != nil {
 		return nil, err
 	}
-	chartFilePath := chartFile.Name()
-	defer func() { d.fs.RemoveAll(chartFilePath) }()
-
-	if err := d.fs.WriteFile(chartFilePath, chartBytes, TempChartFilePermissions); err != nil {
-		return nil, err
-	}
-
-	// 3. Load the chart file
-	chartObj, err := d.helmLoaders.ChartLoader.Load(chartFilePath)
-	if err != nil {
-		return nil, err
-	}
-
 	return chartObj, nil
 }
 

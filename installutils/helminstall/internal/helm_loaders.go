@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"io"
 	"os"
 
 	"github.com/solo-io/go-utils/installutils/helminstall/types"
@@ -97,7 +98,7 @@ func (h *releaseListRunner) SetFilter(filter string) {
 
 // slim interface on top of loader to avoid unnecessary FS calls
 type ChartLoader interface {
-	Load(name string) (*chart.Chart, error)
+	Load(archiveFile io.Reader) (*chart.Chart, error)
 }
 
 type chartLoader struct{}
@@ -106,6 +107,6 @@ func NewChartLoader() ChartLoader {
 	return &chartLoader{}
 }
 
-func (c *chartLoader) Load(name string) (*chart.Chart, error) {
-	return loader.Load(name)
+func (c *chartLoader) Load(archiveFile io.Reader) (*chart.Chart, error) {
+	return loader.LoadArchive(archiveFile)
 }
