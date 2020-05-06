@@ -5,14 +5,9 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 //go:generate mockgen -source ./interfaces.go -destination ./mocks/mock_interfaces.go
-
-type HelmClientForFileConfigFactory func(kubeConfig, kubeContext string) HelmClient
-
-type HelmClientForMemoryConfigFactory func(config clientcmd.ClientConfig) HelmClient
 
 // This interface implements the Helm CLI actions. The implementation relies on the Helm 3 libraries.
 type HelmClient interface {
