@@ -1,9 +1,6 @@
 package types
 
 import (
-	"os"
-
-	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
@@ -33,13 +30,6 @@ type HelmClient interface {
 
 	// Returns true if the release with the given name exists in the given namespace
 	ReleaseExists(namespace, releaseName string) (releaseExists bool, err error)
-}
-
-// interface around needed afero functions
-type FsHelper interface {
-	NewTempFile(dir, prefix string) (f afero.File, err error)
-	WriteFile(filename string, data []byte, perm os.FileMode) error
-	RemoveAll(path string) error
 }
 
 // an interface around Helm's action.Install struct

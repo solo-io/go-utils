@@ -3,15 +3,23 @@ package internal
 import (
 	"os"
 
-	"github.com/solo-io/go-utils/installutils/helminstall/types"
 	"github.com/spf13/afero"
 )
+
+//go:generate mockgen -source ./fs_helper.go -destination ./mocks/mock_fs_helper.go
+
+// interface around needed afero functions
+type FsHelper interface {
+	NewTempFile(dir, prefix string) (f afero.File, err error)
+	WriteFile(filename string, data []byte, perm os.FileMode) error
+	RemoveAll(path string) error
+}
 
 type tempFile struct {
 	fs afero.Fs
 }
 
-func NewFs(fs afero.Fs) types.FsHelper {
+func NewFs(fs afero.Fs) FsHelper {
 	return &tempFile{fs: fs}
 }
 

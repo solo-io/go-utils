@@ -19,7 +19,7 @@ const (
 )
 
 type helmClient struct {
-	fs              types.FsHelper
+	fs              FsHelper
 	resourceFetcher ResourceFetcher
 	helmLoaders     HelmFactories
 	kubeConfig      string
@@ -27,29 +27,9 @@ type helmClient struct {
 	config          clientcmd.ClientConfig
 }
 
-func NewHelmClientForFileConfigFactory(
-	fs types.FsHelper,
-	resourceFetcher ResourceFetcher,
-	helmLoaders HelmFactories,
-) types.HelmClientForFileConfigFactory {
-	return func(kubeConfig, kubeContext string) types.HelmClient {
-		return NewHelmClientForFileConfig(fs, resourceFetcher, helmLoaders, kubeConfig, kubeContext)
-	}
-}
-
-func NewHelmClientForMemoryConfigFactory(
-	fs types.FsHelper,
-	resourceFetcher ResourceFetcher,
-	helmLoaders HelmFactories,
-) types.HelmClientForMemoryConfigFactory {
-	return func(config clientcmd.ClientConfig) types.HelmClient {
-		return NewHelmClientForMemoryConfig(fs, resourceFetcher, helmLoaders, config)
-	}
-}
-
 // Accepts kubeconfig from memory.
 func NewHelmClientForMemoryConfig(
-	fs types.FsHelper,
+	fs FsHelper,
 	resourceFetcher ResourceFetcher,
 	helmLoaders HelmFactories,
 	config clientcmd.ClientConfig,
@@ -64,7 +44,7 @@ func NewHelmClientForMemoryConfig(
 
 // Accepts kubeconfig persisted on disk.
 func NewHelmClientForFileConfig(
-	fs types.FsHelper,
+	fs FsHelper,
 	resourceFetcher ResourceFetcher,
 	helmLoaders HelmFactories,
 	kubeConfig, kubeContext string,
