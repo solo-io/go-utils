@@ -11,7 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockResourceFetcher is a mock of ResourceFetcher interface
+// MockResourceFetcher is a mock of resourceFetcher interface
 type MockResourceFetcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockResourceFetcherMockRecorder

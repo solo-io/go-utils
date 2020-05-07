@@ -12,19 +12,19 @@ import (
 // This interface implements the Helm CLI actions. The implementation relies on the Helm 3 libraries.
 type HelmClient interface {
 	// Prepare an installation object that can then be .Run() with a chart object
-	NewInstall(kubeConfig, kubeContext, namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error)
+	NewInstall(namespace, releaseName string, dryRun bool) (HelmInstaller, *cli.EnvSettings, error)
 
 	// Prepare an un-installation object that can then be .Run() with a release name
-	NewUninstall(kubeConfig, kubeContext, namespace string) (HelmUninstaller, error)
+	NewUninstall(namespace string) (HelmUninstaller, error)
 
 	// List the already-existing releases in the given namespace
-	ReleaseList(kubeConfig, kubeContext, namespace string) (ReleaseListRunner, error)
+	ReleaseList(namespace string) (ReleaseListRunner, error)
 
 	// Returns the Helm chart archive located at the given URI (can be either an http(s) address or a file path)
 	DownloadChart(chartArchiveUri string) (*chart.Chart, error)
 
 	// Returns true if the release with the given name exists in the given namespace
-	ReleaseExists(kubeConfig, kubeContext, namespace, releaseName string) (releaseExists bool, err error)
+	ReleaseExists(namespace, releaseName string) (releaseExists bool, err error)
 }
 
 // an interface around Helm's action.Install struct
@@ -51,10 +51,6 @@ type Installer interface {
 }
 
 type InstallerConfig struct {
-	// kube config containing the context of cluster to install on
-	KubeConfig string
-	// kube context of cluster to install on
-	KubeContext      string
 	DryRun           bool
 	CreateNamespace  bool
 	Verbose          bool

@@ -1,17 +1,14 @@
 package internal
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/solo-io/go-utils/installutils/helminstall/types"
-	"github.com/spf13/afero"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
+	"k8s.io/client-go/tools/clientcmd"
 )
-
-//go:generate mockgen -destination mocks/mock_helm_client.go -source ./client.go
 
 const (
 	TempChartFilePermissions = os.FileMode(0644)
@@ -20,117 +17,87 @@ const (
 	helmKubeContextEnvVar    = "HELM_KUBECONTEXT"
 )
 
-// interface around needed afero functions
-type FsHelper interface {
-	NewTempFile(dir, prefix string) (f afero.File, err error)
-	WriteFile(filename string, data []byte, perm os.FileMode) error
-	RemoveAll(path string) error
+type helmClient struct {
+	resourceFetcher ResourceFetcher
+	helmLoaders     HelmFactories
+	kubeConfig      string
+	kubeContext     string
+	config          clientcmd.ClientConfig
 }
 
-type tempFile struct {
-	fs afero.Fs
-}
-
-func NewFs(fs afero.Fs) FsHelper {
-	return &tempFile{fs: fs}
-}
-
-func (t *tempFile) NewTempFile(dir, prefix string) (f afero.File, err error) {
-	return afero.TempFile(t.fs, dir, prefix)
-}
-
-func (t *tempFile) WriteFile(filename string, data []byte, perm os.FileMode) error {
-	return afero.WriteFile(t.fs, filename, data, perm)
-}
-
-func (t *tempFile) RemoveAll(path string) error {
-	return t.fs.RemoveAll(path)
-}
-
-type DefaultHelmClient struct {
-	Fs              FsHelper
-	ResourceFetcher ResourceFetcher
-	HelmLoaders     HelmFactories
-}
-
-func NewDefaultHelmClient(
-	fs FsHelper,
+// Accepts kubeconfig from memory.
+func NewHelmClientForMemoryConfig(
 	resourceFetcher ResourceFetcher,
-	helmLoaders HelmFactories) *DefaultHelmClient {
-	return &DefaultHelmClient{
-		Fs:              fs,
-		ResourceFetcher: resourceFetcher,
-		HelmLoaders:     helmLoaders,
+	helmLoaders HelmFactories,
+	config clientcmd.ClientConfig,
+) types.HelmClient {
+	return &helmClient{
+		resourceFetcher: resourceFetcher,
+		helmLoaders:     helmLoaders,
+		config:          config,
 	}
 }
 
-func (d *DefaultHelmClient) NewInstall(kubeConfig, kubeContext, namespace, releaseName string, dryRun bool) (types.HelmInstaller, *cli.EnvSettings, error) {
-	actionConfig, settings, err := d.HelmLoaders.ActionConfigFactory.NewActionConfig(kubeConfig, kubeContext, namespace)
+// Accepts kubeconfig persisted on disk.
+func NewHelmClientForFileConfig(
+	resourceFetcher ResourceFetcher,
+	helmLoaders HelmFactories,
+	kubeConfig, kubeContext string,
+) types.HelmClient {
+	return &helmClient{
+		resourceFetcher: resourceFetcher,
+		helmLoaders:     helmLoaders,
+		kubeConfig:      kubeConfig,
+		kubeContext:     kubeContext,
+	}
+}
+
+func (d *helmClient) NewInstall(namespace, releaseName string, dryRun bool) (types.HelmInstaller, *cli.EnvSettings, error) {
+	actionConfig, settings, err := d.buildActionConfigAndSettings(namespace)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	client := action.NewInstall(actionConfig)
 	client.ReleaseName = releaseName
 	client.Namespace = namespace
 	client.DryRun = dryRun
-
 	// If this is a dry run, we don't want to query the API server.
 	// In the future we can make this configurable to emulate the `helm template --validate` behavior.
 	client.ClientOnly = dryRun
-
 	return client, settings, nil
 }
 
-func (d *DefaultHelmClient) NewUninstall(kubeConfig, kubeContext, namespace string) (types.HelmUninstaller, error) {
-	actionConfig, _, err := d.HelmLoaders.ActionConfigFactory.NewActionConfig(kubeConfig, kubeContext, namespace)
+func (d *helmClient) NewUninstall(namespace string) (types.HelmUninstaller, error) {
+	actionConfig, _, err := d.buildActionConfigAndSettings(namespace)
 	if err != nil {
 		return nil, err
 	}
 	return action.NewUninstall(actionConfig), nil
 }
 
-func (d *DefaultHelmClient) DownloadChart(chartArchiveUri string) (*chart.Chart, error) {
-
-	// 1. Get a reader to the chart file (remote URL or local file path)
-	chartFileReader, err := d.ResourceFetcher.GetResource(chartArchiveUri)
+func (d *helmClient) DownloadChart(chartArchiveUri string) (*chart.Chart, error) {
+	chartFileReader, err := d.resourceFetcher.GetResource(chartArchiveUri)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { chartFileReader.Close() }()
-
-	// 2. Write chart to a temporary file
-	chartBytes, err := ioutil.ReadAll(chartFileReader)
+	chartObj, err := d.helmLoaders.ChartLoader.Load(chartFileReader)
 	if err != nil {
 		return nil, err
 	}
-
-	chartFile, err := d.Fs.NewTempFile("", TempChartPrefix)
-	if err != nil {
-		return nil, err
-	}
-	chartFilePath := chartFile.Name()
-	defer func() { d.Fs.RemoveAll(chartFilePath) }()
-
-	if err := d.Fs.WriteFile(chartFilePath, chartBytes, TempChartFilePermissions); err != nil {
-		return nil, err
-	}
-
-	// 3. Load the chart file
-	chartObj, err := d.HelmLoaders.ChartLoader.Load(chartFilePath)
-	if err != nil {
-		return nil, err
-	}
-
 	return chartObj, nil
 }
 
-func (d *DefaultHelmClient) ReleaseList(kubeConfig, kubeContext, namespace string) (types.ReleaseListRunner, error) {
-	return d.HelmLoaders.ActionListFactory.ReleaseList(kubeConfig, kubeContext, namespace)
+func (d *helmClient) ReleaseList(namespace string) (types.ReleaseListRunner, error) {
+	actionConfig, _, err := d.buildActionConfigAndSettings(namespace)
+	if err != nil {
+		return nil, err
+	}
+	return d.helmLoaders.ActionListFactory.ReleaseList(actionConfig, namespace), nil
 }
 
-func (d *DefaultHelmClient) ReleaseExists(kubeConfig, kubeContext, namespace, releaseName string) (bool, error) {
-	list, err := d.ReleaseList(kubeConfig, kubeContext, namespace)
+func (d *helmClient) ReleaseExists(namespace, releaseName string) (bool, error) {
+	list, err := d.ReleaseList(namespace)
 	if err != nil {
 		return false, err
 	}
@@ -147,6 +114,18 @@ func (d *DefaultHelmClient) ReleaseExists(kubeConfig, kubeContext, namespace, re
 	}
 
 	return releaseExists, nil
+}
+
+func (d *helmClient) buildActionConfigAndSettings(namespace string) (actionConfig *action.Configuration, settings *cli.EnvSettings, err error) {
+	if d.config != nil {
+		actionConfig, settings, err = d.helmLoaders.ActionConfigFactory.NewActionConfigFromMemory(d.config, namespace)
+	} else {
+		actionConfig, settings, err = d.helmLoaders.ActionConfigFactory.NewActionConfigFromFile(d.kubeConfig, d.kubeContext, namespace)
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	return actionConfig, settings, nil
 }
 
 // Build a Helm EnvSettings struct
@@ -170,6 +149,7 @@ func NewCLISettings(kubeConfig, kubeContext, namespace string) *cli.EnvSettings 
 		defer os.Setenv(helmNamespaceEnvVar, "")
 	}
 	settings := cli.New()
+
 	settings.KubeConfig = kubeConfig
 	return settings
 }
