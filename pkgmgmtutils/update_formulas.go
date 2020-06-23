@@ -125,8 +125,11 @@ func UpdateFormulas(
 		}
 
 		// Do NOT create PR when dryRun or when we have opted not to publish prerelease versions (and that applies to this invocation)
-		if fOpt.dryRun || (isPreRelease && !fOpt.PublishPreRelease) {
+		if fOpt.dryRun {
 			status[i].Updated = true
+			continue
+		} else if isPreRelease && !fOpt.PublishPreRelease {
+			status[i].Err = eris.Errorf("%s disallows publishing pre-release versions, but found version %s", fOpt.Name, versionStr)
 			continue
 		}
 
