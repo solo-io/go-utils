@@ -85,7 +85,7 @@ func (f *FormulaUpdater) Update(
 		return nil, err
 	}
 
-	perPlatformShas, err := f.getPerPlatformShas(releaseAssets)
+	perPlatformCliBinaryShas, err := f.getPerPlatformCliBinaryShas(releaseAssets)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (f *FormulaUpdater) Update(
 			changePusher = f.localCloneChangePusher
 		}
 
-		err = changePusher.UpdateAndPush(ctx, versionStr, gitRefSha, branchName, commitMessage, perPlatformShas, formulaOptions)
+		err = changePusher.UpdateAndPush(ctx, versionStr, gitRefSha, branchName, commitMessage, perPlatformCliBinaryShas, formulaOptions)
 		if err != nil {
 			if err == ErrAlreadyUpdated {
 				status.Updated = true
@@ -142,7 +142,7 @@ func (f *FormulaUpdater) Update(
 // Those .sha256 files need to be located in the GitHub Release for this version.
 // It returns the sha256s and any read errors encountered. It will also return ErrNoSha256sFound if any of the platform
 // shas are found.
-func (f *FormulaUpdater) getPerPlatformShas(assets []formula_updater_types.ReleaseAsset) (*formula_updater_types.PerPlatformSha256, error) {
+func (f *FormulaUpdater) getPerPlatformCliBinaryShas(assets []formula_updater_types.ReleaseAsset) (*formula_updater_types.PerPlatformSha256, error) {
 	// Scan outputDir directory looking for any files that match the reOS regular expression as targets for extraction
 	// Expect that the binaries have the platform in their name
 	reOS := regexp.MustCompile("^.*(darwin|linux|windows).*$")
