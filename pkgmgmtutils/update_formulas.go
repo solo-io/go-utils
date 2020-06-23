@@ -42,6 +42,10 @@ type FormulaOptions struct {
 	LinuxShaRegex   string
 	WindowsShaRegex string
 
+	// if true, open a PR even if this version is something like "x.y.z-beta1"
+	// per https://docs.brew.sh/Acceptable-Formulae#stable-versions, this is not allowed for homebrew-core
+	PublishPreRelease bool
+
 	dryRun bool
 }
 
@@ -51,11 +55,20 @@ type FormulaStatus struct {
 	Err     error
 }
 
-func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathSha256 string, reShaFilenames string,
-	fOpts []FormulaOptions) ([]FormulaStatus, error) {
+func UpdateFormulas(
+	projectRepoOwner string,
+	projectRepoName string,
+	parentPathSha256 string,
+	reShaFilenames string,
+	fOpts []FormulaOptions,
+) ([]FormulaStatus, error) {
 
-	versionStr := versionutils.GetReleaseVersionOrExitGracefully().String()
-	version := versionStr[1:]
+	versionStruct := versionutils.GetReleaseVersionOrExitGracefully()
+	versionStr := versionStruct.String()
+	version := versionStr[1:] // skip the leading "v" in the version string
+
+	// we're prerelease if we have some label like "rc" or "beta"
+	isPreRelease := versionStruct.Label != ""
 
 	ctx := context.Background()
 	client, err := githubutils.GetClient(ctx)
@@ -111,41 +124,43 @@ func UpdateFormulas(projectRepoOwner string, projectRepoName string, parentPathS
 			continue
 		}
 
-		// Do NOT create PR when dryRun
-		if !fOpt.dryRun {
-			prRepoOwner := fOpt.PRRepoOwner
-			prRepoName := fOpt.PRRepoName
-			prHead := branchName // For same repo PR case
-
-			if prRepoOwner == "" {
-				prRepoOwner = fOpt.RepoOwner
-				prRepoName = fOpt.RepoName
-			} else if prRepoOwner != fOpt.RepoOwner {
-				// For cross-repo PR, prHead should be in format of "<change repo owner>:branch"
-				prHead = fOpt.RepoOwner + ":" + branchName
-			}
-
-			base := fOpt.PRBranch
-			if base == "" {
-				base = PRBaseBranchDefault
-			}
-
-			// Create GitHub Pull Request
-			// GitHub API docs: https://developer.github.com/v3/pulls/#create-a-pull-request
-			_, _, err = client.PullRequests.Create(ctx, prRepoOwner, prRepoName, &github.NewPullRequest{
-				Title:               github.String(commitString),
-				Head:                github.String(prHead),
-				Base:                github.String(base),
-				Body:                github.String(fOpt.PRDescription),
-				MaintainerCanModify: github.Bool(true),
-			})
-			if err != nil {
-				status[i].Err = err
-				continue
-			}
+		// Do NOT create PR when dryRun or when we have opted not to publish prerelease versions (and that applies to this invocation)
+		if fOpt.dryRun || (isPreRelease && !fOpt.PublishPreRelease) {
+			status[i].Updated = true
+			continue
 		}
 
-		status[i].Updated = true
+		prRepoOwner := fOpt.PRRepoOwner
+		prRepoName := fOpt.PRRepoName
+		prHead := branchName // For same repo PR case
+
+		if prRepoOwner == "" {
+			prRepoOwner = fOpt.RepoOwner
+			prRepoName = fOpt.RepoName
+		} else if prRepoOwner != fOpt.RepoOwner {
+			// For cross-repo PR, prHead should be in format of "<change repo owner>:branch"
+			prHead = fOpt.RepoOwner + ":" + branchName
+		}
+
+		base := fOpt.PRBranch
+		if base == "" {
+			base = PRBaseBranchDefault
+		}
+
+		// Create GitHub Pull Request
+		// GitHub API docs: https://developer.github.com/v3/pulls/#create-a-pull-request
+		_, _, err = client.PullRequests.Create(ctx, prRepoOwner, prRepoName, &github.NewPullRequest{
+			Title:               github.String(commitString),
+			Head:                github.String(prHead),
+			Base:                github.String(base),
+			Body:                github.String(fOpt.PRDescription),
+			MaintainerCanModify: github.Bool(true),
+		})
+		if err != nil {
+			status[i].Err = err
+		} else {
+			status[i].Updated = true
+		}
 	}
 
 	return status, nil
