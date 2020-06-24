@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	formula_updater_types "github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types"
+	formula_updater_types "github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 )
 
 // MockGitClient is a mock of GitClient interface
@@ -152,41 +152,4 @@ func (m *MockChangePusher) UpdateAndPush(ctx context.Context, version, versionSh
 func (mr *MockChangePusherMockRecorder) UpdateAndPush(ctx, version, versionSha, branchName, commitMessage, perPlatformShas, formulaOptions interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAndPush", reflect.TypeOf((*MockChangePusher)(nil).UpdateAndPush), ctx, version, versionSha, branchName, commitMessage, perPlatformShas, formulaOptions)
-}
-
-// MockRandom is a mock of Random interface
-type MockRandom struct {
-	ctrl     *gomock.Controller
-	recorder *MockRandomMockRecorder
-}
-
-// MockRandomMockRecorder is the mock recorder for MockRandom
-type MockRandomMockRecorder struct {
-	mock *MockRandom
-}
-
-// NewMockRandom creates a new mock instance
-func NewMockRandom(ctrl *gomock.Controller) *MockRandom {
-	mock := &MockRandom{ctrl: ctrl}
-	mock.recorder = &MockRandomMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRandom) EXPECT() *MockRandomMockRecorder {
-	return m.recorder
-}
-
-// Intn mocks base method
-func (m *MockRandom) Intn(max int) int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Intn", max)
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// Intn indicates an expected call of Intn
-func (mr *MockRandomMockRecorder) Intn(max interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Intn", reflect.TypeOf((*MockRandom)(nil).Intn), max)
 }

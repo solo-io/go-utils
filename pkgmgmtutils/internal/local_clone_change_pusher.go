@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/solo-io/go-utils/githubutils"
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types"
+	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"

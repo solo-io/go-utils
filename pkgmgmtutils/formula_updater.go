@@ -1,14 +1,15 @@
-package brew
+package pkgmgmtutils
 
 import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/githubutils"
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types"
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew/internal"
+	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
+	"github.com/solo-io/go-utils/pkgmgmtutils/internal"
 	"github.com/solo-io/go-utils/versionutils"
 )
 
@@ -20,25 +21,25 @@ var (
 func NewFormulaUpdater(
 	gitClient formula_updater_types.GitClient,
 	remoteShaGetter formula_updater_types.RemoteShaGetter,
-	random formula_updater_types.Random,
+	currentEpochTimeProvider func() int64,
 	localCloneChangePusher formula_updater_types.ChangePusher,
 	remoteChangePusher formula_updater_types.ChangePusher,
 ) *FormulaUpdater {
 	return &FormulaUpdater{
-		gitClient:              gitClient,
-		remoteShaGetter:        remoteShaGetter,
-		random:                 random,
-		localCloneChangePusher: localCloneChangePusher,
-		remoteChangePusher:     remoteChangePusher,
+		gitClient:                gitClient,
+		remoteShaGetter:          remoteShaGetter,
+		currentEpochTimeProvider: currentEpochTimeProvider,
+		localCloneChangePusher:   localCloneChangePusher,
+		remoteChangePusher:       remoteChangePusher,
 	}
 }
 
 type FormulaUpdater struct {
-	gitClient              formula_updater_types.GitClient
-	remoteShaGetter        formula_updater_types.RemoteShaGetter
-	random                 formula_updater_types.Random
-	localCloneChangePusher formula_updater_types.ChangePusher
-	remoteChangePusher     formula_updater_types.ChangePusher
+	gitClient                formula_updater_types.GitClient
+	remoteShaGetter          formula_updater_types.RemoteShaGetter
+	currentEpochTimeProvider func() int64
+	localCloneChangePusher   formula_updater_types.ChangePusher
+	remoteChangePusher       formula_updater_types.ChangePusher
 }
 
 func NewFormulaUpdaterWithDefaults(ctx context.Context) (*FormulaUpdater, error) {
@@ -50,7 +51,9 @@ func NewFormulaUpdaterWithDefaults(ctx context.Context) (*FormulaUpdater, error)
 	return NewFormulaUpdater(
 		internal.NewGitClient(client),
 		internal.NewRemoteShaGetter(),
-		internal.NewRandom(),
+		func() int64 {
+			return time.Now().Unix()
+		},
 		internal.NewLocalCloneChangePusher(),
 		internal.NewRemoteChangePusher(client),
 	), nil
@@ -103,7 +106,7 @@ func (f *FormulaUpdater) Update(
 		}
 
 		// Suffix branch name with random number to prevent collisions in rebuilding releases
-		branchName := fmt.Sprintf("%s-%s-%d", formulaOptions.FormulaName, version, f.random.Intn(1000))
+		branchName := fmt.Sprintf("%s-%s-%d", formulaOptions.FormulaName, version, f.currentEpochTimeProvider())
 		commitMessage := fmt.Sprintf("%s %s", formulaOptions.FormulaName, versionStr)
 
 		var changePusher formula_updater_types.ChangePusher

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/go-github/github"
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types"
+	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 )
 
 // uses real dependencies- i.e. actually communicates with GitHub

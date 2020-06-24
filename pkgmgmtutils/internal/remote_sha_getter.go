@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/rotisserie/eris"
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types"
+	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 )
 
 var ErrNoShaDataFound = eris.New("pkgmgmtutils: no data in SHA256 file")

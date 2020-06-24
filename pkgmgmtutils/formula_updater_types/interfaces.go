@@ -44,12 +44,6 @@ type ChangePusher interface {
 	) error
 }
 
-type Random interface {
-	// replacement for golang's rand.Intn
-	// used to decouple ourselves from the implementation of rand
-	Intn(max int) int
-}
-
 type ReleaseAsset struct {
 	Name               string
 	BrowserDownloadUrl string

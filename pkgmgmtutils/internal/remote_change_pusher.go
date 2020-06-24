@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types"
+	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 )
 
 func NewRemoteChangePusher(gitClient *github.Client) formula_updater_types.ChangePusher {

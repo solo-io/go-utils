@@ -1,4 +1,4 @@
-package brew_test
+package pkgmgmtutils_test
 
 import (
 	"testing"

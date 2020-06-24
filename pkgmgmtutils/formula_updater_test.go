@@ -1,28 +1,33 @@
-package brew_test
+package pkgmgmtutils_test
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types"
-	mock_formula_updater_types "github.com/solo-io/go-utils/pkgmgmtutils/brew/formula_updater_types/mocks"
+	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
+	mock_formula_updater_types "github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types/mocks"
 	"github.com/solo-io/go-utils/versionutils"
 
-	"github.com/solo-io/go-utils/pkgmgmtutils/brew"
+	"github.com/solo-io/go-utils/pkgmgmtutils"
 )
 
 var _ = Describe("FormulaUpdater", func() {
 	var (
-		ctx                    = context.TODO()
-		ctrl                   *gomock.Controller
-		gitClient              *mock_formula_updater_types.MockGitClient
-		remoteShaGetter        *mock_formula_updater_types.MockRemoteShaGetter
-		random                 *mock_formula_updater_types.MockRandom
+		ctx               = context.TODO()
+		ctrl              *gomock.Controller
+		gitClient         *mock_formula_updater_types.MockGitClient
+		remoteShaGetter   *mock_formula_updater_types.MockRemoteShaGetter
+		epochTime         = int64(0)
+		epochTimeProvider = func() int64 {
+			epochTime++
+			return epochTime
+		}
 		localCloneChangePusher *mock_formula_updater_types.MockChangePusher
 		remoteChangePusher     *mock_formula_updater_types.MockChangePusher
-		formulaUpdater         *brew.FormulaUpdater
+		formulaUpdater         *pkgmgmtutils.FormulaUpdater
 		mustParseVersion       = func(version string) *versionutils.Version {
 			parsedVersion, err := versionutils.ParseVersion(version)
 			Expect(err).NotTo(HaveOccurred())
@@ -33,15 +38,15 @@ var _ = Describe("FormulaUpdater", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 
+		epochTime = 0
 		gitClient = mock_formula_updater_types.NewMockGitClient(ctrl)
 		remoteShaGetter = mock_formula_updater_types.NewMockRemoteShaGetter(ctrl)
-		random = mock_formula_updater_types.NewMockRandom(ctrl)
 		localCloneChangePusher = mock_formula_updater_types.NewMockChangePusher(ctrl)
 		remoteChangePusher = mock_formula_updater_types.NewMockChangePusher(ctrl)
-		formulaUpdater = brew.NewFormulaUpdater(
+		formulaUpdater = pkgmgmtutils.NewFormulaUpdater(
 			gitClient,
 			remoteShaGetter,
-			random,
+			epochTimeProvider,
 			localCloneChangePusher,
 			remoteChangePusher,
 		)
@@ -117,9 +122,9 @@ var _ = Describe("FormulaUpdater", func() {
 				version := "1.6.9"
 				gitSha := "my-really-long-sha256-string"
 				commitMessage := "glooctl " + version
-				branch1Name := "glooctl-v" + version + "-1000001"
-				branch2Name := "glooctl-v" + version + "-1000002"
-				branch3Name := "glooctl-v" + version + "-1000003"
+				branch1Name := fmt.Sprintf("glooctl-v%s-%d", version, 1)
+				branch2Name := fmt.Sprintf("glooctl-v%s-%d", version, 2)
+				branch3Name := fmt.Sprintf("glooctl-v%s-%d", version, 3)
 
 				gitClient.EXPECT().
 					GetRefSha(ctx, repoOwner, repoName, "refs/tags/"+version).
@@ -149,15 +154,6 @@ var _ = Describe("FormulaUpdater", func() {
 				remoteShaGetter.EXPECT().
 					GetShaFromUrl("windows-download-url").
 					Return("windows-cli-sha", nil)
-				random.EXPECT().
-					Intn(1000).
-					Return(1000001)
-				random.EXPECT().
-					Intn(1000).
-					Return(1000002)
-				random.EXPECT().
-					Intn(1000).
-					Return(1000003)
 
 				remoteChangePusher.EXPECT().
 					UpdateAndPush(ctx, version, gitSha, branch1Name, commitMessage, &formula_updater_types.PerPlatformSha256{
@@ -262,8 +258,8 @@ var _ = Describe("FormulaUpdater", func() {
 				version := "1.6.9-beta420"
 				gitSha := "my-really-long-sha256-string"
 				commitMessage := "glooctl " + version
-				branch1Name := "glooctl-v" + version + "-1000001"
-				branch2Name := "glooctl-v" + version + "-1000002"
+				branch1Name := fmt.Sprintf("glooctl-v%s-%d", version, 1)
+				branch2Name := fmt.Sprintf("glooctl-v%s-%d", version, 2)
 
 				gitClient.EXPECT().
 					GetRefSha(ctx, repoOwner, repoName, "refs/tags/"+version).
@@ -293,12 +289,6 @@ var _ = Describe("FormulaUpdater", func() {
 				remoteShaGetter.EXPECT().
 					GetShaFromUrl("windows-download-url").
 					Return("windows-cli-sha", nil)
-				random.EXPECT().
-					Intn(1000).
-					Return(1000001)
-				random.EXPECT().
-					Intn(1000).
-					Return(1000002)
 
 				remoteChangePusher.EXPECT().
 					UpdateAndPush(ctx, version, gitSha, branch1Name, commitMessage, &formula_updater_types.PerPlatformSha256{
