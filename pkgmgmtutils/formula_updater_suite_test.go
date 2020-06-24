@@ -1,4 +1,4 @@
-package pkgmgmtutils
+package pkgmgmtutils_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestPkgmgmtutils(t *testing.T) {
+func TestFormulaUpdater(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pkgmgmtutils Suite")
+	RunSpecs(t, "FormulaUpdater Suite")
 }
