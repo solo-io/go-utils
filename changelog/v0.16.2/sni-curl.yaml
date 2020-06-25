@@ -1,0 +1,6 @@
+changelog:
+- type: NON_USER_FACING
+  issueLink: https://github.com/solo-io/go-utils/issues/410
+  description: Add the ability to specify SNI and self-signed client cert.
+
+
