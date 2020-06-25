@@ -27,6 +27,9 @@ type CurlOpts struct {
 	Verbose           bool
 	// WithoutStats sets the -s flag to prevent download stats from printing
 	WithoutStats bool
+	// Optional SNI name to resolve domain to when sending request
+	Sni        string
+	SelfSigned bool
 }
 
 func getTimeouts(timeout ...time.Duration) (currentTimeout time.Duration, pollingInterval time.Duration) {
@@ -109,7 +112,9 @@ func (t *testContainer) CurlEventuallyShouldRespond(opts CurlOpts, substr string
 		default:
 			break
 		case <-tick:
-			log.GreyPrintf("running: %v\nwant %v\nhave: %s", opts, substr, res)
+			if opts.Verbose {
+				log.GreyPrintf("running: %v\nwant %v\nhave: %s", opts, substr, res)
+			}
 		}
 		if strings.Contains(res, substr) {
 			log.GreyPrintf("success: %v", res)
@@ -162,7 +167,17 @@ func (t *testContainer) buildCurlArgs(opts CurlOpts) []string {
 	if service == "" {
 		service = "test-ingress"
 	}
-	args = append(args, fmt.Sprintf("%v://%s:%v%s", protocol, service, port, opts.Path))
+	if opts.SelfSigned {
+		args = append(args, "-k")
+	}
+	if opts.Sni != "" {
+		sniResolution := fmt.Sprintf("%s:%d:%s", opts.Sni, port, service)
+		fullAddress := fmt.Sprintf("%s://%s:%d", protocol, opts.Sni, port)
+		args = append(args, "--resolve", sniResolution, fullAddress)
+	} else {
+		args = append(args, fmt.Sprintf("%v://%s:%v%s", protocol, service, port, opts.Path))
+	}
+
 	log.Printf("running: %v", strings.Join(args, " "))
 	return args
 }
