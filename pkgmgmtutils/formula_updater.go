@@ -72,18 +72,22 @@ func (f *FormulaUpdater) Update(
 		return nil, nil
 	}
 
-	versionStr := version.String()[1:] // skip the leading "v" in the version string
+	// our releases are tagged with a leading "v" character
+	versionStrWithLeadingV := version.String()
+
+	// we create branches/commit messages against the formula repo without the leading V
+	versionStrWithNoLeadingV := versionStrWithLeadingV[1:]
 
 	// Get version tag SHA
 	// GitHub API docs: https://developer.github.com/v3/git/refs/#get-a-reference
-	gitRefSha, err := f.gitClient.GetRefSha(ctx, projectRepoOwner, projectRepoName, "refs/tags/"+versionStr)
+	gitRefSha, err := f.gitClient.GetRefSha(ctx, projectRepoOwner, projectRepoName, "refs/tags/"+versionStrWithLeadingV)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get list of release assets from GitHub
 	// GitHub API docs: https://developer.github.com/v3/repos/releases/#get-a-release-by-tag-name
-	releaseAssets, err := f.gitClient.GetReleaseAssetsByTag(ctx, projectRepoOwner, projectRepoName, versionStr)
+	releaseAssets, err := f.gitClient.GetReleaseAssetsByTag(ctx, projectRepoOwner, projectRepoName, versionStrWithLeadingV)
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +110,8 @@ func (f *FormulaUpdater) Update(
 		}
 
 		// Suffix branch name with random number to prevent collisions in rebuilding releases
-		branchName := fmt.Sprintf("%s-%s-%d", formulaOptions.FormulaName, version, f.currentEpochTimeProvider())
-		commitMessage := fmt.Sprintf("%s %s", formulaOptions.FormulaName, versionStr)
+		branchName := fmt.Sprintf("%s-%s-%d", formulaOptions.FormulaName, versionStrWithNoLeadingV, f.currentEpochTimeProvider())
+		commitMessage := fmt.Sprintf("%s %s", formulaOptions.FormulaName, versionStrWithNoLeadingV)
 
 		var changePusher formula_updater_types.ChangePusher
 		if formulaOptions.PRRepoName == formulaOptions.RepoName && formulaOptions.PRRepoOwner == formulaOptions.RepoOwner {
@@ -118,7 +122,7 @@ func (f *FormulaUpdater) Update(
 			changePusher = f.localCloneChangePusher
 		}
 
-		err = changePusher.UpdateAndPush(ctx, versionStr, gitRefSha, branchName, commitMessage, perPlatformCliBinaryShas, formulaOptions)
+		err = changePusher.UpdateAndPush(ctx, versionStrWithNoLeadingV, gitRefSha, branchName, commitMessage, perPlatformCliBinaryShas, formulaOptions)
 		if err != nil {
 			if err == ErrAlreadyUpdated {
 				status.Updated = true
