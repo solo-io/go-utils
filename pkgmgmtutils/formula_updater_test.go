@@ -119,12 +119,12 @@ var _ = Describe("FormulaUpdater", func() {
 						VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
 					},
 				}
-				version := "1.6.9"
+				version := "v1.6.9"
 				gitSha := "my-really-long-sha256-string"
-				commitMessage := "glooctl " + version
-				branch1Name := fmt.Sprintf("glooctl-v%s-%d", version, 1)
-				branch2Name := fmt.Sprintf("glooctl-v%s-%d", version, 2)
-				branch3Name := fmt.Sprintf("glooctl-v%s-%d", version, 3)
+				commitMessage := "glooctl " + version[1:]
+				branch1Name := fmt.Sprintf("glooctl-%s-%d", version[1:], 1)
+				branch2Name := fmt.Sprintf("glooctl-%s-%d", version[1:], 2)
+				branch3Name := fmt.Sprintf("glooctl-%s-%d", version[1:], 3)
 
 				gitClient.EXPECT().
 					GetRefSha(ctx, repoOwner, repoName, "refs/tags/"+version).
@@ -156,7 +156,7 @@ var _ = Describe("FormulaUpdater", func() {
 					Return("windows-cli-sha", nil)
 
 				remoteChangePusher.EXPECT().
-					UpdateAndPush(ctx, version, gitSha, branch1Name, commitMessage, &formula_updater_types.PerPlatformSha256{
+					UpdateAndPush(ctx, version[1:], gitSha, branch1Name, commitMessage, &formula_updater_types.PerPlatformSha256{
 						DarwinSha:  "darwin-cli-sha",
 						LinuxSha:   "linux-cli-sha",
 						WindowsSha: "windows-cli-sha",
@@ -167,7 +167,7 @@ var _ = Describe("FormulaUpdater", func() {
 					Return(nil)
 
 				localCloneChangePusher.EXPECT().
-					UpdateAndPush(ctx, version, gitSha, branch2Name, commitMessage, &formula_updater_types.PerPlatformSha256{
+					UpdateAndPush(ctx, version[1:], gitSha, branch2Name, commitMessage, &formula_updater_types.PerPlatformSha256{
 						DarwinSha:  "darwin-cli-sha",
 						LinuxSha:   "linux-cli-sha",
 						WindowsSha: "windows-cli-sha",
@@ -178,7 +178,7 @@ var _ = Describe("FormulaUpdater", func() {
 					Return(nil)
 
 				localCloneChangePusher.EXPECT().
-					UpdateAndPush(ctx, version, gitSha, branch3Name, commitMessage, &formula_updater_types.PerPlatformSha256{
+					UpdateAndPush(ctx, version[1:], gitSha, branch3Name, commitMessage, &formula_updater_types.PerPlatformSha256{
 						DarwinSha:  "darwin-cli-sha",
 						LinuxSha:   "linux-cli-sha",
 						WindowsSha: "windows-cli-sha",
@@ -188,7 +188,7 @@ var _ = Describe("FormulaUpdater", func() {
 					CreatePullRequest(ctx, formulaOptionsList[2], commitMessage, branch3Name).
 					Return(nil)
 
-				statuses, err := formulaUpdater.Update(ctx, mustParseVersion("v"+version), repoOwner, repoName, formulaOptionsList)
+				statuses, err := formulaUpdater.Update(ctx, mustParseVersion(version), repoOwner, repoName, formulaOptionsList)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(statuses).To(HaveLen(3))
 
@@ -255,11 +255,11 @@ var _ = Describe("FormulaUpdater", func() {
 						VersionShaRegex: `:revision\s*=>\s*"(.*)"`,
 					},
 				}
-				version := "1.6.9-beta420"
+				version := "v1.6.9-beta420"
 				gitSha := "my-really-long-sha256-string"
-				commitMessage := "glooctl " + version
-				branch1Name := fmt.Sprintf("glooctl-v%s-%d", version, 1)
-				branch2Name := fmt.Sprintf("glooctl-v%s-%d", version, 2)
+				commitMessage := "glooctl " + version[1:]
+				branch1Name := fmt.Sprintf("glooctl-%s-%d", version[1:], 1)
+				branch2Name := fmt.Sprintf("glooctl-%s-%d", version[1:], 2)
 
 				gitClient.EXPECT().
 					GetRefSha(ctx, repoOwner, repoName, "refs/tags/"+version).
@@ -291,7 +291,7 @@ var _ = Describe("FormulaUpdater", func() {
 					Return("windows-cli-sha", nil)
 
 				remoteChangePusher.EXPECT().
-					UpdateAndPush(ctx, version, gitSha, branch1Name, commitMessage, &formula_updater_types.PerPlatformSha256{
+					UpdateAndPush(ctx, version[1:], gitSha, branch1Name, commitMessage, &formula_updater_types.PerPlatformSha256{
 						DarwinSha:  "darwin-cli-sha",
 						LinuxSha:   "linux-cli-sha",
 						WindowsSha: "windows-cli-sha",
@@ -302,7 +302,7 @@ var _ = Describe("FormulaUpdater", func() {
 					Return(nil)
 
 				localCloneChangePusher.EXPECT().
-					UpdateAndPush(ctx, version, gitSha, branch2Name, commitMessage, &formula_updater_types.PerPlatformSha256{
+					UpdateAndPush(ctx, version[1:], gitSha, branch2Name, commitMessage, &formula_updater_types.PerPlatformSha256{
 						DarwinSha:  "darwin-cli-sha",
 						LinuxSha:   "linux-cli-sha",
 						WindowsSha: "windows-cli-sha",
@@ -314,7 +314,7 @@ var _ = Describe("FormulaUpdater", func() {
 
 				// NOTE: not setting up expectations for the homebrew-core cask here
 
-				statuses, err := formulaUpdater.Update(ctx, mustParseVersion("v"+version), repoOwner, repoName, formulaOptionsList)
+				statuses, err := formulaUpdater.Update(ctx, mustParseVersion(version), repoOwner, repoName, formulaOptionsList)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(statuses).To(HaveLen(3))
 

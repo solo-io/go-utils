@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix the tag names looked up by the formula updater utility, and document the related naming in-code.
+    issueLink: https://github.com/solo-io/gloo/issues/3178
