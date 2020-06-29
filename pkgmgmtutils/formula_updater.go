@@ -152,7 +152,7 @@ func (f *FormulaUpdater) Update(
 func (f *FormulaUpdater) getPerPlatformCliBinaryShas(assets []formula_updater_types.ReleaseAsset) (*formula_updater_types.PerPlatformSha256, error) {
 	// Scan outputDir directory looking for any files that match the reOS regular expression as targets for extraction
 	// Expect that the binaries have the platform in their name
-	reOS := regexp.MustCompile("^.*(darwin|linux|windows).*$")
+	reOS := regexp.MustCompile("^.*(darwin|linux|windows).*.sha256$")
 
 	shas := formula_updater_types.PerPlatformSha256{}
 	for _, asset := range assets {

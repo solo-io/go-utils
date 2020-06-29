@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    description: Fix the regex used to find sha256 checksum release assets from Github.
+    issueLink: https://github.com/solo-io/gloo/issues/3178
