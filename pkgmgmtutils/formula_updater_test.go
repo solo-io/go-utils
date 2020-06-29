@@ -144,15 +144,27 @@ var _ = Describe("FormulaUpdater", func() {
 							Name:               "glooctl-windows",
 							BrowserDownloadUrl: "windows-download-url",
 						},
+						{
+							Name:               "glooctl-darwin.sha256",
+							BrowserDownloadUrl: "darwin-checksum-download-url",
+						},
+						{
+							Name:               "glooctl-linux.sha256",
+							BrowserDownloadUrl: "linux-checksum-download-url",
+						},
+						{
+							Name:               "glooctl-windows.sha256",
+							BrowserDownloadUrl: "windows-checksum-download-url",
+						},
 					}, nil)
 				remoteShaGetter.EXPECT().
-					GetShaFromUrl("darwin-download-url").
+					GetShaFromUrl("darwin-checksum-download-url").
 					Return("darwin-cli-sha", nil)
 				remoteShaGetter.EXPECT().
-					GetShaFromUrl("linux-download-url").
+					GetShaFromUrl("linux-checksum-download-url").
 					Return("linux-cli-sha", nil)
 				remoteShaGetter.EXPECT().
-					GetShaFromUrl("windows-download-url").
+					GetShaFromUrl("windows-checksum-download-url").
 					Return("windows-cli-sha", nil)
 
 				remoteChangePusher.EXPECT().
@@ -279,15 +291,27 @@ var _ = Describe("FormulaUpdater", func() {
 							Name:               "glooctl-windows",
 							BrowserDownloadUrl: "windows-download-url",
 						},
+						{
+							Name:               "glooctl-darwin.sha256",
+							BrowserDownloadUrl: "darwin-checksum-download-url",
+						},
+						{
+							Name:               "glooctl-linux.sha256",
+							BrowserDownloadUrl: "linux-checksum-download-url",
+						},
+						{
+							Name:               "glooctl-windows.sha256",
+							BrowserDownloadUrl: "windows-checksum-download-url",
+						},
 					}, nil)
 				remoteShaGetter.EXPECT().
-					GetShaFromUrl("darwin-download-url").
+					GetShaFromUrl("darwin-checksum-download-url").
 					Return("darwin-cli-sha", nil)
 				remoteShaGetter.EXPECT().
-					GetShaFromUrl("linux-download-url").
+					GetShaFromUrl("linux-checksum-download-url").
 					Return("linux-cli-sha", nil)
 				remoteShaGetter.EXPECT().
-					GetShaFromUrl("windows-download-url").
+					GetShaFromUrl("windows-checksum-download-url").
 					Return("windows-cli-sha", nil)
 
 				remoteChangePusher.EXPECT().
