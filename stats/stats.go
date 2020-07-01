@@ -31,6 +31,10 @@ type StartupOptions struct {
 
 	// listen on this port
 	Port int
+
+	// If set, the server will use this `AtomicLevel` to serve
+	// the "/logging" endpoint instead of building its own logger.
+	LogLevel *zap.AtomicLevel
 }
 
 // return options indicating that the server should:
@@ -55,19 +59,24 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 		return
 	}
 
-	logconfig := zap.NewProductionConfig()
-
-	logger, logerr := logconfig.Build()
-	contextutils.SetFallbackLogger(logger.Sugar())
+	var logLevel zap.AtomicLevel
+	if startupOpts.LogLevel != nil {
+		logLevel = *startupOpts.LogLevel
+	} else {
+		logConfig := zap.NewProductionConfig()
+		logger, logErr := logConfig.Build()
+		if logErr == nil {
+			logLevel = logConfig.Level
+			contextutils.SetFallbackLogger(logger.Sugar())
+		}
+	}
 
 	go RunGoroutineStat()
 
 	go func() {
 		mux := new(http.ServeMux)
 
-		if logerr == nil {
-			mux.Handle("/logging", logconfig.Level)
-		}
+		mux.Handle("/logging", logLevel)
 
 		addhandlers = append(addhandlers, addPprof, addStats)
 

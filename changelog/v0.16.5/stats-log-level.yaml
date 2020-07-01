@@ -1,0 +1,7 @@
+changelog:
+- type: NEW_FEATURE
+  description: >
+    Add a new `LogLevel` startup option to inject the `zap.AtomicLevel` into the stats server. This way clients can
+    build their own logger and use the stats server to change its log level at runtime, instead of having to rely on
+    the logger built internally by the server.
+  issueLink: https://github.com/solo-io/go-utils/issues/413
