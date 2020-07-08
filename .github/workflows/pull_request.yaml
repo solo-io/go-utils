@@ -1,0 +1,45 @@
+name: pull_request
+
+on:
+  push:
+    branches:
+    - 'master'
+  pull_request:
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.4.0
+      with:
+        access_token: ${{ github.token }}
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        version: '290.0.1'
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+    - name: Set up Go 1.14
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.14
+    - uses: actions/cache@v1
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go
+    - uses: azure/setup-kubectl@v1
+      with:
+        version: 'v1.18.0'
+    - uses: engineerd/setup-kind@v0.3.0
+      with:
+        skipClusterCreation: "true"
+    - name: Run tests
+      run: |
+        RUN_KUBE_TESTS=1 go test ./...
