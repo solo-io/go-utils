@@ -90,7 +90,7 @@ var _ = Describe("storage client tests", func() {
 			buildIdFile = func(resourceName string) string {
 				buildId := os.Getenv("BUILD_ID")
 				if buildId == "" {
-					Fail("the gcs storage client tests require build id")
+					Skip("the gcs storage client tests require build id")
 				}
 				return fmt.Sprintf("%s/%s", buildId, resourceName)
 			}
