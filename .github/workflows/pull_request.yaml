@@ -38,10 +38,8 @@ jobs:
       with:
         version: 'v1.18.0'
     - uses: engineerd/setup-kind@v0.3.0
-      with:
-        skipClusterCreation: "true"
     - name: Run tests
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
       run: |
         RUN_KUBE_TESTS=1 go test ./...
