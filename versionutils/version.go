@@ -15,6 +15,7 @@ import (
 const (
 	SemverNilVersionValue = "v0.0.0"
 	SemverMinimumVersion  = "v0.0.1"
+	wasmLabel             = "wasm"
 )
 
 var (
@@ -225,7 +226,7 @@ func ParseVersion(tag string) (*Version, error) {
 		return nil, InvalidSemverVersionError(tag)
 	}
 	versionString := tag[1:]
-	splitOnHyphen := strings.Split(versionString, "-")
+	splitOnHyphen := strings.SplitN(versionString, "-", 2)
 	labelAndVersion := ""
 	if len(splitOnHyphen) > 1 {
 		labelAndVersion = splitOnHyphen[1]
@@ -271,18 +272,23 @@ func ParseVersion(tag string) (*Version, error) {
 }
 
 func parseLabelVersion(labelAndVersion string) (string, int, error) {
-	regex := regexp.MustCompile("([a-z]+)([0-9]+)")
-	// should be like ["foo1", "foo", "1"]
+	// straight wasm label with no beta/rc etc
+	if labelAndVersion == wasmLabel {
+		return wasmLabel, 0, nil
+	}
+	regex := regexp.MustCompile("([a-z]+)([0-9]+)(-wasm)?")
+	// should be like ["foo1-wasm", "foo", "1", "-wasm"] or ["foo1", "foo", "1", ""]
 	matches := regex.FindStringSubmatch(labelAndVersion)
-	if len(matches) != 3 {
+	if len(matches) != 4 {
 		return "", 0, eris.Errorf("invalid label and version %s", labelAndVersion)
 	}
-	label := matches[1]
+	label := matches[1] + matches[3]
 	labelVersionToParse := matches[2]
 	labelVersion, err := strconv.Atoi(labelVersionToParse)
 	if err != nil {
 		return "", 0, errors.Wrapf(err, "invalid label version %s", labelVersionToParse)
 	}
+
 	return label, labelVersion, nil
 }
 

@@ -36,6 +36,8 @@ var _ = Describe("Version", func() {
 			Expect(versionutils.MatchesRegex("v1.2.3-beta-wasm")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.0.0-rc-wasm")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("vX.Y.2-wasm")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v-wasm")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("-wasm")).To(BeFalse())
 		})
 	})
 
@@ -56,6 +58,23 @@ var _ = Describe("Version", func() {
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(Equal(versionutils.InvalidSemverVersionError("0.1.2").Error()))
 			Expect(parsed).To(BeNil())
+		})
+
+		It("supports wasm versions", func() {
+			parsed, err := versionutils.ParseVersion("v1.5.0-rc1-wasm")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsed.Label).To(Equal("rc-wasm"))
+			Expect(parsed.LabelVersion).To(Equal(1))
+
+			parsed, err = versionutils.ParseVersion("v1.5.0-beta2-wasm")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsed.Label).To(Equal("beta-wasm"))
+			Expect(parsed.LabelVersion).To(Equal(2))
+
+			parsed, err = versionutils.ParseVersion("v1.5.1-wasm")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsed.Label).To(Equal("wasm"))
+			Expect(parsed.LabelVersion).To(Equal(0))
 		})
 
 	})
@@ -100,6 +119,11 @@ var _ = Describe("Version", func() {
 			expectResult("v1.0.0-rc2", "v1.0.0-beta1", false, false, "")
 			expectResult("v1.0.0-rc1", "v1.0.0-rc2", false, true, "")
 			expectResult("v1.0.0-rc2", "v1.0.0-rc1", true, true, "")
+			expectResult("v1.0.0-rc1-wasm", "v1.0.0-rc2-wasm", false, true, "")
+			expectResult("v1.0.0-rc2-wasm", "v1.0.0-rc1-wasm", true, true, "")
+			expectResult("v1.0.0-wasm", "v1.0.0", false, false, "")
+			expectResult("v1.0.0-rc1-wasm", "v1.0.0-rc1", false, false, "")
+			expectResult("v1.0.0-rc1", "v1.0.0-rc1-wasm", false, false, "")
 		})
 	})
 
@@ -148,6 +172,10 @@ var _ = Describe("Version", func() {
 		v2_0_0_foo_1 := versionutils.NewVersion(2, 0, 0, "foo", 1)
 		v2_0_0_foo_2 := versionutils.NewVersion(2, 0, 0, "foo", 2)
 		v2_0_0 := getVersion(2, 0, 0)
+		v2_0_0_wasm_1 := versionutils.NewVersion(2, 0, 0, "wasm", 1)
+		v2_0_0_wasm_2 := versionutils.NewVersion(2, 0, 0, "wasm", 2)
+		v2_0_0_foo_wasm_1 := versionutils.NewVersion(2, 0, 0, "foo-wasm", 1)
+		v2_0_0_foo_wasm_2 := versionutils.NewVersion(2, 0, 0, "foo-wasm", 2)
 
 		It("works", func() {
 			expectResult(v0_0_1, true, true, v0_1_0)
@@ -163,6 +191,8 @@ var _ = Describe("Version", func() {
 			expectResult(v1_1_10, false, false, v1_1_11)
 			expectResult(v1_1_10, false, true, v1_2_0)
 			expectResult(v2_0_0_foo_1, false, true, v2_0_0_foo_2)
+			expectResult(v2_0_0_wasm_1, false, true, v2_0_0_wasm_2)
+			expectResult(v2_0_0_foo_wasm_1, false, true, v2_0_0_foo_wasm_2)
 		})
 	})
 
