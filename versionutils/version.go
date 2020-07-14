@@ -287,7 +287,7 @@ func parseLabelVersion(labelAndVersion string) (string, int, error) {
 }
 
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?(-wasm)?$)")
 	return regex.MatchString(tag)
 }
 

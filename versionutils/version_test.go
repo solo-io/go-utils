@@ -30,6 +30,12 @@ var _ = Describe("Version", func() {
 			Expect(versionutils.MatchesRegex("v1.2.3-1")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2.3+rc1")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2.3-beta")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.2.3-wasm")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.2.3-beta1-wasm")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.0.0-rc1-wasm")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.2.3-beta-wasm")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.0.0-rc-wasm")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("vX.Y.2-wasm")).To(BeFalse())
 		})
 	})
 
