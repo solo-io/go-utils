@@ -224,6 +224,7 @@ func ParseVersion(tag string) (*Version, error) {
 	if !MatchesRegex(tag) {
 		return nil, InvalidSemverVersionError(tag)
 	}
+
 	versionString := tag[1:]
 	splitOnHyphen := strings.SplitN(versionString, "-", 2)
 	labelAndVersion := ""
@@ -271,22 +272,18 @@ func ParseVersion(tag string) (*Version, error) {
 }
 
 func parseLabelVersion(labelAndVersion string) (string, int, error) {
-	// check for label with no version, eg "wasm"
-	numbersRegex := regexp.MustCompile("[0-9]+")
-	hasNumbers := numbersRegex.MatchString(labelAndVersion)
-	if !hasNumbers && len(labelAndVersion) > 0 {
+	numsRegex := regexp.MustCompile("[0-9]+")
+	numberGroups := numsRegex.FindAllString(labelAndVersion, -1)
+	if len(numberGroups) == 0 {
+		// valid label with no version, eg "wasm"
 		return labelAndVersion, 0, nil
+	} else if len(numberGroups) > 1 {
+		// invalid label with multiple versions like foo1-bar2
+		return "", 0, eris.Errorf("invalid label and version (multiple version numbers not allowed) %s", labelAndVersion)
 	}
 
-	regex := regexp.MustCompile("([a-z]+)([0-9]+)(-[a-z+])?")
-	// should be like ["foo1-bar", "foo", "1", "-bar"] or ["foo1", "foo", "1", ""]
-	matches := regex.FindStringSubmatch(labelAndVersion)
-	if len(matches) != 4 {
-		return "", 0, eris.Errorf("invalid label and version %s", labelAndVersion)
-	}
-	// label is labelAndVersion without numbers. foo1-bar becomes foo-bar
-	label := numbersRegex.ReplaceAllString(labelAndVersion, "")
-	labelVersionToParse := matches[2]
+	label := numsRegex.ReplaceAllString(labelAndVersion, "")
+	labelVersionToParse := numberGroups[0]
 	labelVersion, err := strconv.Atoi(labelVersionToParse)
 	if err != nil {
 		return "", 0, errors.Wrapf(err, "invalid label version %s", labelVersionToParse)
@@ -296,7 +293,7 @@ func parseLabelVersion(labelAndVersion string) (string, int, error) {
 }
 
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?(-[a-z]+)?$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]*)?(-[a-z]+[0-9]*)?$)")
 	return regex.MatchString(tag)
 }
 

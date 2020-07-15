@@ -16,7 +16,8 @@ var _ = Describe("Version", func() {
 			Expect(versionutils.MatchesRegex("v0.0.1")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v1.0.0")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v1.0.0-rc1")).To(BeTrue())
-			Expect(versionutils.MatchesRegex("v0.5.20-rc100")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.0.0-rc10")).To(BeTrue(), "should allow versions with 2 digits")
+			Expect(versionutils.MatchesRegex("v0.5.20-rc100")).To(BeTrue(), "should allow verions with 3 digits")
 			Expect(versionutils.MatchesRegex("v0.0.0-rc1")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("0.1.2")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2")).To(BeFalse())
@@ -32,16 +33,16 @@ var _ = Describe("Version", func() {
 			Expect(versionutils.MatchesRegex("v1.2.3-beta")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v1.2.3-wasm")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v1.2.3-beta1-wasm")).To(BeTrue())
+			Expect(versionutils.MatchesRegex("v1.2.3-beta10-wasm")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v1.0.0-rc1-wasm")).To(BeTrue())
-			Expect(versionutils.MatchesRegex("v1.2.3-beta-wasm")).To(BeFalse())
-			Expect(versionutils.MatchesRegex("v1.0.0-rc-wasm")).To(BeFalse())
+			Expect(versionutils.MatchesRegex("v1.0.0-rc-wasm")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("vX.Y.2-wasm")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v-wasm")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("-wasm")).To(BeFalse())
-			Expect(versionutils.MatchesRegex("v1.2.3-foo")).To(BeTrue())
-			Expect(versionutils.MatchesRegex("v1.2.3-foo1-bar")).To(BeTrue())
-			Expect(versionutils.MatchesRegex("v1.2.3-foo-bar")).To(BeFalse())
-
+			Expect(versionutils.MatchesRegex("v1.2.3-foo")).To(BeTrue(), "should allow an unversioned label")
+			Expect(versionutils.MatchesRegex("v1.2.3-foo-bar")).To(BeTrue(), "should allow hyphenated-labels")
+			Expect(versionutils.MatchesRegex("v1.2.3-foo1-bar")).To(BeTrue(), "should allow one leading label version")
+			Expect(versionutils.MatchesRegex("v1.2.3-foo-bar1")).To(BeTrue(), "should allow one trailing label version")
 		})
 	})
 
@@ -79,6 +80,19 @@ var _ = Describe("Version", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(parsed.Label).To(Equal("wasm"))
 			Expect(parsed.LabelVersion).To(Equal(0))
+		})
+
+		It("supports arbitrary trailing labels with a single version", func() {
+			Expect(matches("v1.2.3-foo", 1, 2, 3, "foo", 0)).To(BeTrue())
+			Expect(matches("v1.2.3-foo-bar", 1, 2, 3, "foo-bar", 0)).To(BeTrue())
+			Expect(matches("v1.2.3-foo1-bar", 1, 2, 3, "foo-bar", 1)).To(BeTrue())
+			Expect(matches("v1.2.3-foo-bar1", 1, 2, 3, "foo-bar", 1)).To(BeTrue())
+		})
+
+		It("rejects labels with multiple versions", func() {
+			_, err := versionutils.ParseVersion("v1.2.3-foo1-bar1")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(BeEquivalentTo("invalid label and version (multiple version numbers not allowed) foo1-bar1"))
 		})
 
 	})
