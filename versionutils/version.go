@@ -224,8 +224,9 @@ func ParseVersion(tag string) (*Version, error) {
 	if !MatchesRegex(tag) {
 		return nil, InvalidSemverVersionError(tag)
 	}
+
 	versionString := tag[1:]
-	splitOnHyphen := strings.Split(versionString, "-")
+	splitOnHyphen := strings.SplitN(versionString, "-", 2)
 	labelAndVersion := ""
 	if len(splitOnHyphen) > 1 {
 		labelAndVersion = splitOnHyphen[1]
@@ -271,23 +272,25 @@ func ParseVersion(tag string) (*Version, error) {
 }
 
 func parseLabelVersion(labelAndVersion string) (string, int, error) {
-	regex := regexp.MustCompile("([a-z]+)([0-9]+)")
-	// should be like ["foo1", "foo", "1"]
-	matches := regex.FindStringSubmatch(labelAndVersion)
-	if len(matches) != 3 {
-		return "", 0, eris.Errorf("invalid label and version %s", labelAndVersion)
+	numsRegex := regexp.MustCompile("[0-9]+")
+	numberGroups := numsRegex.FindAllString(labelAndVersion, -1)
+	if len(numberGroups) == 0 {
+		// valid label with no version, eg "wasm"
+		return labelAndVersion, 0, nil
 	}
-	label := matches[1]
-	labelVersionToParse := matches[2]
+
+	label := numsRegex.ReplaceAllString(labelAndVersion, "")
+	labelVersionToParse := numberGroups[0]
 	labelVersion, err := strconv.Atoi(labelVersionToParse)
 	if err != nil {
 		return "", 0, errors.Wrapf(err, "invalid label version %s", labelVersionToParse)
 	}
+
 	return label, labelVersion, nil
 }
 
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+)*(-[a-z]+[0-9]*)?$)")
 	return regex.MatchString(tag)
 }
 
