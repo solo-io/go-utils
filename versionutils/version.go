@@ -15,7 +15,6 @@ import (
 const (
 	SemverNilVersionValue = "v0.0.0"
 	SemverMinimumVersion  = "v0.0.1"
-	wasmLabel             = "wasm"
 )
 
 var (
@@ -272,17 +271,21 @@ func ParseVersion(tag string) (*Version, error) {
 }
 
 func parseLabelVersion(labelAndVersion string) (string, int, error) {
-	// straight wasm label with no beta/rc etc
-	if labelAndVersion == wasmLabel {
-		return wasmLabel, 0, nil
+	// check for label with no version, eg "wasm"
+	numbersRegex := regexp.MustCompile("[0-9]+")
+	hasNumbers := numbersRegex.MatchString(labelAndVersion)
+	if !hasNumbers && len(labelAndVersion) > 0 {
+		return labelAndVersion, 0, nil
 	}
-	regex := regexp.MustCompile("([a-z]+)([0-9]+)(-wasm)?")
-	// should be like ["foo1-wasm", "foo", "1", "-wasm"] or ["foo1", "foo", "1", ""]
+
+	regex := regexp.MustCompile("([a-z]+)([0-9]+)(-[a-z+])?")
+	// should be like ["foo1-bar", "foo", "1", "-bar"] or ["foo1", "foo", "1", ""]
 	matches := regex.FindStringSubmatch(labelAndVersion)
 	if len(matches) != 4 {
 		return "", 0, eris.Errorf("invalid label and version %s", labelAndVersion)
 	}
-	label := matches[1] + matches[3]
+	// label is labelAndVersion without numbers. foo1-bar becomes foo-bar
+	label := numbersRegex.ReplaceAllString(labelAndVersion, "")
 	labelVersionToParse := matches[2]
 	labelVersion, err := strconv.Atoi(labelVersionToParse)
 	if err != nil {
@@ -293,7 +296,7 @@ func parseLabelVersion(labelAndVersion string) (string, int, error) {
 }
 
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?(-wasm)?$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]+)?(-[a-z]+)?$)")
 	return regex.MatchString(tag)
 }
 
