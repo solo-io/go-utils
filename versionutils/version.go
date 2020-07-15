@@ -277,9 +277,6 @@ func parseLabelVersion(labelAndVersion string) (string, int, error) {
 	if len(numberGroups) == 0 {
 		// valid label with no version, eg "wasm"
 		return labelAndVersion, 0, nil
-	} else if len(numberGroups) > 1 {
-		// invalid label with multiple versions like foo1-bar2
-		return "", 0, eris.Errorf("invalid label and version (multiple version numbers not allowed) %s", labelAndVersion)
 	}
 
 	label := numsRegex.ReplaceAllString(labelAndVersion, "")
@@ -293,7 +290,7 @@ func parseLabelVersion(labelAndVersion string) (string, int, error) {
 }
 
 func MatchesRegex(tag string) bool {
-	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+[0-9]*)?(-[a-z]+[0-9]*)?$)")
+	regex := regexp.MustCompile("(v[0-9]+[.][0-9]+[.][0-9]+(-[a-z]+)*(-[a-z]+[0-9]*)?$)")
 	return regex.MatchString(tag)
 }
 
