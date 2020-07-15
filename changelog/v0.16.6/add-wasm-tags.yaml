@@ -1,5 +1,7 @@
 changelog:
 - type: NEW_FEATURE
   description: >
-    Add `-wasm` as an acceptable tag suffix for builds, releases and changelogs.
+    Expand on allowed tags. Now tags like v1.2.3-foo, v1.2.3-foo-bar-baz,
+    and v1.2.3-foo-bar1 are allowed. Any labelVersion numbers must be
+    trailing, so v1.2.3-foo1-bar is still not allowed for example.
   issueLink: https://github.com/solo-io/go-utils/issues/416
