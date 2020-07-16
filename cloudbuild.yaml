@@ -1,0 +1,3 @@
+steps:
+- name: 'empty'
+  args: ['echo', 'Need at least one step to pass cloudbuild']
