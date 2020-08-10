@@ -35,7 +35,6 @@ var _ = Describe("Docker", func() {
 	Context("Pull", func() {
 		It("can pull a valid container", func() {
 			Expect(pullValidImage()).To(Equal(true))
-			Expect(pullValidImage()).To(Equal(false))
 		})
 
 		It("cannot pull an invalid container", func() {
