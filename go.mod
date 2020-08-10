@@ -11,7 +11,6 @@ require (
 	github.com/bluekeyes/hatpear v0.0.0-20180714193905-ffb42d5bb417 // indirect
 	github.com/bradleyfalzon/ghinstallation v0.1.2 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.0 // indirect
-	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/docker/go-metrics v0.0.0-20181218153428-b84716841b82 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
@@ -24,7 +23,6 @@ require (
 	github.com/go-openapi/spec v0.19.4 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
-	github.com/golang/lint v0.0.0-20180702182130-06c8688daad7 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
@@ -36,7 +34,6 @@ require (
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v2.3.0+incompatible
-	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/onsi/ginkgo v1.12.1
@@ -62,7 +59,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	gonum.org/v1/netlib v0.0.0-20190331212654-76723241ea4e // indirect
 	google.golang.org/api v0.6.0
 	google.golang.org/genproto v0.0.0-20191028173616-919d9bdd9fe6 // indirect
 	google.golang.org/grpc v1.27.0
@@ -74,14 +70,15 @@ require (
 	k8s.io/api v0.18.6
 	k8s.io/apiextensions-apiserver v0.18.6
 	k8s.io/apimachinery v0.18.6
+	k8s.io/cli-runtime v0.18.0
 	k8s.io/client-go v0.18.6
 	rsc.io/letsencrypt v0.0.1 // indirect
 	sigs.k8s.io/controller-runtime v0.6.2
-	sigs.k8s.io/structured-merge-diff v0.0.0-20190817042607-6149e4549fca // indirect
 	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
+	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.0.0+incompatible
 	github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.0.5
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
 )
