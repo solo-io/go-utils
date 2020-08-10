@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -118,9 +119,9 @@ func (rc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstruc
 	}
 	var list *unstructured.UnstructuredList
 	if namespace == "" {
-		list, err = rc.dynamicClient.Resource(kind).List(opts)
+		list, err = rc.dynamicClient.Resource(kind).List(context.Background(), opts)
 	} else {
-		list, err = rc.dynamicClient.Resource(kind).Namespace(namespace).List(opts)
+		list, err = rc.dynamicClient.Resource(kind).Namespace(namespace).List(context.Background(), opts)
 	}
 
 	if err != nil {
@@ -140,9 +141,9 @@ func (rc *resourceCollector) getResource(resource *unstructured.Unstructured) (k
 	}
 	var res *unstructured.Unstructured
 	if resource.GetNamespace() != "" {
-		res, err = rc.dynamicClient.Resource(kind).Namespace(resource.GetNamespace()).Get(resource.GetName(), metav1.GetOptions{})
+		res, err = rc.dynamicClient.Resource(kind).Namespace(resource.GetNamespace()).Get(context.Background(), resource.GetName(), metav1.GetOptions{})
 	} else {
-		res, err = rc.dynamicClient.Resource(kind).Get(resource.GetName(), metav1.GetOptions{})
+		res, err = rc.dynamicClient.Resource(kind).Get(context.Background(), resource.GetName(), metav1.GetOptions{})
 
 	}
 	if err != nil {

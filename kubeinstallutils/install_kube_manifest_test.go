@@ -1,6 +1,7 @@
 package kubeinstallutils_test
 
 import (
+	"context"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -44,9 +45,9 @@ var _ = Describe("InstallKubeManifest", func() {
 		kube, err := kubernetes.NewForConfig(cfg)
 		Expect(err).NotTo(HaveOccurred())
 
-		svcs, err := kube.CoreV1().Services(namespace).List(v1.ListOptions{})
+		svcs, err := kube.CoreV1().Services(namespace).List(context.TODO(), v1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
-		deployments, err := kube.ExtensionsV1beta1().Deployments(namespace).List(v1.ListOptions{})
+		deployments, err := kube.ExtensionsV1beta1().Deployments(namespace).List(context.TODO(), v1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(svcs.Items).To(HaveLen(1))
 		Expect(deployments.Items).To(HaveLen(1))

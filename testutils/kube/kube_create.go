@@ -16,11 +16,11 @@ import (
 
 func CreateNs(ns string) error {
 	kube := MustKubeClient()
-	_, err := kube.CoreV1().Namespaces().Create(&kubev1.Namespace{
+	_, err := kube.CoreV1().Namespaces().Create(context.Background(), &kubev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: ns,
 		},
-	})
+	}, metav1.CreateOptions{})
 
 	return err
 }
@@ -31,7 +31,7 @@ func MustCreateNs(ns string) {
 
 func DeleteNs(ns string) error {
 	kube := MustKubeClient()
-	err := kube.CoreV1().Namespaces().Delete(ns, nil)
+	err := kube.CoreV1().Namespaces().Delete(context.Background(), ns, metav1.DeleteOptions{})
 
 	return err
 }
@@ -57,7 +57,7 @@ func ConfigMap(ns, name, data string, labels map[string]string) kubev1.ConfigMap
 
 func CreateConfigMap(cm kubev1.ConfigMap) error {
 	kube := MustKubeClient()
-	_, err := kube.CoreV1().ConfigMaps(cm.Namespace).Create(&cm)
+	_, err := kube.CoreV1().ConfigMaps(cm.Namespace).Create(context.Background(), &cm, metav1.CreateOptions{})
 
 	return err
 }

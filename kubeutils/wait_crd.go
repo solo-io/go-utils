@@ -1,6 +1,7 @@
 package kubeutils
 
 import (
+	"context"
 	"time"
 
 	"github.com/avast/retry-go"
@@ -15,7 +16,7 @@ import (
 // CRUD'ed by clients
 func WaitForCrdActive(apiexts apiexts.Interface, crdName string) error {
 	return retry.Do(func() error {
-		crd, err := apiexts.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crdName, metav1.GetOptions{})
+		crd, err := apiexts.ApiextensionsV1beta1().CustomResourceDefinitions().Get(context.Background(), crdName, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "lookup crd %v", crdName)
 		}

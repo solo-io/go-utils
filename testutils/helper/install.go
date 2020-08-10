@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -172,7 +173,7 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 func waitForDefaultServiceAccount(installNamespace string) error {
 	kubeClient := kube.MustKubeClient()
 	getDefaultServiceAccount := func() error {
-		_, err := kubeClient.CoreV1().ServiceAccounts(installNamespace).Get("default", v1.GetOptions{})
+		_, err := kubeClient.CoreV1().ServiceAccounts(installNamespace).Get(context.Background(), "default", v1.GetOptions{})
 		return err
 	}
 	return retry.Do(getDefaultServiceAccount)

@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -162,7 +163,7 @@ func (lc LogRequestBuilder) StreamLogs(requests []*LogsRequest) ([]*LogsResponse
 		// necessary to shadow this variable so that it is unique within the goroutine
 		restRequest := request
 		eg.Go(func() error {
-			reader, err := restRequest.Request.Stream()
+			reader, err := restRequest.Request.Stream(context.Background())
 			if err != nil {
 				return err
 			}

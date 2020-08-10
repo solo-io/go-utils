@@ -5,6 +5,7 @@
 package debugutils
 
 import (
+	context "context"
 	io "io"
 	reflect "reflect"
 
@@ -35,31 +36,31 @@ func (m *MockResponseWrapper) EXPECT() *MockResponseWrapperMockRecorder {
 }
 
 // DoRaw mocks base method
-func (m *MockResponseWrapper) DoRaw() ([]byte, error) {
+func (m *MockResponseWrapper) DoRaw(arg0 context.Context) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DoRaw")
+	ret := m.ctrl.Call(m, "DoRaw", arg0)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DoRaw indicates an expected call of DoRaw
-func (mr *MockResponseWrapperMockRecorder) DoRaw() *gomock.Call {
+func (mr *MockResponseWrapperMockRecorder) DoRaw(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoRaw", reflect.TypeOf((*MockResponseWrapper)(nil).DoRaw))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoRaw", reflect.TypeOf((*MockResponseWrapper)(nil).DoRaw), arg0)
 }
 
 // Stream mocks base method
-func (m *MockResponseWrapper) Stream() (io.ReadCloser, error) {
+func (m *MockResponseWrapper) Stream(arg0 context.Context) (io.ReadCloser, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stream")
+	ret := m.ctrl.Call(m, "Stream", arg0)
 	ret0, _ := ret[0].(io.ReadCloser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Stream indicates an expected call of Stream
-func (mr *MockResponseWrapperMockRecorder) Stream() *gomock.Call {
+func (mr *MockResponseWrapperMockRecorder) Stream(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stream", reflect.TypeOf((*MockResponseWrapper)(nil).Stream))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stream", reflect.TypeOf((*MockResponseWrapper)(nil).Stream), arg0)
 }

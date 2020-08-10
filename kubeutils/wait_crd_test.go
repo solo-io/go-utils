@@ -1,6 +1,8 @@
 package kubeutils_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/solo-io/go-utils/kubeutils"
@@ -19,7 +21,7 @@ var _ = Describe("WaitCrd", func() {
 		Expect(err).NotTo(HaveOccurred())
 		api, err = apiexts.NewForConfig(cfg)
 		Expect(err).NotTo(HaveOccurred())
-		crd, err := api.ApiextensionsV1beta1().CustomResourceDefinitions().Create(&v1beta1.CustomResourceDefinition{
+		crd, err := api.ApiextensionsV1beta1().CustomResourceDefinitions().Create(context.TODO(), &v1beta1.CustomResourceDefinition{
 			ObjectMeta: v1.ObjectMeta{Name: "somethings.test.solo.io"},
 			Spec: v1beta1.CustomResourceDefinitionSpec{
 				Group: "test.solo.io",
@@ -30,12 +32,12 @@ var _ = Describe("WaitCrd", func() {
 				},
 				Version: "v1",
 			},
-		})
+		}, v1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		crdName = crd.Name
 	})
 	AfterEach(func() {
-		api.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crdName, nil)
+		api.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(context.TODO(), crdName, v1.DeleteOptions{})
 	})
 	It("waits successfully for a crd to become established", func() {
 		err := WaitForCrdActive(api, crdName)

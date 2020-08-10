@@ -94,8 +94,8 @@ var _ = Describe("logs unit tests", func() {
 		It("fails to save logs if a single request fails", func() {
 			fakeErr := eris.New("this is a fake error")
 			sucessfulRequest, failingRequest := NewMockResponseWrapper(ctrl), NewMockResponseWrapper(ctrl)
-			sucessfulRequest.EXPECT().Stream().Times(2).Return(&os.File{}, nil)
-			failingRequest.EXPECT().Stream().Times(1).Return(nil, fakeErr)
+			sucessfulRequest.EXPECT().Stream(gomock.Any()).Times(2).Return(&os.File{}, nil)
+			failingRequest.EXPECT().Stream(gomock.Any()).Times(1).Return(nil, fakeErr)
 			sc.EXPECT().Save(gomock.Any(), gomock.Any()).AnyTimes()
 			logRequests := []*LogsRequest{
 				{Request: sucessfulRequest},
@@ -111,7 +111,7 @@ var _ = Describe("logs unit tests", func() {
 			fakeLocation := "location"
 			fakeReaderCloser := &os.File{}
 			sucessfulRequest := NewMockResponseWrapper(ctrl)
-			sucessfulRequest.EXPECT().Stream().Times(1).Return(fakeReaderCloser, nil)
+			sucessfulRequest.EXPECT().Stream(gomock.Any()).Times(1).Return(fakeReaderCloser, nil)
 			logRequests := []*LogsRequest{
 				{
 					Request: sucessfulRequest,

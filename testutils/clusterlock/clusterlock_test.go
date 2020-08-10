@@ -99,10 +99,10 @@ var _ = Describe("kube cluster lock test", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(lock.AcquireLock()).NotTo(HaveOccurred())
-		cfgMap, err := kubeClient.CoreV1().ConfigMaps(namespace).Get(clusterlock.LockResourceName, v1.GetOptions{})
+		cfgMap, err := kubeClient.CoreV1().ConfigMaps(namespace).Get(context.Background(), clusterlock.LockResourceName, v1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		cfgMap.Annotations[clusterlock.LockTimeoutAnnotationKey] = time.Now().Add(time.Duration(-1) * time.Minute).Format(clusterlock.DefaultTimeFormat)
-		_, err = kubeClient.CoreV1().ConfigMaps(namespace).Update(cfgMap)
+		_, err = kubeClient.CoreV1().ConfigMaps(namespace).Update(context.Background(), cfgMap, v1.UpdateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		lock2, err := clusterlock.NewTestClusterLocker(kubeClient, clusterlock.Options{
 			Namespace: namespace,

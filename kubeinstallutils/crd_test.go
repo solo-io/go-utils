@@ -1,6 +1,8 @@
 package kubeinstallutils_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -54,7 +56,7 @@ var _ = Describe("Crd", func() {
 	It("creates crds", func() {
 		err := kubeinstallutils.CreateCrds(apiExts, testCrds...)
 		Expect(err).NotTo(HaveOccurred())
-		crdList, err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{})
+		crdList, err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.TODO(), v1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		for _, testCrd := range testCrds {
 			var found bool

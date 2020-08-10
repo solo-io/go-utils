@@ -1,6 +1,7 @@
 package clusterlock_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/solo-io/go-utils/testutils/clusterlock"
@@ -32,5 +33,5 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	_ = consulFactory.Clean()
-	kubeClient.CoreV1().ConfigMaps("default").Delete(clusterlock.LockResourceName, &v1.DeleteOptions{})
+	kubeClient.CoreV1().ConfigMaps("default").Delete(context.Background(), clusterlock.LockResourceName, v1.DeleteOptions{})
 })

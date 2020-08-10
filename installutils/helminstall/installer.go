@@ -1,6 +1,7 @@
 package helminstall
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -166,15 +167,19 @@ type namespaceClient struct {
 }
 
 func (n *namespaceClient) Create(ns *corev1.Namespace) (*corev1.Namespace, error) {
-	return n.client.Create(ns)
+	return n.client.Create(context.Background(), ns, metav1.CreateOptions{})
 }
 
 func (n *namespaceClient) Delete(name string, options *metav1.DeleteOptions) error {
-	return n.client.Delete(name, options)
+	opts := metav1.DeleteOptions{}
+	if options != nil {
+		opts = *options
+	}
+	return n.client.Delete(context.Background(), name, opts)
 }
 
 func (n *namespaceClient) Get(name string, options metav1.GetOptions) (*corev1.Namespace, error) {
-	return n.client.Get(name, options)
+	return n.client.Get(context.Background(), name, options)
 }
 
 func (n *namespaceClient) List(opts metav1.ListOptions) (*corev1.NamespaceList, error) {

@@ -67,7 +67,7 @@ func GetClusterResources(ctx context.Context, cfg *rest.Config, filterFuncs ...F
 		gvr := gvr
 		g.Go(func() error {
 			contextutils.LoggerFrom(ctx).Debugw("listing all", "resourceType", gvr)
-			resources, err := client.Resource(gvr).List(metav1.ListOptions{})
+			resources, err := client.Resource(gvr).List(ctx, metav1.ListOptions{})
 			if err != nil {
 				return emperror.With(err, "group_version_resource", gvr)
 			}

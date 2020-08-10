@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 
 func WaitForServicesInNamespaceTeardown(ns string) {
 	EventuallyWithOffset(1, func() []kubev1.Service {
-		svcs, err := MustKubeClient().CoreV1().Services(ns).List(v1.ListOptions{})
+		svcs, err := MustKubeClient().CoreV1().Services(ns).List(context.Background(), v1.ListOptions{})
 		if err != nil {
 			// namespace is gone
 			return []kubev1.Service{}
@@ -26,27 +27,27 @@ func WaitForServicesInNamespaceTeardown(ns string) {
 }
 
 func TeardownClusterResourcesWithPrefix(kube kubernetes.Interface, prefix string) {
-	clusterroles, err := kube.RbacV1beta1().ClusterRoles().List(metav1.ListOptions{})
+	clusterroles, err := kube.RbacV1beta1().ClusterRoles().List(context.Background(), metav1.ListOptions{})
 	if err == nil {
 		for _, cr := range clusterroles.Items {
 			if strings.Contains(cr.Name, prefix) {
-				kube.RbacV1beta1().ClusterRoles().Delete(cr.Name, nil)
+				kube.RbacV1beta1().ClusterRoles().Delete(context.Background(), cr.Name, v1.DeleteOptions{})
 			}
 		}
 	}
-	clusterrolebindings, err := kube.RbacV1beta1().ClusterRoleBindings().List(metav1.ListOptions{})
+	clusterrolebindings, err := kube.RbacV1beta1().ClusterRoleBindings().List(context.Background(), metav1.ListOptions{})
 	if err == nil {
 		for _, cr := range clusterrolebindings.Items {
 			if strings.Contains(cr.Name, prefix) {
-				kube.RbacV1beta1().ClusterRoleBindings().Delete(cr.Name, nil)
+				kube.RbacV1beta1().ClusterRoleBindings().Delete(context.Background(), cr.Name, v1.DeleteOptions{})
 			}
 		}
 	}
-	webhooks, err := kube.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(metav1.ListOptions{})
+	webhooks, err := kube.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), metav1.ListOptions{})
 	if err == nil {
 		for _, wh := range webhooks.Items {
 			if strings.Contains(wh.Name, prefix) {
-				kube.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().Delete(wh.Name, nil)
+				kube.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().Delete(context.Background(), wh.Name, v1.DeleteOptions{})
 			}
 		}
 	}
@@ -57,11 +58,11 @@ func TeardownClusterResourcesWithPrefix(kube kubernetes.Interface, prefix string
 	exts, err := apiexts.NewForConfig(cfg)
 	Expect(err).NotTo(HaveOccurred())
 
-	crds, err := exts.ApiextensionsV1beta1().CustomResourceDefinitions().List(metav1.ListOptions{})
+	crds, err := exts.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), metav1.ListOptions{})
 	if err == nil {
 		for _, cr := range crds.Items {
 			if strings.Contains(cr.Name, prefix) {
-				exts.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(cr.Name, nil)
+				exts.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(context.Background(), cr.Name, v1.DeleteOptions{})
 			}
 		}
 	}

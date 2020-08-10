@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"sync"
 
 	"github.com/rotisserie/eris"
@@ -63,7 +64,7 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 			var list *corev1.PodList
 			switch {
 			case resource.GetKind() == "Pod":
-				pod, err := lpf.client.CoreV1().Pods(resource.GetNamespace()).Get(resource.GetName(), metav1.GetOptions{})
+				pod, err := lpf.client.CoreV1().Pods(resource.GetNamespace()).Get(context.Background(), resource.GetName(), metav1.GetOptions{})
 				if err != nil {
 					return err
 				}
@@ -100,7 +101,7 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 
 func (lpf *LabelPodFinder) getPodsForMatchLabels(matchLabels map[string]string, namespace string) (*corev1.PodList, error) {
 	var set labels.Set = matchLabels
-	return lpf.client.CoreV1().Pods(namespace).List(metav1.ListOptions{
+	return lpf.client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: set.String(),
 	})
 }

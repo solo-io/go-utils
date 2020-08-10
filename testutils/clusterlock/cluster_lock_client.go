@@ -1,6 +1,7 @@
 package clusterlock
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -111,7 +112,7 @@ type KubeClusterLockClient struct {
 }
 
 func (c *KubeClusterLockClient) Create(cl *ClusterLock) (*ClusterLock, error) {
-	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Create(cl.ConfigMap(c.namespace))
+	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Create(context.Background(), cl.ConfigMap(c.namespace), metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -119,14 +120,14 @@ func (c *KubeClusterLockClient) Create(cl *ClusterLock) (*ClusterLock, error) {
 }
 
 func (c *KubeClusterLockClient) Update(cl *ClusterLock) (*ClusterLock, error) {
-	originalCm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(cl.Name, metav1.GetOptions{})
+	originalCm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(context.Background(), cl.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	cm := cl.ConfigMap(c.namespace)
 	cm.ResourceVersion = originalCm.ResourceVersion
-	cm, err = c.clientset.CoreV1().ConfigMaps(c.namespace).Update(cl.ConfigMap(c.namespace))
+	cm, err = c.clientset.CoreV1().ConfigMaps(c.namespace).Update(context.Background(), cl.ConfigMap(c.namespace), metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (c *KubeClusterLockClient) Update(cl *ClusterLock) (*ClusterLock, error) {
 }
 
 func (c *KubeClusterLockClient) Get(name string) (*ClusterLock, error) {
-	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(name, metav1.GetOptions{})
+	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +143,7 @@ func (c *KubeClusterLockClient) Get(name string) (*ClusterLock, error) {
 }
 
 func (c *KubeClusterLockClient) Delete(name string) error {
-	return c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(name, &metav1.DeleteOptions{})
+	return c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 }
 
 func ExistsError(name string) error {

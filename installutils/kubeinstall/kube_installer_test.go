@@ -205,23 +205,23 @@ mixer:
 			Expect(ListAllCachedValues(context.TODO(), "unknown", inst)).To(BeEmpty())
 
 			// expect the mixer deployments to be created
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-policy", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.TODO(), "istio-policy", v1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-telemetry", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.TODO(), "istio-telemetry", v1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			err = inst.PurgeResources(context.TODO(), uniqueLabels)
 			Expect(err).NotTo(HaveOccurred())
 
 			// uninstalled
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-policy", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.TODO(), "istio-policy", v1.GetOptions{})
 			Expect(err).To(HaveOccurred())
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-telemetry", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.TODO(), "istio-telemetry", v1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 
 			// pods deleted
 			Eventually(func() []kubev1.Pod {
-				pods, err := kubeClient.CoreV1().Pods(ns).List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"app": "telemetry"}).String()})
+				pods, err := kubeClient.CoreV1().Pods(ns).List(context.Background(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"app": "telemetry"}).String()})
 				Expect(err).NotTo(HaveOccurred())
 				return pods.Items
 			}, time.Minute).Should(HaveLen(0))
