@@ -1,0 +1,4 @@
+changelog:
+- type: BREAKING_CHANGE
+  description: Upgrade kube libraries to v1.18.x
+  issueLink: https://github.com/solo-io/go-utils/issues/420
