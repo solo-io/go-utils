@@ -14,9 +14,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateNs(ns string) error {
+func CreateNs(ctx context.Context, ns string) error {
 	kube := MustKubeClient()
-	_, err := kube.CoreV1().Namespaces().Create(context.Background(), &kubev1.Namespace{
+	_, err := kube.CoreV1().Namespaces().Create(ctx, &kubev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: ns,
 		},
@@ -25,19 +25,19 @@ func CreateNs(ns string) error {
 	return err
 }
 
-func MustCreateNs(ns string) {
-	ExpectWithOffset(1, CreateNs(ns)).NotTo(HaveOccurred())
+func MustCreateNs(ctx context.Context, ns string) {
+	ExpectWithOffset(1, CreateNs(ctx, ns)).NotTo(HaveOccurred())
 }
 
-func DeleteNs(ns string) error {
+func DeleteNs(ctx context.Context, ns string) error {
 	kube := MustKubeClient()
-	err := kube.CoreV1().Namespaces().Delete(context.Background(), ns, metav1.DeleteOptions{})
+	err := kube.CoreV1().Namespaces().Delete(ctx, ns, metav1.DeleteOptions{})
 
 	return err
 }
 
-func MustDeleteNs(ns string) {
-	ExpectWithOffset(1, DeleteNs(ns)).NotTo(HaveOccurred())
+func MustDeleteNs(ctx context.Context, ns string) {
+	ExpectWithOffset(1, DeleteNs(ctx, ns)).NotTo(HaveOccurred())
 }
 
 func ConfigMap(ns, name, data string, labels map[string]string) kubev1.ConfigMap {

@@ -15,13 +15,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func WaitForNamespaceTeardown(ns string) {
-	WaitForNamespaceTeardownWithClient(ns, MustKubeClient())
+func WaitForNamespaceTeardown(ctx context.Context, ns string) {
+	WaitForNamespaceTeardownWithClient(ctx, ns, MustKubeClient())
 }
 
-func WaitForNamespaceTeardownWithClient(ns string, client kubernetes.Interface) {
+func WaitForNamespaceTeardownWithClient(ctx context.Context, ns string, client kubernetes.Interface) {
 	EventuallyWithOffset(1, func() (bool, error) {
-		namespaces, err := client.CoreV1().Namespaces().List(context.Background(), v1.ListOptions{})
+		namespaces, err := client.CoreV1().Namespaces().List(ctx, v1.ListOptions{})
 		if err != nil {
 			// namespace is gone
 			return false, err
@@ -35,10 +35,10 @@ func WaitForNamespaceTeardownWithClient(ns string, client kubernetes.Interface) 
 	}, time.Second*180).Should(BeTrue())
 }
 
-func WaitUntilPodsRunning(timeout time.Duration, namespace string, podPrefixes ...string) error {
+func WaitUntilPodsRunning(ctx context.Context, timeout time.Duration, namespace string, podPrefixes ...string) error {
 	pods := MustKubeClient().CoreV1().Pods(namespace)
 	podsWithPrefixReady := func(prefix string) (bool, error) {
-		list, err := pods.List(context.Background(), metav1.ListOptions{})
+		list, err := pods.List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}

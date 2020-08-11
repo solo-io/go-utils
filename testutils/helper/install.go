@@ -131,7 +131,7 @@ func ExtraArgs(args ...string) func(*InstallOptions) {
 }
 
 // Installs Gloo (and, optionally, the test runner)
-func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duration, options ...InstallOption) error {
+func (h *SoloTestHelper) InstallGloo(ctx context.Context, deploymentType string, timeout time.Duration, options ...InstallOption) error {
 	log.Printf("installing gloo in [%s] mode to namespace [%s]", deploymentType, h.InstallNamespace)
 	glooctlCommand := []string{
 		filepath.Join(h.BuildAssetDir, h.GlooctlExecName),
@@ -160,7 +160,7 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	}
 
 	if h.TestRunner != nil {
-		if err := waitForDefaultServiceAccount(h.InstallNamespace); err != nil {
+		if err := waitForDefaultServiceAccount(ctx, h.InstallNamespace); err != nil {
 			return errors.Wrapf(err, "waiting for default service account")
 		}
 		if err := h.TestRunner.Deploy(timeout); err != nil {
@@ -170,10 +170,10 @@ func (h *SoloTestHelper) InstallGloo(deploymentType string, timeout time.Duratio
 	return nil
 }
 
-func waitForDefaultServiceAccount(installNamespace string) error {
+func waitForDefaultServiceAccount(ctx context.Context, installNamespace string) error {
 	kubeClient := kube.MustKubeClient()
 	getDefaultServiceAccount := func() error {
-		_, err := kubeClient.CoreV1().ServiceAccounts(installNamespace).Get(context.Background(), "default", v1.GetOptions{})
+		_, err := kubeClient.CoreV1().ServiceAccounts(installNamespace).Get(ctx, "default", v1.GetOptions{})
 		return err
 	}
 	return retry.Do(getDefaultServiceAccount)

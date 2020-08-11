@@ -9,12 +9,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateNamespacesInParallel(kube kubernetes.Interface, namespaces ...string) error {
+func CreateNamespacesInParallel(ctx context.Context, kube kubernetes.Interface, namespaces ...string) error {
 	eg := errgroup.Group{}
 	for _, namespace := range namespaces {
 		namespace := namespace
 		eg.Go(func() error {
-			_, err := kube.CoreV1().Namespaces().Create(context.Background(), &v1.Namespace{
+			_, err := kube.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: namespace,
 				},
@@ -25,22 +25,22 @@ func CreateNamespacesInParallel(kube kubernetes.Interface, namespaces ...string)
 	return eg.Wait()
 }
 
-func DeleteNamespacesInParallelBlocking(kube kubernetes.Interface, namespaces ...string) error {
+func DeleteNamespacesInParallelBlocking(ctx context.Context, kube kubernetes.Interface, namespaces ...string) error {
 	eg := errgroup.Group{}
 	for _, namespace := range namespaces {
 		namespace := namespace
 		eg.Go(func() error {
-			return kube.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
+			return kube.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
 		})
 	}
 	return eg.Wait()
 }
 
-func DeleteNamespacesInParallel(kube kubernetes.Interface, namespaces ...string) {
+func DeleteNamespacesInParallel(ctx context.Context, kube kubernetes.Interface, namespaces ...string) {
 	for _, namespace := range namespaces {
 		namespace := namespace
 		go func() {
-			kube.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
+			kube.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
 		}()
 	}
 }

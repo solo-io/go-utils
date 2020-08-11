@@ -51,10 +51,10 @@ var _ = Describe("Crd", func() {
 		for _, crd := range testCrds {
 			crdsToDelete = append(crdsToDelete, crd.Name)
 		}
-		kubeinstallutils.DeleteCrds(apiExts, crdsToDelete...)
+		kubeinstallutils.DeleteCrds(context.TODO(), apiExts, crdsToDelete...)
 	})
 	It("creates crds", func() {
-		err := kubeinstallutils.CreateCrds(apiExts, testCrds...)
+		err := kubeinstallutils.CreateCrds(context.TODO(), apiExts, testCrds...)
 		Expect(err).NotTo(HaveOccurred())
 		crdList, err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.TODO(), v1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())

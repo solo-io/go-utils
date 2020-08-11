@@ -21,17 +21,19 @@ import (
 var _ = Describe("kube cluster lock test", func() {
 
 	var (
+		ctx       context.Context
 		namespace string
 	)
 
 	BeforeEach(func() {
+		ctx = context.TODO()
 		namespace = testutils.RandString(8)
-		err := kubeutils.CreateNamespacesInParallel(kubeClient, namespace)
+		err := kubeutils.CreateNamespacesInParallel(ctx, kubeClient, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, namespace)
+		err := kubeutils.DeleteNamespacesInParallelBlocking(ctx, kubeClient, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

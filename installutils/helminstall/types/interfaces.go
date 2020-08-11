@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
@@ -47,7 +49,7 @@ var _ HelmInstaller = &action.Install{}
 var _ HelmUninstaller = &action.Uninstall{}
 
 type Installer interface {
-	Install(installerConfig *InstallerConfig) error
+	Install(ctx context.Context, installerConfig *InstallerConfig) error
 }
 
 type InstallerConfig struct {

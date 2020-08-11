@@ -14,9 +14,9 @@ import (
 
 // Waits for a CRD to be "established" in kubernetes, which means it's active an can be
 // CRUD'ed by clients
-func WaitForCrdActive(apiexts apiexts.Interface, crdName string) error {
+func WaitForCrdActive(ctx context.Context, apiexts apiexts.Interface, crdName string) error {
 	return retry.Do(func() error {
-		crd, err := apiexts.ApiextensionsV1beta1().CustomResourceDefinitions().Get(context.Background(), crdName, metav1.GetOptions{})
+		crd, err := apiexts.ApiextensionsV1beta1().CustomResourceDefinitions().Get(ctx, crdName, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "lookup crd %v", crdName)
 		}

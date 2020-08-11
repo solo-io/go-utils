@@ -221,7 +221,7 @@ mixer:
 
 			// pods deleted
 			Eventually(func() []kubev1.Pod {
-				pods, err := kubeClient.CoreV1().Pods(ns).List(context.Background(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"app": "telemetry"}).String()})
+				pods, err := kubeClient.CoreV1().Pods(ns).List(context.TODO(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"app": "telemetry"}).String()})
 				Expect(err).NotTo(HaveOccurred())
 				return pods.Items
 			}, time.Minute).Should(HaveLen(0))

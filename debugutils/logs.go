@@ -16,7 +16,7 @@ import (
 
 type LogCollector interface {
 	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
-	SaveLogs(client StorageClient, location string, requests []*LogsRequest) error
+	SaveLogs(ctx context.Context, client StorageClient, location string, requests []*LogsRequest) error
 }
 
 type logCollector struct {
@@ -50,9 +50,9 @@ func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResour
 	return lc.LogRequestBuilder.LogsFromUnstructured(resources)
 }
 
-func (lc *logCollector) SaveLogs(storageClient StorageClient, location string, requests []*LogsRequest) error {
+func (lc *logCollector) SaveLogs((ctx context.Context, storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
-	responses, err := lc.LogRequestBuilder.StreamLogs(requests)
+	responses, err := lc.LogRequestBuilder.StreamLogs(ctx, requests)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod, optsFunc ...LogRe
 	return result
 }
 
-func (lc LogRequestBuilder) StreamLogs(requests []*LogsRequest) ([]*LogsResponse, error) {
+func (lc LogRequestBuilder) StreamLogs(ctx context.Context,requests []*LogsRequest) ([]*LogsResponse, error) {
 	result := make([]*LogsResponse, 0, len(requests))
 	eg := errgroup.Group{}
 	lock := sync.Mutex{}
@@ -163,7 +163,7 @@ func (lc LogRequestBuilder) StreamLogs(requests []*LogsRequest) ([]*LogsResponse
 		// necessary to shadow this variable so that it is unique within the goroutine
 		restRequest := request
 		eg.Go(func() error {
-			reader, err := restRequest.Request.Stream(context.Background())
+			reader, err := restRequest.Request.Stream(ctx)
 			if err != nil {
 				return err
 			}
