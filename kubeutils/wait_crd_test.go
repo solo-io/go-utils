@@ -13,15 +13,17 @@ import (
 
 var _ = Describe("WaitCrd", func() {
 	var (
+		ctx     context.Context
 		api     apiexts.Interface
 		crdName = "testing"
 	)
 	BeforeEach(func() {
+		ctx = context.TODO()
 		cfg, err := GetConfig("", "")
 		Expect(err).NotTo(HaveOccurred())
 		api, err = apiexts.NewForConfig(cfg)
 		Expect(err).NotTo(HaveOccurred())
-		crd, err := api.ApiextensionsV1beta1().CustomResourceDefinitions().Create(context.TODO(), &v1beta1.CustomResourceDefinition{
+		crd, err := api.ApiextensionsV1beta1().CustomResourceDefinitions().Create(ctx, &v1beta1.CustomResourceDefinition{
 			ObjectMeta: v1.ObjectMeta{Name: "somethings.test.solo.io"},
 			Spec: v1beta1.CustomResourceDefinitionSpec{
 				Group: "test.solo.io",
@@ -37,10 +39,10 @@ var _ = Describe("WaitCrd", func() {
 		crdName = crd.Name
 	})
 	AfterEach(func() {
-		api.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(context.TODO(), crdName, v1.DeleteOptions{})
+		api.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(ctx, crdName, v1.DeleteOptions{})
 	})
 	It("waits successfully for a crd to become established", func() {
-		err := WaitForCrdActive(api, crdName)
+		err := WaitForCrdActive(ctx, api, crdName)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
