@@ -21,10 +21,9 @@ var _ = BeforeSuite(func() {
 
 var _ = Describe("Docker", func() {
 
-	pullValidImage := func() bool {
-		ok, err := docker.PullIfNotPresent(context.TODO(), validImage, 1)
+	pullValidImage := func() {
+		_, err := docker.PullIfNotPresent(context.TODO(), validImage, 1)
 		Expect(err).NotTo(HaveOccurred())
-		return ok
 	}
 
 	pullInvalidImage := func() {
@@ -34,7 +33,9 @@ var _ = Describe("Docker", func() {
 
 	Context("Pull", func() {
 		It("can pull a valid container", func() {
-			Expect(pullValidImage()).To(Equal(true))
+			// caching in github actions leads to docker image being present from run to run and
+			// failing the previous check
+			pullValidImage()
 		})
 
 		It("cannot pull an invalid container", func() {
