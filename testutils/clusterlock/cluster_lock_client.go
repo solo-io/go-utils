@@ -1,6 +1,7 @@
 package clusterlock
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -99,10 +100,10 @@ func CLFromKVPair(keyPrefix string, kvp *api.KVPair) *ClusterLock {
 }
 
 type ClusterLockClient interface {
-	Create(cl *ClusterLock) (*ClusterLock, error)
-	Update(cl *ClusterLock) (*ClusterLock, error)
-	Get(name string) (*ClusterLock, error)
-	Delete(name string) error
+	Create(ctx context.Context, cl *ClusterLock) (*ClusterLock, error)
+	Update(ctx context.Context, cl *ClusterLock) (*ClusterLock, error)
+	Get(ctx context.Context, name string) (*ClusterLock, error)
+	Delete(ctx context.Context, name string) error
 }
 
 type KubeClusterLockClient struct {
@@ -110,39 +111,39 @@ type KubeClusterLockClient struct {
 	namespace string
 }
 
-func (c *KubeClusterLockClient) Create(cl *ClusterLock) (*ClusterLock, error) {
-	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Create(cl.ConfigMap(c.namespace))
+func (c *KubeClusterLockClient) Create(ctx context.Context, cl *ClusterLock) (*ClusterLock, error) {
+	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Create(ctx, cl.ConfigMap(c.namespace), metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return CLFromConfigMap(cm), nil
 }
 
-func (c *KubeClusterLockClient) Update(cl *ClusterLock) (*ClusterLock, error) {
-	originalCm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(cl.Name, metav1.GetOptions{})
+func (c *KubeClusterLockClient) Update(ctx context.Context, cl *ClusterLock) (*ClusterLock, error) {
+	originalCm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(ctx, cl.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	cm := cl.ConfigMap(c.namespace)
 	cm.ResourceVersion = originalCm.ResourceVersion
-	cm, err = c.clientset.CoreV1().ConfigMaps(c.namespace).Update(cl.ConfigMap(c.namespace))
+	cm, err = c.clientset.CoreV1().ConfigMaps(c.namespace).Update(ctx, cl.ConfigMap(c.namespace), metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return CLFromConfigMap(cm), nil
 }
 
-func (c *KubeClusterLockClient) Get(name string) (*ClusterLock, error) {
-	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(name, metav1.GetOptions{})
+func (c *KubeClusterLockClient) Get(ctx context.Context, name string) (*ClusterLock, error) {
+	cm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return CLFromConfigMap(cm), nil
 }
 
-func (c *KubeClusterLockClient) Delete(name string) error {
-	return c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(name, &metav1.DeleteOptions{})
+func (c *KubeClusterLockClient) Delete(ctx context.Context, name string) error {
+	return c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx, name, metav1.DeleteOptions{})
 }
 
 func ExistsError(name string) error {
@@ -162,8 +163,8 @@ type ConsulClusterLockClient struct {
 	keyPrefix string
 }
 
-func (c *ConsulClusterLockClient) Create(cl *ClusterLock) (*ClusterLock, error) {
-	_, err := c.Get(cl.Name)
+func (c *ConsulClusterLockClient) Create(ctx context.Context, cl *ClusterLock) (*ClusterLock, error) {
+	_, err := c.Get(ctx, cl.Name)
 	if err == nil {
 		return nil, ExistsError(cl.Name)
 	}
@@ -175,11 +176,11 @@ func (c *ConsulClusterLockClient) Create(cl *ClusterLock) (*ClusterLock, error) 
 	if !success {
 		return nil, ExistsError(cl.Name)
 	}
-	return c.Get(cl.Name)
+	return c.Get(ctx, cl.Name)
 }
 
-func (c *ConsulClusterLockClient) Update(cl *ClusterLock) (*ClusterLock, error) {
-	_, err := c.Get(cl.Name)
+func (c *ConsulClusterLockClient) Update(ctx context.Context, cl *ClusterLock) (*ClusterLock, error) {
+	_, err := c.Get(ctx, cl.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +192,7 @@ func (c *ConsulClusterLockClient) Update(cl *ClusterLock) (*ClusterLock, error) 
 	if !success {
 		return nil, ConflictError(cl.Name)
 	}
-	return c.Get(cl.Name)
+	return c.Get(ctx, cl.Name)
 }
 
 func (c *ConsulClusterLockClient) put(cl *ClusterLock) (*ClusterLock, error) {
@@ -206,7 +207,7 @@ func (c *ConsulClusterLockClient) put(cl *ClusterLock) (*ClusterLock, error) {
 	return cl, nil
 }
 
-func (c *ConsulClusterLockClient) Get(name string) (*ClusterLock, error) {
+func (c *ConsulClusterLockClient) Get(_ context.Context, name string) (*ClusterLock, error) {
 	kvp, _, err := c.client.KV().Get(c.keyPrefix+name, nil)
 	if err != nil {
 		return nil, err
@@ -217,7 +218,7 @@ func (c *ConsulClusterLockClient) Get(name string) (*ClusterLock, error) {
 	return CLFromKVPair(c.keyPrefix, kvp), nil
 }
 
-func (c *ConsulClusterLockClient) Delete(name string) error {
+func (c *ConsulClusterLockClient) Delete(_ context.Context, name string) error {
 	_, err := c.client.KV().Delete(c.keyPrefix+name, nil)
 	return err
 }

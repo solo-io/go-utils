@@ -99,7 +99,7 @@ func NewConsulClusterLocker(ctx context.Context, idPrefix string, consul *api.Cl
 func NewClusterLocker(ctx context.Context, idPrefix string, client ClusterLockClient) (*TestClusterLocker, error) {
 	ownerId := idPrefix + uuid.New().String()
 
-	_, err := client.Create(defaultClusterLock)
+	_, err := client.Create(ctx, defaultClusterLock)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (t *TestClusterLocker) AcquireLock(opts ...retry.Option) error {
 }
 
 func (t *TestClusterLocker) reacquireLock() error {
-	lock, err := t.client.Get(LockResourceName)
+	lock, err := t.client.Get(t.ctx, LockResourceName)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (t *TestClusterLocker) reacquireLock() error {
 	lock.OwnerID = t.ownerId
 	lock.Timeout = time.Now().Format(DefaultTimeFormat)
 
-	if _, err = t.client.Update(lock); err != nil {
+	if _, err = t.client.Update(t.ctx, lock); err != nil {
 		return err
 	}
 	return nil
@@ -196,7 +196,7 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 			}
 		}
 
-		if _, err := t.client.Update(lock); err != nil {
+		if _, err := t.client.Update(t.ctx, lock); err != nil {
 			return err
 		}
 		return nil
@@ -205,12 +205,12 @@ func (t *TestClusterLocker) lockLoop() retry.RetryableFunc {
 }
 
 func (t *TestClusterLocker) concurrentLockGet() (*ClusterLock, error) {
-	originalLock, err := t.client.Get(LockResourceName)
+	originalLock, err := t.client.Get(t.ctx, LockResourceName)
 	if err == nil {
 		return originalLock, nil
 	}
 	if errors.IsNotFound(err) {
-		newLock, err := t.client.Create(defaultClusterLock)
+		newLock, err := t.client.Create(t.ctx, defaultClusterLock)
 		if err != nil {
 			// force the loop to restart
 			if errors.IsAlreadyExists(err) {
@@ -242,7 +242,7 @@ var (
 )
 
 func (t *TestClusterLocker) ReleaseLock() error {
-	lock, err := t.client.Get(LockResourceName)
+	lock, err := t.client.Get(t.ctx, LockResourceName)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -258,7 +258,7 @@ func (t *TestClusterLocker) ReleaseLock() error {
 
 	lock.Clear()
 
-	if _, err := t.client.Update(lock); err != nil {
+	if _, err := t.client.Update(t.ctx, lock); err != nil {
 		return err
 	}
 	return nil

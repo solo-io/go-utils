@@ -45,12 +45,14 @@ var istioCrd = apiextensions.CustomResourceDefinition{}
 // these are disabled pending https://github.com/solo-io/go-utils/issues/348
 var _ = XDescribe("KubeInstaller", func() {
 	var (
+		ctx        context.Context
 		ns         string
 		lock       *clusterlock.TestClusterLocker
 		kubeClient kubernetes.Interface
 	)
 
 	BeforeSuite(func() {
+		ctx = context.Background()
 		var err error
 		idPrefix := fmt.Sprintf("kube-installer-%s-", os.Getenv("BUILD_ID"))
 		lock, err = clusterlock.NewTestClusterLocker(kube.MustKubeClient(), clusterlock.Options{
@@ -69,19 +71,19 @@ var _ = XDescribe("KubeInstaller", func() {
 		// wait for all services in the previous namespace to be torn down
 		// important because of a race caused by nodeport conflcit
 		if ns != "" {
-			kube.WaitForNamespaceTeardown(ns)
+			kube.WaitForNamespaceTeardown(ctx, ns)
 		}
 		ns = "test" + testutils.RandString(5)
-		err := kubeutils.CreateNamespacesInParallel(kubeClient, ns)
+		err := kubeutils.CreateNamespacesInParallel(ctx, kubeClient, ns)
 		Expect(err).NotTo(HaveOccurred())
 
 	})
 	AfterEach(func() {
-		err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, ns)
+		err := kubeutils.DeleteNamespacesInParallelBlocking(ctx, kubeClient, ns)
 		Expect(err).NotTo(HaveOccurred())
-		kube.TeardownClusterResourcesWithPrefix(kubeClient, "istio")
-		kube.TeardownClusterResourcesWithPrefix(kubeClient, "prometheus")
-		kube.WaitForNamespaceTeardown(ns)
+		kube.TeardownClusterResourcesWithPrefix(ctx, kubeClient, "istio")
+		kube.TeardownClusterResourcesWithPrefix(ctx, kubeClient, "prometheus")
+		kube.WaitForNamespaceTeardown(ctx, ns)
 	})
 
 	Context("updating resource from cache", func() {
@@ -108,17 +110,17 @@ var _ = XDescribe("KubeInstaller", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			written := resource.DeepCopy()
-			err = dynamicClient.Create(context.TODO(), written)
+			err = dynamicClient.Create(context.Background(), written)
 			Expect(err).NotTo(HaveOccurred())
 
 			inst, err := NewKubeInstaller(restCfg, cache, nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = inst.ReconcileResources(context.TODO(), NewReconcileParams(ns, kuberesource.UnstructuredResources{resource}, ownerLabels, false))
+			err = inst.ReconcileResources(context.Background(), NewReconcileParams(ns, kuberesource.UnstructuredResources{resource}, ownerLabels, false))
 			Expect(err).NotTo(HaveOccurred())
 
 			afterReconcile := resource.DeepCopy()
-			err = dynamicClient.Get(context.TODO(), client.ObjectKey{Name: afterReconcile.GetName(), Namespace: afterReconcile.GetNamespace()}, afterReconcile)
+			err = dynamicClient.Get(context.Background(), client.ObjectKey{Name: afterReconcile.GetName(), Namespace: afterReconcile.GetNamespace()}, afterReconcile)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(afterReconcile.GetResourceVersion()).To(Equal(written.GetResourceVersion()))
@@ -128,10 +130,10 @@ var _ = XDescribe("KubeInstaller", func() {
 			an["hi"] = "bye"
 			resource.SetAnnotations(an)
 
-			err = inst.ReconcileResources(context.TODO(), NewReconcileParams(ns, kuberesource.UnstructuredResources{resource}, ownerLabels, false))
+			err = inst.ReconcileResources(context.Background(), NewReconcileParams(ns, kuberesource.UnstructuredResources{resource}, ownerLabels, false))
 			Expect(err).NotTo(HaveOccurred())
 
-			err = dynamicClient.Get(context.TODO(), client.ObjectKey{Name: afterReconcile.GetName(), Namespace: afterReconcile.GetNamespace()}, afterReconcile)
+			err = dynamicClient.Get(context.Background(), client.ObjectKey{Name: afterReconcile.GetName(), Namespace: afterReconcile.GetNamespace()}, afterReconcile)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(afterReconcile.GetResourceVersion()).NotTo(Equal(written.GetResourceVersion()))
 
@@ -145,7 +147,7 @@ mixer:
 
 `
 			manifests, err := helmchart.RenderManifests(
-				context.TODO(),
+				context.Background(),
 				"https://storage.googleapis.com/supergloo-charts/istio-1.0.6.tgz",
 				values,
 				"aaa",
@@ -157,7 +159,7 @@ mixer:
 			restCfg, err := kubeutils.GetConfig("", "")
 			Expect(err).NotTo(HaveOccurred())
 			cache := NewCache()
-			err = cache.Init(context.TODO(), restCfg)
+			err = cache.Init(context.Background(), restCfg)
 			Expect(err).NotTo(HaveOccurred())
 			inst, err := NewKubeInstaller(restCfg, cache, nil)
 			Expect(err).NotTo(HaveOccurred())
@@ -166,14 +168,14 @@ mixer:
 			Expect(err).NotTo(HaveOccurred())
 
 			uniqueLabels := map[string]string{"unique": "setoflabels"}
-			err = inst.ReconcileResources(context.TODO(), NewReconcileParams(ns, resources, uniqueLabels, false))
+			err = inst.ReconcileResources(context.Background(), NewReconcileParams(ns, resources, uniqueLabels, false))
 			Expect(err).NotTo(HaveOccurred())
 
 			genericClient, err := client.New(restCfg, client.Options{})
 			Expect(err).NotTo(HaveOccurred())
 			// expect each resource to exist
 			for _, resource := range resources {
-				err := genericClient.Get(context.TODO(), client.ObjectKey{resource.GetNamespace(), resource.GetName()}, resource)
+				err := genericClient.Get(context.Background(), client.ObjectKey{resource.GetNamespace(), resource.GetName()}, resource)
 				Expect(err).NotTo(HaveOccurred())
 				if resource.Object["kind"] == "Deployment" || resource.Object["kind"] == "Job" {
 					// ensure all deployments have at least one ready replica and all jobs are complete
@@ -201,32 +203,32 @@ mixer:
 
 			}
 
-			Expect(ListAllCachedValues(context.TODO(), "unique", inst)).To(ConsistOf("setoflabels"))
-			Expect(ListAllCachedValues(context.TODO(), "unknown", inst)).To(BeEmpty())
+			Expect(ListAllCachedValues(context.Background(), "unique", inst)).To(ConsistOf("setoflabels"))
+			Expect(ListAllCachedValues(context.Background(), "unknown", inst)).To(BeEmpty())
 
 			// expect the mixer deployments to be created
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-policy", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.Background(), "istio-policy", v1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-telemetry", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.Background(), "istio-telemetry", v1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = inst.PurgeResources(context.TODO(), uniqueLabels)
+			err = inst.PurgeResources(context.Background(), uniqueLabels)
 			Expect(err).NotTo(HaveOccurred())
 
 			// uninstalled
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-policy", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.Background(), "istio-policy", v1.GetOptions{})
 			Expect(err).To(HaveOccurred())
-			_, err = kubeClient.AppsV1().Deployments(ns).Get("istio-telemetry", v1.GetOptions{})
+			_, err = kubeClient.AppsV1().Deployments(ns).Get(context.Background(), "istio-telemetry", v1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 
 			// pods deleted
 			Eventually(func() []kubev1.Pod {
-				pods, err := kubeClient.CoreV1().Pods(ns).List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"app": "telemetry"}).String()})
+				pods, err := kubeClient.CoreV1().Pods(ns).List(context.Background(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"app": "telemetry"}).String()})
 				Expect(err).NotTo(HaveOccurred())
 				return pods.Items
 			}, time.Minute).Should(HaveLen(0))
 
-			Expect(ListAllCachedValues(context.TODO(), "unique", inst)).To(BeEmpty())
+			Expect(ListAllCachedValues(context.Background(), "unique", inst)).To(BeEmpty())
 		})
 	})
 
@@ -239,7 +241,7 @@ mixer:
 		getResourceVersion := func() string {
 			objectKey := client.ObjectKey{Namespace: res.GetNamespace(), Name: res.GetName()}
 			resCopy := res.DeepCopy()
-			err := inst.client.Get(context.TODO(), objectKey, resCopy)
+			err := inst.client.Get(context.Background(), objectKey, resCopy)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 			return resCopy.GetResourceVersion()
 		}
@@ -265,7 +267,7 @@ mixer:
 					res = makeConfigmap("a", "b", ns)
 				})
 				It("updates the resource instead", func() {
-					ctx := context.TODO()
+					ctx := context.Background()
 
 					// call creation function to create object
 					err := inst.getCreationFunction(ctx, res)()
@@ -296,7 +298,7 @@ mixer:
 					res = makeService(ns)
 				})
 				It("returns an ImmutableResource error", func() {
-					ctx := context.TODO()
+					ctx := context.Background()
 
 					// call creation function to create object
 					err := inst.getCreationFunction(ctx, res)()
@@ -325,7 +327,7 @@ mixer:
 			})
 			It("returns AlreadyExists error", func() {
 				res = makeConfigmap("any", "thing", ns)
-				ctx := context.TODO()
+				ctx := context.Background()
 
 				// call creation function to create object
 				err := inst.getCreationFunction(ctx, res)()
@@ -353,7 +355,7 @@ mixer:
 			})
 			It("re-creates resources with immutable fields", func() {
 				res = makeService(ns)
-				ctx := context.TODO()
+				ctx := context.Background()
 
 				// call creation function to create object
 				err := inst.getCreationFunction(ctx, res)()

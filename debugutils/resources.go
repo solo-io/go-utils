@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -25,8 +26,8 @@ const (
 )
 
 type ResourceCollector interface {
-	RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
-	SaveResources(client StorageClient, location string, versionedResources []kuberesource.VersionedResources) error
+	RetrieveResources(ctx context.Context, resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error)
+	SaveResources(ctx context.Context, client StorageClient, location string, versionedResources []kuberesource.VersionedResources) error
 }
 
 type resourceCollector struct {
@@ -59,15 +60,15 @@ func DefaultResourceCollector() (*resourceCollector, error) {
 	}, nil
 }
 
-func (rc *resourceCollector) RetrieveResourcesFromManifest(manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
+func (rc *resourceCollector) RetrieveResourcesFromManifest(ctx context.Context, manifests helmchart.Manifests, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
 	resources, err := manifests.ResourceList()
 	if err != nil {
 		return nil, err
 	}
-	return rc.RetrieveResources(resources, "", opts)
+	return rc.RetrieveResources(ctx, resources, "", opts)
 }
 
-func (rc *resourceCollector) RetrieveResources(resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
+func (rc *resourceCollector) RetrieveResources(ctx context.Context, resources kuberesource.UnstructuredResources, namespace string, opts metav1.ListOptions) ([]kuberesource.VersionedResources, error) {
 	var result kuberesource.UnstructuredResources
 	eg := errgroup.Group{}
 	lock := sync.RWMutex{}
@@ -75,7 +76,7 @@ func (rc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 	for _, kind := range resources {
 		kind := kind
 		eg.Go(func() error {
-			resources, err := rc.handleUnstructuredResource(kind, namespace, opts)
+			resources, err := rc.handleUnstructuredResource(ctx, kind, namespace, opts)
 			if err != nil {
 				return err
 			}
@@ -88,7 +89,7 @@ func (rc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-	pods, err := rc.podFinder.GetPods(resources)
+	pods, err := rc.podFinder.GetPods(ctx, resources)
 	if err != nil {
 		return nil, err
 	}
@@ -102,25 +103,25 @@ func (rc *resourceCollector) RetrieveResources(resources kuberesource.Unstructur
 
 var ownerResources = []string{"Deployment", "DaemonSet", "Job", "CronJob"}
 
-func (rc *resourceCollector) handleUnstructuredResource(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
+func (rc *resourceCollector) handleUnstructuredResource(ctx context.Context, resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
 	switch {
 	case resource.GetKind() == "CustomResourceDefinition":
-		return rc.listAllFromNamespace(resource, namespace, opts)
+		return rc.listAllFromNamespace(ctx, resource, namespace, opts)
 	default:
-		return rc.getResource(resource)
+		return rc.getResource(ctx, resource)
 	}
 }
 
-func (rc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
+func (rc *resourceCollector) listAllFromNamespace(ctx context.Context, resource *unstructured.Unstructured, namespace string, opts metav1.ListOptions) (kuberesource.UnstructuredResources, error) {
 	kind, err := rc.gvrFromUnstructured(*resource)
 	if err != nil {
 		return nil, err
 	}
 	var list *unstructured.UnstructuredList
 	if namespace == "" {
-		list, err = rc.dynamicClient.Resource(kind).List(opts)
+		list, err = rc.dynamicClient.Resource(kind).List(ctx, opts)
 	} else {
-		list, err = rc.dynamicClient.Resource(kind).Namespace(namespace).List(opts)
+		list, err = rc.dynamicClient.Resource(kind).Namespace(namespace).List(ctx, opts)
 	}
 
 	if err != nil {
@@ -133,16 +134,16 @@ func (rc *resourceCollector) listAllFromNamespace(resource *unstructured.Unstruc
 	return result, nil
 }
 
-func (rc *resourceCollector) getResource(resource *unstructured.Unstructured) (kuberesource.UnstructuredResources, error) {
+func (rc *resourceCollector) getResource(ctx context.Context, resource *unstructured.Unstructured) (kuberesource.UnstructuredResources, error) {
 	kind, err := rc.gvrFromUnstructured(*resource)
 	if err != nil {
 		return nil, err
 	}
 	var res *unstructured.Unstructured
 	if resource.GetNamespace() != "" {
-		res, err = rc.dynamicClient.Resource(kind).Namespace(resource.GetNamespace()).Get(resource.GetName(), metav1.GetOptions{})
+		res, err = rc.dynamicClient.Resource(kind).Namespace(resource.GetNamespace()).Get(ctx, resource.GetName(), metav1.GetOptions{})
 	} else {
-		res, err = rc.dynamicClient.Resource(kind).Get(resource.GetName(), metav1.GetOptions{})
+		res, err = rc.dynamicClient.Resource(kind).Get(ctx, resource.GetName(), metav1.GetOptions{})
 
 	}
 	if err != nil {
@@ -179,7 +180,7 @@ func (rc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 	return result, nil
 }
 
-func (rc *resourceCollector) SaveResources(storageClient StorageClient, location string, versionedResources []kuberesource.VersionedResources) error {
+func (rc *resourceCollector) SaveResources(ctx context.Context, storageClient StorageClient, location string, versionedResources []kuberesource.VersionedResources) error {
 	var storageObjects []*StorageObject
 	for _, versionedResource := range versionedResources {
 		tmpManifests, err := helmchart.ManifestsFromResources(versionedResource.Resources)

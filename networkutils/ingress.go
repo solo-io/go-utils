@@ -2,6 +2,7 @@ package networkutils
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,8 +26,8 @@ type ServiceRef struct {
 	Namespace string
 }
 
-func GetIngressHostAndPort(restCfg *rest.Config, ref *ServiceRef, proxyPort string) (string, uint32, error) {
-	url, err := GetIngressHost(restCfg, ref, proxyPort)
+func GetIngressHostAndPort(ctx context.Context, restCfg *rest.Config, ref *ServiceRef, proxyPort string) (string, uint32, error) {
+	url, err := GetIngressHost(ctx, restCfg, ref, proxyPort)
 	if err != nil {
 		return "", 0, err
 	}
@@ -43,13 +44,13 @@ func GetIngressHostAndPort(restCfg *rest.Config, ref *ServiceRef, proxyPort stri
 	return "", 0, eris.Errorf("Unexpected url %s", url)
 }
 
-func GetIngressHost(restCfg *rest.Config, ref *ServiceRef, proxyPort string) (string, error) {
+func GetIngressHost(ctx context.Context, restCfg *rest.Config, ref *ServiceRef, proxyPort string) (string, error) {
 	kube, err := kubernetes.NewForConfig(restCfg)
 	if err != nil {
 		return "", err
 	}
 	namespace, name := ref.Namespace, ref.Name
-	svc, err := kube.CoreV1().Services(namespace).Get(name, metav1.GetOptions{})
+	svc, err := kube.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return "", eris.Wrapf(err, "could not detect '%v' service in %v namespace", name, namespace)
 	}
@@ -75,7 +76,7 @@ func GetIngressHost(restCfg *rest.Config, ref *ServiceRef, proxyPort string) (st
 	if len(svc.Status.LoadBalancer.Ingress) == 0 {
 		// assume nodeport on kubernetes
 		// TODO: support more types of NodePort services
-		host, err = getNodeIp(svc, kube)
+		host, err = getNodeIp(ctx, svc, kube)
 		if err != nil {
 			return "", eris.Wrapf(err, "")
 		}
@@ -90,9 +91,9 @@ func GetIngressHost(restCfg *rest.Config, ref *ServiceRef, proxyPort string) (st
 	return host + ":" + port, nil
 }
 
-func getNodeIp(svc *v1.Service, kube kubernetes.Interface) (string, error) {
+func getNodeIp(ctx context.Context, svc *v1.Service, kube kubernetes.Interface) (string, error) {
 	// pick a node where one of our pods is running
-	pods, err := kube.CoreV1().Pods(svc.Namespace).List(metav1.ListOptions{
+	pods, err := kube.CoreV1().Pods(svc.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(svc.Spec.Selector).String(),
 	})
 	if err != nil {
@@ -116,7 +117,7 @@ func getNodeIp(svc *v1.Service, kube kubernetes.Interface) (string, error) {
 		return minikubeIp(LocalClusterName)
 	}
 
-	node, err := kube.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
+	node, err := kube.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}

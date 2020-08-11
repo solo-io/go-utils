@@ -16,7 +16,7 @@ import (
 
 var _ = Describe("FormulaUpdater", func() {
 	var (
-		ctx               = context.TODO()
+		ctx               = context.Background()
 		ctrl              *gomock.Controller
 		gitClient         *mock_formula_updater_types.MockGitClient
 		remoteShaGetter   *mock_formula_updater_types.MockRemoteShaGetter

@@ -31,7 +31,7 @@ var (
 	_ = SynchronizedBeforeSuite(func() []byte {
 		var err error
 		manifests, err = helmchart.RenderManifests(
-			context.TODO(),
+			context.Background(),
 			"https://storage.googleapis.com/solo-public-helm/charts/gloo-0.13.33.tgz",
 			"",
 			"aaa",
@@ -45,7 +45,7 @@ var (
 	}, func(data []byte) {})
 
 	_ = SynchronizedAfterSuite(func() {}, func() {
-		ctx := context.TODO()
+		ctx := context.Background()
 		client, err := storage.NewClient(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		bucket := client.Bucket("go-utils-test")

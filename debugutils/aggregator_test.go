@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/golang/mock/gomock"
@@ -50,13 +51,13 @@ var _ = Describe("aggregator test", func() {
 		It("properly sets all filepaths", func() {
 			namespace := "ns"
 			filename := "/hello/world/test.tgz"
-			resourceCollector.EXPECT().RetrieveResources(gomock.Any(), namespace, gomock.Any()).Return(nil, nil).Times(1)
-			resourceCollector.EXPECT().SaveResources(storageClient, filepath.Join(tmpd, "resources"), nil).Return(nil).Times(1)
-			logCollector.EXPECT().GetLogRequests(gomock.Any()).Return(nil, nil).Times(1)
-			logCollector.EXPECT().SaveLogs(storageClient, filepath.Join(tmpd, "logs"), nil).Times(1)
+			resourceCollector.EXPECT().RetrieveResources(gomock.Any(), gomock.Any(), namespace, gomock.Any()).Return(nil, nil).Times(1)
+			resourceCollector.EXPECT().SaveResources(gomock.Any(), storageClient, filepath.Join(tmpd, "resources"), nil).Return(nil).Times(1)
+			logCollector.EXPECT().GetLogRequests(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+			logCollector.EXPECT().SaveLogs(gomock.Any(), storageClient, filepath.Join(tmpd, "logs"), nil).Times(1)
 			storageClient.EXPECT().Save(filepath.Dir(filename), gomock.Any()).Return(nil).Times(1)
 
-			err := aggregator.StreamFromManifest(manifests, namespace, filename)
+			err := aggregator.StreamFromManifest(context.Background(), manifests, namespace, filename)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

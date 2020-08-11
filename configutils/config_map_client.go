@@ -30,7 +30,7 @@ func (c *KubeConfigMapClient) GetConfigMap(ctx context.Context, namespace string
 	contextutils.LoggerFrom(ctx).Debugw("Getting config map from Kubernetes",
 		zap.String("namespace", namespace),
 		zap.String("name", configMapName))
-	configMap, err := c.client.CoreV1().ConfigMaps(namespace).Get(configMapName, kubemeta.GetOptions{})
+	configMap, err := c.client.CoreV1().ConfigMaps(namespace).Get(ctx, configMapName, kubemeta.GetOptions{})
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Errorw("Could not get config map",
 			zap.Error(err),
@@ -45,7 +45,7 @@ func (c *KubeConfigMapClient) SetConfigMap(ctx context.Context, config *v1.Confi
 	contextutils.LoggerFrom(ctx).Debugw("Setting config map in Kubernetes",
 		zap.String("namespace", config.Namespace),
 		zap.String("name", config.Name))
-	_, err := c.client.CoreV1().ConfigMaps(config.Namespace).Update(config)
+	_, err := c.client.CoreV1().ConfigMaps(config.Namespace).Update(ctx, config, kubemeta.UpdateOptions{})
 	if err != nil {
 		if !kubeerr.IsNotFound(err) {
 			contextutils.LoggerFrom(ctx).Errorw("Could not update config map",
@@ -55,7 +55,7 @@ func (c *KubeConfigMapClient) SetConfigMap(ctx context.Context, config *v1.Confi
 				zap.Any("configMap", config))
 			return err
 		}
-		_, err := c.client.CoreV1().ConfigMaps(config.Namespace).Create(config)
+		_, err := c.client.CoreV1().ConfigMaps(config.Namespace).Create(ctx, config, kubemeta.CreateOptions{})
 		if err != nil {
 			contextutils.LoggerFrom(ctx).Errorw("Config map not found, but error creating it",
 				zap.Error(err),

@@ -1,13 +1,15 @@
 package testutils
 
 import (
+	"context"
+
 	"github.com/solo-io/go-utils/kubeinstallutils"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
-func DeployFromYaml(cfg *rest.Config, namespace, yamlManifest string) error {
+func DeployFromYaml(ctx context.Context, cfg *rest.Config, namespace, yamlManifest string) error {
 	kube, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return err
@@ -26,7 +28,7 @@ func DeployFromYaml(cfg *rest.Config, namespace, yamlManifest string) error {
 	}
 
 	for _, kubeOjb := range kubeObjs {
-		if err := installer.Create(kubeOjb); err != nil {
+		if err := installer.Create(ctx, kubeOjb); err != nil {
 			return err
 		}
 	}

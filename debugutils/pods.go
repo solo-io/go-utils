@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"sync"
 
 	"github.com/rotisserie/eris"
@@ -24,7 +25,7 @@ import (
 //go:generate mockgen -destination mocks_kube_test.go  -package debugutils k8s.io/client-go/rest ResponseWrapper
 
 type PodFinder interface {
-	GetPods(resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error)
+	GetPods(ctx context.Context, resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error)
 }
 
 const (
@@ -53,7 +54,7 @@ func DefaultLabelPodFinder() (*LabelPodFinder, error) {
 	}, nil
 }
 
-func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error) {
+func (lpf *LabelPodFinder) GetPods(ctx context.Context, resources kuberesource.UnstructuredResources) ([]*corev1.PodList, error) {
 	eg := errgroup.Group{}
 	lock := sync.Mutex{}
 	var result []*corev1.PodList
@@ -63,7 +64,7 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 			var list *corev1.PodList
 			switch {
 			case resource.GetKind() == "Pod":
-				pod, err := lpf.client.CoreV1().Pods(resource.GetNamespace()).Get(resource.GetName(), metav1.GetOptions{})
+				pod, err := lpf.client.CoreV1().Pods(resource.GetNamespace()).Get(ctx, resource.GetName(), metav1.GetOptions{})
 				if err != nil {
 					return err
 				}
@@ -79,7 +80,7 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 				if err != nil {
 					return err
 				}
-				list, err = lpf.getPodsForMatchLabels(matchLabels, resource.GetNamespace())
+				list, err = lpf.getPodsForMatchLabels(ctx, matchLabels, resource.GetNamespace())
 				if err != nil {
 					return err
 				}
@@ -98,9 +99,9 @@ func (lpf *LabelPodFinder) GetPods(resources kuberesource.UnstructuredResources)
 	return result, nil
 }
 
-func (lpf *LabelPodFinder) getPodsForMatchLabels(matchLabels map[string]string, namespace string) (*corev1.PodList, error) {
+func (lpf *LabelPodFinder) getPodsForMatchLabels(ctx context.Context, matchLabels map[string]string, namespace string) (*corev1.PodList, error) {
 	var set labels.Set = matchLabels
-	return lpf.client.CoreV1().Pods(namespace).List(metav1.ListOptions{
+	return lpf.client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: set.String(),
 	})
 }

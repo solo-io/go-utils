@@ -1,6 +1,8 @@
 package kubeinstallutils
 
 import (
+	"context"
+
 	"github.com/rotisserie/eris"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiexts "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -24,18 +26,18 @@ func CrdsFromManifest(crdManifestYaml string) ([]*v1beta1.CustomResourceDefiniti
 	return crds, nil
 }
 
-func CreateCrds(apiExts apiexts.Interface, crds ...*v1beta1.CustomResourceDefinition) error {
+func CreateCrds(ctx context.Context, apiExts apiexts.Interface, crds ...*v1beta1.CustomResourceDefinition) error {
 	for _, crd := range crds {
-		if _, err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd); err != nil && !apierrors.IsAlreadyExists(err) {
+		if _, err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().Create(ctx, crd, v1.CreateOptions{}); err != nil && !apierrors.IsAlreadyExists(err) {
 			return eris.Wrapf(err, "failed to create crd: %v", crd)
 		}
 	}
 	return nil
 }
 
-func DeleteCrds(apiExts apiexts.Interface, crdNames ...string) error {
+func DeleteCrds(ctx context.Context, apiExts apiexts.Interface, crdNames ...string) error {
 	for _, name := range crdNames {
-		err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(name, &v1.DeleteOptions{})
+		err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(ctx, name, v1.DeleteOptions{})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return eris.Wrapf(err, "failed to delete crd: %v", name)
 		}

@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -13,7 +14,8 @@ import (
 
 var _ = Describe("logs", func() {
 	var (
-		fs afero.Fs
+		ctx context.Context
+		fs  afero.Fs
 
 		deployedPods = []*debugutils.LogsRequest{
 			{
@@ -62,13 +64,17 @@ var _ = Describe("logs", func() {
 		}
 	)
 
+	BeforeEach(func() {
+		ctx = context.Background()
+	})
+
 	Context("request builder", func() {
 
 		It("can properly build the requests from the gloo manifest", func() {
 			requestBuilder := mustRequestBuilder()
 			resources, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
-			requests, err := requestBuilder.LogsFromUnstructured(resources)
+			requests, err := requestBuilder.LogsFromUnstructured(ctx, resources)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requests).To(HaveLen(4))
 			for _, deployedPod := range deployedPods {
@@ -102,10 +108,10 @@ var _ = Describe("logs", func() {
 			Expect(err).NotTo(HaveOccurred())
 			unstructured, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
-			requests, err := lc.GetLogRequests(unstructured)
+			requests, err := lc.GetLogRequests(ctx, unstructured)
 			Expect(requests).To(HaveLen(4))
 			Expect(err).NotTo(HaveOccurred())
-			err = lc.SaveLogs(sc, tmpDir, requests)
+			err = lc.SaveLogs(ctx, sc, tmpDir, requests)
 			Expect(err).NotTo(HaveOccurred())
 			files, err := afero.ReadDir(fs, tmpDir)
 			Expect(err).NotTo(HaveOccurred())

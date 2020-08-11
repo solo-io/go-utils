@@ -1,6 +1,7 @@
 package helminstall
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -41,7 +42,7 @@ func NewInstaller(helmClient types.HelmClient, kubeNsClient NamespaceClient, out
 	}
 }
 
-func (i *installer) Install(installerConfig *types.InstallerConfig) error {
+func (i *installer) Install(ctx context.Context, installerConfig *types.InstallerConfig) error {
 	namespace := installerConfig.InstallNamespace
 	releaseName := installerConfig.ReleaseName
 	if !installerConfig.DryRun {
@@ -52,7 +53,7 @@ func (i *installer) Install(installerConfig *types.InstallerConfig) error {
 		}
 		if installerConfig.CreateNamespace {
 			// Create the namespace if it doesn't exist. Helm3 no longer does this.
-			i.createNamespace(namespace)
+			i.createNamespace(ctx, namespace)
 		}
 	}
 
@@ -121,11 +122,11 @@ func (i *installer) Install(installerConfig *types.InstallerConfig) error {
 	return nil
 }
 
-func (i *installer) createNamespace(namespace string) {
-	_, err := i.kubeNsClient.Get(namespace, metav1.GetOptions{})
+func (i *installer) createNamespace(ctx context.Context, namespace string) {
+	_, err := i.kubeNsClient.Get(ctx, namespace, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		fmt.Fprintf(i.out, "Creating namespace %s... ", namespace)
-		if _, err := i.kubeNsClient.Create(&corev1.Namespace{
+		if _, err := i.kubeNsClient.Create(ctx, &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespace,
 			},
@@ -155,30 +156,34 @@ func (i *installer) defaultPostInstallMessage(config *types.InstallerConfig) {
 }
 
 type NamespaceClient interface {
-	Create(ns *corev1.Namespace) (*corev1.Namespace, error)
-	Delete(name string, options *metav1.DeleteOptions) error
-	Get(name string, options metav1.GetOptions) (*corev1.Namespace, error)
-	List(opts metav1.ListOptions) (*corev1.NamespaceList, error)
+	Create(ctx context.Context, ns *corev1.Namespace) (*corev1.Namespace, error)
+	Delete(ctx context.Context, name string, options *metav1.DeleteOptions) error
+	Get(ctx context.Context, name string, options metav1.GetOptions) (*corev1.Namespace, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*corev1.NamespaceList, error)
 }
 
 type namespaceClient struct {
 	client v1.NamespaceInterface
 }
 
-func (n *namespaceClient) Create(ns *corev1.Namespace) (*corev1.Namespace, error) {
-	return n.client.Create(ns)
+func (n *namespaceClient) Create(ctx context.Context, ns *corev1.Namespace) (*corev1.Namespace, error) {
+	return n.client.Create(ctx, ns, metav1.CreateOptions{})
 }
 
-func (n *namespaceClient) Delete(name string, options *metav1.DeleteOptions) error {
-	return n.client.Delete(name, options)
+func (n *namespaceClient) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) error {
+	opts := metav1.DeleteOptions{}
+	if options != nil {
+		opts = *options
+	}
+	return n.client.Delete(ctx, name, opts)
 }
 
-func (n *namespaceClient) Get(name string, options metav1.GetOptions) (*corev1.Namespace, error) {
-	return n.client.Get(name, options)
+func (n *namespaceClient) Get(ctx context.Context, name string, options metav1.GetOptions) (*corev1.Namespace, error) {
+	return n.client.Get(ctx, name, options)
 }
 
-func (n *namespaceClient) List(opts metav1.ListOptions) (*corev1.NamespaceList, error) {
-	return n.List(opts)
+func (n *namespaceClient) List(ctx context.Context, opts metav1.ListOptions) (*corev1.NamespaceList, error) {
+	return n.List(ctx, opts)
 }
 
 func NewNamespaceClient(client v1.NamespaceInterface) *namespaceClient {

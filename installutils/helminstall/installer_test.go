@@ -2,6 +2,7 @@ package helminstall_test
 
 import (
 	"bytes"
+	"context"
 	"os"
 
 	"github.com/solo-io/go-utils/installutils/helminstall/types"
@@ -23,6 +24,7 @@ import (
 
 var _ = Describe("Helm Installer", func() {
 	var (
+		ctx                 context.Context
 		ctrl                *gomock.Controller
 		mockHelmClient      *mock_types.MockHelmClient
 		mockNamespaceClient *mock_helminstall.MockNamespaceClient
@@ -32,7 +34,7 @@ var _ = Describe("Helm Installer", func() {
 	)
 
 	BeforeEach(func() {
-		ctrl = gomock.NewController(GinkgoT())
+		ctrl, ctx = gomock.WithContext(context.Background(), GinkgoT())
 		mockHelmClient = mock_types.NewMockHelmClient(ctrl)
 		mockNamespaceClient = mock_helminstall.NewMockNamespaceClient(ctrl)
 		mockHelmInstaller = mock_types.NewMockHelmInstaller(ctrl)
@@ -50,7 +52,7 @@ var _ = Describe("Helm Installer", func() {
 			EXPECT().
 			ReleaseExists(installerConfig.InstallNamespace, installerConfig.ReleaseName).
 			Return(true, nil)
-		err := installer.Install(installerConfig)
+		err := installer.Install(ctx, installerConfig)
 		Expect(err).To(testutils.HaveInErrorChain(
 			helminstall.ReleaseAlreadyInstalledErr(installerConfig.ReleaseName, installerConfig.InstallNamespace)))
 	})
@@ -72,11 +74,11 @@ var _ = Describe("Helm Installer", func() {
 		statusError := errors.StatusError{ErrStatus: metav1.Status{Reason: metav1.StatusReasonNotFound}}
 		mockNamespaceClient.
 			EXPECT().
-			Get(installerConfig.InstallNamespace, metav1.GetOptions{}).
+			Get(ctx, installerConfig.InstallNamespace, metav1.GetOptions{}).
 			Return(nil, &statusError)
 		mockNamespaceClient.
 			EXPECT().
-			Create(&corev1.Namespace{
+			Create(ctx, &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: installerConfig.InstallNamespace,
 				},
@@ -96,7 +98,7 @@ var _ = Describe("Helm Installer", func() {
 			Run(chartObj, map[string]interface{}{}).
 			Return(&release.Release{}, nil)
 
-		err := installer.Install(installerConfig)
+		err := installer.Install(ctx, installerConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })

@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"io"
 	"path/filepath"
 
@@ -56,7 +57,7 @@ func DefaultAggregator() (*Aggregator, error) {
 
 }
 
-func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace, filename string) error {
+func (a *Aggregator) StreamFromManifest(ctx context.Context, manifest helmchart.Manifests, namespace, filename string) error {
 	if err := a.createSubResourceDirectories(); err != nil {
 		return err
 	}
@@ -64,18 +65,18 @@ func (a *Aggregator) StreamFromManifest(manifest helmchart.Manifests, namespace,
 	if err != nil {
 		return err
 	}
-	kubeResources, err := a.resourceCollector.RetrieveResources(unstructuredResources, namespace, metav1.ListOptions{})
+	kubeResources, err := a.resourceCollector.RetrieveResources(ctx, unstructuredResources, namespace, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	if err := a.resourceCollector.SaveResources(a.storageClient, filepath.Join(a.dir, resourcesStr), kubeResources); err != nil {
+	if err := a.resourceCollector.SaveResources(ctx, a.storageClient, filepath.Join(a.dir, resourcesStr), kubeResources); err != nil {
 		return err
 	}
-	logRequests, err := a.logCollector.GetLogRequests(unstructuredResources)
+	logRequests, err := a.logCollector.GetLogRequests(ctx, unstructuredResources)
 	if err != nil {
 		return err
 	}
-	if err = a.logCollector.SaveLogs(a.storageClient, filepath.Join(a.dir, logsStr), logRequests); err != nil {
+	if err = a.logCollector.SaveLogs(ctx, a.storageClient, filepath.Join(a.dir, logsStr), logRequests); err != nil {
 		return err
 	}
 	tarball, err := afero.TempFile(a.fs, "", "")

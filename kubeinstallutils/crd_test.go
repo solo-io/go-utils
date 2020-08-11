@@ -1,6 +1,8 @@
 package kubeinstallutils_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -49,12 +51,12 @@ var _ = Describe("Crd", func() {
 		for _, crd := range testCrds {
 			crdsToDelete = append(crdsToDelete, crd.Name)
 		}
-		kubeinstallutils.DeleteCrds(apiExts, crdsToDelete...)
+		kubeinstallutils.DeleteCrds(context.Background(), apiExts, crdsToDelete...)
 	})
 	It("creates crds", func() {
-		err := kubeinstallutils.CreateCrds(apiExts, testCrds...)
+		err := kubeinstallutils.CreateCrds(context.Background(), apiExts, testCrds...)
 		Expect(err).NotTo(HaveOccurred())
-		crdList, err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{})
+		crdList, err := apiExts.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), v1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		for _, testCrd := range testCrds {
 			var found bool

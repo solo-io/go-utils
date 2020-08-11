@@ -54,7 +54,7 @@ var (
 		restCfg, err = kubeutils.GetConfig("", "")
 		Expect(err).NotTo(HaveOccurred())
 		manifests, err = helmchart.RenderManifests(
-			context.TODO(),
+			context.Background(),
 			"https://storage.googleapis.com/solo-public-helm/charts/gloo-0.13.33.tgz",
 			"",
 			"aaa",
@@ -63,12 +63,12 @@ var (
 		)
 		Expect(err).NotTo(HaveOccurred())
 		cache := kubeinstall.NewCache()
-		Expect(cache.Init(context.TODO(), restCfg)).NotTo(HaveOccurred())
+		Expect(cache.Init(context.Background(), restCfg)).NotTo(HaveOccurred())
 		installer, err = kubeinstall.NewKubeInstaller(restCfg, cache, nil)
 		Expect(err).NotTo(HaveOccurred())
 		unstructuredResources, err = manifests.ResourceList()
 		Expect(err).NotTo(HaveOccurred())
-		err = installer.ReconcileResources(context.TODO(), kubeinstall.NewReconcileParams("gloo-system", unstructuredResources, ownerLabels, false))
+		err = installer.ReconcileResources(context.Background(), kubeinstall.NewReconcileParams("gloo-system", unstructuredResources, ownerLabels, false))
 		Expect(err).NotTo(HaveOccurred())
 		return nil
 	}, func(data []byte) {})
@@ -77,7 +77,7 @@ var (
 		if os.Getenv("RUN_KUBE_TESTS") != "1" {
 			return
 		}
-		err := installer.PurgeResources(context.TODO(), ownerLabels)
+		err := installer.PurgeResources(context.Background(), ownerLabels)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(lock.ReleaseLock()).NotTo(HaveOccurred())
 	})

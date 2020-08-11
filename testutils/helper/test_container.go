@@ -72,7 +72,7 @@ func (t *testContainer) deploy(timeout time.Duration) error {
 	}
 
 	// Create http echo pod
-	if _, err := t.kube.CoreV1().Pods(t.namespace).Create(&corev1.Pod{
+	if _, err := t.kube.CoreV1().Pods(t.namespace).Create(context.TODO(), &corev1.Pod{
 		ObjectMeta: metadata,
 		Spec: corev1.PodSpec{
 			TerminationGracePeriodSeconds: &zero,
@@ -84,12 +84,12 @@ func (t *testContainer) deploy(timeout time.Duration) error {
 				},
 			},
 		},
-	}); err != nil {
+	}, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 
 	// Create http echo service
-	if _, err := t.kube.CoreV1().Services(t.namespace).Create(&corev1.Service{
+	if _, err := t.kube.CoreV1().Services(t.namespace).Create(context.Background(), &corev1.Service{
 		ObjectMeta: metadata,
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -101,7 +101,7 @@ func (t *testContainer) deploy(timeout time.Duration) error {
 			},
 			Selector: labels,
 		},
-	}); err != nil {
+	}, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 

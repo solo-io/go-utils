@@ -1,6 +1,8 @@
 package test
 
 import (
+	"context"
+
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,11 +17,13 @@ import (
 var _ = Describe("pod unit tests", func() {
 	Context("Label Pod Finder", func() {
 		var (
+			ctx       context.Context
 			podFinder *debugutils.LabelPodFinder
 			clientset *fake.Clientset
 		)
 
 		BeforeEach(func() {
+			ctx = context.Background()
 			clientset = fake.NewSimpleClientset(podsAsObjects(GeneratePodList())...)
 			podFinder = debugutils.NewLabelPodFinder(clientset)
 		})
@@ -27,7 +31,7 @@ var _ = Describe("pod unit tests", func() {
 		It("can handle full use case", func() {
 			resources, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
-			list, err := podFinder.GetPods(resources)
+			list, err := podFinder.GetPods(ctx, resources)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(list).To(HaveLen(4))
 			for _, v := range list {
@@ -39,7 +43,7 @@ var _ = Describe("pod unit tests", func() {
 			var unstructuredPod unstructured.Unstructured
 			err := yaml.Unmarshal([]byte(GlooPodYaml), &unstructuredPod)
 			Expect(err).NotTo(HaveOccurred())
-			list, err := podFinder.GetPods(kuberesource.UnstructuredResources{&unstructuredPod})
+			list, err := podFinder.GetPods(ctx, kuberesource.UnstructuredResources{&unstructuredPod})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(list).To(HaveLen(1))
 			Expect(list[0].Items).To(HaveLen(1))

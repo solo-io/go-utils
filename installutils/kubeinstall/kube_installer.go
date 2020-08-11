@@ -400,9 +400,9 @@ func (r *KubeInstaller) reconcileResources(ctx context.Context, installNamespace
 	// create
 	// ensure ns exists before performing a create
 	if len(resourcesToCreate) > 0 {
-		if _, err := r.core.CoreV1().Namespaces().Create(&kubev1.Namespace{
+		if _, err := r.core.CoreV1().Namespaces().Create(ctx, &kubev1.Namespace{
 			ObjectMeta: v1.ObjectMeta{Name: installNamespace},
-		}); err != nil && !kubeerrutils.IsAlreadyExists(err) {
+		}, v1.CreateOptions{}); err != nil && !kubeerrutils.IsAlreadyExists(err) {
 			return errors.Wrapf(err, "creating installation namespace")
 		}
 	}
@@ -656,7 +656,7 @@ func (r *KubeInstaller) waitForCrd(ctx context.Context, crdName string) error {
 			return nil
 		default:
 		}
-		crd, err := r.apiExtensions.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crdName, v1.GetOptions{})
+		crd, err := r.apiExtensions.ApiextensionsV1beta1().CustomResourceDefinitions().Get(ctx, crdName, v1.GetOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "lookup crd %v", crdName)
 		}
@@ -678,7 +678,7 @@ func (r *KubeInstaller) waitForCrd(ctx context.Context, crdName string) error {
 			Group:    crd.Spec.Group,
 			Version:  crd.Spec.Version,
 			Resource: crd.Spec.Names.Plural,
-		}).List(v1.ListOptions{})
+		}).List(ctx, v1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -698,7 +698,7 @@ func (r *KubeInstaller) waitForDeploymentReplica(ctx context.Context, name, name
 			return nil
 		default:
 		}
-		deployment, err := r.core.AppsV1().Deployments(namespace).Get(name, v1.GetOptions{})
+		deployment, err := r.core.AppsV1().Deployments(namespace).Get(ctx, name, v1.GetOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "lookup deployment %v.%v", name, namespace)
 		}
@@ -732,7 +732,7 @@ func (r *KubeInstaller) waitForJobComplete(ctx context.Context, name, namespace 
 			return nil
 		default:
 		}
-		job, err := r.core.BatchV1().Jobs(namespace).Get(name, v1.GetOptions{})
+		job, err := r.core.BatchV1().Jobs(namespace).Get(ctx, name, v1.GetOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "lookup job %v.%v", name, namespace)
 		}
