@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -22,19 +23,21 @@ var _ = Describe("test container tests", func() {
 	}
 
 	var (
+		ctx       context.Context
 		namespace string
 		kube      kubernetes.Interface
 	)
 
 	BeforeSuite(func() {
+		ctx = context.TODO()
 		namespace = testutils.RandString(8)
 		kube = kube2.MustKubeClient()
-		err := kubeutils.CreateNamespacesInParallel(kube, namespace)
+		err := kubeutils.CreateNamespacesInParallel(ctx, kube, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterSuite(func() {
-		err := kubeutils.DeleteNamespacesInParallelBlocking(kube, namespace)
+		err := kubeutils.DeleteNamespacesInParallelBlocking(ctx, kube, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 	Context("test runner", func() {
