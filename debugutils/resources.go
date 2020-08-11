@@ -180,7 +180,7 @@ func (rc *resourceCollector) gvrFromUnstructured(resource unstructured.Unstructu
 	return result, nil
 }
 
-func (rc *resourceCollector) SaveResources(storageClient StorageClient, location string, versionedResources []kuberesource.VersionedResources) error {
+func (rc *resourceCollector) SaveResources(ctx context.Context, storageClient StorageClient, location string, versionedResources []kuberesource.VersionedResources) error {
 	var storageObjects []*StorageObject
 	for _, versionedResource := range versionedResources {
 		tmpManifests, err := helmchart.ManifestsFromResources(versionedResource.Resources)

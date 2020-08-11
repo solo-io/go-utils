@@ -5,6 +5,7 @@
 package debugutils
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -37,18 +38,18 @@ func (m *MockPodFinder) EXPECT() *MockPodFinderMockRecorder {
 }
 
 // GetPods mocks base method
-func (m *MockPodFinder) GetPods(arg0 kuberesource.UnstructuredResources) ([]*v1.PodList, error) {
+func (m *MockPodFinder) GetPods(arg0 context.Context, arg1 kuberesource.UnstructuredResources) ([]*v1.PodList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPods", arg0)
+	ret := m.ctrl.Call(m, "GetPods", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.PodList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPods indicates an expected call of GetPods
-func (mr *MockPodFinderMockRecorder) GetPods(arg0 interface{}) *gomock.Call {
+func (mr *MockPodFinderMockRecorder) GetPods(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPods", reflect.TypeOf((*MockPodFinder)(nil).GetPods), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPods", reflect.TypeOf((*MockPodFinder)(nil).GetPods), arg0, arg1)
 }
 
 // MockLogCollector is a mock of LogCollector interface
@@ -75,32 +76,32 @@ func (m *MockLogCollector) EXPECT() *MockLogCollectorMockRecorder {
 }
 
 // GetLogRequests mocks base method
-func (m *MockLogCollector) GetLogRequests(arg0 kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
+func (m *MockLogCollector) GetLogRequests(arg0 context.Context, arg1 kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLogRequests", arg0)
+	ret := m.ctrl.Call(m, "GetLogRequests", arg0, arg1)
 	ret0, _ := ret[0].([]*LogsRequest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLogRequests indicates an expected call of GetLogRequests
-func (mr *MockLogCollectorMockRecorder) GetLogRequests(arg0 interface{}) *gomock.Call {
+func (mr *MockLogCollectorMockRecorder) GetLogRequests(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogRequests", reflect.TypeOf((*MockLogCollector)(nil).GetLogRequests), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogRequests", reflect.TypeOf((*MockLogCollector)(nil).GetLogRequests), arg0, arg1)
 }
 
 // SaveLogs mocks base method
-func (m *MockLogCollector) SaveLogs(arg0 StorageClient, arg1 string, arg2 []*LogsRequest) error {
+func (m *MockLogCollector) SaveLogs(arg0 context.Context, arg1 StorageClient, arg2 string, arg3 []*LogsRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveLogs", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SaveLogs", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveLogs indicates an expected call of SaveLogs
-func (mr *MockLogCollectorMockRecorder) SaveLogs(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockLogCollectorMockRecorder) SaveLogs(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLogs", reflect.TypeOf((*MockLogCollector)(nil).SaveLogs), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLogs", reflect.TypeOf((*MockLogCollector)(nil).SaveLogs), arg0, arg1, arg2, arg3)
 }
 
 // MockResourceCollector is a mock of ResourceCollector interface
@@ -127,32 +128,32 @@ func (m *MockResourceCollector) EXPECT() *MockResourceCollectorMockRecorder {
 }
 
 // RetrieveResources mocks base method
-func (m *MockResourceCollector) RetrieveResources(arg0 kuberesource.UnstructuredResources, arg1 string, arg2 v10.ListOptions) ([]kuberesource.VersionedResources, error) {
+func (m *MockResourceCollector) RetrieveResources(arg0 context.Context, arg1 kuberesource.UnstructuredResources, arg2 string, arg3 v10.ListOptions) ([]kuberesource.VersionedResources, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RetrieveResources", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RetrieveResources", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]kuberesource.VersionedResources)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RetrieveResources indicates an expected call of RetrieveResources
-func (mr *MockResourceCollectorMockRecorder) RetrieveResources(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockResourceCollectorMockRecorder) RetrieveResources(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveResources", reflect.TypeOf((*MockResourceCollector)(nil).RetrieveResources), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveResources", reflect.TypeOf((*MockResourceCollector)(nil).RetrieveResources), arg0, arg1, arg2, arg3)
 }
 
 // SaveResources mocks base method
-func (m *MockResourceCollector) SaveResources(arg0 StorageClient, arg1 string, arg2 []kuberesource.VersionedResources) error {
+func (m *MockResourceCollector) SaveResources(arg0 context.Context, arg1 StorageClient, arg2 string, arg3 []kuberesource.VersionedResources) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveResources", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SaveResources", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveResources indicates an expected call of SaveResources
-func (mr *MockResourceCollectorMockRecorder) SaveResources(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockResourceCollectorMockRecorder) SaveResources(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveResources", reflect.TypeOf((*MockResourceCollector)(nil).SaveResources), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveResources", reflect.TypeOf((*MockResourceCollector)(nil).SaveResources), arg0, arg1, arg2, arg3)
 }
 
 // MockStorageClient is a mock of StorageClient interface

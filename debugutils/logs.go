@@ -15,7 +15,7 @@ import (
 )
 
 type LogCollector interface {
-	GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
+	GetLogRequests(ctx context.Context, resources kuberesource.UnstructuredResources) ([]*LogsRequest, error)
 	SaveLogs(ctx context.Context, client StorageClient, location string, requests []*LogsRequest) error
 }
 
@@ -38,19 +38,19 @@ func DefaultLogCollector() (*logCollector, error) {
 	}, nil
 }
 
-func (lc *logCollector) GetLogRequestsFromManifest(manifests helmchart.Manifests) ([]*LogsRequest, error) {
+func (lc *logCollector) GetLogRequestsFromManifest(ctx context.Context, manifests helmchart.Manifests) ([]*LogsRequest, error) {
 	resources, err := manifests.ResourceList()
 	if err != nil {
 		return nil, err
 	}
-	return lc.LogRequestBuilder.LogsFromUnstructured(resources)
+	return lc.LogRequestBuilder.LogsFromUnstructured(ctx, resources)
 }
 
-func (lc *logCollector) GetLogRequests(resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
-	return lc.LogRequestBuilder.LogsFromUnstructured(resources)
+func (lc *logCollector) GetLogRequests(ctx context.Context, resources kuberesource.UnstructuredResources) ([]*LogsRequest, error) {
+	return lc.LogRequestBuilder.LogsFromUnstructured(ctx, resources)
 }
 
-func (lc *logCollector) SaveLogs((ctx context.Context, storageClient StorageClient, location string, requests []*LogsRequest) error {
+func (lc *logCollector) SaveLogs(ctx context.Context, storageClient StorageClient, location string, requests []*LogsRequest) error {
 	eg := errgroup.Group{}
 	responses, err := lc.LogRequestBuilder.StreamLogs(ctx, requests)
 	if err != nil {
@@ -114,9 +114,9 @@ func DefaultLogRequestBuilder() (*LogRequestBuilder, error) {
 	}, nil
 }
 
-func (lrb *LogRequestBuilder) LogsFromUnstructured(resources kuberesource.UnstructuredResources, opts ...LogRequestOptions) ([]*LogsRequest, error) {
+func (lrb *LogRequestBuilder) LogsFromUnstructured(ctx context.Context, resources kuberesource.UnstructuredResources, opts ...LogRequestOptions) ([]*LogsRequest, error) {
 	var result []*LogsRequest
-	pods, err := lrb.podFinder.GetPods(resources)
+	pods, err := lrb.podFinder.GetPods(ctx, resources)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (lrb *LogRequestBuilder) buildLogsRequest(pod corev1.Pod, optsFunc ...LogRe
 	return result
 }
 
-func (lc LogRequestBuilder) StreamLogs(ctx context.Context,requests []*LogsRequest) ([]*LogsResponse, error) {
+func (lc LogRequestBuilder) StreamLogs(ctx context.Context, requests []*LogsRequest) ([]*LogsResponse, error) {
 	result := make([]*LogsResponse, 0, len(requests))
 	eg := errgroup.Group{}
 	lock := sync.Mutex{}

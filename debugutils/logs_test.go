@@ -1,6 +1,7 @@
 package debugutils
 
 import (
+	"context"
 	"errors"
 	"os"
 
@@ -16,13 +17,14 @@ import (
 
 var _ = Describe("logs unit tests", func() {
 	var (
+		ctx            context.Context
 		podFinder      *MockPodFinder
 		requestBuilder *LogRequestBuilder
 		podList        *corev1.PodList
 	)
 
 	BeforeEach(func() {
-		ctrl = gomock.NewController(T)
+		ctrl, ctx = gomock.WithContext(context.TODO(), T)
 		podFinder = NewMockPodFinder(ctrl)
 		podList = test.GeneratePodList()
 		fakeCoreV1 := &fakecorev1.FakeCoreV1{Fake: &testing.Fake{}}
@@ -36,8 +38,8 @@ var _ = Describe("logs unit tests", func() {
 		It("works from unstructured", func() {
 			resources, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
-			podFinder.EXPECT().GetPods(resources).Return([]*corev1.PodList{podList}, nil).Times(1)
-			requests, err := requestBuilder.LogsFromUnstructured(resources)
+			podFinder.EXPECT().GetPods(ctx, resources).Return([]*corev1.PodList{podList}, nil).Times(1)
+			requests, err := requestBuilder.LogsFromUnstructured(ctx, resources)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requests).To(HaveLen(4))
 		})
@@ -45,8 +47,8 @@ var _ = Describe("logs unit tests", func() {
 			resources, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
 			fakeErr := eris.New("this is a fake error")
-			podFinder.EXPECT().GetPods(resources).Return(nil, fakeErr).Times(1)
-			_, err = requestBuilder.LogsFromUnstructured(resources)
+			podFinder.EXPECT().GetPods(ctx, resources).Return(nil, fakeErr).Times(1)
+			_, err = requestBuilder.LogsFromUnstructured(ctx, resources)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.Is(err, fakeErr)).To(BeTrue())
 		})
@@ -102,7 +104,7 @@ var _ = Describe("logs unit tests", func() {
 				{Request: failingRequest},
 				{Request: sucessfulRequest},
 			}
-			err := lc.SaveLogs(sc, "", logRequests)
+			err := lc.SaveLogs(ctx, sc, "", logRequests)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.Is(err, fakeErr)).To(BeTrue())
 		})
@@ -124,7 +126,7 @@ var _ = Describe("logs unit tests", func() {
 				Resource: fakeReaderCloser,
 				Name:     logRequests[0].ResourceId(),
 			}).Return(nil).Times(1)
-			err := lc.SaveLogs(sc, fakeLocation, logRequests)
+			err := lc.SaveLogs(ctx, sc, fakeLocation, logRequests)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
