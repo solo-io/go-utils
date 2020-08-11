@@ -14,26 +14,30 @@ import (
 )
 
 var _ = Describe("GetClusterResources", func() {
-	var ns string
+	var (
+		ctx context.Context
+		ns  string
+	)
 	labelSetA := map[string]string{"a": "b"}
 	var cm1, cm2, cm3 v1.ConfigMap
 	BeforeEach(func() {
+		ctx = context.Background()
 		ns = "test" + testutils.RandString(4)
 		cm1, cm2, cm3 = utils.ConfigMap(ns, "a1", "data1", labelSetA),
 			utils.ConfigMap(ns, "a2", "data2", labelSetA),
 			utils.ConfigMap(ns, "a3", "data3", labelSetA)
-		utils.MustCreateNs(ns)
+		utils.MustCreateNs(ctx, ns)
 		utils.MustCreateConfigMap(cm1)
 		utils.MustCreateConfigMap(cm2)
 		utils.MustCreateConfigMap(cm3)
 	})
 	AfterEach(func() {
-		utils.MustDeleteNs(ns)
+		utils.MustDeleteNs(ctx, ns)
 	})
 	It("gets all resources in the cluster, period", func() {
 		cfg, err := kubeutils.GetConfig("", "")
 		Expect(err).NotTo(HaveOccurred())
-		allRes, err := GetClusterResources(context.TODO(), cfg, func(resource schema.GroupVersionResource) bool {
+		allRes, err := GetClusterResources(ctx, cfg, func(resource schema.GroupVersionResource) bool {
 			// just get configmaps
 			if resource.Resource != "configmaps" {
 				return true

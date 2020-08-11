@@ -19,6 +19,7 @@ import (
 var _ = Describe("ConfigTest", func() {
 
 	var (
+		ctx                context.Context
 		configMapNamespace string
 		configClient       configutils.ConfigClient
 	)
@@ -44,27 +45,28 @@ var _ = Describe("ConfigTest", func() {
 		var configMapClient configutils.ConfigMapClient
 
 		BeforeEach(func() {
+			ctx = context.Background()
 			rand := testutils.RandString(8)
 			configMapNamespace = "test-" + rand
 			configMapClient = configutils.NewConfigMapClient(kube2.MustKubeClient())
 			configClient = configutils.NewConfigClient(configMapClient, configMapNamespace, configMapName, configKey, getDefaultConfig())
-			kube2.MustCreateNs(configMapNamespace)
+			kube2.MustCreateNs(ctx, configMapNamespace)
 		})
 
 		AfterEach(func() {
-			kube2.MustDeleteNs(configMapNamespace)
+			kube2.MustDeleteNs(ctx, configMapNamespace)
 		})
 
 		It("works by default", func() {
 			actual := GetApplicationDetailsRequest{}
-			err := configClient.GetConfig(context.TODO(), &actual)
+			err := configClient.GetConfig(context.Background(), &actual)
 			Expect(err).NotTo(HaveOccurred())
 			expected := getDefaultConfig()
 			Expect(actual).To(BeEquivalentTo(*expected))
 			expected.ApplicationName = "updated"
-			err = configClient.SetConfig(context.TODO(), expected)
+			err = configClient.SetConfig(context.Background(), expected)
 			Expect(err).NotTo(HaveOccurred())
-			err = configClient.GetConfig(context.TODO(), &actual)
+			err = configClient.GetConfig(context.Background(), &actual)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actual).To(BeEquivalentTo(*expected))
 		})
@@ -83,19 +85,19 @@ var _ = Describe("ConfigTest", func() {
 
 		It("errors on get when config map client errors", func() {
 			mockConfigMapClient.GetError = testErr
-			err := configClient.GetConfig(context.TODO(), &GetApplicationDetailsRequest{})
+			err := configClient.GetConfig(context.Background(), &GetApplicationDetailsRequest{})
 			Expect(err.Error()).To(BeEquivalentTo(configutils.ErrorLoadingExistingConfig(testErr).Error()))
 		})
 
 		It("errors on set when config map client errors", func() {
 			mockConfigMapClient.SetError = testErr
-			err := configClient.SetConfig(context.TODO(), getDefaultConfig())
+			err := configClient.SetConfig(context.Background(), getDefaultConfig())
 			Expect(err.Error()).To(BeEquivalentTo(configutils.ErrorUpdatingConfig(testErr).Error()))
 		})
 
 		It("errors on get when config map contains invalid data", func() {
 			mockConfigMapClient.Data = map[string]string{configKey: "dummy"}
-			err := configClient.GetConfig(context.TODO(), &GetApplicationDetailsRequest{})
+			err := configClient.GetConfig(context.Background(), &GetApplicationDetailsRequest{})
 			unmarshalErr := eris.Errorf("json: cannot unmarshal string into Go value of type map[string]json.RawMessage")
 			Expect(err.Error()).To(BeEquivalentTo(configutils.ErrorUnmarshallingConfig(unmarshalErr).Error()))
 		})
@@ -103,7 +105,7 @@ var _ = Describe("ConfigTest", func() {
 		It("errors on get when default config can't be set", func() {
 			mockConfigMapClient.GetError = kubeerr.NewNotFound(schema.GroupResource{}, "name")
 			mockConfigMapClient.SetError = testErr
-			err := configClient.GetConfig(context.TODO(), &GetApplicationDetailsRequest{})
+			err := configClient.GetConfig(context.Background(), &GetApplicationDetailsRequest{})
 			Expect(err.Error()).To(BeEquivalentTo(configutils.ErrorSettingDefaultConfig(testErr).Error()))
 		})
 	})

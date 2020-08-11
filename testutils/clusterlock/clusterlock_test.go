@@ -26,7 +26,7 @@ var _ = Describe("kube cluster lock test", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.TODO()
+		ctx = context.Background()
 		namespace = testutils.RandString(8)
 		err := kubeutils.CreateNamespacesInParallel(ctx, kubeClient, namespace)
 		Expect(err).NotTo(HaveOccurred())

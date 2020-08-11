@@ -24,7 +24,7 @@ var _ = Describe("logs unit tests", func() {
 	)
 
 	BeforeEach(func() {
-		ctrl, ctx = gomock.WithContext(context.TODO(), T)
+		ctrl, ctx = gomock.WithContext(context.Background(), T)
 		podFinder = NewMockPodFinder(ctrl)
 		podList = test.GeneratePodList()
 		fakeCoreV1 := &fakecorev1.FakeCoreV1{Fake: &testing.Fake{}}

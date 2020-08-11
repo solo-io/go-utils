@@ -19,7 +19,7 @@ import (
 var _ = Describe("ReaderTest", func() {
 
 	var (
-		ctx    = context.TODO()
+		ctx    = context.Background()
 		reader changelogutils.ChangelogReader
 	)
 

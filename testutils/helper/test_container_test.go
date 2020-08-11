@@ -29,7 +29,7 @@ var _ = Describe("test container tests", func() {
 	)
 
 	BeforeSuite(func() {
-		ctx = context.TODO()
+		ctx = context.Background()
 		namespace = testutils.RandString(8)
 		kube = kube2.MustKubeClient()
 		err := kubeutils.CreateNamespacesInParallel(ctx, kube, namespace)

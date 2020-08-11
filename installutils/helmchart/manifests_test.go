@@ -46,7 +46,7 @@ global:
 
 `
 		manifests, err := RenderManifests(
-			context.TODO(),
+			context.Background(),
 			"https://storage.googleapis.com/solo-public-helm/charts/gloo-1.0.0.tgz",
 			values,
 			"yella",
@@ -70,7 +70,7 @@ global:
 				Owner:          "helm",
 				ChartDirectory: "stable/envoy",
 			}
-			manifests, err := RenderManifestsFromGithub(context.TODO(), ref, "", "test", "test", "")
+			manifests, err := RenderManifestsFromGithub(context.Background(), ref, "", "test", "test", "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(manifests)).To(BeEquivalentTo(4))
 		})
@@ -82,7 +82,7 @@ global:
 				Owner:          "helm",
 				ChartDirectory: "stable",
 			}
-			charts, err := RenderChartsFromGithub(context.TODO(), ref)
+			charts, err := RenderChartsFromGithub(context.Background(), ref)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(charts)).To(BeEquivalentTo(270))
 		})

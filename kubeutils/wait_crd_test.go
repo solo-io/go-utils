@@ -18,7 +18,7 @@ var _ = Describe("WaitCrd", func() {
 		crdName = "testing"
 	)
 	BeforeEach(func() {
-		ctx = context.TODO()
+		ctx = context.Background()
 		cfg, err := GetConfig("", "")
 		Expect(err).NotTo(HaveOccurred())
 		api, err = apiexts.NewForConfig(cfg)

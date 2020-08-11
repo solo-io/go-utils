@@ -1,6 +1,8 @@
 package test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/debugutils"
@@ -30,7 +32,7 @@ var _ = Describe("aggregator test", func() {
 			tmpf, err := afero.TempFile(fs, "", "")
 			defer fs.Remove(tmpf.Name())
 			Expect(err).NotTo(HaveOccurred())
-			err = aggregator.StreamFromManifest(manifests, "gloo-system", tmpf.Name())
+			err = aggregator.StreamFromManifest(context.Background(), manifests, "gloo-system", tmpf.Name())
 			Expect(err).NotTo(HaveOccurred())
 			tmpd, err := afero.TempDir(fs, "", "")
 			Expect(err).NotTo(HaveOccurred())

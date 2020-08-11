@@ -57,7 +57,7 @@ var _ = Describe("aggregator test", func() {
 			logCollector.EXPECT().SaveLogs(gomock.Any(), storageClient, filepath.Join(tmpd, "logs"), nil).Times(1)
 			storageClient.EXPECT().Save(filepath.Dir(filename), gomock.Any()).Return(nil).Times(1)
 
-			err := aggregator.StreamFromManifest(context.TODO(), manifests, namespace, filename)
+			err := aggregator.StreamFromManifest(context.Background(), manifests, namespace, filename)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

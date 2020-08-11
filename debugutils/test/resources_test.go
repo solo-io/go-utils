@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -34,7 +35,7 @@ var _ = Describe("resource collector e2e", func() {
 		It("can retrieve all gloo resources", func() {
 			unstructured, err := manifests.ResourceList()
 			Expect(err).NotTo(HaveOccurred())
-			collectedResources, err := collector.RetrieveResources(unstructured, "", v1.ListOptions{})
+			collectedResources, err := collector.RetrieveResources(context.Background(), unstructured, "", v1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			for _, resource := range collectedResources {
 				switch resource.GVK.Kind {

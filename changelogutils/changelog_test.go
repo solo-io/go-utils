@@ -410,7 +410,7 @@ closing
 
 	Context("Check for presence of changelog", func() {
 		It("passes on repo with changelog", func() {
-			ctx := context.TODO()
+			ctx := context.Background()
 			client, err := githubutils.GetClient(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "testrepo", "master")
@@ -419,7 +419,7 @@ closing
 		})
 
 		It("fails on repo with no changelog", func() {
-			ctx := context.TODO()
+			ctx := context.Background()
 			client, err := githubutils.GetClient(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "solo-docs", "master")
@@ -430,7 +430,7 @@ closing
 
 	Context("Summary documentation generation", func() {
 		It("produces the expected output", func() {
-			ctx := context.TODO()
+			ctx := context.Background()
 			repoRootPath := ".."
 			owner := "solo-io"
 			repo := "go-utils"

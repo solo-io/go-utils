@@ -18,6 +18,7 @@ import (
 
 var _ = Describe("InstallKubeManifest", func() {
 	var (
+		ctx        context.Context
 		namespace  string
 		kubeClient kubernetes.Interface
 	)
@@ -27,17 +28,17 @@ var _ = Describe("InstallKubeManifest", func() {
 		}
 		namespace = "install-kube-manifest-" + testutils.RandString(8)
 		kubeClient = kube.MustKubeClient()
-		err := kubeutils.CreateNamespacesInParallel(kubeClient, namespace)
+		err := kubeutils.CreateNamespacesInParallel(ctx, kubeClient, namespace)
 		Expect(err).NotTo(HaveOccurred())
 	})
 	AfterEach(func() {
 		if kubeClient != nil {
-			err := kubeutils.DeleteNamespacesInParallelBlocking(kubeClient, namespace)
+			err := kubeutils.DeleteNamespacesInParallelBlocking(ctx, kubeClient, namespace)
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})
 	It("installs arbitrary kube manifests", func() {
-		err := deployNginx(namespace)
+		err := deployNginx(ctx, namespace)
 		Expect(err).NotTo(HaveOccurred())
 
 		cfg, err := kubeutils.GetConfig("", "")
@@ -45,9 +46,9 @@ var _ = Describe("InstallKubeManifest", func() {
 		kube, err := kubernetes.NewForConfig(cfg)
 		Expect(err).NotTo(HaveOccurred())
 
-		svcs, err := kube.CoreV1().Services(namespace).List(context.TODO(), v1.ListOptions{})
+		svcs, err := kube.CoreV1().Services(namespace).List(context.Background(), v1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
-		deployments, err := kube.ExtensionsV1beta1().Deployments(namespace).List(context.TODO(), v1.ListOptions{})
+		deployments, err := kube.ExtensionsV1beta1().Deployments(namespace).List(context.Background(), v1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(svcs.Items).To(HaveLen(1))
 		Expect(deployments.Items).To(HaveLen(1))
@@ -55,7 +56,7 @@ var _ = Describe("InstallKubeManifest", func() {
 	})
 })
 
-func deployNginx(namespace string) error {
+func deployNginx(ctx context.Context, namespace string) error {
 	cfg, err := kubeutils.GetConfig("", "")
 	if err != nil {
 		return err
@@ -78,7 +79,7 @@ func deployNginx(namespace string) error {
 	}
 
 	for _, kubeOjb := range kubeObjs {
-		if err := installer.Create(kubeOjb); err != nil {
+		if err := installer.Create(ctx, kubeOjb); err != nil {
 			return err
 		}
 	}

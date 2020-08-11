@@ -83,7 +83,7 @@ var _ = Describe("Unstructured", func() {
 		compareResources := InputIstioUnstructured()
 		for i := range resources {
 			res1, res2 := resources[i], compareResources[i]
-			Expect(Match(context.TODO(), res1, res2)).To(BeTrue())
+			Expect(Match(context.Background(), res1, res2)).To(BeTrue())
 
 			// these values should be ignored
 			res2.SetUID("abcd")
@@ -95,9 +95,9 @@ var _ = Describe("Unstructured", func() {
 			res2.SetDeletionGracePeriodSeconds(proto.Int64(64))
 			res2.SetClusterName("abcd")
 			res2.Object["status"] = "asdf"
-			Expect(Match(context.TODO(), res1, res2)).To(BeTrue())
+			Expect(Match(context.Background(), res1, res2)).To(BeTrue())
 			res2.Object["anyotherfield"] = "asdf"
-			Expect(Match(context.TODO(), res1, res2)).To(BeFalse())
+			Expect(Match(context.Background(), res1, res2)).To(BeFalse())
 		}
 	})
 
