@@ -141,7 +141,7 @@ func (r *configReader) updatePrivateKey(config *Config) error {
 func (r *configReader) updateIntegrationId(config *Config) error {
 	integrationIdStr := r.os.Getenv(IntegrationIdEnvVar)
 	if integrationIdStr != "" {
-		integrationId, err := strconv.Atoi(integrationIdStr)
+		integrationId, err := strconv.ParseInt(integrationIdStr, 10, 64)
 		if err != nil {
 			return FailedToParseEnvVarError(err, IntegrationIdEnvVar, integrationIdStr)
 		}
