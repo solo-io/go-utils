@@ -24,6 +24,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-github v17.0.0+incompatible
+	github.com/google/go-github/v32 v32.0.0
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/goph/emperror v0.17.1
