@@ -6,3 +6,4 @@ changelog:
   - type: BREAKING_CHANGE
     description: >-
       Use new github API throughout the project.
+    issueLink: https://github.com/solo-io/build-bot/issues/73
