@@ -3,6 +3,6 @@ changelog:
     dependencyOwner: palantir
     dependencyRepo: go-githubapp
     dependencyTag: v0.5.0
-  - type: NON_USER_FACING
+  - type: BREAKING_CHANGE
     description: >-
-      Bump transitive dependencies to stop using deprecated GitHub API (i.e. "%s/installations/%v/access_tokens" -> "%s/app/installations/%v/access_tokens")
+      Use new github API throughout the project.
