@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/pkg/errors"
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"

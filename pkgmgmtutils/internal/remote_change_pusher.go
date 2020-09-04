@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 )
 

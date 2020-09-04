@@ -17,7 +17,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/ghodss/yaml"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/rs/zerolog"
 	"google.golang.org/api/cloudbuild/v1"
 )
@@ -98,7 +98,7 @@ func (sb *StorageBuilder) copyArchiveToStorage(ctx context.Context, builderCtx B
 		Ref: ref,
 	}
 
-	archiveURL, _, err := client.Repositories.GetArchiveLink(ctx, owner, repo, github.Tarball, opts)
+	archiveURL, _, err := client.Repositories.GetArchiveLink(ctx, owner, repo, github.Tarball, opts, true)
 	if err != nil {
 		logger.Error().Err(err).Msg("can't get archive")
 		return nil, err

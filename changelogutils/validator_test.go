@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rotisserie/eris"
@@ -142,7 +142,7 @@ var _ = Describe("changelog validator utils", func() {
 		validateVersionBump := func(lastTag, nextTag, contents string, expectFailure bool) {
 
 			nextTagFile := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
-			cc := github.CommitsComparison{Files: []github.CommitFile{{Filename: &nextTagFile, Status: &added}}}
+			cc := github.CommitsComparison{Files: []*github.CommitFile{{Filename: &nextTagFile, Status: &added}}}
 
 			repoClient.EXPECT().
 				CompareCommits(ctx, base, sha).
@@ -207,7 +207,7 @@ var _ = Describe("changelog validator utils", func() {
 		It("errors when more than one changelog file added", func() {
 			file1 := github.CommitFile{Filename: &path1, Status: &added}
 			file2 := github.CommitFile{Filename: &path2, Status: &added}
-			cc := github.CommitsComparison{Files: []github.CommitFile{file1, file2}}
+			cc := github.CommitsComparison{Files: []*github.CommitFile{&file1, &file2}}
 			repoClient.EXPECT().
 				CompareCommits(ctx, base, sha).
 				Return(&cc, nil)
@@ -220,7 +220,7 @@ var _ = Describe("changelog validator utils", func() {
 
 		It("errors when getting changelog file contents fails", func() {
 			file1 := github.CommitFile{Filename: &path1, Status: &added}
-			cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+			cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 			repoClient.EXPECT().
 				CompareCommits(ctx, base, sha).
 				Return(&cc, nil)
@@ -236,7 +236,7 @@ var _ = Describe("changelog validator utils", func() {
 		Context("validating proposed tag", func() {
 			BeforeEach(func() {
 				file1 := github.CommitFile{Filename: &path1, Status: &added}
-				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 				repoClient.EXPECT().
 					CompareCommits(ctx, base, sha).
 					Return(&cc, nil)
@@ -346,7 +346,7 @@ var _ = Describe("changelog validator utils", func() {
 
 				It("works on patch version bump", func() {
 					file1 := github.CommitFile{Filename: &path1, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -369,7 +369,7 @@ var _ = Describe("changelog validator utils", func() {
 
 				It("errors when not incrementing major version", func() {
 					file1 := github.CommitFile{Filename: &path1, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -396,7 +396,7 @@ var _ = Describe("changelog validator utils", func() {
 				It("works when incrementing major version", func() {
 					path := filepath.Join(changelogutils.ChangelogDirectory, "v0.6.0", filename1)
 					file1 := github.CommitFile{Filename: &path, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -441,7 +441,7 @@ var _ = Describe("changelog validator utils", func() {
 				It("works for stable api release", func() {
 					path := filepath.Join(changelogutils.ChangelogDirectory, "v1.0.0", filename1)
 					file1 := github.CommitFile{Filename: &path, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -466,7 +466,7 @@ var _ = Describe("changelog validator utils", func() {
 				It("errors when not incrementing for stable api release", func() {
 					path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
 					file1 := github.CommitFile{Filename: &path, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -501,7 +501,7 @@ var _ = Describe("changelog validator utils", func() {
 
 				It("allows not incrementing major version", func() {
 					file1 := github.CommitFile{Filename: &path1, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -526,7 +526,7 @@ var _ = Describe("changelog validator utils", func() {
 				It("works when incrementing major version", func() {
 					path := filepath.Join(changelogutils.ChangelogDirectory, "v0.6.0", filename1)
 					file1 := github.CommitFile{Filename: &path, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -572,7 +572,7 @@ var _ = Describe("changelog validator utils", func() {
 				It("works for stable api release", func() {
 					path := filepath.Join(changelogutils.ChangelogDirectory, "v1.0.0", filename1)
 					file1 := github.CommitFile{Filename: &path, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -597,7 +597,7 @@ var _ = Describe("changelog validator utils", func() {
 				It("errors when not incrementing for stable api release", func() {
 					path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
 					file1 := github.CommitFile{Filename: &path, Status: &added}
-					cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+					cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 					repoClient.EXPECT().
 						CompareCommits(ctx, base, sha).
 						Return(&cc, nil)
@@ -627,7 +627,7 @@ var _ = Describe("changelog validator utils", func() {
 			labelWorkflow := func(lastTag, nextTag, contents string, settingsFunc func()) {
 				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
 				file1 := github.CommitFile{Filename: &path, Status: &added}
-				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 				repoClient.EXPECT().
 					CompareCommits(ctx, base, sha).
 					Return(&cc, nil)
@@ -681,7 +681,7 @@ var _ = Describe("changelog validator utils", func() {
 			setup := func(setupTag string) {
 				path := filepath.Join(changelogutils.ChangelogDirectory, setupTag, filename1)
 				file1 := github.CommitFile{Filename: &path, Status: &added}
-				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 				repoClient.EXPECT().
 					CompareCommits(ctx, base, sha).
 					Return(&cc, nil)
@@ -725,7 +725,7 @@ var _ = Describe("changelog validator utils", func() {
 
 			setup := func() {
 				file1 := github.CommitFile{Filename: &path1, Status: &added}
-				cc := github.CommitsComparison{Files: []github.CommitFile{file1}}
+				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 				repoClient.EXPECT().
 					CompareCommits(ctx, base, sha).
 					Return(&cc, nil)
@@ -793,7 +793,7 @@ var _ = Describe("changelog validator utils", func() {
 				validationPath := changelogutils.GetValidationSettingsPath()
 				file1 := github.CommitFile{Filename: &path1, Status: &added}
 				file2 := github.CommitFile{Filename: &validationPath, Status: &added}
-				cc := github.CommitsComparison{Files: []github.CommitFile{file1, file2}}
+				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1, &file2}}
 				repoClient.EXPECT().
 					CompareCommits(ctx, base, sha).
 					Return(&cc, nil)

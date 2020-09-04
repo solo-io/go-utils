@@ -7,7 +7,7 @@ import (
 
 	"github.com/solo-io/go-utils/randutils"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/githubutils"
