@@ -14,7 +14,7 @@ import (
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 )
 
@@ -197,7 +197,7 @@ func DownloadRepoArchive(ctx context.Context, client *github.Client, w io.Writer
 		Ref: sha,
 	}
 
-	archiveURL, _, err := client.Repositories.GetArchiveLink(ctx, owner, repo, github.Tarball, opt)
+	archiveURL, _, err := client.Repositories.GetArchiveLink(ctx, owner, repo, github.Tarball, opt, true)
 	if err != nil {
 		logger.Errorw("can't get archive", zap.Error(err))
 		return err
