@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/onsi/ginkgo"
 	"github.com/pkg/errors"
 	"github.com/rotisserie/eris"

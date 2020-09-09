@@ -1,0 +1,10 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: palantir
+    dependencyRepo: go-githubapp
+    dependencyTag: v0.5.0
+  - type: BREAKING_CHANGE
+    description: >-
+      Use new github API throughout the project.
+    issueLink: https://github.com/solo-io/build-bot/issues/73
+    resolvesIssue: false

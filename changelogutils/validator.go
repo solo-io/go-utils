@@ -10,7 +10,7 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/stringutils"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/pkg/errors"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/versionutils"
@@ -271,7 +271,7 @@ func GetChangelogFilesAdded(ctx context.Context, client githubutils.RepoClient, 
 	for _, file := range commitComparison.Files {
 		if strings.HasPrefix(file.GetFilename(), fmt.Sprintf("%s/", ChangelogDirectory)) {
 			if !IsKnownChangelogFile(file.GetFilename()) && file.GetStatus() == githubutils.COMMIT_FILE_STATUS_ADDED {
-				changelogFiles = append(changelogFiles, file)
+				changelogFiles = append(changelogFiles, *file)
 			}
 		}
 	}

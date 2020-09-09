@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/avast/retry-go"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/versionutils"
 )

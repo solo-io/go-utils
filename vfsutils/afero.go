@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/tarutils"
 

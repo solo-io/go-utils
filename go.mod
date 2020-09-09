@@ -8,8 +8,6 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e // indirect
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/avast/retry-go v2.2.0+incompatible
-	github.com/bluekeyes/hatpear v0.0.0-20180714193905-ffb42d5bb417 // indirect
-	github.com/bradleyfalzon/ghinstallation v0.1.2 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.0 // indirect
 	github.com/docker/go-metrics v0.0.0-20181218153428-b84716841b82 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
@@ -24,12 +22,10 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/golang/mock v1.3.1
-	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/go-querystring v1.0.0 // indirect
+	github.com/google/go-github/v32 v32.0.0
 	github.com/google/uuid v1.1.1
 	github.com/goph/emperror v0.17.1
 	github.com/gorilla/handlers v1.4.0 // indirect
-	github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f // indirect
 	github.com/hashicorp/consul/api v1.1.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
@@ -38,16 +34,13 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
-	github.com/palantir/go-baseapp v0.0.0-20190430095958-24408a192334
-	github.com/palantir/go-githubapp v0.0.0-20190620114758-91e10a96cd34
+	github.com/palantir/go-baseapp v0.2.0
+	github.com/palantir/go-githubapp v0.5.0
 	github.com/pelletier/go-toml v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.2.1 // indirect
-	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rotisserie/eris v0.1.1
-	github.com/rs/zerolog v1.14.3
-	github.com/shurcooL/githubv4 v0.0.0-20190625031733-ee671ab25ff0 // indirect
-	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
+	github.com/rs/zerolog v1.18.0
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v1.0.0
 	github.com/xenolf/lego v0.3.2-0.20160613233155-a9d8cec0e656 // indirect
@@ -56,7 +49,7 @@ require (
 	go.opencensus.io v0.22.0
 	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/api v0.6.0

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/vfsutils"
@@ -40,7 +40,7 @@ type githubRefUpdater struct {
 
 	ref           *github.Reference
 	code          vfsutils.MountedRepo
-	filesToCommit []github.TreeEntry
+	filesToCommit []*github.TreeEntry
 }
 
 func NewGithubRefUpdater(client *github.Client, owner, repo string) RefUpdater {
@@ -73,7 +73,7 @@ func (c *githubRefUpdater) UpdateFile(ctx context.Context, path string, contentU
 	contextutils.LoggerFrom(ctx).Infow("Committing file",
 		zap.String("contents", string(contents)),
 		zap.String("newContents", newContents))
-	c.filesToCommit = append(c.filesToCommit, github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(newContents), Mode: github.String("100644")})
+	c.filesToCommit = append(c.filesToCommit, &github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(newContents), Mode: github.String("100644")})
 	return nil
 }
 
@@ -103,7 +103,7 @@ func (c *githubRefUpdater) Commit(ctx context.Context, spec CommitSpec) error {
 		Author:  author,
 		Message: github.String(spec.Message),
 		Tree:    tree,
-		Parents: []github.Commit{*parent.Commit},
+		Parents: []*github.Commit{parent.Commit},
 	}
 	newCommit, _, err := c.client.Git.CreateCommit(ctx, c.code.GetOwner(), c.code.GetRepo(), commit)
 	if err != nil {
@@ -132,7 +132,7 @@ func (c *githubRefUpdater) RenameFile(ctx context.Context, oldPath, newPath stri
 	var found *github.TreeEntry
 	for _, entry := range tree.Entries {
 		if entry.GetPath() == oldPath {
-			found = &entry
+			found = entry
 		}
 	}
 	if found == nil {
@@ -145,7 +145,7 @@ func (c *githubRefUpdater) RenameFile(ctx context.Context, oldPath, newPath stri
 		SHA:  found.SHA,
 		Mode: found.Mode,
 	}
-	c.filesToCommit = append(c.filesToCommit, updated)
+	c.filesToCommit = append(c.filesToCommit, &updated)
 	return nil
 }
 

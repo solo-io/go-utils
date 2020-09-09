@@ -3,7 +3,7 @@ package botutils
 import (
 	"context"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 )
 
 type Plugin interface {
