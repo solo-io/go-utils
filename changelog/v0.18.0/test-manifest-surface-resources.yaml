@@ -1,0 +1,3 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add a function to the TestManifest interface that directly returns the underlying testManifest struct's resources for testing.

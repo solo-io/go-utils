@@ -53,6 +53,8 @@ type TestManifest interface {
 	// construct a new set of resources to make assertions against by collecting
 	// all the resources for which `selector` returns true
 	SelectResources(selector func(*unstructured.Unstructured) bool) TestManifest
+	// Return the underlying UnstructuredResources for direct inspection.
+	SurfaceResources() kuberesource.UnstructuredResources
 }
 
 type testManifest struct {
@@ -69,6 +71,10 @@ func NewTestManifestWithResources(resources kuberesource.UnstructuredResources) 
 	return &testManifest{
 		resources: resources,
 	}
+}
+
+func (t *testManifest) SurfaceResources() kuberesource.UnstructuredResources {
+	return t.resources
 }
 
 func (t *testManifest) NumResources() int {
