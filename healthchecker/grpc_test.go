@@ -32,7 +32,7 @@ func RunServer(ctx context.Context) *testGRPCServer {
 	}
 	grpcServer := grpc.NewServer()
 	reflection.Register(grpcServer)
-	hc := healthchecker.NewGrpc(serviceName, health.NewServer())
+	hc := healthchecker.NewGrpc(serviceName, health.NewServer(), false)
 	healthpb.RegisterHealthServer(grpcServer, hc.GetServer())
 	go grpcServer.Serve(lis)
 	time.Sleep(time.Millisecond)
@@ -89,21 +89,31 @@ var _ = Describe("grpc healthchecker", func() {
 	})
 
 	Context("with service name", func() {
-		It("can recieve serving from a healthy server", func() {
+
+		ExpectStatus:= func(s healthpb.HealthCheckResponse_ServingStatus){
 			resp, err := client.Check(ctx, &healthpb.HealthCheckRequest{
 				Service: serviceName,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(resp.Status).To(Equal(healthpb.HealthCheckResponse_SERVING))
+			Expect(resp.Status).To(Equal(s))
+		}
+
+
+		It("can recieve serving from a healthy server", func() {
+			ExpectStatus(healthpb.HealthCheckResponse_SERVING)
 		})
 
 		It("can receive not serving from an unhealthy server", func() {
 			srv.HealthChecker.Fail()
-			resp, err := client.Check(ctx, &healthpb.HealthCheckRequest{
-				Service: serviceName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(resp.Status).To(Equal(healthpb.HealthCheckResponse_NOT_SERVING))
+			ExpectStatus(healthpb.HealthCheckResponse_NOT_SERVING)
+		})
+
+		It("can receive not serving from an unhealthy server, and then serving when it becomes health", func() {
+			srv.HealthChecker.Fail()
+			ExpectStatus(healthpb.HealthCheckResponse_NOT_SERVING)
+
+			srv.HealthChecker.Ok()
+			ExpectStatus(healthpb.HealthCheckResponse_SERVING)
 		})
 	})
 })
