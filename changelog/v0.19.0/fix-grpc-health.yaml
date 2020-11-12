@@ -2,3 +2,4 @@ changelog:
   - type: BREAKING_CHANGE
     description: >-
       Fixes an issue with gRPC health checking
+    issueLink: https://github.com/solo-io/go-utils/issues/425
