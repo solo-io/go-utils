@@ -1,0 +1,5 @@
+changelog:
+  - type: BREAKING_CHANGE
+    description: >-
+      Move all k8s code out of here.
+    issueLink: https://github.com/solo-io/go-utils/issues/426
