@@ -1,4 +1,4 @@
-package kubeutils_test
+package checks
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestKubeutils(t *testing.T) {
+func TestChecks(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Kubeutils Suite")
+	RunSpecs(t, "Checks Suite")
 }
