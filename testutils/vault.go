@@ -35,7 +35,7 @@ func NewVaultFactory() (*VaultFactory, error) {
 		}, nil
 	}
 
-	// try to grab one form docker...
+	// try to grab one from docker...
 	tmpdir, err := ioutil.TempDir(os.Getenv("HELPER_TMP"), "vault")
 	if err != nil {
 		return nil, err
