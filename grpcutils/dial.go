@@ -23,6 +23,12 @@ type DialOpts struct {
 
 	// Enable fast reconnection attempts on network failures (gRPC code 14 'unavailable')
 	ReconnectOnNetworkFailures bool
+
+	// Set this as the authority (host header) on the outbound dial request
+	Authority string
+
+	// additional options the caller wishes to inject
+	ExtraOptions []grpc.DialOption
 }
 
 func (o DialOpts) Dial(ctx context.Context) (*grpc.ClientConn, error) {
@@ -49,6 +55,10 @@ func (o DialOpts) Dial(ctx context.Context) (*grpc.ClientConn, error) {
 			)),
 		)
 	}
+	if o.Authority != "" {
+		opts = append(opts, grpc.WithAuthority(o.Authority))
+	}
+	opts = append(opts, o.ExtraOptions...)
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	cc, err := grpc.DialContext(ctx, o.Address, opts...)
