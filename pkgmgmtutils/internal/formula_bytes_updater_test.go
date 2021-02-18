@@ -5,6 +5,7 @@ import (
 	"github.com/google/go-github/v32/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 	"github.com/solo-io/go-utils/pkgmgmtutils/internal"
 )
@@ -79,12 +80,11 @@ var _ = Describe("FormulaBytesUpdater", func() {
 		// GitHub API docs: https://developer.github.com/v3/repos/contents/#get-contents
 		gclient := github.NewClient(nil)
 		ctx := context.Background()
-		fileContent, _, _, err := gclient.Repositories.GetContents(ctx, formula.RepoOwner, formula.RepoName, formula.Path, &github.RepositoryContentGetOptions{
-			Ref: "refs/heads/master",
-		})
+		fileContents, err := githubutils.GetFilesFromGit(ctx, gclient, formula.RepoOwner, formula.RepoName, "refs/heads/master", formula.Path)
+		Expect(len(fileContents)).To(Equal(1))
 		Expect(err).To(Not(HaveOccurred()))
 
-		c, err := fileContent.GetContent()
+		c, err := fileContents[0].GetContent()
 		Expect(err).To(Not(HaveOccurred()))
 
 		b, err := internal.UpdateFormulaBytes(
