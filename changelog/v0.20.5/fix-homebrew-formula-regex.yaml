@@ -1,0 +1,5 @@
+changelog:
+  - type: FIX
+    description: Fix homebrew formula to update homebrew-core with stable gloo release
+    issueLink: https://github.com/solo-io/gloo/issues/4217
+    resolvesIssue: false
