@@ -99,7 +99,9 @@ func (f *FormulaUpdater) Update(
 
 	var formulaStatuses []formula_updater_types.FormulaStatus
 	for _, formulaOptions := range formulaOptionsList {
-		status := formula_updater_types.FormulaStatus{}
+		status := formula_updater_types.FormulaStatus{
+			Name: formulaOptions.Name,
+		}
 
 		// a version is not stable if it has a label, like "rc", "beta", etc.
 		// in either case, silently mark it as updated and continue
