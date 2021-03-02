@@ -70,6 +70,10 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 			setLevel = zapcore.WarnLevel
 		case "error":
 			setLevel = zapcore.ErrorLevel
+		case "panic":
+			setLevel = zapcore.PanicLevel
+		case "fatal":
+			setLevel = zapcore.FatalLevel
 		default:
 			setLevel = zapcore.InfoLevel
 		}
