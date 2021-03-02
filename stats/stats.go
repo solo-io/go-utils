@@ -14,6 +14,7 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/zpages"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -60,7 +61,20 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 	}
 
 	var logLevel zap.AtomicLevel
-	if startupOpts.LogLevel != nil {
+	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
+		var setLevel zapcore.Level
+		switch envLogLevel {
+		case "debug":
+			setLevel = zapcore.DebugLevel
+		case "warn":
+			setLevel = zapcore.WarnLevel
+		case "error":
+			setLevel = zapcore.ErrorLevel
+		default:
+			setLevel = zapcore.InfoLevel
+		}
+		logLevel = zap.NewAtomicLevelAt(setLevel)
+	} else if startupOpts.LogLevel != nil {
 		logLevel = *startupOpts.LogLevel
 	} else {
 		logConfig := zap.NewProductionConfig()
@@ -143,7 +157,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 var profileDescriptions = map[string]string{
 
 	"/logging": `View \ change the log level of the program. <br/>
-	
+
 log level:
 <select id="loglevelselector">
 <option value="debug">debug</option>
@@ -153,7 +167,7 @@ log level:
 </select>
 <button onclick="setlevel(document.getElementById('loglevelselector').value)">click</button>
 
-<script>	
+<script>
 function setlevel(l) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('PUT', '/logging', true);
