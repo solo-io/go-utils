@@ -21,12 +21,12 @@ type grpcHealthChecker struct {
 
 var _ HealthChecker = new(grpcHealthChecker)
 
-func NewGrpc(serviceName string, grpcHealthServer *health.Server, failOnTerm bool) *grpcHealthChecker {
+func NewGrpc(serviceName string, grpcHealthServer *health.Server, failOnTerm bool, initialServingStatus healthpb.HealthCheckResponse_ServingStatus) *grpcHealthChecker {
 	hc := &grpcHealthChecker{}
 	hc.name = serviceName
 
 	hc.srv = grpcHealthServer
-	hc.srv.SetServingStatus(serviceName, healthpb.HealthCheckResponse_SERVING)
+	hc.srv.SetServingStatus(serviceName, initialServingStatus)
 
 	// TODO(yuval-k): we should remove this, as this shouldn't be done by this component, and
 	// cannot be unit tested.
