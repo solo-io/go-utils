@@ -32,7 +32,7 @@ func RunServer(ctx context.Context) *testGRPCServer {
 	}
 	grpcServer := grpc.NewServer()
 	reflection.Register(grpcServer)
-	hc := healthchecker.NewGrpc(serviceName, health.NewServer(), false)
+	hc := healthchecker.NewGrpc(serviceName, health.NewServer(), false, healthpb.HealthCheckResponse_SERVING)
 	healthpb.RegisterHealthServer(grpcServer, hc.GetServer())
 	go grpcServer.Serve(lis)
 	time.Sleep(time.Millisecond)
