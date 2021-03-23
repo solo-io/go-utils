@@ -62,19 +62,19 @@ var _ = Describe("FormulaBytesUpdater", func() {
 		testVersion := "v7.8.9"
 		testVersionSha := "gitcommitsha"
 		formula := formula_updater_types.FormulaOptions{
-				Name:            "homebrew-core/glooctl",
-				FormulaName:     "glooctl",
-				Path:            "Formula/glooctl.rb",
-				RepoOwner:       "solo-io",
-				RepoName:        "homebrew-core",
-				PRRepoOwner:     "homebrew",
-				PRRepoName:      "homebrew-core",
-				PRBranch:        "master",
-				PRDescription:   "Created by Solo-io Bot",
-				PRCommitName:    "Solo-io Bot",
-				PRCommitEmail:   "bot@solo.io",
-				VersionRegex:    `tag:\s*"v([0-9.]+)",`,
-				VersionShaRegex: `revision:\s*"(.*)"`,
+			Name:            "homebrew-core/glooctl",
+			FormulaName:     "glooctl",
+			Path:            "Formula/glooctl.rb",
+			RepoOwner:       "solo-io",
+			RepoName:        "homebrew-core",
+			PRRepoOwner:     "homebrew",
+			PRRepoName:      "homebrew-core",
+			PRBranch:        "master",
+			PRDescription:   "Created by Solo-io Bot",
+			PRCommitName:    "Solo-io Bot",
+			PRCommitEmail:   "bot@solo.io",
+			VersionRegex:    `tag:\s*"v([0-9.]+)",`,
+			VersionShaRegex: `revision:\s*"(.*)"`,
 		}
 
 		// GitHub API docs: https://developer.github.com/v3/repos/contents/#get-contents

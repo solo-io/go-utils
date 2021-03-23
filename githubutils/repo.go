@@ -159,10 +159,10 @@ func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, rep
 }
 
 func FindLatestReleaseBySemver(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
-	releases, _, err := client.Repositories.ListReleases((ctx, owner, repo, &github.ListOptions{
-		Page: 0,
+	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
+		Page:    0,
 		PerPage: 10000000,
-	}))
+	})
 	if err != nil {
 		return "", err
 	}
