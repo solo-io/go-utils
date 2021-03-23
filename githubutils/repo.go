@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/solo-io/go-utils/versionutils"
 
@@ -156,6 +157,22 @@ func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, rep
 	return *release.TagName, nil
 }
 
+func FindLatestReleaseBySemver(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
+	releases, _, err := client.Repositories.ListReleases((ctx, owner, repo, &github.ListOptions{
+		Page: 0,
+		PerPage: 10000000,
+	}))
+	if err != nil {
+		return "", err
+	}
+	if len(releases) == 0 {
+		// no release tags have been found, so the latest is "version zero"
+		return versionutils.SemverNilVersionValue, nil
+	}
+	SortReleases(releases)
+	return releases[0].GetName(), nil
+}
+
 func MarkInitialPending(ctx context.Context, client *github.Client, owner, repo, sha, description, label string) (*github.RepoStatus, error) {
 	return CreateStatus(ctx, client, owner, repo, sha, description, label, STATUS_PENDING)
 }
@@ -223,4 +240,19 @@ func DownloadFile(url string, w io.Writer) error {
 	}
 
 	return nil
+}
+
+func SortReleases(releases []*github.RepositoryRelease) {
+	sort.Slice(releases, func(i, j int) bool {
+		rA, rB := releases[i], releases[j]
+		verA, err := versionutils.ParseVersion(rA.GetTagName())
+		if err != nil {
+			return false
+		}
+		verB, err := versionutils.ParseVersion(rB.GetTagName())
+		if err != nil {
+			return false
+		}
+		return verA.MustIsGreaterThan(*verB)
+	})
 }
