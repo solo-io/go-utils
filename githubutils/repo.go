@@ -170,7 +170,7 @@ func FindLatestReleaseBySemver(ctx context.Context, client *github.Client, owner
 		// no release tags have been found, so the latest is "version zero"
 		return versionutils.SemverNilVersionValue, nil
 	}
-	SortReleases(releases)
+	SortReleasesBySemver(releases)
 	return releases[0].GetName(), nil
 }
 
@@ -243,7 +243,7 @@ func DownloadFile(url string, w io.Writer) error {
 	return nil
 }
 
-func SortReleases(releases []*github.RepositoryRelease) {
+func SortReleasesBySemver(releases []*github.RepositoryRelease) {
 	sort.Slice(releases, func(i, j int) bool {
 		rA, rB := releases[i], releases[j]
 		verA, err := versionutils.ParseVersion(rA.GetTagName())
