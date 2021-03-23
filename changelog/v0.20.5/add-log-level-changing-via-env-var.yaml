@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Add ability to set log level from an environment variable
+    issueLink: https://github.com/solo-io/gloo/issues/4090

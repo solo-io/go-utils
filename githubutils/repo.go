@@ -107,8 +107,9 @@ func GetFilesFromGit(ctx context.Context, client *github.Client, owner, repo, re
 	}
 	if single != nil {
 		content = append(content, single)
+	} else {
+		content = list
 	}
-	content = list
 	return content, nil
 }
 

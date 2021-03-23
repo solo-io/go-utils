@@ -5,9 +5,7 @@ go 1.13
 require (
 	cloud.google.com/go/pubsub v1.2.0
 	cloud.google.com/go/storage v1.6.0
-	contrib.go.opencensus.io/exporter/jaeger v0.2.1
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
-	contrib.go.opencensus.io/exporter/zipkin v0.1.2
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/fgrosse/zaptest v1.1.0
@@ -15,8 +13,9 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.4.3
+	github.com/golang/protobuf v1.4.2
 	github.com/google/go-github/v32 v32.0.0
-	github.com/gorilla/mux v1.7.2 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
@@ -27,7 +26,6 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
-	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/palantir/go-baseapp v0.2.0
 	github.com/palantir/go-githubapp v0.5.0
 	github.com/pelletier/go-toml v1.2.0
@@ -51,6 +49,7 @@ require (
 	golang.org/x/text v0.3.3 // indirect
 	google.golang.org/api v0.29.0
 	google.golang.org/grpc v1.30.0
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/src-d/go-git.v4 v4.10.0
 	gopkg.in/yaml.v2 v2.3.0
