@@ -74,17 +74,17 @@ type ChangelogValidator interface {
 
 type TagComparator func(greaterThanTag, lessThanTag string) (bool, bool, error)
 
-func NewChangelogValidatorWithTagComparator(client githubutils.RepoClient, code vfsutils.MountedRepo, base string, tagComparator TagComparator) ChangelogValidator {
+func NewChangelogValidatorWithLabelOrder(client githubutils.RepoClient, code vfsutils.MountedRepo, base string, labelOrder []string) ChangelogValidator {
 	return &changelogValidator{
 		client: client,
 		code:   code,
 		base:   base,
-		tagComparator: tagComparator,
+		labelOrder: labelOrder,
 	}
 }
 
 func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedRepo, base string) ChangelogValidator {
-	return NewChangelogValidatorWithTagComparator(client, code, base, versionutils.IsGreaterThanTag)
+	return NewChangelogValidatorWithLabelOrder(client, code, base, nil)
 }
 
 type ValidationSettings struct {
@@ -97,13 +97,13 @@ type ValidationSettings struct {
 }
 
 type changelogValidator struct {
-	base          string
-	reader        ChangelogReader
-	client        githubutils.RepoClient
-	code          vfsutils.MountedRepo
-	// Provide custom comparator to compare tags.
-	// Can be used to compare arbitrary tag labels (e.g. rc, beta, alpha)
-	tagComparator TagComparator
+	base   string
+	reader ChangelogReader
+	client githubutils.RepoClient
+	code   vfsutils.MountedRepo
+	// list of arbitrary labels whos order is used to tie-break tag comparisons between
+	// versions with different labels. Labels ordered earlier are greater.
+	labelOrder []string
 }
 
 func (c *changelogValidator) ShouldCheckChangelog(ctx context.Context) (bool, error) {
@@ -168,7 +168,14 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		if !versionutils.MatchesRegex(child.Name()) {
 			return "", InvalidChangelogSubdirectoryNameError(child.Name())
 		}
-		greaterThan, determinable, err := c.tagComparator(child.Name(), latestTag)
+		var greaterThan, determinable bool
+		if len(c.labelOrder) > 0 {
+			greaterThan, determinable, err = versionutils.IsGreaterThanTagWithLabelOrder(child.Name(), latestTag, c.labelOrder)
+
+		}else{
+			greaterThan, determinable, err = versionutils.IsGreaterThanTag(child.Name(), latestTag)
+
+		}
 		if err != nil {
 			return "", err
 		}
