@@ -72,12 +72,19 @@ type ChangelogValidator interface {
 	ValidateChangelog(ctx context.Context) (*ChangelogFile, error)
 }
 
-func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedRepo, base string) ChangelogValidator {
+type TagComparator func(greaterThanTag, lessThanTag string) (bool, bool, error)
+
+func NewChangelogValidatorWithLabelOrder(client githubutils.RepoClient, code vfsutils.MountedRepo, base string, labelOrder []string) ChangelogValidator {
 	return &changelogValidator{
 		client: client,
 		code:   code,
 		base:   base,
+		labelOrder: labelOrder,
 	}
+}
+
+func NewChangelogValidator(client githubutils.RepoClient, code vfsutils.MountedRepo, base string) ChangelogValidator {
+	return NewChangelogValidatorWithLabelOrder(client, code, base, nil)
 }
 
 type ValidationSettings struct {
@@ -94,6 +101,9 @@ type changelogValidator struct {
 	reader ChangelogReader
 	client githubutils.RepoClient
 	code   vfsutils.MountedRepo
+	// list of arbitrary labels whos order is used to tie-break tag comparisons between
+	// versions with different labels. Labels ordered earlier are greater.
+	labelOrder []string
 }
 
 func (c *changelogValidator) ShouldCheckChangelog(ctx context.Context) (bool, error) {
@@ -158,7 +168,14 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		if !versionutils.MatchesRegex(child.Name()) {
 			return "", InvalidChangelogSubdirectoryNameError(child.Name())
 		}
-		greaterThan, determinable, err := versionutils.IsGreaterThanTag(child.Name(), latestTag)
+		var greaterThan, determinable bool
+		if len(c.labelOrder) > 0 {
+			greaterThan, determinable, err = versionutils.IsGreaterThanTagWithLabelOrder(child.Name(), latestTag, c.labelOrder)
+
+		}else{
+			greaterThan, determinable, err = versionutils.IsGreaterThanTag(child.Name(), latestTag)
+
+		}
 		if err != nil {
 			return "", err
 		}

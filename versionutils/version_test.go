@@ -162,6 +162,22 @@ var _ = Describe("Version", func() {
 		)
 	})
 
+	Describe("IsGreaterThanTagWithLabelOrder", func() {
+		labelOrder := []string{"rc", "beta", "alpha", "frog"}
+		DescribeTable("it works", func(greater, lesser string, determinable, expected bool){
+			isGreater, isDeterminable, err := versionutils.IsGreaterThanTagWithLabelOrder(greater, lesser, labelOrder)
+			Expect(isGreater).To(Equal(expected))
+			Expect(isDeterminable).To(Equal(determinable))
+			Expect(err).To(BeNil())
+		},
+			Entry("rc1 is greater than beta1", "v1.0.0-rc1", "v1.0.0-beta1", true, true),
+			Entry("rc1 is greater than alpha1", "v1.0.0-rc1", "v1.0.0-alpha1", true, true),
+			Entry("beta1 is greater than alpha1", "v1.0.0-beta1", "v1.0.0-alpha1", true, true),
+			Entry("frog1 is not greater than beta1", "v1.0.0-frog1", "v1.0.0-beta1", true, false),
+			Entry("unknown label is indeterminable", "v1.0.0-cat1", "v1.0.0-beta1", false, false),
+			Entry("unknown label is indeterminable", "v1.0.0-beta1", "v1.0.0-dog1", false, false))
+	})
+
 	Context("GetVersionFromTag", func() {
 		It("works", func() {
 			Expect(versionutils.GetVersionFromTag("v0.1.2")).To(Equal("0.1.2"))

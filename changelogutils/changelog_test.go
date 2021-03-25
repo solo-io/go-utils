@@ -44,6 +44,8 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(getProposedTag("v1.0.0-beta1", tmpDir, "v1.0.0-beta2")).To(BeNil())
 			Expect(createSubdirs(changelogDir, "v1.0.0-rc1")).To(BeNil())
 			Expect(getProposedTag("v1.0.0-beta2", tmpDir, "v1.0.0-rc1")).To(BeNil())
+			Expect(createSubdirs(changelogDir, "v1.0.0-rc2")).To(BeNil())
+			Expect(getProposedTag("v1.0.0-rc1", tmpDir, "")).NotTo(BeNil())
 
 			// add a directory without 'v' prefix, which should be parsed as invalid
 			Expect(createSubdirs(changelogDir, "1.0.0-beta3")).To(BeNil())

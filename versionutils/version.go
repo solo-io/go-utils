@@ -133,6 +133,33 @@ func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 	return false, true
 }
 
+// In order, returns isGreaterThanOrEqualTo, isDeterminable
+// labelOrder specifies tie-break order for labels
+// e.g. labelOrder = [ beta, alpha, predev ], then 1.7.0-beta11 > 1.7.0-alpha5 > 1.7.0-predev9
+// isDeterminable is for incomporable versions because they have different labels not specified in labelOrder
+func (v Version) IsGreaterThanWithLabelOrder(lesser Version, labelOrder []string) (bool, bool) {
+
+	greaterThan, determinable := v.IsGreaterThan(lesser)
+	if determinable {
+		return greaterThan, determinable
+	}
+	vIndex, lIndex := -1, -1
+	for i, lbl := range labelOrder {
+		if lbl == v.Label {
+			vIndex = i
+		}
+		if lbl == lesser.Label {
+			lIndex = i
+		}
+	}
+	if vIndex == -1 || lIndex == -1 {
+		return false, false
+	}
+
+	return vIndex < lIndex, true
+
+}
+
 // for incomparable versions, default to alphanumeric sort on label
 // e.g. 1.0.0-foo1 > 1.0.0-bar2
 func (v Version) MustIsGreaterThanOrEqualTo(lesser Version) bool {
@@ -218,6 +245,19 @@ func IsGreaterThanTag(greaterTag, lesserTag string) (bool, bool, error) {
 		return false, false, err
 	}
 	return greaterVersion.IsGreaterThanPtr(lesserVersion)
+}
+
+func IsGreaterThanTagWithLabelOrder(greaterTag, lesserTag string, labelOrder []string) (bool, bool, error){
+	greaterVersion, err := ParseVersion(greaterTag)
+	if err != nil {
+		return false, false, err
+	}
+	lesserVersion, err := ParseVersion(lesserTag)
+	if err != nil {
+		return false, false, err
+	}
+	isGreaterThan, determinable := greaterVersion.IsGreaterThanWithLabelOrder(*lesserVersion, labelOrder)
+	return isGreaterThan, determinable, nil
 }
 
 func ParseVersion(tag string) (*Version, error) {
