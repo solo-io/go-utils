@@ -28,7 +28,7 @@ var _ = Describe("ChangelogTest", func() {
 			return actualErr
 		}
 
-		FIt("works", func() {
+		It("works", func() {
 			tmpDir := mustWriteTestDir()
 			defer os.RemoveAll(tmpDir)
 			changelogDir := filepath.Join(tmpDir, changelogutils.ChangelogDirectory)
