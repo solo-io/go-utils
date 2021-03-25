@@ -1,0 +1,6 @@
+changelog:
+  - type: NEW_FEATURE
+    description: >
+      Adds `labelOrder` to changelogValidator. If `labelOrder` exists, then changelogValidator
+      will now use the order specified in this array to tie-break tags with same versions but different labels.
+      e.g. if e.g. labelOrder = [ beta, alpha, predev ], then 1.7.0-beta11 > 1.7.0-alpha5 > 1.7.0-predev9.
