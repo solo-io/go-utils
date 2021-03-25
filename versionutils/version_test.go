@@ -162,7 +162,7 @@ var _ = Describe("Version", func() {
 		)
 	})
 
-	FDescribe("IsGreaterThanTagWithLabelOrder", func() {
+	Describe("IsGreaterThanTagWithLabelOrder", func() {
 		labelOrder := []string{"rc", "beta", "alpha", "frog"}
 		DescribeTable("it works", func(greater, lesser string, determinable, expected bool){
 			isGreater, isDeterminable, err := versionutils.IsGreaterThanTagWithLabelOrder(greater, lesser, labelOrder)
