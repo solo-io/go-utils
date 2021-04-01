@@ -21,9 +21,16 @@ func RegisterCommonFailHandlers() {
 func failHandler(message string, callerSkip ...int) {
 	fmt.Println("Fail handler msg", message)
 
-	for _, prefail := range preFails {
-		prefail()
+	for _, preFail := range preFails {
+		preFail()
 	}
-	Fail(message, callerSkip...)
 
+	// Account for this extra function in the call stack.
+	// Without this all failure messages will show the incorrect line number!
+	var shiftedCallerSkip []int
+	for _, i := range callerSkip {
+		shiftedCallerSkip = append(shiftedCallerSkip, i+1)
+	}
+
+	Fail(message, shiftedCallerSkip...)
 }
