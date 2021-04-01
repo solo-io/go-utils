@@ -1,0 +1,5 @@
+changelog:
+- type: FIX
+  description: >
+    Fix the `RegisterCommonFailHandlers` function so that our custom fail handlers report correct line numbers on failures.
+  issueLink: https://github.com/solo-io/go-utils/issues/443
