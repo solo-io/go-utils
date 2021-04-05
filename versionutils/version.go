@@ -337,3 +337,21 @@ func MatchesRegex(tag string) bool {
 func GetImageVersion(version *Version) string {
 	return version.String()[1:]
 }
+
+func Index(versions []Version, v Version) int {
+	for idx, ver := range versions {
+		if v == ver {
+			return idx
+		}
+	}
+	return -1
+}
+
+func IndexPtr(versions []*Version, v Version) int {
+	for idx, ver := range versions {
+		if v == *ver {
+			return idx
+		}
+	}
+	return -1
+}

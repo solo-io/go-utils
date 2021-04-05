@@ -46,6 +46,15 @@ func KeysAndValues(m map[string]string) ([]string, []string) {
 	return keys, values
 }
 
+func Keys(m map[string]interface{}) []string {
+	var keys []string
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func Unique(stringSlice []string) []string {
 	keys := make(map[string]bool)
 	list := []string{}

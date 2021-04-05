@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -135,6 +136,17 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 	return byt, err
 }
 
+func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error){
+	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
+		Page: 0,
+		PerPage: math.MaxInt64,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return releases, nil
+}
+
 func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
 	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{})
 	if err != nil {
@@ -159,10 +171,7 @@ func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, rep
 }
 
 func FindLatestReleaseBySemver(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
-	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
-		Page:    0,
-		PerPage: 10000000,
-	})
+	releases, err := GetAllRepoReleases(ctx, client, owner, repo)
 	if err != nil {
 		return "", err
 	}
