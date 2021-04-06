@@ -44,6 +44,14 @@ func (g *MinorReleaseGroupedChangelogGenerator) Generate(ctx context.Context) (s
 	return releaseData.String(), nil
 }
 
+func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context) (string, error) {
+	releaseData, err := g.GetReleaseData(ctx)
+	if err != nil {
+		return "", err
+	}
+	return releaseData.Dump()
+}
+
 func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Context) (*ReleaseData, error) {
 	releases, err := githubutils.GetAllRepoReleases(ctx, g.Client, g.RepoOwner, g.Repo)
 	if err != nil {

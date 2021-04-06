@@ -71,15 +71,31 @@ func NewMergedReleaseGenerator(client *github.Client, repoOwner, enterpriseRepo,
 }
 
 func (g *MergedReleaseGenerator) Generate(ctx context.Context) (string, error) {
+	enterpriseReleases, err := g.GetMergedEnterpriseRelease(ctx)
+	if err != nil {
+		return "", err
+	}
+	return enterpriseReleases.String(), nil
+}
+
+func (g *MergedReleaseGenerator) GenerateJSON(ctx context.Context) (string, error) {
+	enterpriseReleases, err := g.GetMergedEnterpriseRelease(ctx)
+	if err != nil {
+		return "", err
+	}
+	return enterpriseReleases.Dump()
+}
+
+func (g *MergedReleaseGenerator) GetMergedEnterpriseRelease(ctx context.Context) (*ReleaseData, error){
 	ossReleases, err := NewMinorReleaseGroupedChangelogGenerator(g.client, g.repoOwner, g.openSourceRepo).
 		GetReleaseData(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	enterpriseReleases, err := NewMinorReleaseGroupedChangelogGenerator(g.client, g.repoOwner, g.enterpriseRepo).
 		GetReleaseData(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// Get releases from max version to min version (e.g. 1.8.0, 1.8.0-beta2, 1.8.0-beta1...)
 	enterpriseSorted := enterpriseReleases.GetReleasesSorted()
@@ -117,8 +133,7 @@ func (g *MergedReleaseGenerator) Generate(ctx context.Context) (string, error) {
 			minorReleaseChangelogNotes.Add(finalChangelogNotes)
 		}
 	}
-	res, err := enterpriseReleases.Dump()
-	return res, err
+	return enterpriseReleases, nil
 }
 
 func GetOtherRepoDepsBetweenVersions(otherRepoReleasesSorted []Version, earlierVersion, laterVersion *Version) []Version {
