@@ -225,8 +225,6 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewChangelogNotes(r *github.Repo
 	}, nil
 }
 
-//changelogTypes := []string{"New Features", "Fixes", "Dependency Bumps", "Helm Changes"}
-
 func (c *ChangelogNotes) String() string {
 	var b strings.Builder
 	var keys []string
@@ -253,7 +251,6 @@ func (c *ChangelogNotes) Dump() (string, error) {
 	res, err := json.Marshal(c)
 	r := strings.NewReplacer("\\r", "", "\\n", "")
 	return r.Replace(string(res)), err
-	//return string(res), err
 }
 
 func (c *ChangelogNotes) Add(other *ChangelogNotes) {
