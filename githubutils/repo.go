@@ -34,6 +34,8 @@ const (
 
 	CONTENT_TYPE_FILE      = "file"
 	CONTENT_TYPE_DIRECTORY = "dir"
+
+	MAX_GITHUB_RELEASES_PER_PAGE = 100
 )
 
 func GetGithubToken() (string, error) {
@@ -137,14 +139,28 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 }
 
 func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error){
-	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
-		Page: 0,
-		PerPage: math.MaxInt64,
-	})
-	if err != nil {
-		return nil, err
+	return GetAllRepoReleasesWithMax(ctx, client, owner, repo, math.MaxInt32)
+}
+
+func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxReleases int) ([]*github.RepositoryRelease, error){
+	var allReleases []*github.RepositoryRelease
+	for i := 0 ; len(allReleases) < maxReleases; i+=1{
+		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
+			Page:    i,
+			PerPage: MAX_GITHUB_RELEASES_PER_PAGE,
+		})
+		if err != nil {
+			return nil, err
+		}
+		allReleases = append(allReleases, releases...)
+		if len(releases) <  MAX_GITHUB_RELEASES_PER_PAGE{
+			break
+		}
 	}
-	return releases, nil
+	if len(allReleases) > maxReleases{
+		allReleases = allReleases[:maxReleases]
+	}
+	return allReleases[:maxReleases], nil
 }
 
 func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.Client, owner, repo string) (string, error) {

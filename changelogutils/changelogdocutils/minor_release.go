@@ -79,7 +79,8 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 	for _, release := range releases {
 		tag, err := ParseVersion(release.GetTagName())
 		if err != nil {
-			return nil, UnableToParseVersionError(err, release.GetTagName())
+			// Release name doesn't follow proper semantic versioning, skip
+			continue
 		}
 
 		releaseVersion := GetMajorAndMinorVersionPtr(tag)
@@ -349,6 +350,7 @@ func ParseReleaseBody(body string) ([]*Note, map[string][]*Note, error) {
 			{
 				// Only add release enterpriseNotes if we are under a current header
 				for child := n.FirstChild(); child != nil; child = child.NextSibling() {
+					if child.FirstChild().Lines().Len() > 0 {
 					v := child.FirstChild().Lines().At(0)
 					releaseNote := string(v.Value(buf))
 					if currentHeader != "" {
@@ -357,6 +359,7 @@ func ParseReleaseBody(body string) ([]*Note, map[string][]*Note, error) {
 						//any extra text that may be in a list but not under a heading
 						extraNotes = append(extraNotes, &Note{Note: releaseNote})
 					}
+				}
 				}
 			}
 		default:
