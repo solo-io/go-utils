@@ -21,12 +21,12 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 	gen := changelogdocutils.NewMergedReleaseGenerator(client, "solo-io", "solo-projects", "gloo")
-	changelog, err := gen.Generate(ctx)
+	changelog, err := gen.GenerateJSON(ctx)
 	if err != nil {
 		fmt.Println("error", err.Error())
 		os.Exit(1)
 	}
-	f, err := os.Create("./tmp2.md")
+	f, err := os.Create("./tmp2.json")
 	if err != nil {
 		fmt.Println(err.Error())
 	}

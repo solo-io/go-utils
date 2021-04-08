@@ -64,6 +64,9 @@ func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Conte
 	return releaseData, nil
 }
 
+// Release Data is mapped such that it easy to group by minor release
+// e.g. Releases will be a map of v1.2.0 -> VersionData, v1.3.0 -> VersionData
+// VersionData will contain information for individual Versions
 type ReleaseData struct {
 	Releases  map[Version]*VersionData
 	generator *MinorReleaseGroupedChangelogGenerator
@@ -79,8 +82,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 			return nil, UnableToParseVersionError(err, release.GetTagName())
 		}
 
-
-		releaseVersion := &Version{Major: tag.Major, Minor: tag.Minor}
+		releaseVersion := GetMajorAndMinorVersionPtr(tag)
 		if r.Releases[*releaseVersion] == nil {
 			if err != nil {
 				return nil, err
@@ -88,6 +90,9 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 			r.Releases[*releaseVersion] = g.NewVersionData()
 		}
 		notes, err := g.NewChangelogNotes(release)
+		if err != nil {
+			return nil, err
+		}
 		currRelease := r.Releases[*releaseVersion]
 		currRelease.ChangelogNotes[*tag] = notes
 	}
@@ -109,7 +114,7 @@ func (r *ReleaseData) GetChangelogNotes(v Version) *ChangelogNotes {
 	if r == nil || r.Releases == nil {
 		return nil
 	}
-	release, ok := r.Releases[Version{Major: v.Major, Minor: v.Minor}]
+	release, ok := r.Releases[GetMajorAndMinorVersion(&v)]
 	if !ok {
 		return nil
 	}
@@ -158,6 +163,9 @@ func (r *ReleaseData) Dump() (string, error) {
 	return b.String(), nil
 }
 
+// Contains Changelog enterpriseNotes for Individual openSourceReleases
+// ChangelogNotes is a map of individiual openSourceReleases to enterpriseNotes
+// e.g. v1.2.5-beta3 -> ChangelogNotes, v1.4.0 -> ChangelogNotes
 type VersionData struct {
 	ChangelogNotes map[Version]*ChangelogNotes
 	generator      *MinorReleaseGroupedChangelogGenerator
@@ -210,14 +218,14 @@ func (v *VersionData) Dump() (string, error) {
 }
 
 type ChangelogNotes struct {
-	Categories   map[string][]string
-	ExtraNotes   []string
+	Categories   map[string][]*Note
+	ExtraNotes   []*Note
 	HeaderSuffix string
-	CreatedAt int64
+	CreatedAt    int64
 }
 
 func NewChangelogNotes() *ChangelogNotes {
-	return &ChangelogNotes{Categories: make(map[string][]string)}
+	return &ChangelogNotes{Categories: make(map[string][]*Note)}
 }
 
 func (g *MinorReleaseGroupedChangelogGenerator) NewChangelogNotes(r *github.RepositoryRelease) (*ChangelogNotes, error) {
@@ -229,7 +237,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewChangelogNotes(r *github.Repo
 	return &ChangelogNotes{
 		Categories: releaseNotes,
 		ExtraNotes: extraNotes,
-		CreatedAt: r.GetCreatedAt().Unix(),
+		CreatedAt:  r.GetCreatedAt().Unix(),
 	}, nil
 }
 
@@ -243,13 +251,13 @@ func (c *ChangelogNotes) String() string {
 	for _, header := range keys {
 		b.WriteString(H5(header))
 		for _, note := range c.Categories[header] {
-			b.WriteString(UnorderedListItem(note))
+			b.WriteString(UnorderedListItem(note.Note))
 		}
 	}
 	if len(c.ExtraNotes) != 0 {
 		b.WriteString(H5("Notes"))
 		for _, note := range c.ExtraNotes {
-			b.WriteString(UnorderedListItem(note))
+			b.WriteString(UnorderedListItem(note.Note))
 		}
 	}
 	return b.String()
@@ -262,33 +270,60 @@ func (c *ChangelogNotes) Dump() (string, error) {
 }
 
 func (c *ChangelogNotes) Add(other *ChangelogNotes) {
-	c.AddWithPrefix(other, "")
-}
-
-func (c *ChangelogNotes) AddWithPrefix(other *ChangelogNotes, prefix string) {
 	for header, notes := range other.Categories {
 		for _, note := range notes {
-			c.Categories[header] = append(c.Categories[header], prefix+note)
+			c.Categories[header] = append(c.Categories[header], note)
 		}
 	}
 }
 
-func (c *ChangelogNotes) AddWithPrefixIncludeExtraNotes(other *ChangelogNotes, prefix string) {
-	c.AddWithPrefix(other, prefix)
-	for _, note := range other.ExtraNotes {
-		c.ExtraNotes = append(c.ExtraNotes, prefix+note)
+func (c *ChangelogNotes) AddWithDependentVersion(other *ChangelogNotes, depVersion Version) {
+	for header, notes := range other.Categories {
+		for _, note := range notes {
+			c.Categories[header] = append(c.Categories[header], &Note{note.Note, &depVersion})
+		}
 	}
 }
 
-func ParseReleaseBody(body string) ([]string, map[string][]string, error) {
+func (c *ChangelogNotes) AddWithDependentVersionIncludeExtraNotes(other *ChangelogNotes, depVersion Version) {
+	c.AddWithDependentVersion(other, depVersion)
+	for _, note := range other.ExtraNotes {
+		c.ExtraNotes = append(c.ExtraNotes, &Note{note.Note, &depVersion})
+	}
+}
+
+type Note struct {
+	Note string
+	// Indicates which version of the dependent repo that this note is from
+	FromDependentVersion *Version
+}
+
+func (c *Note) MarshalJSON() ([]byte, error){
+	note, err := json.Marshal(c.Note)
+	if err != nil {
+		return nil, err
+	}
+	str := fmt.Sprintf(`{"Note": %s`, note)
+	if c.FromDependentVersion != nil {
+		version, err := json.Marshal(c.FromDependentVersion.String())
+		if err != nil {
+			return nil, err
+		}
+		str += fmt.Sprintf(`, "FromDependentVersion":%s`, version)
+	}
+	str += "}"
+	return []byte(str), nil
+}
+
+func ParseReleaseBody(body string) ([]*Note, map[string][]*Note, error) {
 	var (
 		currentHeader string
-		extraNotes    []string
+		extraNotes    []*Note
 	)
-	releaseNotes := make(map[string][]string)
+	releaseNotes := make(map[string][]*Note)
 	buf := []byte(body)
 	root := goldmark.DefaultParser().Parse(text.NewReader(buf))
-	// Translate list of markdown "blocks" to a map of headers to notes
+	// Translate list of markdown "blocks" to a map of headers to enterpriseNotes
 	for n := root.FirstChild(); n != nil; n = n.NextSibling() {
 		switch typedNode := n.(type) {
 		case *ast.Paragraph:
@@ -304,29 +339,29 @@ func ParseReleaseBody(body string) ([]string, map[string][]string, error) {
 				v := typedNode.Lines().At(0)
 				note := string(v.Value(buf))
 				if currentHeader != "" {
-					releaseNotes[currentHeader] = append(releaseNotes[currentHeader], note)
+					releaseNotes[currentHeader] = append(releaseNotes[currentHeader], &Note{Note: note})
 				} else {
-					//any extra text e.g. "This release build has failed", only used for enterprise release notes
-					extraNotes = append(extraNotes, note)
+					//any extra text e.g. "This release build has failed", only used for enterprise release enterpriseNotes
+					extraNotes = append(extraNotes, &Note{Note: note})
 				}
 			}
 		case *ast.List:
 			{
-				// Only add release notes if we are under a current header
+				// Only add release enterpriseNotes if we are under a current header
 				for child := n.FirstChild(); child != nil; child = child.NextSibling() {
 					v := child.FirstChild().Lines().At(0)
 					releaseNote := string(v.Value(buf))
 					if currentHeader != "" {
-						releaseNotes[currentHeader] = append(releaseNotes[currentHeader], releaseNote)
+						releaseNotes[currentHeader] = append(releaseNotes[currentHeader], &Note{Note: releaseNote})
 					} else {
 						//any extra text that may be in a list but not under a heading
-						extraNotes = append(extraNotes, releaseNote)
+						extraNotes = append(extraNotes, &Note{Note: releaseNote})
 					}
 				}
 			}
 		default:
 			{
-				return nil, nil, fmt.Errorf("unable to parse %s", n.Text(buf))
+				continue
 			}
 		}
 	}
@@ -343,4 +378,12 @@ func SortReleaseVersions(versions []Version) {
 func getGithubReleaseMarkdownLink(tag, repoOwner, repo string) string {
 	link := fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", repoOwner, repo, tag)
 	return Link(tag, link)
+}
+
+func GetMajorAndMinorVersion(v *Version) Version {
+	return Version{Major: v.Major, Minor: v.Minor}
+}
+
+func GetMajorAndMinorVersionPtr(v *Version) *Version {
+	return &Version{Major: v.Major, Minor: v.Minor}
 }
