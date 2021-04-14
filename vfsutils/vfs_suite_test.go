@@ -1,6 +1,7 @@
 package vfsutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestVfsutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Vfsutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Vfsutils Suite", []Reporter{junitReporter})
 }

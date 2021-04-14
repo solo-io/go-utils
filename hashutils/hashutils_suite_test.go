@@ -1,6 +1,7 @@
 package hashutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestHashutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Hashutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Hashutils Suite", []Reporter{junitReporter})
 }

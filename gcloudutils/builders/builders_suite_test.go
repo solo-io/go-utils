@@ -1,6 +1,7 @@
 package builders
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -14,5 +15,6 @@ var (
 func TestBuilders(t *testing.T) {
 	T = t
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Builders Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Builders Suite", []Reporter{junitReporter})
 }

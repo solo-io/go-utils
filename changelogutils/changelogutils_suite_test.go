@@ -1,6 +1,7 @@
 package changelogutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	"github.com/solo-io/go-utils/testutils"
@@ -17,7 +18,8 @@ func TestChangelogUtils(t *testing.T) {
 			testutils.PrintTrimmedStack()
 		})
 	testutils.RegisterCommonFailHandlers()
-	RunSpecs(t, "ChangelogUtils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "ChangelogUtils Suite", []Reporter{junitReporter})
 }
 
 var test *testing.T

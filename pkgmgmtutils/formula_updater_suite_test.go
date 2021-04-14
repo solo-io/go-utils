@@ -1,6 +1,7 @@
 package pkgmgmtutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestFormulaUpdater(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "FormulaUpdater Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "FormulaUpdater Suite", []Reporter{junitReporter})
 }

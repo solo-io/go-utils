@@ -1,6 +1,7 @@
 package versionutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	"github.com/solo-io/go-utils/testutils"
@@ -16,5 +17,6 @@ func TestVersionUtils(t *testing.T) {
 			testutils.PrintTrimmedStack()
 		})
 	testutils.RegisterCommonFailHandlers()
-	RunSpecs(t, "Versionutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Versionutils Suite", []Reporter{junitReporter})
 }

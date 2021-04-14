@@ -1,6 +1,7 @@
 package surveyutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestSurveyutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Surveyutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Surveyutils Suite", []Reporter{junitReporter})
 }

@@ -1,6 +1,7 @@
 package gcloudutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestCloudbuild(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Cloudbuild Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Cloudbuild Suite", []Reporter{junitReporter})
 }

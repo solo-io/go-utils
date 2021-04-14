@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestChecks(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Checks Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Checks Suite", []Reporter{junitReporter})
 }

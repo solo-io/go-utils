@@ -1,6 +1,7 @@
 package clicore
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -17,5 +18,6 @@ func TestCliCore(t *testing.T) {
 	testutils.RegisterCommonFailHandlers()
 	RegisterFailHandler(Fail)
 	testutils.SetupLog()
-	RunSpecs(t, "Clicore Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Clicore Suite", []Reporter{junitReporter})
 }

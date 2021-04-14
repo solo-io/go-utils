@@ -1,6 +1,7 @@
 package testutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestTestutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Testutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Testutils Suite", []Reporter{junitReporter})
 }

@@ -1,6 +1,7 @@
 package loggingutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestLoggingutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Loggingutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Loggingutils Suite", []Reporter{junitReporter})
 }

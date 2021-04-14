@@ -1,6 +1,7 @@
 package slackutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestSlackutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Slackutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Slackutils Suite", []Reporter{junitReporter})
 }

@@ -1,6 +1,7 @@
 package tarutils_test
 
 import (
+	"github.com/onsi/ginkgo/reporters"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -9,5 +10,6 @@ import (
 
 func TestTarutils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Tarutils Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Tarutils Suite", []Reporter{junitReporter})
 }
