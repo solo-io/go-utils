@@ -46,7 +46,7 @@ jobs:
         ginkgo  -r   -p   -failFast   -randomizeSuites   -randomizeAllSpecs   -skipPackage=./installutils/kubeinstall,./debugutils/test
     - uses: testspace-com/setup-testspace@v1
       with:
-        domain: solo.io
+        domain: solo-io.testspace.com
     - name: Push result to Testspace server
       run: |
         testspace */junit.xml
