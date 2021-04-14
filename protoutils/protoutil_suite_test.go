@@ -1,8 +1,9 @@
 package protoutils
 
 import (
-	"github.com/onsi/ginkgo/reporters"
 	"testing"
+
+	"github.com/onsi/ginkgo/reporters"
 
 	"github.com/solo-io/go-utils/log"
 

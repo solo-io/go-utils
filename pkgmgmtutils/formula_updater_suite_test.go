@@ -1,8 +1,9 @@
 package pkgmgmtutils_test
 
 import (
-	"github.com/onsi/ginkgo/reporters"
 	"testing"
+
+	"github.com/onsi/ginkgo/reporters"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

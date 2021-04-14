@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"context"
+
 	"github.com/google/go-github/v32/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
