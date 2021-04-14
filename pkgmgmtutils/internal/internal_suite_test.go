@@ -3,11 +3,14 @@ package internal_test
 import (
 	"testing"
 
+	"github.com/onsi/ginkgo/reporters"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 func TestInternal(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Internal Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Internal Suite", []Reporter{junitReporter})
 }

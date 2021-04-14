@@ -247,7 +247,7 @@ func IsGreaterThanTag(greaterTag, lesserTag string) (bool, bool, error) {
 	return greaterVersion.IsGreaterThanPtr(lesserVersion)
 }
 
-func IsGreaterThanTagWithLabelOrder(greaterTag, lesserTag string, labelOrder []string) (bool, bool, error){
+func IsGreaterThanTagWithLabelOrder(greaterTag, lesserTag string, labelOrder []string) (bool, bool, error) {
 	greaterVersion, err := ParseVersion(greaterTag)
 	if err != nil {
 		return false, false, err

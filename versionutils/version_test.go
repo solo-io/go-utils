@@ -164,7 +164,7 @@ var _ = Describe("Version", func() {
 
 	Describe("IsGreaterThanTagWithLabelOrder", func() {
 		labelOrder := []string{"rc", "beta", "alpha", "frog"}
-		DescribeTable("it works", func(greater, lesser string, determinable, expected bool){
+		DescribeTable("it works", func(greater, lesser string, determinable, expected bool) {
 			isGreater, isDeterminable, err := versionutils.IsGreaterThanTagWithLabelOrder(greater, lesser, labelOrder)
 			Expect(isGreater).To(Equal(expected))
 			Expect(isDeterminable).To(Equal(determinable))
