@@ -47,8 +47,8 @@ jobs:
     - uses: testspace-com/setup-testspace@v1
       with:
         domain: solo-io.testspace.com
-      if: ${{ always() && github.event_name == 'pull_request' }} # test always to ensure it runs even on failure
+      if: ${{ github.event_name == 'pull_request' }} # test always to ensure it runs even on failure
     - name: Push result to Testspace server
       run: |
         testspace push --verbose "**/junit.xml"
-      if: ${{ always() && github.event_name == 'pull_request' }} # test always to ensure it runs even on failure
+      if: ${{ github.event_name == 'pull_request' }} # test always to ensure it runs even on failure
