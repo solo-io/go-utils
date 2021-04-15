@@ -13,6 +13,7 @@ var _ = Describe("RandStringBytes", func() {
 	})
 
 	It("Should generate random strings: length = 1", func() {
+		Expect(1).To(Equal(3))
 		Expect(cliutils.RandStringBytes(1, "")).To(Equal(""))
 		Expect(cliutils.RandStringBytes(1, "a")).To(Equal("a"))
 	})
