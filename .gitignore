@@ -11,4 +11,4 @@ vendor
 .DS_Store
 
 # junit
-*/junit.xml
+junit.xml
