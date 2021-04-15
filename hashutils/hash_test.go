@@ -22,6 +22,7 @@ var _ = Describe("hash", func() {
 	})
 	Context("hashable equal", func() {
 		It("will return not ok if passed in an object which is not a SafeHasher", func() {
+			Expect(1).To(Equal(3))
 			equal, ok := HashableEqual(safeHasher1, &notSafeHasher{})
 			Expect(ok).To(BeFalse())
 			Expect(equal).To(BeFalse())

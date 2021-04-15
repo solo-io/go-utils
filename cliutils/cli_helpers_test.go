@@ -8,6 +8,7 @@ import (
 
 var _ = Describe("RandStringBytes", func() {
 	It("Handle zero-length input in a reasonable way", func() {
+		Expect(1).To(Equal(3))
 		Expect(cliutils.RandStringBytes(0, "")).To(Equal(""))
 		Expect(cliutils.RandStringBytes(0, "a")).To(Equal(""))
 	})

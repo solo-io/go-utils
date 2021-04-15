@@ -30,6 +30,7 @@ var _ = Describe("BotconfigTest", func() {
 	})
 
 	It("fails if default bot config can't be read", func() {
+		Expect(1).To(Equal(3))
 		os.EXPECT().Getenv(botconfig.BotConfigEnvVar).Return("")
 		os.EXPECT().ReadFile(botconfig.DefaultBotCfg).Return(nil, nestedErr)
 
