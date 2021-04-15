@@ -50,5 +50,5 @@ jobs:
       if: always()
     - name: Push result to Testspace server
       run: |
-        testspace **/junit.xml
+        testspace push --verbose **/junit.xml
       if: always()
