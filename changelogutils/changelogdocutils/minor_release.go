@@ -11,6 +11,7 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"
+	"math"
 	"sort"
 	"strings"
 )
@@ -22,14 +23,23 @@ func UnableToParseVersionError(err error, versionTag string) error {
 	return errors.Wrapf(err, "Unable to parse version tag %s", versionTag)
 }
 
+type MinorReleaseOpts struct {
+	MaxVersions int
+}
+
 type MinorReleaseGroupedChangelogGenerator struct {
 	Client    *github.Client
 	RepoOwner string
 	Repo      string
+	opts      MinorReleaseOpts
 }
 
-func NewMinorReleaseGroupedChangelogGenerator(client *github.Client, repoOwner, repo string) *MinorReleaseGroupedChangelogGenerator {
+func NewMinorReleaseGroupedChangelogGenerator(opts MinorReleaseOpts, client *github.Client, repoOwner, repo string) *MinorReleaseGroupedChangelogGenerator {
+	if opts.MaxVersions == 0{
+		opts.MaxVersions = math.MaxInt64
+	}
 	return &MinorReleaseGroupedChangelogGenerator{
+		opts:      opts,
 		Client:    client,
 		RepoOwner: repoOwner,
 		Repo:      repo,
@@ -53,7 +63,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context
 }
 
 func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Context) (*ReleaseData, error) {
-	releases, err := githubutils.GetAllRepoReleases(ctx, g.Client, g.RepoOwner, g.Repo)
+	releases, err := githubutils.GetAllRepoReleasesWithMax(ctx, g.Client, g.RepoOwner, g.Repo, g.opts.MaxVersions)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +309,7 @@ type Note struct {
 	FromDependentVersion *Version
 }
 
-func (c *Note) MarshalJSON() ([]byte, error){
+func (c *Note) MarshalJSON() ([]byte, error) {
 	note, err := json.Marshal(c.Note)
 	if err != nil {
 		return nil, err
@@ -351,15 +361,15 @@ func ParseReleaseBody(body string) ([]*Note, map[string][]*Note, error) {
 				// Only add release enterpriseNotes if we are under a current header
 				for child := n.FirstChild(); child != nil; child = child.NextSibling() {
 					if child.FirstChild().Lines().Len() > 0 {
-					v := child.FirstChild().Lines().At(0)
-					releaseNote := string(v.Value(buf))
-					if currentHeader != "" {
-						releaseNotes[currentHeader] = append(releaseNotes[currentHeader], &Note{Note: releaseNote})
-					} else {
-						//any extra text that may be in a list but not under a heading
-						extraNotes = append(extraNotes, &Note{Note: releaseNote})
+						v := child.FirstChild().Lines().At(0)
+						releaseNote := string(v.Value(buf))
+						if currentHeader != "" {
+							releaseNotes[currentHeader] = append(releaseNotes[currentHeader], &Note{Note: releaseNote})
+						} else {
+							//any extra text that may be in a list but not under a heading
+							extraNotes = append(extraNotes, &Note{Note: releaseNote})
+						}
 					}
-				}
 				}
 			}
 		default:

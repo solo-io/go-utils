@@ -160,7 +160,7 @@ func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner
 	if len(allReleases) > maxReleases{
 		allReleases = allReleases[:maxReleases]
 	}
-	return allReleases[:maxReleases], nil
+	return allReleases, nil
 }
 
 func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
