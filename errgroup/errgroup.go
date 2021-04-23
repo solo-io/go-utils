@@ -19,7 +19,7 @@ type Group struct {
 	wg sync.WaitGroup
 
 	errOnce sync.Once
-	errs    error // appended with each erro
+	errs    error // appended with each error
 	errLock sync.RWMutex
 }
 
@@ -34,7 +34,7 @@ func WithContext(ctx context.Context) (*Group, context.Context) {
 }
 
 // Wait blocks until all function calls from the Go method have returned, then
-// returns the first non-nil error (if any) from them.
+// returns an error representing all errors encountered from any goroutines in the group.
 func (g *Group) Wait() error {
 	g.wg.Wait()
 	if g.cancel != nil {
