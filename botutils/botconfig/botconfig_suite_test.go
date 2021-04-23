@@ -3,6 +3,8 @@ package botconfig_test
 import (
 	"testing"
 
+	"github.com/onsi/ginkgo/reporters"
+
 	"github.com/solo-io/go-utils/testutils"
 
 	. "github.com/onsi/ginkgo"
@@ -17,7 +19,8 @@ func TestBotconfig(t *testing.T) {
 			testutils.PrintTrimmedStack()
 		})
 	testutils.RegisterCommonFailHandlers()
-	RunSpecs(t, "Botconfig Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Botconfig Suite", []Reporter{junitReporter})
 }
 
 var test *testing.T

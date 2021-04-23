@@ -3,6 +3,8 @@ package builders
 import (
 	"testing"
 
+	"github.com/onsi/ginkgo/reporters"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -14,5 +16,6 @@ var (
 func TestBuilders(t *testing.T) {
 	T = t
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Builders Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Builders Suite", []Reporter{junitReporter})
 }

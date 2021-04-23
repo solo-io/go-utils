@@ -9,3 +9,6 @@ vendor
 
 # mac files
 .DS_Store
+
+# junit
+junit.xml

@@ -76,9 +76,9 @@ type TagComparator func(greaterThanTag, lessThanTag string) (bool, bool, error)
 
 func NewChangelogValidatorWithLabelOrder(client githubutils.RepoClient, code vfsutils.MountedRepo, base string, labelOrder []string) ChangelogValidator {
 	return &changelogValidator{
-		client: client,
-		code:   code,
-		base:   base,
+		client:     client,
+		code:       code,
+		base:       base,
 		labelOrder: labelOrder,
 	}
 }
@@ -172,7 +172,7 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		if len(c.labelOrder) > 0 {
 			greaterThan, determinable, err = versionutils.IsGreaterThanTagWithLabelOrder(child.Name(), latestTag, c.labelOrder)
 
-		}else{
+		} else {
 			greaterThan, determinable, err = versionutils.IsGreaterThanTag(child.Name(), latestTag)
 
 		}
