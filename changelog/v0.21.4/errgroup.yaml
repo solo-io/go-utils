@@ -1,0 +1,5 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Implement error group which does not squelch errors.
+    issueLink: https://github.com/solo-io/gloo-mesh/issues/1468
+    resolvesIssue: false
