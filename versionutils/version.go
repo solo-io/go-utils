@@ -1,6 +1,7 @@
 package versionutils
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -52,6 +53,10 @@ func (v *Version) String() string {
 		return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 	}
 	return fmt.Sprintf("v%d.%d.%d-%s%d", v.Major, v.Minor, v.Patch, v.Label, v.LabelVersion)
+}
+
+func (v *Version) MarshalJSON() ([]byte, error){
+	return json.Marshal(v.String())
 }
 
 // In order, returns isGreaterThanOrEqualTo, isDeterminable, err

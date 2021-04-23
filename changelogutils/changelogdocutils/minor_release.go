@@ -23,47 +23,39 @@ func UnableToParseVersionError(err error, versionTag string) error {
 	return errors.Wrapf(err, "Unable to parse version tag %s", versionTag)
 }
 
-type MinorReleaseOpts struct {
-	MaxVersions int
-}
-
 type MinorReleaseGroupedChangelogGenerator struct {
 	Client    *github.Client
-	RepoOwner string
-	Repo      string
-	opts      MinorReleaseOpts
+	opts      Options
 }
 
-func NewMinorReleaseGroupedChangelogGenerator(opts MinorReleaseOpts, client *github.Client, repoOwner, repo string) *MinorReleaseGroupedChangelogGenerator {
-	if opts.MaxVersions == 0{
-		opts.MaxVersions = math.MaxInt64
+func NewMinorReleaseGroupedChangelogGenerator(opts Options, client *github.Client) *MinorReleaseGroupedChangelogGenerator {
+	if opts.NumVersions == 0{
+		opts.NumVersions = math.MaxInt64
 	}
 	return &MinorReleaseGroupedChangelogGenerator{
 		opts:      opts,
 		Client:    client,
-		RepoOwner: repoOwner,
-		Repo:      repo,
 	}
-}
-
-func (g *MinorReleaseGroupedChangelogGenerator) Generate(ctx context.Context) (string, error) {
-	releaseData, err := g.GetReleaseData(ctx)
-	if err != nil {
-		return "", err
-	}
-	return releaseData.String(), nil
 }
 
 func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context) (string, error) {
+	var err error
 	releaseData, err := g.GetReleaseData(ctx)
 	if err != nil {
 		return "", err
 	}
-	return releaseData.Dump()
+	var out struct {
+		Opts        Options
+		ReleaseData *ReleaseData
+	}
+	out.Opts = g.opts
+	out.ReleaseData = releaseData
+	res, err := json.Marshal(out)
+	return string(res), err
 }
 
 func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Context) (*ReleaseData, error) {
-	releases, err := githubutils.GetAllRepoReleasesWithMax(ctx, g.Client, g.RepoOwner, g.Repo, g.opts.MaxVersions)
+	releases, err := githubutils.GetAllRepoReleasesWithMax(ctx, g.Client, g.opts.RepoOwner, g.opts.Repo, g.opts.NumVersions)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +74,21 @@ type ReleaseData struct {
 	generator *MinorReleaseGroupedChangelogGenerator
 }
 
+// Contains Changelog enterpriseNotes for Individual openSourceReleases
+// ChangelogNotes is a map of individiual openSourceReleases to enterpriseNotes
+// e.g. v1.2.5-beta3 -> ChangelogNotes, v1.4.0 -> ChangelogNotes
+type VersionData struct {
+	ChangelogNotes map[Version]*ChangelogNotes
+	generator      *MinorReleaseGroupedChangelogGenerator
+}
+
+type ChangelogNotes struct {
+	Categories   map[string][]*Note
+	ExtraNotes   []*Note
+	HeaderSuffix string
+	CreatedAt    int64
+}
+
 func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*github.RepositoryRelease) (*ReleaseData, error) {
 	r := &ReleaseData{
 		Releases: make(map[Version]*VersionData),
@@ -90,6 +97,9 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 		tag, err := ParseVersion(release.GetTagName())
 		if err != nil {
 			// Release name doesn't follow proper semantic versioning, skip
+			continue
+		}
+		if !g.isBetweenMinAndMaxVersions(*tag){
 			continue
 		}
 
@@ -108,6 +118,17 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 		currRelease.ChangelogNotes[*tag] = notes
 	}
 	return r, nil
+}
+
+func (g *MinorReleaseGroupedChangelogGenerator) isBetweenMinAndMaxVersions(version Version) bool{
+	res := true
+	if g.opts.MinVersion != nil{
+		res = version.MustIsGreaterThanOrEqualTo(*g.opts.MinVersion)
+	}
+	if g.opts.MaxVersion != nil {
+		res = res && !version.MustIsGreaterThanOrEqualTo(*g.opts.MaxVersion)
+	}
+	return res
 }
 
 func (r *ReleaseData) GetReleasesSorted() []Version {
@@ -136,21 +157,7 @@ func (r *ReleaseData) GetChangelogNotes(v Version) *ChangelogNotes {
 
 }
 
-func (r *ReleaseData) String() string {
-	var versions []Version
-	var b strings.Builder
-	for ver := range r.Releases {
-		versions = append(versions, ver)
-	}
-	SortReleaseVersions(versions)
-	for _, ver := range versions {
-		b.WriteString(H3(ver.String()))
-		b.WriteString(r.Releases[ver].String())
-	}
-	return b.String()
-}
-
-func (r *ReleaseData) Dump() (string, error) {
+func (r *ReleaseData) MarshalJSON() ([]byte, error) {
 	var versions []Version
 	var b strings.Builder
 	for ver := range r.Releases {
@@ -160,26 +167,18 @@ func (r *ReleaseData) Dump() (string, error) {
 	b.WriteRune('[')
 	for i, ver := range versions {
 		b.WriteString(fmt.Sprintf("{\"%s\":", ver.String()))
-		cNotes, err := r.Releases[ver].Dump()
+		cNotes, err := json.Marshal(r.Releases[ver])
 		if err != nil {
-			return "", nil
+			return nil, nil
 		}
-		b.WriteString(cNotes)
+		b.Write(cNotes)
 		b.WriteRune('}')
 		if i != len(versions)-1 {
 			b.WriteRune(',')
 		}
 	}
 	b.WriteRune(']')
-	return b.String(), nil
-}
-
-// Contains Changelog enterpriseNotes for Individual openSourceReleases
-// ChangelogNotes is a map of individiual openSourceReleases to enterpriseNotes
-// e.g. v1.2.5-beta3 -> ChangelogNotes, v1.4.0 -> ChangelogNotes
-type VersionData struct {
-	ChangelogNotes map[Version]*ChangelogNotes
-	generator      *MinorReleaseGroupedChangelogGenerator
+	return []byte(b.String()), nil
 }
 
 func (g *MinorReleaseGroupedChangelogGenerator) NewVersionData() *VersionData {
@@ -189,22 +188,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewVersionData() *VersionData {
 	}
 }
 
-func (v *VersionData) String() string {
-	var versions []Version
-	var b strings.Builder
-	for ver := range v.ChangelogNotes {
-		versions = append(versions, ver)
-	}
-	SortReleaseVersions(versions)
-	for _, ver := range versions {
-		changelogNotes := v.ChangelogNotes[ver]
-		b.WriteString(H4(getGithubReleaseMarkdownLink(ver.String(), v.generator.RepoOwner, v.generator.Repo) + changelogNotes.HeaderSuffix))
-		b.WriteString(changelogNotes.String())
-	}
-	return b.String()
-}
-
-func (v *VersionData) Dump() (string, error) {
+func (v *VersionData) MarshalJSON() ([]byte, error) {
 	var versions []Version
 	var b strings.Builder
 	for ver := range v.ChangelogNotes {
@@ -214,25 +198,18 @@ func (v *VersionData) Dump() (string, error) {
 	b.WriteRune('[')
 	for i, ver := range versions {
 		b.WriteString(fmt.Sprintf("{\"%s\":", ver.String()))
-		cNotes, err := v.ChangelogNotes[ver].Dump()
+		cNotes, err := json.Marshal(v.ChangelogNotes[ver])
 		if err != nil {
-			return "", nil
+			return nil, nil
 		}
-		b.WriteString(cNotes)
+		b.Write(cNotes)
 		b.WriteRune('}')
 		if i != len(versions)-1 {
 			b.WriteRune(',')
 		}
 	}
 	b.WriteRune(']')
-	return b.String(), nil
-}
-
-type ChangelogNotes struct {
-	Categories   map[string][]*Note
-	ExtraNotes   []*Note
-	HeaderSuffix string
-	CreatedAt    int64
+	return []byte(b.String()), nil
 }
 
 func NewChangelogNotes() *ChangelogNotes {
@@ -250,28 +227,6 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewChangelogNotes(r *github.Repo
 		ExtraNotes: extraNotes,
 		CreatedAt:  r.GetCreatedAt().Unix(),
 	}, nil
-}
-
-func (c *ChangelogNotes) String() string {
-	var b strings.Builder
-	var keys []string
-	for k := range c.Categories {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, header := range keys {
-		b.WriteString(H5(header))
-		for _, note := range c.Categories[header] {
-			b.WriteString(UnorderedListItem(note.Note))
-		}
-	}
-	if len(c.ExtraNotes) != 0 {
-		b.WriteString(H5("Notes"))
-		for _, note := range c.ExtraNotes {
-			b.WriteString(UnorderedListItem(note.Note))
-		}
-	}
-	return b.String()
 }
 
 func (c *ChangelogNotes) Dump() (string, error) {
@@ -305,7 +260,7 @@ func (c *ChangelogNotes) AddWithDependentVersionIncludeExtraNotes(other *Changel
 
 type Note struct {
 	Note string
-	// Indicates which version of the dependent repo that this note is from
+	// Indicates which version of the dependent Repo that this note is from
 	FromDependentVersion *Version
 }
 
@@ -386,11 +341,6 @@ func SortReleaseVersions(versions []Version) {
 	sort.Slice(versions, func(i, j int) bool {
 		return versions[i].MustIsGreaterThanOrEqualTo(versions[j])
 	})
-}
-
-func getGithubReleaseMarkdownLink(tag, repoOwner, repo string) string {
-	link := fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", repoOwner, repo, tag)
-	return Link(tag, link)
 }
 
 func GetMajorAndMinorVersion(v *Version) Version {

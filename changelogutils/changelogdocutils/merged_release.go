@@ -2,6 +2,7 @@ package changelogdocutils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/go-github/v32/github"
 	. "github.com/solo-io/go-utils/versionutils"
@@ -9,59 +10,62 @@ import (
 
 type DependencyFn func(*Version) (*Version, error)
 
-type MergedReleaseGeneratorOptions struct {
-	MaxVersions int
+type Options struct {
+	// Number of versions from the most previous version to display in changelog
+	NumVersions int
+	// Maximum version changelog to display on this changelog
+	MaxVersion *Version
+	// Minimum version changelog to display on this changelog
+	MinVersion *Version
+	ProjectName,
+	RepoOwner,
+	Repo,
+	OtherRepo string
 }
 
 type MergedReleaseGenerator struct {
 	client               *github.Client
-	repoOwner            string
-	enterpriseRepo       string
-	openSourceRepo       string
 	releaseDepMap        map[Version]*Version
 	FindDependentVersion DependencyFn
-	opts                 MergedReleaseGeneratorOptions
+	opts                 Options
 }
 
-func NewMergedReleaseGenerator(opts MergedReleaseGeneratorOptions, client *github.Client, repoOwner, enterpriseRepo, ossRepo string, dependencyFunc DependencyFn) *MergedReleaseGenerator {
+func NewMergedReleaseGenerator(opts Options, client *github.Client, dependencyFunc DependencyFn) *MergedReleaseGenerator {
 	return &MergedReleaseGenerator{
 		opts:                 opts,
 		client:               client,
-		repoOwner:            repoOwner,
-		enterpriseRepo:       enterpriseRepo,
-		openSourceRepo:       ossRepo,
 		releaseDepMap:        map[Version]*Version{},
 		FindDependentVersion: dependencyFunc,
 	}
 
 }
 
-func (g *MergedReleaseGenerator) Generate(ctx context.Context) (string, error) {
-	enterpriseReleases, err := g.GetMergedEnterpriseRelease(ctx)
-	if err != nil {
-		return "", err
-	}
-	return enterpriseReleases.String(), nil
-}
-
 func (g *MergedReleaseGenerator) GenerateJSON(ctx context.Context) (string, error) {
+	var err error
 	enterpriseReleases, err := g.GetMergedEnterpriseRelease(ctx)
 	if err != nil {
 		return "", err
 	}
-	return enterpriseReleases.Dump()
+	var out struct {
+		Opts        Options
+		ReleaseData *ReleaseData
+	}
+	out.Opts = g.opts
+	out.ReleaseData = enterpriseReleases
+	res, err := json.Marshal(out)
+	return string(res), err
 }
 
 func (g *MergedReleaseGenerator) GetMergedEnterpriseRelease(ctx context.Context) (*ReleaseData, error) {
-	ossReleases, err := NewMinorReleaseGroupedChangelogGenerator(MinorReleaseOpts{}, g.client, g.repoOwner, g.openSourceRepo).
+	ossReleases, err := NewMinorReleaseGroupedChangelogGenerator(Options{
+		RepoOwner:   "solo-io",
+		Repo:        g.opts.OtherRepo,
+	}, g.client).
 		GetReleaseData(ctx)
 	if err != nil {
 		return nil, err
 	}
-	opts := MinorReleaseOpts{
-		MaxVersions: g.opts.MaxVersions,
-	}
-	enterpriseReleases, err := NewMinorReleaseGroupedChangelogGenerator(opts, g.client, g.repoOwner, g.enterpriseRepo).
+	enterpriseReleases, err := NewMinorReleaseGroupedChangelogGenerator(g.opts, g.client).
 		GetReleaseData(ctx)
 	if err != nil {
 		return nil, err
@@ -86,7 +90,7 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(ctx context.Contex
 	}
 
 	for idx, eRelease := range enterpriseSorted {
-		var earlierVersion, earlierDep, currentDep *Version
+		var earlierVersion, earlierOSDep, currentOSDep *Version
 		if idx < len(enterpriseSorted)-1 {
 			earlierVersion = &enterpriseSorted[idx+1]
 		}
@@ -96,19 +100,19 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(ctx context.Contex
 				g.releaseDepMap[*earlierVersion] == nil && idx+i < len(enterpriseSorted)-1;
 			i, earlierVersion = i+1, &enterpriseSorted[idx+i] {
 			}
-			earlierDep = g.releaseDepMap[*earlierVersion]
+			earlierOSDep = g.releaseDepMap[*earlierVersion]
 		}
 		// Find all open source released versions between consecutive enterprise versions
-		currentDep = g.releaseDepMap[eRelease]
-		if currentDep != nil {
-			depVersions := GetOtherRepoDepsBetweenVersions(osSorted, earlierDep, currentDep)
+		currentOSDep = g.releaseDepMap[eRelease]
+		if currentOSDep != nil {
+			depVersions := GetOtherRepoDepsBetweenVersions(osSorted, earlierOSDep, currentOSDep)
 			var finalChangelogNotes = NewChangelogNotes()
 			for _, version := range depVersions {
-				//prefix := fmt.Sprintf("(From OSS %s) ", getGithubReleaseMarkdownLink(version.String(), g.repoOwner, g.openSourceRepo))
+				//prefix := fmt.Sprintf("(From OSS %s) ", getGithubReleaseMarkdownLink(version.String(), g.RepoOwner, g.openSourceRepo))
 				finalChangelogNotes.AddWithDependentVersion(osReleases.GetChangelogNotes(version), version)
 			}
 			minorReleaseChangelogNotes := enterpriseReleases.GetChangelogNotes(eRelease)
-			minorReleaseChangelogNotes.HeaderSuffix = fmt.Sprintf(" (Uses OSS %s)", getGithubReleaseMarkdownLink(currentDep.String(), g.repoOwner, g.openSourceRepo))
+			minorReleaseChangelogNotes.HeaderSuffix = fmt.Sprintf(" (Uses OSS %s)", getGithubReleaseMarkdownLink(currentOSDep.String(), g.opts.RepoOwner, g.opts.OtherRepo))
 			minorReleaseChangelogNotes.Add(finalChangelogNotes)
 		}
 	}
@@ -138,5 +142,9 @@ func GetOtherRepoDepsBetweenVersions(otherRepoReleasesSorted []Version, earlierV
 	if i < 0 || j < 0 || j+1 < i {
 		return nil
 	}
-	return otherRepoReleasesSorted[i : j+1]
+	return otherRepoReleasesSorted[i : j]
+}
+
+func getGithubReleaseMarkdownLink(tag, repoOwner, repo string) string {
+	return fmt.Sprintf("[%s](https://github.com/%s/%s/releases/tag/%s)", tag,repoOwner, repo, tag)
 }
