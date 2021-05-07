@@ -1,6 +1,0 @@
-changelog:
-- type: NEW_FEATURE
-  description: >
-    Adds changelog tooling to go-utils to be used across repos.
-  issueLink: https://github.com/solo-io/gloo/issues/4653
-  resolvesIssue: false
