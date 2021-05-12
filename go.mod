@@ -3,7 +3,7 @@ module github.com/solo-io/go-utils
 go 1.13
 
 require (
-	cloud.google.com/go v0.40.0
+	cloud.google.com/go v0.81.0
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/avast/retry-go v2.2.0+incompatible
