@@ -1,5 +1,0 @@
-changelog:
-- type: FIX
-  description: Fix setting of stat server log level when using the LOG_LEVEL environment variable
-  resolvesIssue: false
-  issueLink: https://github.com/solo-io/gloo/issues/4648
