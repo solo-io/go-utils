@@ -58,9 +58,13 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 	opts := changelogdocutils.Options{
-		NumVersions: 200,
+		NumVersions:   200,
+		ProjectName:   "",
+		RepoOwner:     "solo-io",
+		MainRepo:      "solo-projects",
+		DependentRepo: "gloo",
 	}
-	gen := changelogdocutils.NewMergedReleaseGenerator(opts, client, "solo-io", "solo-projects", "gloo", FindDependentVersionFn)
+	gen := changelogdocutils.NewMergedReleaseGenerator(opts, client)
 	changelog, err := gen.GenerateJSON(ctx)
 	if err != nil {
 		fmt.Println("error", err.Error())

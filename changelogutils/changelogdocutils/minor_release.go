@@ -55,7 +55,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context
 }
 
 func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Context) (*ReleaseData, error) {
-	releases, err := githubutils.GetAllRepoReleasesWithMax(ctx, g.Client, g.opts.RepoOwner, g.opts.Repo, g.opts.NumVersions)
+	releases, err := githubutils.GetAllRepoReleasesWithMax(ctx, g.Client, g.opts.RepoOwner, g.opts.MainRepo, g.opts.NumVersions)
 	if err != nil {
 		return nil, err
 	}

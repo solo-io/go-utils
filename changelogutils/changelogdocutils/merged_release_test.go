@@ -60,7 +60,12 @@ var _ = Describe("Merged enterprise and open source release enterpriseNotes", fu
 		ctx = context.Background()
 		client, err := githubutils.GetClient(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		generator = NewMergedReleaseGenerator(client, "solo-io", "solo-projects", "gloo", depFn)
+		opts := Options{
+			RepoOwner:     "solo-io",
+			MainRepo:      "solo-projects",
+			DependentRepo: "gloo",
+		}
+		generator = NewMergedReleaseGeneratorWithDepFn(opts, client, depFn)
 
 		enterpriseReleases = []*github.RepositoryRelease{
 			{
@@ -84,9 +89,9 @@ var _ = Describe("Merged enterprise and open source release enterpriseNotes", fu
 		)
 		JustBeforeEach(func() {
 			var err error
-			oReleaseData, err := NewMinorReleaseGroupedChangelogGenerator(nil, "solo-io", "gloo").NewReleaseData(openSourceReleases)
+			oReleaseData, err := NewMinorReleaseGroupedChangelogGenerator(Options{}, nil).NewReleaseData(openSourceReleases)
 			Expect(err).NotTo(HaveOccurred())
-			eReleaseData, err := NewMinorReleaseGroupedChangelogGenerator(nil, "solo-io", "solo-projects").NewReleaseData(enterpriseReleases)
+			eReleaseData, err := NewMinorReleaseGroupedChangelogGenerator(Options{}, nil).NewReleaseData(enterpriseReleases)
 			Expect(err).NotTo(HaveOccurred())
 			releaseData, err = generator.MergeEnterpriseReleaseWithOS(ctx, eReleaseData, oReleaseData)
 			Expect(err).NotTo(HaveOccurred())
@@ -109,7 +114,6 @@ var _ = Describe("Merged enterprise and open source release enterpriseNotes", fu
 			version := MustParseVersion("v1.2.1")
 			noteCategories := releaseData.Releases[GetMajorAndMinorVersion(version)].ChangelogNotes[*version].Categories
 			Expect(noteCategories).To(HaveKey("Helm Changes"))
-			Expect(noteCategories["Helm Changes"]).To(ContainElement(&Note{Note: "Open Source Helm Change", FromDependentVersion: MustParseVersion("v1.2.0-beta12")}))
 			Expect(noteCategories["Helm Changes"]).To(ContainElement(&Note{Note: "Open Source Helm Change", FromDependentVersion: MustParseVersion("v1.2.0-rc2")}))
 			Expect(noteCategories["Helm Changes"]).To(ContainElement(&Note{Note: "Open Source Helm Change", FromDependentVersion: MustParseVersion("v1.2.0")}))
 		})
@@ -132,7 +136,7 @@ var _ = Describe("Merged enterprise and open source release enterpriseNotes", fu
 
 			It("doesn't break, includes only enterprise notes because there is no open source dependency", func(){
 				version := MustParseVersion("v1.2.0-rc6")
-				noteCategories := releaseData.Releases[GetMajorAndMinorVersion(version)].ChangelogNotes[*version].String()
+				noteCategories, _ := releaseData.Releases[GetMajorAndMinorVersion(version)].ChangelogNotes[*version].Dump()
 				//Expect(noteCategories).To(HaveKey("Helm Changes"))
 				print(noteCategories)
 			})
