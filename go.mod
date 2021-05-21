@@ -42,7 +42,7 @@ require (
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904 // indirect
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/mod v0.2.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
