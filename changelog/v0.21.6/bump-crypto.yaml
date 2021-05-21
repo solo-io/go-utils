@@ -1,0 +1,5 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: golang
+    dependencyRepo: crypto
+    dependencyTag: v0.0.0-20210513164829-c07d793c2f9a
