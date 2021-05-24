@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/go-github/v32/github"
-	errors "github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/githubutils"
 	. "github.com/solo-io/go-utils/versionutils"
 	"github.com/yuin/goldmark"
@@ -16,18 +15,21 @@ import (
 	"strings"
 )
 
-func UnableToGenerateChangelogError(err error) error {
-	return errors.Wrap(err, "Unable to generate changelog")
-}
-func UnableToParseVersionError(err error, versionTag string) error {
-	return errors.Wrapf(err, "Unable to parse version tag %s", versionTag)
-}
-
 type MinorReleaseGroupedChangelogGenerator struct {
 	Client    *github.Client
 	opts      Options
 }
 
+/**
+ Groups releases by their minor version:
+ v1.8
+ - v1.8.2
+ - v1.8.1
+ v1.7
+ - v1.7.1
+ - v1.7.0-beta9
+ ...
+ */
 func NewMinorReleaseGroupedChangelogGenerator(opts Options, client *github.Client) *MinorReleaseGroupedChangelogGenerator {
 	if opts.NumVersions == 0{
 		opts.NumVersions = math.MaxInt64
