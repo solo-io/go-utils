@@ -11,9 +11,7 @@ changelog:
     dependencyOwner: spf13
     dependencyRepo: cobra
     dependencyTag: v1.1.3
-  - type: DEPENDENCY_BUMP
-    dependencyOwner: form3tech-oss
-    dependencyRepo: jwt-go
-    dependencyTag: v3.2.3
+  - type: FIX
+    description: Use the form3tech-oss fork of jwt-go to fix CVE.
     issueLink: https://github.com/solo-io/gloo/issues/4722
     resolvesIssue: false
