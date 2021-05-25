@@ -36,8 +36,7 @@ require (
 	github.com/rotisserie/eris v0.1.1
 	github.com/rs/zerolog v1.18.0
 	github.com/spf13/afero v1.2.2
-	github.com/spf13/cobra v1.0.0
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/cobra v1.1.3
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible
@@ -50,7 +49,7 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/src-d/go-git.v4 v4.10.0
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace (

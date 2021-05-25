@@ -7,3 +7,7 @@ changelog:
     dependencyOwner: palantir
     dependencyRepo: go-baseapp
     dependencyTag: v0.2.3
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: spf13
+    dependencyRepo: cobra
+    dependencyTag: v1.1.3
