@@ -3,3 +3,7 @@ changelog:
     dependencyOwner: golang
     dependencyRepo: crypto
     dependencyTag: v0.0.0-20210513164829-c07d793c2f9a
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: palantir
+    dependencyRepo: go-baseapp
+    dependencyTag: v0.2.3
