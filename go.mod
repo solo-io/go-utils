@@ -11,6 +11,7 @@ require (
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-git/go-git/v5 v5.4.1
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.4.2
@@ -38,16 +39,13 @@ require (
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/yuin/goldmark v1.3.3
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904 // indirect
 	golang.org/x/mod v0.2.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	golang.org/x/text v0.3.3 // indirect
 	google.golang.org/api v0.29.0
 	google.golang.org/grpc v1.30.0
 	google.golang.org/protobuf v1.25.0

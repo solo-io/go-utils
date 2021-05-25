@@ -16,8 +16,8 @@ import (
 )
 
 type MinorReleaseGroupedChangelogGenerator struct {
-	Client    *github.Client
-	opts      Options
+	Client *github.Client
+	opts   Options
 }
 
 /**
@@ -73,7 +73,6 @@ func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Conte
 // VersionData will contain information for individual Versions
 type ReleaseData struct {
 	Releases  map[Version]*VersionData
-	generator *MinorReleaseGroupedChangelogGenerator
 }
 
 // Contains Changelog enterpriseNotes for Individual openSourceReleases
@@ -81,7 +80,6 @@ type ReleaseData struct {
 // e.g. v1.2.5-beta3 -> ChangelogNotes, v1.4.0 -> ChangelogNotes
 type VersionData struct {
 	ChangelogNotes map[Version]*ChangelogNotes
-	generator      *MinorReleaseGroupedChangelogGenerator
 }
 
 type ChangelogNotes struct {
@@ -105,6 +103,8 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 			continue
 		}
 
+		// We only want the tag version 1.8, omitting the patch version
+		// because Releases is keyed only by major and minor version
 		releaseVersion := GetMajorAndMinorVersionPtr(tag)
 		if r.Releases[*releaseVersion] == nil {
 			if err != nil {
@@ -186,7 +186,6 @@ func (r *ReleaseData) MarshalJSON() ([]byte, error) {
 func (g *MinorReleaseGroupedChangelogGenerator) NewVersionData() *VersionData {
 	return &VersionData{
 		ChangelogNotes: map[Version]*ChangelogNotes{},
-		generator:      g,
 	}
 }
 

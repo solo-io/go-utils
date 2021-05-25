@@ -4,6 +4,9 @@ import (
     "context"
     "encoding/json"
     "fmt"
+    "github.com/go-git/go-git/v5"
+    http2 "github.com/go-git/go-git/v5/plumbing/transport/http"
+    "github.com/go-git/go-git/v5/storage/memory"
     "github.com/google/go-github/v32/github"
     "github.com/solo-io/go-utils/githubutils"
     . "github.com/solo-io/go-utils/versionutils"
@@ -13,16 +16,25 @@ import (
 type DependencyFn func(*Version) (*Version, error)
 
 type Options struct {
-    // Number of versions from the most previous version to display in changelog
-    NumVersions int
-    // Maximum version changelog to display on this changelog
-    MaxVersion *Version
-    // Minimum version changelog to display on this changelog
-    MinVersion *Version
-    ProjectName,
+    // Github user/org
     RepoOwner,
+    // Only repo used in MinorReleaseGenerator
+    // This is the enterprise repo used in MergedReleaseGenerator
     MainRepo,
+    // Unused in MinorReleaseGenerator
+    // This is the Open Source repo in MergedReleaseGenerator
     DependentRepo string
+
+    // NumVersions sets the maximum amount of releases to be fetched from Github.
+    // Once fetched, MaxVersion and MinVersion are bounds for which versions are included
+    // in the output. The following three only bound the
+    NumVersions int
+    // Maximum release version to be included in this changelog. If not specified, all releases >= MinVersion
+    // will be included
+    MaxVersion *Version
+    // Minimum release version to display on this changelog. If not specified, all releases <= MaxVersion
+    // will be included
+    MinVersion *Version
 }
 
 type MergedReleaseGenerator struct {
@@ -33,11 +45,13 @@ type MergedReleaseGenerator struct {
 }
 
 func NewMergedReleaseGenerator(opts Options, client *github.Client) *MergedReleaseGenerator {
-    return &MergedReleaseGenerator{
+    generator :=  &MergedReleaseGenerator{
         opts:          opts,
         client:        client,
         releaseDepMap: map[Version]*Version{},
     }
+    generator.DependencyFunc = generator.GetOpenSourceDependency
+    return generator
 }
 
 func NewMergedReleaseGeneratorWithDepFn(opts Options, client *github.Client, depFn DependencyFn) *MergedReleaseGenerator {
@@ -70,7 +84,7 @@ func (g *MergedReleaseGenerator) GenerateJSON(ctx context.Context) (string, erro
 
 func (g *MergedReleaseGenerator) GetMergedEnterpriseRelease(ctx context.Context) (*ReleaseData, error) {
     ossReleases, err := NewMinorReleaseGroupedChangelogGenerator(Options{
-        RepoOwner: "solo-io",
+        RepoOwner: g.opts.RepoOwner,
         MainRepo:  g.opts.DependentRepo,
     }, g.client).
         GetReleaseData(ctx)
@@ -96,14 +110,9 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(ctx context.Contex
                 dep *Version
                 err error
             )
-            if g.DependencyFunc != nil {
-                dep, err = g.DependencyFunc(&release)
-            } else {
-                dep, err = g.GetOpenSourceDependency(&release)
-            }
+            dep, err = g.DependencyFunc(&release)
             if err != nil {
                 continue
-                //return "", err
             }
             g.releaseDepMap[release] = dep
         }
@@ -169,6 +178,21 @@ func getGithubReleaseMarkdownLink(tag, repoOwner, repo string) string {
     return fmt.Sprintf("[%s](https://github.com/%s/%s/releases/tag/%s)", tag, repoOwner, repo, tag)
 }
 
+// Looks for
+// repoOwner/otherRepo v1.x.x-x
+// in go.mod string (goMod) and returns the package version
+func getPkgVersionFromGoMod(goMod, repoOwner, repo string) (*Version, error){
+    semverRegex := fmt.Sprintf("%s/%s\\s+(v((([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?)(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?))",
+        repoOwner, repo)
+    regex := regexp.MustCompile(semverRegex)
+    // Find version of open source dependency
+    matches := regex.FindStringSubmatch(goMod)
+    if len(matches) < 2 {
+        return nil, fmt.Errorf("unable to find dependency")
+    }
+    return ParseVersion(matches[1])
+}
+
 /*
  Enterprise changelogs have the option to "merge" open source changelogs. The following function retrieves and returns
  the open source version that an enterprise version depends on. It checks out the enterprise go.mod at the release version
@@ -186,16 +210,43 @@ func (g *MergedReleaseGenerator) GetOpenSourceDependency(enterpriseVersion *Vers
     if err != nil {
         return nil, err
     }
-    // Looks for
-    // ...repoOwner/otherRepo v1.x.x-x
-    // and captures semantic version
-    semverRegex := fmt.Sprintf("%s/%s\\s+(v((([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?)(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?))",
-        g.opts.RepoOwner, g.opts.DependentRepo)
-    regex := regexp.MustCompile(semverRegex)
-    // Find version of open source dependency
-    matches := regex.FindStringSubmatch(content)
-    if len(matches) < 2 {
-        return nil, fmt.Errorf("unable to find version %s dependency", enterpriseVersion.String())
+
+    return getPkgVersionFromGoMod(content, g.opts.RepoOwner, g.opts.DependentRepo)
+}
+
+// HOF that returns a Dependency function. The returned function generates
+// changelogs faster than the default but requires passing in the github token.
+func GetOSDependencyFunc(repoOwner, enterpriseRepo, osRepo, githubToken string) (DependencyFn, error){
+    // Clones repo in-memory, we only want to clone the repo into the variable once, hence the HOF to
+    // pass the repo variable in the function's closure.
+    repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
+        URL:               fmt.Sprintf("https://github.com/%s/%s", repoOwner, enterpriseRepo),
+        Auth: &http2.BasicAuth{
+            Username: "nonEmptyString", // https://github.com/go-git/go-git/blob/master/_examples/clone/auth/basic/access_token/main.go#L24
+            Password: githubToken,
+        },
+    })
+    if err != nil {
+        return nil, err
     }
-    return ParseVersion(matches[1])
+    dependencyFn := func(v *Version) (*Version, error) {
+        tagRef, err := repo.Tag(v.String())
+        if err != nil {
+            return nil, err
+        }
+        commit, err := repo.CommitObject(tagRef.Hash())
+        if err != nil {
+            return nil, err
+        }
+        gomod, err := commit.File("go.mod")
+        if err != nil {
+            return nil, err
+        }
+        content, err := gomod.Contents()
+        if err != nil {
+            return nil, err
+        }
+        return getPkgVersionFromGoMod(content, repoOwner, osRepo)
+    }
+    return dependencyFn, nil
 }
