@@ -40,6 +40,7 @@ func NewMinorReleaseGroupedChangelogGenerator(opts Options, client *github.Clien
 	}
 }
 
+// Entry point for generating changelog JSON
 func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context) (string, error) {
 	var err error
 	releaseData, err := g.GetReleaseData(ctx)
@@ -128,7 +129,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) isBetweenMinAndMaxVersions(versi
 		res = version.MustIsGreaterThanOrEqualTo(*g.opts.MinVersion)
 	}
 	if g.opts.MaxVersion != nil {
-		res = res && !version.MustIsGreaterThanOrEqualTo(*g.opts.MaxVersion)
+		res = res && !version.MustIsGreaterThan(*g.opts.MaxVersion)
 	}
 	return res
 }

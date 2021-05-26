@@ -93,7 +93,7 @@ var _ = Describe("Merged enterprise and open source release enterpriseNotes", fu
 			Expect(err).NotTo(HaveOccurred())
 			eReleaseData, err := NewMinorReleaseGroupedChangelogGenerator(Options{}, nil).NewReleaseData(enterpriseReleases)
 			Expect(err).NotTo(HaveOccurred())
-			releaseData, err = generator.MergeEnterpriseReleaseWithOS(ctx, eReleaseData, oReleaseData)
+			releaseData, err = generator.MergeEnterpriseReleaseWithOS(eReleaseData, oReleaseData)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

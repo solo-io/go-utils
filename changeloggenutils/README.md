@@ -4,7 +4,7 @@
 These utils allow us to make our [changelogs](https://docs.solo.io/gloo-edge/master/reference/changelog/enterprise/)
 rich and easy-to-use for end users. 
 
-**Note**: `changeloggenuitls` are currently only used in the user-facing changelogs on product sites. If you are looking for 
+**Note**: `changeloggenutils` are currently only used in the user-facing changelogs on product sites. If you are looking for 
 the code that generates changelogs on github releases, that lives under the `changelogutils` package.
 
 ## The Problem

@@ -41,7 +41,7 @@ type MergedReleaseGenerator struct {
     client         *github.Client
     releaseDepMap  map[Version]*Version
     opts           Options
-    DependencyFunc DependencyFn
+    dependencyFunc DependencyFn
 }
 
 func NewMergedReleaseGenerator(opts Options, client *github.Client) *MergedReleaseGenerator {
@@ -50,13 +50,13 @@ func NewMergedReleaseGenerator(opts Options, client *github.Client) *MergedRelea
         client:        client,
         releaseDepMap: map[Version]*Version{},
     }
-    generator.DependencyFunc = generator.GetOpenSourceDependency
+    generator.dependencyFunc = generator.GetOpenSourceDependency
     return generator
 }
 
 func NewMergedReleaseGeneratorWithDepFn(opts Options, client *github.Client, depFn DependencyFn) *MergedReleaseGenerator {
 	gen :=  NewMergedReleaseGenerator(opts, client)
-	gen.DependencyFunc = depFn
+	gen.dependencyFunc = depFn
 	return gen
 }
 
@@ -96,11 +96,12 @@ func (g *MergedReleaseGenerator) GetMergedEnterpriseRelease(ctx context.Context)
     if err != nil {
         return nil, err
     }
-    return g.MergeEnterpriseReleaseWithOS(ctx, enterpriseReleases, ossReleases)
+    return g.MergeEnterpriseReleaseWithOS(enterpriseReleases, ossReleases)
 }
 
-func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(ctx context.Context, enterpriseReleases, osReleases *ReleaseData) (*ReleaseData, error) {
-    // Get openSourceReleases from max version to min version (e.g. 1.8.0, 1.8.0-beta2, 1.8.0-beta1...)
+func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(enterpriseReleases, osReleases *ReleaseData) (*ReleaseData, error) {
+    // Get openSourceReleases and enterpriseReleases sorted from max version to min version
+    // (e.g. 1.8.0, 1.8.0-beta2, 1.8.0-beta1, 1.7.15, 1.7.14...)
     enterpriseSorted := enterpriseReleases.GetReleasesSorted()
     osSorted := osReleases.GetReleasesSorted()
     for _, release := range enterpriseSorted {
@@ -110,7 +111,7 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(ctx context.Contex
                 dep *Version
                 err error
             )
-            dep, err = g.DependencyFunc(&release)
+            dep, err = g.dependencyFunc(&release)
             if err != nil {
                 continue
             }
