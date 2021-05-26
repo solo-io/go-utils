@@ -1,6 +1,7 @@
 package versionutils
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -52,6 +53,10 @@ func (v *Version) String() string {
 		return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 	}
 	return fmt.Sprintf("v%d.%d.%d-%s%d", v.Major, v.Minor, v.Patch, v.Label, v.LabelVersion)
+}
+
+func (v *Version) MarshalJSON() ([]byte, error){
+	return json.Marshal(v.String())
 }
 
 // In order, returns isGreaterThanOrEqualTo, isDeterminable, err
@@ -336,4 +341,22 @@ func MatchesRegex(tag string) bool {
 
 func GetImageVersion(version *Version) string {
 	return version.String()[1:]
+}
+
+func Index(versions []Version, v Version) int {
+	for idx, ver := range versions {
+		if v == ver {
+			return idx
+		}
+	}
+	return -1
+}
+
+func IndexPtr(versions []*Version, v Version) int {
+	for idx, ver := range versions {
+		if v == *ver {
+			return idx
+		}
+	}
+	return -1
 }

@@ -12,6 +12,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-git/go-git/v5 v5.4.1
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.4.2
@@ -38,6 +39,7 @@ require (
 	github.com/rs/zerolog v1.18.0
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v1.1.3
+	github.com/yuin/goldmark v1.3.3
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible

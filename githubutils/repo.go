@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -33,6 +34,8 @@ const (
 
 	CONTENT_TYPE_FILE      = "file"
 	CONTENT_TYPE_DIRECTORY = "dir"
+
+	MAX_GITHUB_RELEASES_PER_PAGE = 100
 )
 
 func GetGithubToken() (string, error) {
@@ -135,6 +138,31 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 	return byt, err
 }
 
+func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error){
+	return GetAllRepoReleasesWithMax(ctx, client, owner, repo, math.MaxInt32)
+}
+
+func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxReleases int) ([]*github.RepositoryRelease, error){
+	var allReleases []*github.RepositoryRelease
+	for i := 0 ; len(allReleases) < maxReleases; i+=1{
+		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
+			Page:    i,
+			PerPage: MAX_GITHUB_RELEASES_PER_PAGE,
+		})
+		if err != nil {
+			return nil, err
+		}
+		allReleases = append(allReleases, releases...)
+		if len(releases) <  MAX_GITHUB_RELEASES_PER_PAGE{
+			break
+		}
+	}
+	if len(allReleases) > maxReleases{
+		allReleases = allReleases[:maxReleases]
+	}
+	return allReleases, nil
+}
+
 func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
 	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{})
 	if err != nil {
@@ -159,10 +187,7 @@ func FindLatestReleaseTag(ctx context.Context, client *github.Client, owner, rep
 }
 
 func FindLatestReleaseBySemver(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
-	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
-		Page:    0,
-		PerPage: 10000000,
-	})
+	releases, err := GetAllRepoReleases(ctx, client, owner, repo)
 	if err != nil {
 		return "", err
 	}
