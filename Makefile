@@ -6,3 +6,8 @@
 .PHONY: init
 init:
 	git config core.hooksPath .githooks
+
+.PHONY: go-fmt
+go-fmt:
+	gofmt -w .
+	goimports -w .
