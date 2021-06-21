@@ -7,7 +7,11 @@
 init:
 	git config core.hooksPath .githooks
 
+.PHONY: install-go-tools
+install-go-tools:
+	go install golang.org/x/tools/cmd/goimports
+
 .PHONY: go-fmt
-go-fmt:
+go-fmt: install-go-tools
 	gofmt -w .
 	goimports -w .
