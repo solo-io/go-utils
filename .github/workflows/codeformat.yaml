@@ -1,8 +1,8 @@
-name: CI
+name: pull_request
 on: pull_request
 jobs:
   codegen:
-    name: codegen check
+    name: Code format check
     runs-on: ubuntu-18.04
     steps:
       - name: Cancel Previous Actions
