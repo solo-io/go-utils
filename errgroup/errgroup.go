@@ -5,8 +5,9 @@ package errgroup
 
 import (
 	"context"
-	"github.com/hashicorp/go-multierror"
 	"sync"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 // A Group is a collection of goroutines working on subtasks that are part of

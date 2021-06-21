@@ -138,13 +138,13 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 	return byt, err
 }
 
-func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error){
+func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error) {
 	return GetAllRepoReleasesWithMax(ctx, client, owner, repo, math.MaxInt32)
 }
 
-func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxReleases int) ([]*github.RepositoryRelease, error){
+func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxReleases int) ([]*github.RepositoryRelease, error) {
 	var allReleases []*github.RepositoryRelease
-	for i := 0 ; len(allReleases) < maxReleases; i+=1{
+	for i := 0; len(allReleases) < maxReleases; i += 1 {
 		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
 			Page:    i,
 			PerPage: MAX_GITHUB_RELEASES_PER_PAGE,
@@ -153,11 +153,11 @@ func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner
 			return nil, err
 		}
 		allReleases = append(allReleases, releases...)
-		if len(releases) <  MAX_GITHUB_RELEASES_PER_PAGE{
+		if len(releases) < MAX_GITHUB_RELEASES_PER_PAGE {
 			break
 		}
 	}
-	if len(allReleases) > maxReleases{
+	if len(allReleases) > maxReleases {
 		allReleases = allReleases[:maxReleases]
 	}
 	return allReleases, nil
