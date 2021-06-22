@@ -3,6 +3,7 @@ package changelogdocutils_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/go-github/v32/github"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,17 +33,17 @@ func enterpriseNotes() *string {
 
 var _ = Describe("Merged enterprise and open source release enterpriseNotes", func() {
 	var (
-		generator *MergedReleaseGenerator
-		ctx       context.Context
+		generator          *MergedReleaseGenerator
+		ctx                context.Context
 		enterpriseReleases []*github.RepositoryRelease
 	)
 
 	// Mock function to provide which open source version an enterprise version depends on (to merge changelog enterpriseNotes)
-	depFn := func (v *Version) (*Version, error){
+	depFn := func(v *Version) (*Version, error) {
 		// Build dependency tree
 		deps := map[string]string{
-			"v1.2.1": "v1.2.0",
-			"v1.2.0-rc1": "v1.2.0-beta12",
+			"v1.2.1":        "v1.2.0",
+			"v1.2.0-rc1":    "v1.2.0-beta12",
 			"v1.2.0-beta13": "v1.1.0",
 		}
 		version, ok := deps[v.String()]
@@ -134,7 +135,7 @@ var _ = Describe("Merged enterprise and open source release enterpriseNotes", fu
 				})
 			})
 
-			It("doesn't break, includes only enterprise notes because there is no open source dependency", func(){
+			It("doesn't break, includes only enterprise notes because there is no open source dependency", func() {
 				version := MustParseVersion("v1.2.0-rc6")
 				noteCategories, _ := releaseData.Releases[GetMajorAndMinorVersion(version)].ChangelogNotes[*version].Dump()
 				//Expect(noteCategories).To(HaveKey("Helm Changes"))
@@ -144,11 +145,9 @@ var _ = Describe("Merged enterprise and open source release enterpriseNotes", fu
 		})
 	})
 
-
-
 })
 
-func MustParseVersion(version string) *Version{
+func MustParseVersion(version string) *Version {
 	v, err := ParseVersion(version)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	return v

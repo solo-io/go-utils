@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
+	"strings"
+
 	"github.com/google/go-github/v32/github"
 	"github.com/solo-io/go-utils/githubutils"
 	. "github.com/solo-io/go-utils/versionutils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"
-	"math"
-	"sort"
-	"strings"
 )
 
 type MinorReleaseGroupedChangelogGenerator struct {
@@ -21,29 +22,29 @@ type MinorReleaseGroupedChangelogGenerator struct {
 }
 
 /**
- Groups releases by their minor version:
- v1.8
- - v1.8.2
- - v1.8.1
- v1.7
- - v1.7.1
- - v1.7.0-beta9
- ...
- */
+Groups releases by their minor version:
+v1.8
+- v1.8.2
+- v1.8.1
+v1.7
+- v1.7.1
+- v1.7.0-beta9
+...
+*/
 func NewMinorReleaseGroupedChangelogGenerator(opts Options, client *github.Client) *MinorReleaseGroupedChangelogGenerator {
-	if opts.NumVersions == 0{
+	if opts.NumVersions == 0 {
 		opts.NumVersions = math.MaxInt64
 	}
 	return &MinorReleaseGroupedChangelogGenerator{
-		opts:      opts,
-		Client:    client,
+		opts:   opts,
+		Client: client,
 	}
 }
 
 // Entry point for generating changelog JSON
 func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context) (string, error) {
 	var err error
-	releaseData, err := g.GetReleaseData(ctx)
+	releaseData, err := g.GetReleaseData(ctx, g.opts.MainRepoReleases)
 	if err != nil {
 		return "", err
 	}
@@ -51,16 +52,28 @@ func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context
 		Opts        Options
 		ReleaseData *ReleaseData
 	}
-	out.Opts = g.opts
+	out.Opts = Options{
+		RepoOwner:     g.opts.RepoOwner,
+		MainRepo:      g.opts.MainRepo,
+		DependentRepo: g.opts.DependentRepo,
+	}
 	out.ReleaseData = releaseData
 	res, err := json.Marshal(out)
 	return string(res), err
 }
 
-func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Context) (*ReleaseData, error) {
-	releases, err := githubutils.GetAllRepoReleasesWithMax(ctx, g.Client, g.opts.RepoOwner, g.opts.MainRepo, g.opts.NumVersions)
-	if err != nil {
-		return nil, err
+func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Context, cachedReleases []*github.RepositoryRelease) (*ReleaseData, error) {
+	var (
+		releases []*github.RepositoryRelease
+		err      error
+	)
+	if cachedReleases != nil {
+		releases = cachedReleases
+	} else {
+		releases, err = githubutils.GetAllRepoReleasesWithMax(ctx, g.Client, g.opts.RepoOwner, g.opts.MainRepo, g.opts.NumVersions)
+		if err != nil {
+			return nil, err
+		}
 	}
 	releaseData, err := g.NewReleaseData(releases)
 	if err != nil {
@@ -73,7 +86,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) GetReleaseData(ctx context.Conte
 // e.g. Releases will be a map of v1.2.0 -> VersionData, v1.3.0 -> VersionData
 // VersionData will contain information for individual Versions
 type ReleaseData struct {
-	Releases  map[Version]*VersionData
+	Releases map[Version]*VersionData
 }
 
 // Contains Changelog enterpriseNotes for Individual openSourceReleases
@@ -100,7 +113,7 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 			// Release name doesn't follow proper semantic versioning, skip
 			continue
 		}
-		if !g.isBetweenMinAndMaxVersions(*tag){
+		if !g.isBetweenMinAndMaxVersions(*tag) {
 			continue
 		}
 
@@ -123,9 +136,9 @@ func (g *MinorReleaseGroupedChangelogGenerator) NewReleaseData(releases []*githu
 	return r, nil
 }
 
-func (g *MinorReleaseGroupedChangelogGenerator) isBetweenMinAndMaxVersions(version Version) bool{
+func (g *MinorReleaseGroupedChangelogGenerator) isBetweenMinAndMaxVersions(version Version) bool {
 	res := true
-	if g.opts.MinVersion != nil{
+	if g.opts.MinVersion != nil {
 		res = version.MustIsGreaterThanOrEqualTo(*g.opts.MinVersion)
 	}
 	if g.opts.MaxVersion != nil {
