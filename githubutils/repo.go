@@ -36,6 +36,7 @@ const (
 	CONTENT_TYPE_DIRECTORY = "dir"
 
 	MAX_GITHUB_RELEASES_PER_PAGE = 100
+	MIN_GITHUB_PAGE_NUM          = 1
 )
 
 func GetGithubToken() (string, error) {
@@ -144,7 +145,7 @@ func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo 
 
 func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxReleases int) ([]*github.RepositoryRelease, error) {
 	var allReleases []*github.RepositoryRelease
-	for i := 1; len(allReleases) < maxReleases; i += 1 {
+	for i := MIN_GITHUB_PAGE_NUM; len(allReleases) < maxReleases; i += 1 {
 		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
 			Page:    i,
 			PerPage: MAX_GITHUB_RELEASES_PER_PAGE,

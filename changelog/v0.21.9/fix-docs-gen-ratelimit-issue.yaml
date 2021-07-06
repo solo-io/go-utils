@@ -1,0 +1,5 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/gloo/issues/4974
+    resolvesIssue: false
+    description: Start querying github paginated API at page 1, rather than page 0.
