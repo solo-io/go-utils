@@ -144,7 +144,7 @@ func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo 
 
 func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxReleases int) ([]*github.RepositoryRelease, error) {
 	var allReleases []*github.RepositoryRelease
-	for i := 0; len(allReleases) < maxReleases; i += 1 {
+	for i := 1; len(allReleases) < maxReleases; i += 1 {
 		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
 			Page:    i,
 			PerPage: MAX_GITHUB_RELEASES_PER_PAGE,
