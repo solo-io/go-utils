@@ -10,12 +10,15 @@ import (
 	"os"
 	"sort"
 
+	"github.com/solo-io/go-utils/log"
+
 	"github.com/solo-io/go-utils/versionutils"
 
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 )
@@ -269,6 +272,8 @@ func DownloadFile(url string, w io.Writer) error {
 	return nil
 }
 
+// Sorts github release array in place by semver, from
+// most recent release to least (v2.8.0, v1.7.0, v1.6.0...)
 func SortReleasesBySemver(releases []*github.RepositoryRelease) {
 	sort.Slice(releases, func(i, j int) bool {
 		rA, rB := releases[i], releases[j]
@@ -282,4 +287,27 @@ func SortReleasesBySemver(releases []*github.RepositoryRelease) {
 		}
 		return verA.MustIsGreaterThan(*verB)
 	})
+}
+
+// Filters slice of github releases by providing a constraint on the release semver
+// does not modify input slice, returns the filtered list.
+// If we are unable to parse a release version, we do not include it in the filtered list
+
+func FilterReleases(releases []*github.RepositoryRelease, constraint *semver.Constraints) []*github.RepositoryRelease {
+	if constraint == nil {
+		return releases
+	}
+	var filteredReleases []*github.RepositoryRelease
+	for _, release := range releases {
+		versionToTest, err := semver.NewVersion(release.GetTagName())
+		if err != nil {
+			// If we are unable to parse the release version, we do not include it in the filtered list
+			log.Warnf("unable to parse release version %s", release.GetTagName())
+			continue
+		}
+		if constraint.Check(versionToTest) {
+			filteredReleases = append(filteredReleases, release)
+		}
+	}
+	return filteredReleases
 }
