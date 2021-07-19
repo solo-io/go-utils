@@ -73,6 +73,9 @@ type SecurityScanOpts struct {
 	UploadCodeScanToGithub bool
 }
 
+// Main method to call on SecurityScanner which generates .md and .sarif files
+// in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
+// sarif files will be uploaded to the repository's code-scanning endpoint.
 func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 
 	client, err := githubutils.GetClient(ctx)
