@@ -153,7 +153,7 @@ func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sar
 	}
 	for _, image := range images {
 		imageWithRepo := fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
-		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
+		fileName := fmt.Sprintf("%s_cve_report.sarif", image)
 		output := path.Join(outputDir, fileName)
 		err = RunTrivyScan(imageWithRepo, version, sarifTplFile, output)
 		if err != nil {

@@ -8,7 +8,8 @@ trivy image --severity HIGH,CRITICAL quay.io/solo-io/<IMAGE>:<VERSION>
 
 ## Using securityscanutils
 The following code snippet shows how to import and use the `SecurityScanner` to scan a repositories' releases. Multiple
-repositories can be specified for scanning.
+repositories can be specified for scanning. To have the script work on private repositories, as well as mitigate the 
+chance of rate-limiting, set the `GITHUB_TOKEN` environment variable.
 
 ```go
 package main
