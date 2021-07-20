@@ -180,12 +180,15 @@ func (r *SecurityScanRepo) GetImagesToScan(versionToScan *semver.Version) ([]str
 			// We want to make sure that each version only matches ONE constraint provided
 			// in the constraint -> []images map, so that we are scanning the right images for each version
 			if imagesToScan != nil {
-				return nil, eris.Errorf("version %s matched more than one constraint provided, please make all constraints"+
-					"mutually exclusive", versionToScan.String())
+				return nil, eris.Errorf(
+					"version %s matched more than one constraint provided, please make all constraints mutually exclusive", versionToScan.String())
 			}
 			imagesToScan = images
 		}
 
+	}
+	if imagesToScan == nil {
+		return nil, eris.Errorf("version %s matched no constraints and has no images to scan", versionToScan.String())
 	}
 	return imagesToScan, nil
 }
