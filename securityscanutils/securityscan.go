@@ -155,11 +155,11 @@ func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sar
 		imageWithRepo := fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
 		fileName := fmt.Sprintf("%s_cve_report.sarif", image)
 		output := path.Join(outputDir, fileName)
-		err = RunTrivyScan(imageWithRepo, version, sarifTplFile, output)
+		success, err := RunTrivyScan(imageWithRepo, version, sarifTplFile, output)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
-		if r.Opts.UploadCodeScanToGithub {
+		if success && r.Opts.UploadCodeScanToGithub {
 			err = r.UploadSecurityScanToGithub(output, version)
 			if err != nil {
 				return eris.Wrapf(err, "error uploading security scan results sarif to github for version %s", version)
@@ -191,11 +191,12 @@ func (r *SecurityScanRepo) GetImagesToScan(versionToScan *semver.Version) ([]str
 }
 
 // Runs trivy scan command
-func RunTrivyScan(image, version, templateFile, output string) error {
+// returns if trivy scan ran successfully and error if there was one
+func RunTrivyScan(image, version, templateFile, output string) (bool, error) {
 	// Ensure Trivy is installed and on PATH
 	_, err := exec.LookPath("trivy")
 	if err != nil {
-		return eris.Wrap(err, "trivy is not on PATH, make sure that the trivy v0.18 is installed and on PATH")
+		return false, eris.Wrap(err, "trivy is not on PATH, make sure that the trivy v0.18 is installed and on PATH")
 	}
 	args := []string{"image", "--severity", "HIGH,CRITICAL", "--format", "template", "--template", "@" + templateFile, "--output", output, image}
 	cmd := exec.Command("trivy", args...)
@@ -207,11 +208,11 @@ func RunTrivyScan(image, version, templateFile, output string) error {
 		// even if some releases failed and we didn't publish images for those releases
 		if IsImageNotFoundErr(string(out)) {
 			log.Warnf("image %s not found for version %s", image, version)
-			return nil
+			return false, nil
 		}
-		return eris.Wrapf(err, "error running trivy scan on image %s, version %s, Logs: \n%s", image, version, string(out))
+		return false, eris.Wrapf(err, "error running trivy scan on image %s, version %s, Logs: \n%s", image, version, string(out))
 	}
-	return nil
+	return true, nil
 }
 
 type SarifMetadata struct {

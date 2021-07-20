@@ -40,9 +40,11 @@ func main() {
                     // Read https://github.com/Masterminds/semver#checking-version-constraints for more about how to use
                     // semver constraints
 					ImagesPerVersion: map[string][]string{
-					    "<=1.7.0": {"gloo", "gloo-envoy-wrapper"},
+					    "1.7.x": {"gloo", "gloo-envoy-wrapper"},
 						">=v1.7.0 <= v1.8.0": {"gloo", "gloo-envoy-wrapper", "discovery"},
 					},
+                    // If VersionConstraint is not specified, all releases from the repo will be scanned, including
+                    // pre-releases, which is not recommended.
 					VersionConstraint:      constraint,
 					ImageRepo:              "quay.io/solo-io",
                     // Setting this to true will upload any generated sarif files to the github repository
