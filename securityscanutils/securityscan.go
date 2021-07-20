@@ -132,7 +132,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(versionToScan *semver.Version, markdo
 		imageWithRepo := fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
 		output := path.Join(outputDir, fileName)
-		err = RunTrivyScan(imageWithRepo, version, markdownTplFile, output)
+		_, err = RunTrivyScan(imageWithRepo, version, markdownTplFile, output)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
