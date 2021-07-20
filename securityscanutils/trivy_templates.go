@@ -1,7 +1,7 @@
 package securityscanutils
 
 import (
-	"os"
+	"io/ioutil"
 
 	"github.com/rotisserie/eris"
 )
@@ -125,7 +125,7 @@ const SarifTrivyTemplate = `{
 // Create tempoarary file that contains the trivy template
 // Trivy CLI only accepts files as input for a template, so this is a workaround
 func GetTemplateFile(trivyTemplate string) (string, error) {
-	f, err := os.CreateTemp("", "")
+	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		return "", eris.Wrap(err, "Unable to create temporary file to write template to")
 	}
