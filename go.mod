@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
+	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/fgrosse/zaptest v1.1.0
@@ -20,6 +21,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
+	github.com/imroc/req v0.3.0
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v2.3.0+incompatible
 	github.com/kr/pty v1.1.5 // indirect
