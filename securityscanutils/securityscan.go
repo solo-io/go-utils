@@ -111,6 +111,8 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
+			// Only generate sarif files if we are uploading code scan results
+			// to github
 			if repo.Opts.UploadCodeScanToGithub {
 				err = repo.RunGithubSarifScan(ver, sarifTplFile)
 				if err != nil {
