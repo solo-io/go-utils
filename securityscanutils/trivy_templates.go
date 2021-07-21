@@ -133,5 +133,6 @@ func GetTemplateFile(trivyTemplate string) (string, error) {
 	if err != nil {
 		return "", eris.Wrapf(err, "Unable to write template to file %s", f.Name())
 	}
+	f.Close()
 	return f.Name(), nil
 }

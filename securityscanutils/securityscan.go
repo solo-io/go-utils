@@ -132,7 +132,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(versionToScan *semver.Version, markdo
 	}
 	version := versionToScan.String()
 	outputDir := path.Join(r.Opts.OutputDir, r.Repo, "markdown_results", version)
-	err = osutils.CreateDirIfNotExists(outputDir)
+	err = os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sar
 	}
 	version := versionToScan.String()
 	outputDir := path.Join(r.Opts.OutputDir, r.Repo, "sarif_results", version)
-	err = osutils.CreateDirIfNotExists(outputDir)
+	err = os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 	}
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/code-scanning/sarifs", r.Owner, r.Repo)
 	res, err := req.Post(url, req.BodyJSON(sarifMetadata), header)
-	fmt.Println(res.String())
+	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, res.String())
 	if err != nil || res.Response().StatusCode != 200 {
 		return eris.Wrapf(err, "error uploading sarif file to github, response: \n%s", res)
 	}
