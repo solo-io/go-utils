@@ -82,23 +82,27 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	if err != nil {
 		return eris.Wrap(err, "error initializing github client")
 	}
+	markdownTplFile, err := GetTemplateFile(MarkdownTrivyTemplate)
+	if err != nil {
+		return eris.Wrap(err, "error creating temporary markdown template file to pass to trivy")
+	}
+	sarifTplFile, err := GetTemplateFile(SarifTrivyTemplate)
+	if err != nil {
+		return eris.Wrap(err, "error creating temporary markdown template file to pass to trivy")
+	}
+	defer func() {
+		os.Remove(markdownTplFile)
+		os.Remove(sarifTplFile)
+	}()
 	for _, repo := range s.Repos {
 		opts := repo.Opts
 		allReleases, err := githubutils.GetAllRepoReleases(ctx, client, repo.Owner, repo.Repo)
 		if err != nil {
 			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
 		}
-		githubutils.SortReleasesBySemver(allReleases)
 		// Filter releases by version constraint provided
 		filteredReleases := githubutils.FilterReleases(allReleases, opts.VersionConstraint)
-		markdownTplFile, err := GetTemplateFile(MarkdownTrivyTemplate)
-		if err != nil {
-			return eris.Wrap(err, "error creating temporary markdown template file to pass to trivy")
-		}
-		sarifTplFile, err := GetTemplateFile(SarifTrivyTemplate)
-		if err != nil {
-			return eris.Wrap(err, "error creating temporary markdown template file to pass to trivy")
-		}
+		githubutils.SortReleasesBySemver(filteredReleases)
 		for _, release := range filteredReleases {
 			// We can swallow the error here, any releases with improper tag names
 			// will not be included in the filtered list
@@ -107,9 +111,11 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
-			err = repo.RunGithubSarifScan(ver, sarifTplFile)
-			if err != nil {
-				return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
+			if repo.Opts.UploadCodeScanToGithub {
+				err = repo.RunGithubSarifScan(ver, sarifTplFile)
+				if err != nil {
+					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
+				}
 			}
 		}
 
@@ -159,7 +165,7 @@ func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sar
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
-		if success && r.Opts.UploadCodeScanToGithub {
+		if success {
 			err = r.UploadSecurityScanToGithub(output, version)
 			if err != nil {
 				return eris.Wrapf(err, "error uploading security scan results sarif to github for version %s", version)
@@ -224,51 +230,40 @@ type SarifMetadata struct {
 	Sarif     string `json:"sarif"`
 }
 
-type Response struct {
-	ShaObject `json:"object"`
-}
-
-type ShaObject struct {
-	Sha string `json:"sha"`
-}
-
 func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag string) error {
-	githubRepoApiUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", r.Owner, r.Repo)
+	sha, err := githubutils.GetCommitForTag(r.Owner, r.Repo, "v"+versionTag, true)
+	if err != nil {
+		return err
+	}
 	githubToken, err := osutils.GetEnvE("GITHUB_TOKEN")
 	if err != nil {
 		return err
 	}
-	resp, err := req.Get(githubRepoApiUrl+"/git/refs/tags/v"+versionTag, req.Header{"Authorization": "token " + githubToken})
-	if err != nil {
-		return eris.Wrapf(err, "Unable to get commit for version v%s", versionTag)
-	}
-	shaResp := &Response{}
-	resp.ToJSON(shaResp)
-	fmt.Printf("%+v\n", shaResp)
-	b, err := ioutil.ReadFile(fileName)
+	sarifFileBytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return eris.Wrapf(err, "error reading sarif file %s", fileName)
 	}
 	var sarifFile bytes.Buffer
-	w := gzip.NewWriter(&sarifFile)
-	_, err = w.Write(b)
+	gzipWriter := gzip.NewWriter(&sarifFile)
+	_, err = gzipWriter.Write(sarifFileBytes)
 	if err != nil {
 		return eris.Wrap(err, "error writing gzip file")
 	}
-	w.Close()
-	if len(shaResp.Sha) != 40 {
-		return eris.Errorf("Invalid SHA (%s) for version %s", shaResp.Sha, versionTag)
+	gzipWriter.Close()
+	if len(sha) != 40 {
+		return eris.Errorf("Invalid SHA (%s) for version %s", sha, versionTag)
 	}
 	sarifMetadata := SarifMetadata{
 		Ref:       fmt.Sprintf("refs/tags/v%s", versionTag),
-		CommitSha: shaResp.Sha,
+		CommitSha: sha,
 		Sarif:     base64.StdEncoding.EncodeToString(sarifFile.Bytes()),
 	}
 	header := req.Header{
 		"Authorization": fmt.Sprintf("token %s", githubToken),
 		"Content-Type":  "application/json",
 	}
-	res, err := req.Post(githubRepoApiUrl+"/code-scanning/sarifs", req.BodyJSON(sarifMetadata), header)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/code-scanning/sarifs", r.Owner, r.Repo)
+	res, err := req.Post(url, req.BodyJSON(sarifMetadata), header)
 	fmt.Println(res.String())
 	if err != nil || res.Response().StatusCode != 200 {
 		return eris.Wrapf(err, "error uploading sarif file to github, response: \n%s", res)
