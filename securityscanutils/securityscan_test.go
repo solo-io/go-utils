@@ -72,14 +72,6 @@ var _ = Describe("Security Scan Suite", func() {
 			// Expect there to be a generated generated file for each image per version
 			ExpectDirToHaveFiles(path.Join(markdownDir, "1.6.0"), "gloo_cve_report.docgen")
 			ExpectDirToHaveFiles(path.Join(markdownDir, "1.7.0"), "discovery_cve_report.docgen", "gloo_cve_report.docgen")
-
-			sarifDir := path.Join(outputDir, "gloo", "sarif_results")
-			// Have a directory for each version we scanned
-			ExpectDirToHaveFiles(sarifDir, "1.6.0", "1.7.0")
-			// Expect there to be a generated sarif file for each image per version
-			ExpectDirToHaveFiles(path.Join(sarifDir, "1.6.0"), "gloo_cve_report.sarif")
-			ExpectDirToHaveFiles(path.Join(sarifDir, "1.7.0"), "discovery_cve_report.sarif", "gloo_cve_report.sarif")
-
 		})
 
 		It("errors if more than one constraint is matched", func() {
