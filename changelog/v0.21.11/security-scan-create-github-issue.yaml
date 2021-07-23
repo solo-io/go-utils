@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/gloo/issues/5048
+    resolvesIssue: false
+    description: >
+      Adds option to Security Scanner to create github issues for each image that a vulnerability is found in.
+      If an issue already exists for that image, it will update the issue with the most recent vulnerability scan results.
