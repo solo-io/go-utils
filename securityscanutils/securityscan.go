@@ -33,6 +33,8 @@ type SecurityScanRepo struct {
 	Repo  string
 	Owner string
 	Opts  *SecurityScanOpts
+
+	allGithubIssues []*github.Issue
 }
 
 type SecurityScanOpts struct {
@@ -114,18 +116,17 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		// Filter releases by version constraint provided
 		filteredReleases := githubutils.FilterReleases(allReleases, opts.VersionConstraint)
 		githubutils.SortReleasesBySemver(filteredReleases)
-		var allGithubIssues []*github.Issue
 		if repo.Opts.CreateGithubIssuePerImageVulnerability {
-			allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{})
+			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{})
 			if err != nil {
-				eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
+				return eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
 			}
 		}
 		for _, release := range filteredReleases {
 			// We can swallow the error here, any releases with improper tag names
 			// will not be included in the filtered list
 			ver, _ := semver.NewVersion(release.GetTagName())
-			err = repo.RunMarkdownScan(ctx, s.githubClient, ver, markdownTplFile, allGithubIssues)
+			err = repo.RunMarkdownScan(ctx, s.githubClient, ver, markdownTplFile)
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
@@ -143,7 +144,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	return nil
 }
 
-func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.Client, versionToScan *semver.Version, markdownTplFile string, allGithubIssues []*github.Issue) error {
+func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.Client, versionToScan *semver.Version, markdownTplFile string) error {
 	images, err := r.GetImagesToScan(versionToScan)
 	if err != nil {
 		return err
@@ -165,7 +166,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 		// Create / Update Github issue for the repo if a vulnerability is found
 		// and CreateGithubIssuePerImageVulnerability is set to true
 		if vulnFound && r.Opts.CreateGithubIssuePerImageVulnerability {
-			err = r.CreateUpdateVulnerabilityIssue(ctx, client, imageWithRepo, output, allGithubIssues)
+			err = r.CreateUpdateVulnerabilityIssue(ctx, client, imageWithRepo, output)
 			if err != nil {
 				return err
 			}
@@ -235,9 +236,17 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	if err != nil {
 		return false, false, eris.Wrap(err, "trivy is not on PATH, make sure that the trivy v0.18 is installed and on PATH")
 	}
-	args := []string{"image", "--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode), "--severity", "HIGH,CRITICAL", "--format", "template", "--template", "@" + templateFile, "--output", output, image}
+	args := []string{"image",
+		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
+		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
+		"--severity", "HIGH,CRITICAL",
+		"--format", "template",
+		"--template", "@" + templateFile,
+		"--output", output,
+		image}
 	cmd := exec.Command("trivy", args...)
 	out, statusCode, err := executils.CombinedOutputWithStatus(cmd)
+	// Check if a vulnerability has been found
 	vulnFound := statusCode == VulnerabilityFoundStatusCode
 	// err will be non-nil if there is a non-zero status code
 	// so if the status code is the special "vulnerability found" status code,
@@ -297,17 +306,17 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 	}
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/code-scanning/sarifs", r.Owner, r.Repo)
 	res, err := req.Post(url, req.BodyJSON(sarifMetadata), header)
-	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, res.String())
 	if err != nil || res.Response().StatusCode != 200 {
 		return eris.Wrapf(err, "error uploading sarif file to github, response: \n%s", res)
 	}
+	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, res.String())
 	return nil
 }
 
 // Creates/Updates a Github Issue per image
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
-func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, client *github.Client, image, markdownScanFilePath string, allGithubIssues []*github.Issue) error {
+func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, client *github.Client, image, markdownScanFilePath string) error {
 	issueTitle := fmt.Sprintf("Security Alert: %s", image)
 	trivyLabels := &[]string{"trivy", "vulnerability"}
 	markdownScan, err := ioutil.ReadFile(markdownScanFilePath)
@@ -321,7 +330,7 @@ func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, c
 	}
 	createNewIssue := true
 
-	for _, issue := range allGithubIssues {
+	for _, issue := range r.allGithubIssues {
 		// If issue already exists, update existing issue with new security scan
 		if strings.Contains(issue.GetTitle(), issueTitle) {
 			// Only create new issue if issue does not already exist

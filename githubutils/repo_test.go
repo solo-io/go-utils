@@ -17,5 +17,6 @@ var _ = Describe("repo utils", func() {
 		sha, err := githubutils.GetCommitForTag("solo-io", "solo-projects", "v1.6.0", true)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(sha).To(Equal("7110f444371f7ea7b18ed4380438709492d02bb8"))
+
 	})
 })
