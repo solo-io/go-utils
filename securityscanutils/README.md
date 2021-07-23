@@ -52,6 +52,8 @@ func main() {
                     // endpoint, e.g. https://github.com/solo-io/gloo/security/code-scanning
                     // read more here: https://docs.github.com/en/rest/reference/code-scanning
 					UploadCodeScanToGithub: true,
+					// Opens/Updates Github Issue for each image a vulnerability is found in
+                    CreateGithubIssuePerImageVulnerability: true,
 				},
 			},
 		},

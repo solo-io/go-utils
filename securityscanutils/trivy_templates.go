@@ -13,6 +13,8 @@ const MarkdownTrivyTemplate = `{{- if . }}
 
 No Vulnerabilities Found for {{.Target}}
 {{- else }}
+Vulnerabilities Listed for {{.Target}}
+
 Vulnerability ID|Package|Severity|Installed Version|Fixed Version|Reference
 ---|---|---|---|---|---
 {{- range .Vulnerabilities }}

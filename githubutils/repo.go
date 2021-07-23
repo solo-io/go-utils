@@ -41,8 +41,9 @@ const (
 	CONTENT_TYPE_FILE      = "file"
 	CONTENT_TYPE_DIRECTORY = "dir"
 
-	MAX_GITHUB_RELEASES_PER_PAGE = 100
-	MIN_GITHUB_PAGE_NUM          = 1
+	// https://docs.github.com/en/rest/guides/traversing-with-pagination#changing-the-number-of-items-received
+	MAX_GITHUB_RESULTS_PER_PAGE = 100
+	MIN_GITHUB_PAGE_NUM         = 1
 )
 
 func GetGithubToken() (string, error) {
@@ -154,13 +155,13 @@ func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner
 	for i := MIN_GITHUB_PAGE_NUM; len(allReleases) < maxReleases; i += 1 {
 		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
 			Page:    i,
-			PerPage: MAX_GITHUB_RELEASES_PER_PAGE,
+			PerPage: MAX_GITHUB_RESULTS_PER_PAGE,
 		})
 		if err != nil {
 			return nil, err
 		}
 		allReleases = append(allReleases, releases...)
-		if len(releases) < MAX_GITHUB_RELEASES_PER_PAGE {
+		if len(releases) < MAX_GITHUB_RESULTS_PER_PAGE {
 			break
 		}
 	}
@@ -238,6 +239,44 @@ func CreateStatus(ctx context.Context, client *github.Client, owner, repo, sha, 
 		return nil, err
 	}
 	return st, nil
+}
+
+// Gets all issues from a repo in order from newest to oldest
+func GetAllIssues(ctx context.Context, client *github.Client, owner, repo string, listOpts *github.IssueListByRepoOptions) ([]*github.Issue, error) {
+	return GetAllRepoIssuesWithMax(ctx, client, owner, repo, math.MaxInt32, listOpts)
+}
+
+// Gets all issues from a repo in order from newest to oldest, up to a maxIssues number of issues
+func GetAllRepoIssuesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxIssues int, listOpts *github.IssueListByRepoOptions) ([]*github.Issue, error) {
+	var allIssues []*github.Issue
+	for i := MIN_GITHUB_PAGE_NUM; len(allIssues) < maxIssues; i += 1 {
+		listOpts.ListOptions = github.ListOptions{
+			Page:    i,
+			PerPage: MAX_GITHUB_RESULTS_PER_PAGE,
+		}
+		issues, _, err := client.Issues.ListByRepo(ctx, owner, repo, listOpts)
+		if err != nil {
+			return nil, err
+		}
+		allIssues = append(allIssues, issues...)
+		if len(issues) < MAX_GITHUB_RESULTS_PER_PAGE {
+			break
+		}
+	}
+	if len(allIssues) > maxIssues {
+		allIssues = allIssues[:maxIssues]
+	}
+	return allIssues, nil
+}
+
+func CreateIssue(ctx context.Context, client *github.Client, owner, repo string, ir *github.IssueRequest) (*github.Issue, error) {
+	created, _, err := client.Issues.Create(ctx, owner, repo, ir)
+	return created, eris.Wrapf(err, "error creating issue with create request %+v", ir)
+}
+
+func UpdateIssue(ctx context.Context, client *github.Client, owner, repo string, issueNumber int, ir *github.IssueRequest) error {
+	_, _, err := client.Issues.Edit(ctx, owner, repo, issueNumber, ir)
+	return eris.Wrapf(err, "error updating issue no. %d, issue with edit request %+v", issueNumber, ir)
 }
 
 // This function writes directly to a writer, so the user is required to close the writer manually
