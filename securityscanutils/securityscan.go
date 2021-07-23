@@ -86,6 +86,9 @@ type SecurityScanOpts struct {
 // Status code returned by Trivy if a vulnerability is found
 const VulnerabilityFoundStatusCode = 52
 
+// Labels that are applied to github issues that security scan generates
+var TrivyLabels = []string{"trivy", "vulnerability"}
+
 // Main method to call on SecurityScanner which generates .md and .sarif files
 // in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
 // sarif files will be uploaded to the repository's code-scanning endpoint.
@@ -117,7 +120,10 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		filteredReleases := githubutils.FilterReleases(allReleases, opts.VersionConstraint)
 		githubutils.SortReleasesBySemver(filteredReleases)
 		if repo.Opts.CreateGithubIssuePerImageVulnerability {
-			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{})
+			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
+				State:  "open",
+				Labels: TrivyLabels,
+			})
 			if err != nil {
 				return eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
 			}
@@ -318,7 +324,6 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 // example: https://github.com/solo-io/solo-projects/issues/2458
 func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, client *github.Client, image, markdownScanFilePath string) error {
 	issueTitle := fmt.Sprintf("Security Alert: %s", image)
-	trivyLabels := &[]string{"trivy", "vulnerability"}
 	markdownScan, err := ioutil.ReadFile(markdownScanFilePath)
 	if err != nil {
 		return eris.Wrapf(err, "error reading file %s", markdownScanFilePath)
@@ -326,7 +331,7 @@ func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, c
 	issueRequest := &github.IssueRequest{
 		Title:  github.String(issueTitle),
 		Body:   github.String(string(markdownScan)),
-		Labels: trivyLabels,
+		Labels: &TrivyLabels,
 	}
 	createNewIssue := true
 
