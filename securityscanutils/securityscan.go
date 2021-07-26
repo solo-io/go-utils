@@ -80,7 +80,7 @@ type SecurityScanOpts struct {
 	UploadCodeScanToGithub bool
 
 	// Creates github issue if image vulnerabilities are found
-	CreateGithubIssuePerImageVulnerability bool
+	CreateGithubIssuePerVersion bool
 }
 
 // Status code returned by Trivy if a vulnerability is found
@@ -119,7 +119,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		// Filter releases by version constraint provided
 		filteredReleases := githubutils.FilterReleases(allReleases, opts.VersionConstraint)
 		githubutils.SortReleasesBySemver(filteredReleases)
-		if repo.Opts.CreateGithubIssuePerImageVulnerability {
+		if repo.Opts.CreateGithubIssuePerVersion {
 			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
 				State:  "open",
 				Labels: TrivyLabels,
@@ -181,8 +181,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 
 	}
 	// Create / Update Github issue for the repo if a vulnerability is found
-	// and CreateGithubIssuePerImageVulnerability is set to true
-	if r.Opts.CreateGithubIssuePerImageVulnerability {
+	// and CreateGithubIssuePerVersion is set to true
+	if r.Opts.CreateGithubIssuePerVersion {
 		fmt.Printf(vulnerabilityMd)
 		err = r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMd)
 		if err != nil {
