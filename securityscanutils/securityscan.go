@@ -80,7 +80,7 @@ type SecurityScanOpts struct {
 	UploadCodeScanToGithub bool
 
 	// Creates github issue if image vulnerabilities are found
-	CreateGithubIssuePerImageVulnerability bool
+	CreateGithubIssuePerVersion bool
 }
 
 // Status code returned by Trivy if a vulnerability is found
@@ -119,7 +119,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		// Filter releases by version constraint provided
 		filteredReleases := githubutils.FilterReleases(allReleases, opts.VersionConstraint)
 		githubutils.SortReleasesBySemver(filteredReleases)
-		if repo.Opts.CreateGithubIssuePerImageVulnerability {
+		if repo.Opts.CreateGithubIssuePerVersion {
 			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
 				State:  "open",
 				Labels: TrivyLabels,
@@ -161,6 +161,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 	if err != nil {
 		return err
 	}
+	var vulnerabilityMd string
 	for _, image := range images {
 		imageWithRepo := fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
@@ -169,13 +170,23 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
-		// Create / Update Github issue for the repo if a vulnerability is found
-		// and CreateGithubIssuePerImageVulnerability is set to true
-		if vulnFound && r.Opts.CreateGithubIssuePerImageVulnerability {
-			err = r.CreateUpdateVulnerabilityIssue(ctx, client, imageWithRepo, output)
-			if err != nil {
-				return err
-			}
+		trivyScanMd, err := ioutil.ReadFile(output)
+		if err != nil {
+			return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
+		}
+
+		if vulnFound {
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n\n", imageWithRepo, trivyScanMd)
+		}
+
+	}
+	// Create / Update Github issue for the repo if a vulnerability is found
+	// and CreateGithubIssuePerVersion is set to true
+	if r.Opts.CreateGithubIssuePerVersion {
+		fmt.Printf(vulnerabilityMd)
+		err = r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMd)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -322,15 +333,11 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 // Creates/Updates a Github Issue per image
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
-func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, client *github.Client, image, markdownScanFilePath string) error {
-	issueTitle := fmt.Sprintf("Security Alert: %s", image)
-	markdownScan, err := ioutil.ReadFile(markdownScanFilePath)
-	if err != nil {
-		return eris.Wrapf(err, "error reading file %s", markdownScanFilePath)
-	}
+func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, client *github.Client, version, vulnerabilityMarkdown string) error {
+	issueTitle := fmt.Sprintf("Security Alert: %s", version)
 	issueRequest := &github.IssueRequest{
 		Title:  github.String(issueTitle),
-		Body:   github.String(string(markdownScan)),
+		Body:   github.String(vulnerabilityMarkdown),
 		Labels: &TrivyLabels,
 	}
 	createNewIssue := true
@@ -340,7 +347,7 @@ func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, c
 		if strings.Contains(issue.GetTitle(), issueTitle) {
 			// Only create new issue if issue does not already exist
 			createNewIssue = false
-			err = githubutils.UpdateIssue(ctx, client, r.Owner, r.Repo, issue.GetNumber(), issueRequest)
+			err := githubutils.UpdateIssue(ctx, client, r.Owner, r.Repo, issue.GetNumber(), issueRequest)
 			if err != nil {
 				return eris.Wrapf(err, "error updating issue with issue request %+v", issueRequest)
 			}

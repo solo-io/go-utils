@@ -1,0 +1,7 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/gloo/issues/5048
+    resolvesIssue: false
+    description: >
+      Change image vulnerability github issue creation behavior such that only one issue is created per version, where
+      each of the images' vulnerabilities are reported in that one issue.
