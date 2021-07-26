@@ -1,0 +1,6 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/gloo/issues/5048
+    resolvesIssue: false
+    description: >
+      Fixes security scanning bug that renames issue from 1.6.13 -> 1.6.1 or 1.6.24-> 1.6.2
