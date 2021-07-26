@@ -1,0 +1,6 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/gloo/issues/5048
+    resolvesIssue: false
+    description: >
+      Fixes issue where security scanning will fail and error when scanning releases that failed mid-release.
