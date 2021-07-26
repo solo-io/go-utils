@@ -183,7 +183,6 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 	// Create / Update Github issue for the repo if a vulnerability is found
 	// and CreateGithubIssuePerVersion is set to true
 	if r.Opts.CreateGithubIssuePerVersion {
-		fmt.Printf(vulnerabilityMd)
 		err = r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMd)
 		if err != nil {
 			return err
