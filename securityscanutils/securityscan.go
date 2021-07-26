@@ -183,7 +183,6 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 	// Create / Update Github issue for the repo if a vulnerability is found
 	// and CreateGithubIssuePerVersion is set to true
 	if r.Opts.CreateGithubIssuePerVersion {
-		fmt.Printf(vulnerabilityMd)
 		err = r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMd)
 		if err != nil {
 			return err
@@ -344,13 +343,14 @@ func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, c
 
 	for _, issue := range r.allGithubIssues {
 		// If issue already exists, update existing issue with new security scan
-		if strings.Contains(issue.GetTitle(), issueTitle) {
+		if issue.GetTitle() == issueTitle {
 			// Only create new issue if issue does not already exist
 			createNewIssue = false
 			err := githubutils.UpdateIssue(ctx, client, r.Owner, r.Repo, issue.GetNumber(), issueRequest)
 			if err != nil {
 				return eris.Wrapf(err, "error updating issue with issue request %+v", issueRequest)
 			}
+			break
 		}
 	}
 	if createNewIssue {
