@@ -66,3 +66,26 @@ func Unique(stringSlice []string) []string {
 	}
 	return list
 }
+
+func ToHashSet(stringSlice []string) map[string]bool {
+	if len(stringSlice) == 0 {
+		return nil
+	}
+	set := make(map[string]bool)
+	for _, s := range stringSlice {
+		set[s] = true
+	}
+	return set
+}
+
+// returns a new array where f is applied on all values in stringSlice
+// usage:
+// fmt.Println(MapSlice([]string{"abc","def"}, strings.ToUpper)
+// result: []string{"ABC", "DEF}
+func MapSlice(stringSlice []string, f func(string) string) []string {
+	out := make([]string, len(stringSlice))
+	for i, v := range stringSlice {
+		out[i] = f(v)
+	}
+	return out
+}
