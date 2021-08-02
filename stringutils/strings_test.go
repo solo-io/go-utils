@@ -25,7 +25,7 @@ var _ = Describe("stringutils", func() {
 		})
 	})
 
-	Context("ToHashSet", func() {
+	Context("StringSliceToHashSet", func() {
 		var (
 			stringSlice []string
 		)
@@ -35,7 +35,7 @@ var _ = Describe("stringutils", func() {
 		})
 
 		It("Works", func() {
-			hashSet := stringutils.ToHashSet(stringSlice)
+			hashSet := stringutils.StringSliceToHashSet(stringSlice)
 			for _, s := range stringSlice {
 				Expect(hashSet).To(HaveKeyWithValue(s, true))
 			}

@@ -67,7 +67,7 @@ func Unique(stringSlice []string) []string {
 	return list
 }
 
-func ToHashSet(stringSlice []string) map[string]bool {
+func StringSliceToHashSet(stringSlice []string) map[string]bool {
 	if len(stringSlice) == 0 {
 		return nil
 	}
