@@ -80,9 +80,9 @@ func ToHashSet(stringSlice []string) map[string]bool {
 
 // returns a new array where f is applied on all values in stringSlice
 // usage:
-// fmt.Println(MapSlice([]string{"abc","def"}, strings.ToUpper)
+// fmt.Println(MapStringSlice([]string{"abc","def"}, strings.ToUpper)
 // result: []string{"ABC", "DEF}
-func MapSlice(stringSlice []string, f func(string) string) []string {
+func MapStringSlice(stringSlice []string, f func(string) string) []string {
 	out := make([]string, len(stringSlice))
 	for i, v := range stringSlice {
 		out[i] = f(v)

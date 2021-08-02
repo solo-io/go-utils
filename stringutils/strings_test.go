@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("stringutils", func() {
-	Context("MapSlice", func() {
+	Context("MapStringSlice", func() {
 		var (
 			stringSlice []string
 		)
@@ -19,7 +19,7 @@ var _ = Describe("stringutils", func() {
 		})
 
 		It("works", func() {
-			transformedSlice := stringutils.MapSlice(stringSlice, strings.ToUpper)
+			transformedSlice := stringutils.MapStringSlice(stringSlice, strings.ToUpper)
 			Expect(transformedSlice).To(Equal([]string{"A", "B", "C", "D", "E"}))
 			Expect(stringSlice).To(Equal([]string{"a", "b", "c", "d", "e"}))
 		})

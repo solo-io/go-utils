@@ -1,4 +1,4 @@
 changelog:
   - type: NON_USER_FACING
     description: >
-      Add `MapSlice` and `ToHashSet` stringutil functions.
+      Add `MapStringSlice` and `ToHashSet` stringutil functions.
