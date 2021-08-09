@@ -295,7 +295,7 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	if err != nil {
 		return false, false, eris.Wrap(err, "trivy is not on PATH, make sure that the trivy v0.18 is installed and on PATH")
 	}
-	args := []string{"image",
+	trivyScanArgs := []string{"image",
 		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
 		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
 		"--severity", "HIGH,CRITICAL",
@@ -303,13 +303,11 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 		"--template", "@" + templateFile,
 		"--output", output,
 		image}
-	cmd := exec.Command("trivy", args...)
-
 	// Execute the trivy scan, with retries and sleep's between each retry
 	// We noticed flakes when executing the trivy scan and the easiest solution
 	// is to just perform a retry. If this does not resolve the issue, we should
 	// investigate a more robust solution.
-	out, statusCode, err := executeTrivyScanWithRetries(cmd)
+	out, statusCode, err := executeTrivyScanWithRetries(trivyScanArgs)
 
 	// Check if a vulnerability has been found
 	vulnFound := statusCode == VulnerabilityFoundStatusCode
@@ -334,7 +332,7 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	return true, vulnFound, nil
 }
 
-func executeTrivyScanWithRetries(trivyScanCmd *exec.Cmd) ([]byte, int, error) {
+func executeTrivyScanWithRetries(trivyScanArgs []string) ([]byte, int, error) {
 	remainingRetries := 5
 	timeBetweenRetries := time.Second
 
@@ -345,6 +343,7 @@ func executeTrivyScanWithRetries(trivyScanCmd *exec.Cmd) ([]byte, int, error) {
 	)
 
 	for remainingRetries > 0 {
+		trivyScanCmd := exec.Command("trivy", trivyScanArgs...)
 		out, statusCode, err = executils.CombinedOutputWithStatus(trivyScanCmd)
 
 		// If there is no error, don't retry
