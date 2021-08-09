@@ -10,8 +10,11 @@ import (
 	"os"
 	"sort"
 
+	"github.com/Masterminds/semver/v3"
+
 	"github.com/imroc/req"
 
+	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/versionutils"
 
 	"github.com/rotisserie/eris"
@@ -174,7 +177,7 @@ func GetRepoReleasesWithPredicateAndMax(ctx context.Context, client *github.Clie
 
 		// Only append releases if they match the predicate
 		// This is required since the Github API does not expose parameters to filter the RepositoryRelease list in the request
-		filteredReleases := FilterReleases(releases, predicate)
+		filteredReleases := FilterRepositoryReleases(releases, predicate)
 		allReleases = append(allReleases, filteredReleases...)
 
 		// If the number of releases on this page is less than the results per page,
@@ -191,7 +194,7 @@ func GetRepoReleasesWithPredicateAndMax(ctx context.Context, client *github.Clie
 	return allReleases, nil
 }
 
-func FilterReleases(releases []*github.RepositoryRelease, predicate RepositoryReleasePredicate) []*github.RepositoryRelease {
+func FilterRepositoryReleases(releases []*github.RepositoryRelease, predicate RepositoryReleasePredicate) []*github.RepositoryRelease {
 	var filteredReleases []*github.RepositoryRelease
 	for _, release := range releases {
 		if predicate.Apply(release) {
@@ -359,6 +362,29 @@ func SortReleasesBySemver(releases []*github.RepositoryRelease) {
 		}
 		return verA.MustIsGreaterThan(*verB)
 	})
+}
+
+// Filters slice of github releases by providing a constraint on the release semver
+// does not modify input slice, returns the filtered list.
+// If we are unable to parse a release version, we do not include it in the filtered list
+// Deprecated: use FilterRepositoryReleases
+func FilterReleases(releases []*github.RepositoryRelease, constraint *semver.Constraints) []*github.RepositoryRelease {
+	if constraint == nil {
+		return releases
+	}
+	var filteredReleases []*github.RepositoryRelease
+	for _, release := range releases {
+		versionToTest, err := semver.NewVersion(release.GetTagName())
+		if err != nil {
+			// If we are unable to parse the release version, we do not include it in the filtered list
+			log.Warnf("unable to parse release version %s", release.GetTagName())
+			continue
+		}
+		if constraint.Check(versionToTest) {
+			filteredReleases = append(filteredReleases, release)
+		}
+	}
+	return filteredReleases
 }
 
 type Response struct {
