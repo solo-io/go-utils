@@ -11,9 +11,6 @@ import (
 	"sort"
 
 	"github.com/imroc/req"
-	"github.com/solo-io/go-utils/osutils"
-
-	"github.com/solo-io/go-utils/log"
 
 	"github.com/solo-io/go-utils/versionutils"
 
@@ -21,7 +18,6 @@ import (
 	"github.com/solo-io/go-utils/contextutils"
 	"go.uber.org/zap"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 )
@@ -146,11 +142,26 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 	return byt, err
 }
 
+type RepositoryReleasePredicate interface {
+	Apply(release *github.RepositoryRelease) bool
+}
+
+type AllReleasesPredicate struct {
+}
+
+func (a *AllReleasesPredicate) Apply(_ *github.RepositoryRelease) bool {
+	return true
+}
+
 func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error) {
 	return GetAllRepoReleasesWithMax(ctx, client, owner, repo, math.MaxInt32)
 }
 
 func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner, repo string, maxReleases int) ([]*github.RepositoryRelease, error) {
+	return GetRepoReleasesWithPredicateAndMax(ctx, client, owner, repo, &AllReleasesPredicate{}, maxReleases)
+}
+
+func GetRepoReleasesWithPredicateAndMax(ctx context.Context, client *github.Client, owner, repo string, predicate RepositoryReleasePredicate, maxReleases int) ([]*github.RepositoryRelease, error) {
 	var allReleases []*github.RepositoryRelease
 	for i := MIN_GITHUB_PAGE_NUM; len(allReleases) < maxReleases; i += 1 {
 		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
@@ -160,15 +171,34 @@ func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner
 		if err != nil {
 			return nil, err
 		}
-		allReleases = append(allReleases, releases...)
+
+		// Only append releases if they match the predicate
+		// This is required since the Github API does not expose parameters to filter the RepositoryRelease list in the request
+		filteredReleases := FilterReleases(releases, predicate)
+		allReleases = append(allReleases, filteredReleases...)
+
+		// If the number of releases on this page is less than the results per page,
+		// we have reached the final page
 		if len(releases) < MAX_GITHUB_RESULTS_PER_PAGE {
 			break
 		}
 	}
+
+	// Ensure that if we have exceeded the number of maxReleases, we truncate the list
 	if len(allReleases) > maxReleases {
 		allReleases = allReleases[:maxReleases]
 	}
 	return allReleases, nil
+}
+
+func FilterReleases(releases []*github.RepositoryRelease, predicate RepositoryReleasePredicate) []*github.RepositoryRelease {
+	var filteredReleases []*github.RepositoryRelease
+	for _, release := range releases {
+		if predicate.Apply(release) {
+			filteredReleases = append(filteredReleases, release)
+		}
+	}
+	return filteredReleases
 }
 
 func FindLatestReleaseTagIncudingPrerelease(ctx context.Context, client *github.Client, owner, repo string) (string, error) {
@@ -331,29 +361,6 @@ func SortReleasesBySemver(releases []*github.RepositoryRelease) {
 	})
 }
 
-// Filters slice of github releases by providing a constraint on the release semver
-// does not modify input slice, returns the filtered list.
-// If we are unable to parse a release version, we do not include it in the filtered list
-
-func FilterReleases(releases []*github.RepositoryRelease, constraint *semver.Constraints) []*github.RepositoryRelease {
-	if constraint == nil {
-		return releases
-	}
-	var filteredReleases []*github.RepositoryRelease
-	for _, release := range releases {
-		versionToTest, err := semver.NewVersion(release.GetTagName())
-		if err != nil {
-			// If we are unable to parse the release version, we do not include it in the filtered list
-			log.Warnf("unable to parse release version %s", release.GetTagName())
-			continue
-		}
-		if constraint.Check(versionToTest) {
-			filteredReleases = append(filteredReleases, release)
-		}
-	}
-	return filteredReleases
-}
-
 type Response struct {
 	ShaObject `json:"object"`
 }
@@ -369,7 +376,7 @@ func GetCommitForTag(repoOwner, repo, tag string, auth bool) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/refs/tags/%s", repoOwner, repo, tag)
 	header := req.Header{}
 	if auth {
-		githubToken, err := osutils.GetEnvE("GITHUB_TOKEN")
+		githubToken, err := GetGithubToken()
 		if err != nil {
 			return "", err
 		}
