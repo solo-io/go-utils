@@ -1,0 +1,7 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >
+      Support retries in Trivy scan.
+      This is an attempt to handle cases where a network connection failure causes
+      a Trivy scan to fail. Since the SecurityScan executes as a bulk job, we want
+      to ensure that transient failures do not cause the entire job to fail.
