@@ -7,21 +7,23 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"os/exec"
 	"path"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/Masterminds/semver/v3"
 
 	"github.com/google/go-github/v32/github"
 	"github.com/solo-io/go-utils/osutils/executils"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/imroc/req"
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/log"
-	"github.com/solo-io/go-utils/osutils"
 )
 
 type SecurityScanner struct {
@@ -110,14 +112,18 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		os.Remove(markdownTplFile)
 		os.Remove(sarifTplFile)
 	}()
+
 	for _, repo := range s.Repos {
 		opts := repo.Opts
-		allReleases, err := githubutils.GetAllRepoReleases(ctx, s.githubClient, repo.Owner, repo.Repo)
+
+		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
+		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
+		maxReleasesToScan := math.MaxInt32
+		filteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
 		if err != nil {
 			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
 		}
-		// Filter releases by version constraint provided
-		filteredReleases := githubutils.FilterReleases(allReleases, opts.VersionConstraint)
+
 		githubutils.SortReleasesBySemver(filteredReleases)
 		if repo.Opts.CreateGithubIssuePerVersion {
 			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
@@ -244,6 +250,43 @@ func (r *SecurityScanRepo) GetImagesToScan(versionToScan *semver.Version) ([]str
 	return imagesToScan, nil
 }
 
+func getReleasePredicateForSecurityScan(versionConstraint *semver.Constraints) *SecurityScanRepositoryReleasePredicate {
+	return &SecurityScanRepositoryReleasePredicate{
+		versionConstraint: versionConstraint,
+	}
+}
+
+// The SecurityScanRepositoryReleasePredicate is responsible for defining which
+// github.RepositoryRelease artifacts should be included in the bulk security scan
+// At the moment, the two requirements are that:
+// 1. The release is not a pre-release or draft
+// 2. The release matches the configured version constraint
+type SecurityScanRepositoryReleasePredicate struct {
+	versionConstraint *semver.Constraints
+}
+
+func (s *SecurityScanRepositoryReleasePredicate) Apply(release *github.RepositoryRelease) bool {
+	if release.GetPrerelease() || release.GetDraft() {
+		// Do not include pre-releases or drafts
+		return false
+	}
+
+	versionToTest, err := semver.NewVersion(release.GetTagName())
+	if err != nil {
+		// If we are unable to parse the release version, we do not include it in the filtered list
+		log.Warnf("unable to parse release version %s", release.GetTagName())
+		return false
+	}
+
+	if !s.versionConstraint.Check(versionToTest) {
+		// If the release version does not pass the version constraint, do not include
+		return false
+	}
+
+	// If all checks have passed, include the release
+	return true
+}
+
 // Runs trivy scan command
 // Returns (trivy scan ran successfully, vulnerabilities found, error running trivy scan)
 func RunTrivyScan(image, version, templateFile, output string) (bool, bool, error) {
@@ -252,7 +295,7 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	if err != nil {
 		return false, false, eris.Wrap(err, "trivy is not on PATH, make sure that the trivy v0.18 is installed and on PATH")
 	}
-	args := []string{"image",
+	trivyScanArgs := []string{"image",
 		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
 		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
 		"--severity", "HIGH,CRITICAL",
@@ -260,8 +303,12 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 		"--template", "@" + templateFile,
 		"--output", output,
 		image}
-	cmd := exec.Command("trivy", args...)
-	out, statusCode, err := executils.CombinedOutputWithStatus(cmd)
+	// Execute the trivy scan, with retries and sleep's between each retry
+	// We noticed flakes when executing the trivy scan and the easiest solution
+	// is to just perform a retry. If this does not resolve the issue, we should
+	// investigate a more robust solution.
+	out, statusCode, err := executeTrivyScanWithRetries(trivyScanArgs)
+
 	// Check if a vulnerability has been found
 	vulnFound := statusCode == VulnerabilityFoundStatusCode
 	// err will be non-nil if there is a non-zero status code
@@ -272,6 +319,10 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 		_ = os.Remove(output)
 		// swallow error if image is not found error, so that we can continue scanning releases
 		// even if some releases failed and we didn't publish images for those releases
+		// this error used to happen if a release was a pre-release and therefore images
+		// weren't pushed to the container registry.
+		// we have since filtered out non-release images from being scanned so this warning
+		// shouldn't occur, but leaving here in case there was another edge case we missed
 		if IsImageNotFoundErr(string(out)) {
 			log.Warnf("image %s not found for version %s", image, version)
 			return false, false, nil
@@ -279,6 +330,36 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 		return false, false, eris.Wrapf(err, "error running trivy scan on image %s, version %s, Logs: \n%s", image, version, string(out))
 	}
 	return true, vulnFound, nil
+}
+
+func executeTrivyScanWithRetries(trivyScanArgs []string) ([]byte, int, error) {
+	remainingRetries := 5
+	timeBetweenRetries := time.Second
+
+	var (
+		out        []byte
+		statusCode int
+		err        error
+	)
+
+	for remainingRetries > 0 {
+		trivyScanCmd := exec.Command("trivy", trivyScanArgs...)
+		out, statusCode, err = executils.CombinedOutputWithStatus(trivyScanCmd)
+
+		// If there is no error, don't retry
+		if err == nil {
+			return out, statusCode, err
+		}
+
+		// If there is no image, don't retry
+		if IsImageNotFoundErr(string(out)) {
+			return out, statusCode, err
+		}
+		// decrement the remaining retries
+		remainingRetries -= 1
+		time.Sleep(timeBetweenRetries)
+	}
+	return out, statusCode, err
 }
 
 type SarifMetadata struct {
@@ -293,7 +374,8 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 	if err != nil {
 		return err
 	}
-	githubToken, err := osutils.GetEnvE("GITHUB_TOKEN")
+
+	githubToken, err := githubutils.GetGithubToken()
 	if err != nil {
 		return err
 	}
