@@ -13,6 +13,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 
@@ -304,11 +305,11 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 		image}
 	cmd := exec.Command("trivy", args...)
 
-	// Execute the trivy scan, with 3 retries
+	// Execute the trivy scan, with retries and sleep's between each retry
 	// We noticed flakes when executing the trivy scan and the easiest solution
 	// is to just perform a retry. If this does not resolve the issue, we should
 	// investigate a more robust solution.
-	out, statusCode, err := executeTrivyScanWithRetries(cmd, 3)
+	out, statusCode, err := executeTrivyScanWithRetries(cmd)
 
 	// Check if a vulnerability has been found
 	vulnFound := statusCode == VulnerabilityFoundStatusCode
@@ -333,8 +334,9 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	return true, vulnFound, nil
 }
 
-func executeTrivyScanWithRetries(trivyScanCmd *exec.Cmd, numberOfRetries int) ([]byte, int, error) {
-	remainingRetries := numberOfRetries
+func executeTrivyScanWithRetries(trivyScanCmd *exec.Cmd) ([]byte, int, error) {
+	remainingRetries := 5
+	timeBetweenRetries := time.Second
 
 	var (
 		out        []byte
@@ -356,6 +358,7 @@ func executeTrivyScanWithRetries(trivyScanCmd *exec.Cmd, numberOfRetries int) ([
 		}
 		// decrement the remaining retries
 		remainingRetries -= 1
+		time.Sleep(timeBetweenRetries)
 	}
 	return out, statusCode, err
 }
