@@ -60,7 +60,7 @@ func (s *slackClient) NotifyForRepo(ctx context.Context, repo, message string) {
 	if slackUrl == "" {
 		contextutils.LoggerFrom(ctx).Warnw("Requested notifying slack, but no URL",
 			zap.String("repo", repo),
-			zap.Any("notifications", s.notifications))
+			zap.Any("events", s.notifications))
 		return
 	}
 	s.httpClient.PostJsonContent(ctx, message, slackUrl)

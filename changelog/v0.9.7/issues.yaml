@@ -1,4 +1,4 @@
 changelog:
   - type: NEW_FEATURE
     issueLink: https://github.com/solo-io/go-utils/issues/237
-    description: Support issues webhook events for git bots. 
+    description: Support issues webhook events for git bots.

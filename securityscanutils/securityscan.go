@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/solo-io/go-utils/securityscanutils/events"
 	"io/ioutil"
 	"math"
 	"os"
@@ -29,12 +30,18 @@ import (
 type SecurityScanner struct {
 	Repos        []*SecurityScanRepo
 	githubClient *github.Client
+
+	// securityScanEventBus
+	securityScanEventBus *events.SecurityScanEventBus
 }
 
 type SecurityScanRepo struct {
 	Repo  string
 	Owner string
 	Opts  *SecurityScanOpts
+
+	// securityScanEventBus
+	securityScanEventBus *events.SecurityScanEventBus
 
 	allGithubIssues []*github.Issue
 }
@@ -83,6 +90,9 @@ type SecurityScanOpts struct {
 
 	// Creates github issue if image vulnerabilities are found
 	CreateGithubIssuePerVersion bool
+
+	// If defined, push a notification after the job completes
+	SlackNotificationWebhook string
 }
 
 // Status code returned by Trivy if a vulnerability is found
@@ -95,6 +105,16 @@ var TrivyLabels = []string{"trivy", "vulnerability"}
 // in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
 // sarif files will be uploaded to the repository's code-scanning endpoint.
 func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
+	s.securityScanEventBus = events.NewSecurityScanEventBus()
+
+	s.securityScanEventBus.PublishScannerEvent(events.ScanStarted, nil)
+	err := s.GenerateSecurityScansInternal(ctx)
+	s.securityScanEventBus.PublishScannerEvent(events.ScanCompleted, err)
+
+	return err
+}
+
+func (s *SecurityScanner) GenerateSecurityScansInternal(ctx context.Context) error {
 	var err error
 	s.githubClient, err = githubutils.GetClient(ctx)
 	if err != nil {
@@ -116,6 +136,20 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	for _, repo := range s.Repos {
 		opts := repo.Opts
 
+		// re-use the existing event bus
+		repo.securityScanEventBus = s.securityScanEventBus
+
+		// Configure event subscribers for the repo
+		repo.securityScanEventBus.RegisterSubscriptionConfiguration(ctx, &events.SecurityScanSubscriptions{
+			Github: &events.GithubSubscription{
+				CreateGithubIssuePerVersion: opts.CreateGithubIssuePerVersion,
+			},
+			Slack:  &events.SlackSubscription{
+				WebhookUrl: opts.SlackNotificationWebhook,
+			},
+		})
+		repo.securityScanEventBus.PublishRepositoryEvent(events.RepoScanStarted, repo.Repo, nil)
+
 		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
 		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
 		maxReleasesToScan := math.MaxInt32
@@ -125,15 +159,6 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		}
 
 		githubutils.SortReleasesBySemver(filteredReleases)
-		if repo.Opts.CreateGithubIssuePerVersion {
-			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
-				State:  "open",
-				Labels: TrivyLabels,
-			})
-			if err != nil {
-				return eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
-			}
-		}
 		for _, release := range filteredReleases {
 			// We can swallow the error here, any releases with improper tag names
 			// will not be included in the filtered list
@@ -142,6 +167,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
+
 			// Only generate sarif files if we are uploading code scan results
 			// to github
 			if repo.Opts.UploadCodeScanToGithub {
@@ -151,6 +177,8 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 				}
 			}
 		}
+
+		repo.securityScanEventBus.PublishRepositoryEvent(events.RepoScanCompleted, repo.Repo, nil)
 
 	}
 	return nil
@@ -186,14 +214,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 		}
 
 	}
-	// Create / Update Github issue for the repo if a vulnerability is found
-	// and CreateGithubIssuePerVersion is set to true
-	if r.Opts.CreateGithubIssuePerVersion {
-		err = r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMd)
-		if err != nil {
-			return err
-		}
-	}
+
+	r.securityScanEventBus.PublishVulnerabilityFound(r.Repo, r.Owner, version, vulnerabilityMd)
 	return nil
 }
 
@@ -408,39 +430,6 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 		return eris.Wrapf(err, "error uploading sarif file to github, response: \n%s", res)
 	}
 	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, res.String())
-	return nil
-}
-
-// Creates/Updates a Github Issue per image
-// The github issue will have the markdown table report of the image's vulnerabilities
-// example: https://github.com/solo-io/solo-projects/issues/2458
-func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, client *github.Client, version, vulnerabilityMarkdown string) error {
-	issueTitle := fmt.Sprintf("Security Alert: %s", version)
-	issueRequest := &github.IssueRequest{
-		Title:  github.String(issueTitle),
-		Body:   github.String(vulnerabilityMarkdown),
-		Labels: &TrivyLabels,
-	}
-	createNewIssue := true
-
-	for _, issue := range r.allGithubIssues {
-		// If issue already exists, update existing issue with new security scan
-		if issue.GetTitle() == issueTitle {
-			// Only create new issue if issue does not already exist
-			createNewIssue = false
-			err := githubutils.UpdateIssue(ctx, client, r.Owner, r.Repo, issue.GetNumber(), issueRequest)
-			if err != nil {
-				return eris.Wrapf(err, "error updating issue with issue request %+v", issueRequest)
-			}
-			break
-		}
-	}
-	if createNewIssue {
-		_, err := githubutils.CreateIssue(ctx, client, r.Owner, r.Repo, issueRequest)
-		if err != nil {
-			return eris.Wrapf(err, "error creating issue with issue request %+v", issueRequest)
-		}
-	}
 	return nil
 }
 
