@@ -156,6 +156,20 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(enterpriseReleases
 	return enterpriseReleases, nil
 }
 
+// Run after MergeEnterpriseReleaseWithOS
+func (g *MergedReleaseGenerator) GetReleaseDependencyMap() string {
+	keys := make([]Version, 0, len(g.releaseDepMap))
+	for k := range g.releaseDepMap {
+		keys = append(keys, k)
+	}
+	SortReleaseVersions(keys)
+	var out string
+	for _, k := range keys {
+		out += fmt.Sprintf("%v|%v\n", k.String(), g.releaseDepMap[k])
+	}
+	return out
+}
+
 func GetOtherRepoDepsBetweenVersions(otherRepoReleasesSorted []Version, earlierVersion, laterVersion *Version) []Version {
 	if earlierVersion == nil {
 		return []Version{*laterVersion}
