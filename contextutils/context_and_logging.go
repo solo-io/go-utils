@@ -19,6 +19,7 @@ package contextutils
 
 import (
 	"context"
+	"os"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -36,7 +37,7 @@ var (
 	level zap.AtomicLevel
 )
 
-func buildLogger() (*zap.Logger, error) {
+func buildProductionLogger() (*zap.Logger, error) {
 	config := zap.NewProductionConfig()
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	level = zap.NewAtomicLevel()
@@ -44,7 +45,53 @@ func buildLogger() (*zap.Logger, error) {
 	return config.Build()
 }
 
+func buildSplitOutputProductionLogger() (*zap.Logger, error) {
+	logger, err := buildProductionLogger()
+	if err != nil {
+		return nil, err
+	}
+
+	// Define level-handling logic.
+	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.ErrorLevel
+	})
+	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.ErrorLevel
+	})
+
+	// High-priority output should go to standard error, and low-priority
+	// output should go to standard out.
+	consoleDebugging := zapcore.Lock(os.Stdout)
+	consoleErrors := zapcore.Lock(os.Stderr)
+
+	buildEncoder := func() zapcore.Encoder {
+		encoderConfig := zap.NewDevelopmentEncoderConfig()
+		// encoderConfig := zap.NewProductionEncoderConfig()
+		encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		return zapcore.NewJSONEncoder(encoderConfig)
+	}
+
+	splitOutput := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
+		// Join the outputs, encoders, and level-handling functions into
+		// zapcore.Cores, then tee the cores together.
+		return zapcore.NewTee(
+			zapcore.NewCore(
+				buildEncoder(), consoleErrors, highPriority,
+			),
+			zapcore.NewCore(
+				buildEncoder(), consoleDebugging, lowPriority,
+			),
+		)
+	})
+
+	return logger.WithOptions(splitOutput, zap.AddCaller(), zap.AddStacktrace(highPriority)), nil
+}
+
 func init() {
+	buildLogger := buildProductionLogger
+	if os.Getenv("SPLIT_LOG_OUTPUT") == "true" {
+		buildLogger = buildSplitOutputProductionLogger
+	}
 	if logger, err := buildLogger(); err != nil {
 
 		// We failed to create a fallback logger. Our fallback
