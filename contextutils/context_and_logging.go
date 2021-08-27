@@ -65,8 +65,7 @@ func buildSplitOutputProductionLogger() (*zap.Logger, error) {
 	consoleErrors := zapcore.Lock(os.Stderr)
 
 	buildEncoder := func() zapcore.Encoder {
-		encoderConfig := zap.NewDevelopmentEncoderConfig()
-		// encoderConfig := zap.NewProductionEncoderConfig()
+		encoderConfig := zap.NewProductionEncoderConfig()
 		encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 		return zapcore.NewJSONEncoder(encoderConfig)
 	}
