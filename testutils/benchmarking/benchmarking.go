@@ -44,3 +44,28 @@ func ExpectFuncToComplete(f func(), runtimeThresholdInSeconds float64) {
 		BeNumerically("<=", runtimeThresholdInSeconds),
 		BeNumerically(">", 0)))
 }
+
+func TimeFunc(f func()) float64{
+	var rusage1 syscall.Rusage
+	var rusage2 syscall.Rusage
+	runtime.LockOSThread()                                    // important to lock OS thread to ensure we are the only goroutine being benchmarked
+	prevGc := debug.SetGCPercent(-1)                          // might just be paranoid, but disable gc while benchmarking
+	err := syscall.Getrusage(syscall.RUSAGE_THREAD, &rusage1) // RUSAGE_THREAD system call only works/compiles on linux
+	if err != nil {
+		Expect(err).ToNot(HaveOccurred())
+	}
+	f()
+	err = syscall.Getrusage(syscall.RUSAGE_THREAD, &rusage2)
+	if err != nil {
+		Expect(err).ToNot(HaveOccurred())
+	}
+	debug.SetGCPercent(prevGc)
+	runtime.UnlockOSThread()
+	duration1 := time.Duration(rusage1.Utime.Nano())
+	duration2 := time.Duration(rusage2.Utime.Nano())
+	userRuntime := duration2 - duration1
+	fmt.Printf("utime: %f\n", userRuntime.Seconds())
+	Expect(userRuntime.Seconds()).Should(
+		BeNumerically(">", 0))
+	return userRuntime.Seconds()
+}
