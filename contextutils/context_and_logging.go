@@ -88,7 +88,8 @@ func buildSplitOutputProductionLogger() (*zap.Logger, error) {
 
 func init() {
 	buildLogger := buildProductionLogger
-	if os.Getenv("SPLIT_LOG_OUTPUT") == "split" {
+	// Specify gloo.splitLogOutput=true when installing Gloo via Helm to set the SPLIT_LOG_OUTPUT env var
+	if os.Getenv("SPLIT_LOG_OUTPUT") == "true" {
 		buildLogger = buildSplitOutputProductionLogger
 	}
 	if logger, err := buildLogger(); err != nil {

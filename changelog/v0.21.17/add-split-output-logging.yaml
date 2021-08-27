@@ -4,7 +4,6 @@ changelog:
     resolvesIssue: false
     description: >
       When the SPLIT_LOG_OUTPUT environment variable is specified, a global logger is created with the following characteristics:
-        - debug/info/warning are written to stdout
-        - error/fatal/panic are written to stderr
+      debug/info/warning are written to stdout, error/fatal/panic are written to stderr
       Configuration is otherwise identical to the default logger
       When SPLIT_LOG_OUTPUT is unspecified, logging configuration is unchanged
