@@ -77,23 +77,11 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 		default:
 			setLevel = zapcore.InfoLevel
 		}
-		logLevel = zap.NewAtomicLevelAt(setLevel)
 
-		logConfig := zap.NewProductionConfig()
-		logConfig.Level = logLevel
-		logger, logErr := logConfig.Build()
-		if logErr == nil {
-			contextutils.SetFallbackLogger(logger.Sugar())
-		}
+		contextutils.SetLogLevel(setLevel)
+
 	} else if startupOpts.LogLevel != nil {
 		logLevel = *startupOpts.LogLevel
-	} else {
-		logConfig := zap.NewProductionConfig()
-		logger, logErr := logConfig.Build()
-		if logErr == nil {
-			logLevel = logConfig.Level
-			contextutils.SetFallbackLogger(logger.Sugar())
-		}
 	}
 
 	go RunGoroutineStat()
