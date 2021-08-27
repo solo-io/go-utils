@@ -89,7 +89,7 @@ func buildSplitOutputProductionLogger() (*zap.Logger, error) {
 
 func init() {
 	buildLogger := buildProductionLogger
-	if os.Getenv("SPLIT_LOG_OUTPUT") == "true" {
+	if os.Getenv("SPLIT_LOG_OUTPUT") == "split" {
 		buildLogger = buildSplitOutputProductionLogger
 	}
 	if logger, err := buildLogger(); err != nil {
