@@ -45,7 +45,7 @@ func ExpectFuncToComplete(f func(), runtimeThresholdInSeconds float64) {
 		BeNumerically(">", 0)))
 }
 
-func TimeForFuncToComplete(f func()) float64{
+func TimeForFuncToComplete(f func()) float64 {
 	var rusage1 syscall.Rusage
 	var rusage2 syscall.Rusage
 	runtime.LockOSThread()                                    // important to lock OS thread to ensure we are the only goroutine being benchmarked
