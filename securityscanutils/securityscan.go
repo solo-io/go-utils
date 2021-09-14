@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/solo-io/go-utils/securityscanutils/events"
 	"io/ioutil"
 	"math"
 	"os"
@@ -15,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/solo-io/go-utils/securityscanutils/events"
 
 	"github.com/Masterminds/semver/v3"
 
@@ -30,9 +31,6 @@ import (
 type SecurityScanner struct {
 	Repos        []*SecurityScanRepo
 	githubClient *github.Client
-
-	// securityScanEventBus
-	securityScanEventBus *events.SecurityScanEventBus
 }
 
 type SecurityScanRepo struct {
@@ -40,10 +38,10 @@ type SecurityScanRepo struct {
 	Owner string
 	Opts  *SecurityScanOpts
 
-	// securityScanEventBus
+	// securityScanEventBus is the event bus used to connect
+	// security scanning events, with subscribers that perform
+	// actions on those events
 	securityScanEventBus *events.SecurityScanEventBus
-
-	allGithubIssues []*github.Issue
 }
 
 type SecurityScanOpts struct {
@@ -98,23 +96,10 @@ type SecurityScanOpts struct {
 // Status code returned by Trivy if a vulnerability is found
 const VulnerabilityFoundStatusCode = 52
 
-// Labels that are applied to github issues that security scan generates
-var TrivyLabels = []string{"trivy", "vulnerability"}
-
 // Main method to call on SecurityScanner which generates .md and .sarif files
 // in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
 // sarif files will be uploaded to the repository's code-scanning endpoint.
 func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
-	s.securityScanEventBus = events.NewSecurityScanEventBus()
-
-	s.securityScanEventBus.PublishScannerEvent(events.ScanStarted, nil)
-	err := s.GenerateSecurityScansInternal(ctx)
-	s.securityScanEventBus.PublishScannerEvent(events.ScanCompleted, err)
-
-	return err
-}
-
-func (s *SecurityScanner) GenerateSecurityScansInternal(ctx context.Context) error {
 	var err error
 	s.githubClient, err = githubutils.GetClient(ctx)
 	if err != nil {
@@ -136,51 +121,63 @@ func (s *SecurityScanner) GenerateSecurityScansInternal(ctx context.Context) err
 	for _, repo := range s.Repos {
 		opts := repo.Opts
 
-		// re-use the existing event bus
-		repo.securityScanEventBus = s.securityScanEventBus
-
 		// Configure event subscribers for the repo
+		repo.securityScanEventBus = events.NewSecurityScanEventBus()
 		repo.securityScanEventBus.RegisterSubscriptionConfiguration(ctx, &events.SecurityScanSubscriptions{
 			Github: &events.GithubSubscription{
 				CreateGithubIssuePerVersion: opts.CreateGithubIssuePerVersion,
 			},
-			Slack:  &events.SlackSubscription{
+			Slack: &events.SlackSubscription{
 				WebhookUrl: opts.SlackNotificationWebhook,
 			},
 		})
+
 		repo.securityScanEventBus.PublishRepositoryEvent(events.RepoScanStarted, repo.Repo, nil)
+		err := s.GenerateSecurityScanForRepo(ctx, repo, markdownTplFile, sarifTplFile)
+		repo.securityScanEventBus.PublishRepositoryEvent(events.RepoScanCompleted, repo.Repo, err)
 
-		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
-		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
-		maxReleasesToScan := math.MaxInt32
-		filteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
 		if err != nil {
-			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
+			return err
 		}
-
-		githubutils.SortReleasesBySemver(filteredReleases)
-		for _, release := range filteredReleases {
-			// We can swallow the error here, any releases with improper tag names
-			// will not be included in the filtered list
-			ver, _ := semver.NewVersion(release.GetTagName())
-			err = repo.RunMarkdownScan(ctx, s.githubClient, ver, markdownTplFile)
-			if err != nil {
-				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
-			}
-
-			// Only generate sarif files if we are uploading code scan results
-			// to github
-			if repo.Opts.UploadCodeScanToGithub {
-				err = repo.RunGithubSarifScan(ver, sarifTplFile)
-				if err != nil {
-					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
-				}
-			}
-		}
-
-		repo.securityScanEventBus.PublishRepositoryEvent(events.RepoScanCompleted, repo.Repo, nil)
-
 	}
+	return nil
+}
+
+func (s *SecurityScanner) GenerateSecurityScanForRepo(
+	ctx context.Context,
+	repo *SecurityScanRepo,
+	markdownTplFile,
+	sarifTplFile string) error {
+
+	opts := repo.Opts
+
+	// This predicate filters releases so we only perform scans on the images that are relevant to the repo
+	repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
+	filteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, math.MaxInt32)
+	if err != nil {
+		return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
+	}
+
+	githubutils.SortReleasesBySemver(filteredReleases)
+	for _, release := range filteredReleases {
+		// We can swallow the error here, any releases with improper tag names
+		// will not be included in the filtered list
+		ver, _ := semver.NewVersion(release.GetTagName())
+		err = repo.RunMarkdownScan(ctx, s.githubClient, ver, markdownTplFile)
+		if err != nil {
+			return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
+		}
+
+		// Only generate sarif files if we are uploading code scan results
+		// to github
+		if repo.Opts.UploadCodeScanToGithub {
+			err = repo.RunGithubSarifScan(ver, sarifTplFile)
+			if err != nil {
+				return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -212,7 +209,6 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 			}
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n\n", imageWithRepo, trivyScanMd)
 		}
-
 	}
 
 	r.securityScanEventBus.PublishVulnerabilityFound(r.Repo, r.Owner, version, vulnerabilityMd)

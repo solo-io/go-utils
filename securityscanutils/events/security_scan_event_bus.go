@@ -5,9 +5,15 @@ import (
 	"time"
 )
 
+type SecurityScanSubscriptionConfig struct {
+	defaultSubscriptions SecurityScanSubscriptions
+
+	repositorySubscriptions map[string]SecurityScanSubscriptions
+}
+
 type SecurityScanSubscriptions struct {
 	Github *GithubSubscription
-	Slack *SlackSubscription
+	Slack  *SlackSubscription
 }
 
 type SecurityScanEventBus struct {
@@ -21,7 +27,7 @@ type SecurityScanEventBus struct {
 func NewSecurityScanEventBus() *SecurityScanEventBus {
 	return &SecurityScanEventBus{
 		subscriptionConfig: nil,
-		eventBus: nil,
+		eventBus:           nil,
 	}
 }
 
@@ -32,8 +38,6 @@ func (n *SecurityScanEventBus) RegisterSubscriptionConfiguration(ctx context.Con
 	// Always log the event
 	loggingEventSubscriber := &LoggingEventSubscriber{}
 	n.subscribeEventHandlerToTopics(ctx, loggingEventSubscriber, []EventTopic{
-		ScanStarted,
-		ScanCompleted,
 		RepoScanStarted,
 		RepoScanCompleted,
 		VulnerabilityFound,
@@ -51,8 +55,8 @@ func (n *SecurityScanEventBus) RegisterSubscriptionConfiguration(ctx context.Con
 	if subscriptionConfig.Slack != nil {
 		slackNotificationEventSubscriber := NewSlackNotificationEventSubscriber(subscriptionConfig.Slack)
 		n.subscribeEventHandlerToTopics(ctx, slackNotificationEventSubscriber, []EventTopic{
-			ScanStarted,
-			ScanCompleted,
+			RepoScanStarted,
+			RepoScanCompleted,
 			VulnerabilityFound,
 		})
 	}
@@ -71,7 +75,7 @@ func (n *SecurityScanEventBus) subscribeEventHandlerToTopic(ctx context.Context,
 			select {
 			case event := <-subscriptionChannel:
 				handler.HandleEvent(event)
-			case <- ctx.Done():
+			case <-ctx.Done():
 				return
 			}
 		}
@@ -82,7 +86,7 @@ func (n *SecurityScanEventBus) subscribeEventHandlerToTopic(ctx context.Context,
 func (n *SecurityScanEventBus) PublishScannerEvent(topic EventTopic, err error) {
 	n.publishToTopic(topic, &EventData{
 		Time: time.Now(),
-		Err: err,
+		Err:  err,
 	})
 }
 
@@ -90,7 +94,7 @@ func (n *SecurityScanEventBus) PublishRepositoryEvent(topic EventTopic, reposito
 	n.publishToTopic(topic, RepositoryEventData{
 		EventData: &EventData{
 			Time: time.Now(),
-			Err: err,
+			Err:  err,
 		},
 		RepositoryName: repository,
 	})
@@ -100,11 +104,11 @@ func (n *SecurityScanEventBus) PublishVulnerabilityFound(repositoryName, reposit
 	n.publishToTopic(VulnerabilityFound, &VulnerabilityFoundEventData{
 		EventData: &EventData{
 			Time: time.Now(),
-			Err: nil,
+			Err:  nil,
 		},
-		RepositoryName: repositoryName,
+		RepositoryName:  repositoryName,
 		RepositoryOwner: repositoryOwner,
-		Version: version,
+		Version:         version,
 		VulnerabilityMd: vulnerabilityMd,
 	})
 }

@@ -8,10 +8,7 @@ import (
 type EventTopic int
 
 const (
-	ScanStarted EventTopic = iota
-	ScanCompleted
-
-	RepoScanStarted
+	RepoScanStarted EventTopic = iota
 	RepoScanCompleted
 
 	VulnerabilityFound
@@ -19,12 +16,12 @@ const (
 
 type Event struct {
 	Topic EventTopic
-	Data interface{}
+	Data  interface{}
 }
 
 type EventData struct {
 	Time time.Time
-	Err error
+	Err  error
 }
 
 type RepositoryEventData struct {
@@ -34,15 +31,14 @@ type RepositoryEventData struct {
 
 type VulnerabilityFoundEventData struct {
 	*EventData
-	RepositoryName string
+	RepositoryName  string
 	RepositoryOwner string
-	Version string
+	Version         string
 	VulnerabilityMd string
 }
 
 type EventChannel chan Event
 type EventChannelSlice []EventChannel
-
 
 type EventBus struct {
 	subscribersByTopic map[EventTopic]EventChannelSlice
@@ -56,7 +52,7 @@ func NewEventBus() *EventBus {
 	}
 }
 
-func (eb *EventBus) Subscribe(topic EventTopic, ch EventChannel)  {
+func (eb *EventBus) Subscribe(topic EventTopic, ch EventChannel) {
 	eb.rm.Lock()
 	defer eb.rm.Unlock()
 
