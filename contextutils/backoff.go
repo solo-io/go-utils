@@ -24,14 +24,14 @@ type ExponentialBackoff struct {
 	MaxDelay    *time.Duration
 }
 
-// Deprecated - use ExponentialBackoff instead
+// Deprecated: Deprecated due to typo; use ExponentialBackoff instead
 type ExponentioalBackoff = ExponentialBackoff
 
 type Backoff interface {
 	Backoff(ctx context.Context, f func(ctx context.Context) error) error
 }
 
-// Deprecated - use NewExponentialBackoff instead
+// Deprecated: Deprecated due to typo; use NewExponentialBackoff instead
 func NewExponentioalBackoff(eb ExponentioalBackoff) Backoff {
 	return NewExponentialBackoff(eb)
 }
