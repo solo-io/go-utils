@@ -18,30 +18,38 @@ const (
 	jitter = 0.2
 )
 
-type ExponentioalBackoff struct {
+type ExponentialBackoff struct {
 	MaxRetries  uint
 	MaxDuration *time.Duration
 	MaxDelay    *time.Duration
 }
 
+// Deprecated - use ExponentialBackoff instead
+type ExponentioalBackoff = ExponentialBackoff
+
 type Backoff interface {
 	Backoff(ctx context.Context, f func(ctx context.Context) error) error
 }
 
+// Deprecated - use NewExponentialBackoff instead
 func NewExponentioalBackoff(eb ExponentioalBackoff) Backoff {
+	return NewExponentialBackoff(eb)
+}
+
+func NewExponentialBackoff(eb ExponentialBackoff) Backoff {
 	if eb.MaxDelay == nil {
 		tmp := 15 * time.Minute
 		eb.MaxDelay = &tmp
 	}
 
-	return &exponentioalBackoff{
+	return &exponentialBackoff{
 		MaxRetries:  eb.MaxRetries,
 		MaxDuration: eb.MaxDuration,
 		MaxDelay:    *eb.MaxDelay,
 	}
 }
 
-type exponentioalBackoff struct {
+type exponentialBackoff struct {
 	MaxRetries  uint
 	MaxDuration *time.Duration
 	MaxDelay    time.Duration
@@ -49,7 +57,7 @@ type exponentioalBackoff struct {
 	start *time.Duration
 }
 
-func (e *exponentioalBackoff) Backoff(ctx context.Context, f func(ctx context.Context) error) error {
+func (e *exponentialBackoff) Backoff(ctx context.Context, f func(ctx context.Context) error) error {
 	retries := uint(0)
 	if e.MaxDuration != nil {
 		var cancel context.CancelFunc
@@ -84,7 +92,7 @@ func (e *exponentioalBackoff) Backoff(ctx context.Context, f func(ctx context.Co
 }
 
 // inspired by: https://github.com/grpc/grpc-go/blob/ce4f3c8a89229d9db3e0c30d28a9f905435ad365/internal/backoff/backoff.go#L59
-func (e *exponentioalBackoff) calcTimeToSleep(retries uint) time.Duration {
+func (e *exponentialBackoff) calcTimeToSleep(retries uint) time.Duration {
 	if retries == 0 {
 		return baseDelay
 	}

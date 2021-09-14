@@ -1,0 +1,3 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Deprecate misspelled versions of exponential backoff functions.
