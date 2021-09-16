@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/solo-io/go-utils/slackutils"
+
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/google/go-github/v32/github"
@@ -37,6 +39,16 @@ type SecurityScanRepo struct {
 	Opts  *SecurityScanOpts
 
 	allGithubIssues []*github.Issue
+
+	scanAggregate *ScanAggregate
+}
+
+type ScanAggregate struct {
+	StartTime time.Time
+	EndTime   time.Time
+
+	VersionsWithVulnerabilities []string
+	GithubIssuesModified        int
 }
 
 type SecurityScanOpts struct {
@@ -83,6 +95,9 @@ type SecurityScanOpts struct {
 
 	// Creates github issue if image vulnerabilities are found
 	CreateGithubIssuePerVersion bool
+
+	// Webhook to invoke if vulnerabilities are found
+	SlackWebhookUrl string
 }
 
 // Status code returned by Trivy if a vulnerability is found
@@ -114,10 +129,10 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	}()
 
 	for _, repo := range s.Repos {
-		opts := repo.Opts
+		repo.StartScan()
 
 		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
-		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
+		repoReleasePredicate := getReleasePredicateForSecurityScan(repo.Opts.VersionConstraint)
 		maxReleasesToScan := math.MaxInt32
 		filteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
 		if err != nil {
@@ -152,6 +167,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 			}
 		}
 
+		repo.CompleteScan()
 	}
 	return nil
 }
@@ -186,15 +202,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 		}
 
 	}
-	// Create / Update Github issue for the repo if a vulnerability is found
-	// and CreateGithubIssuePerVersion is set to true
-	if r.Opts.CreateGithubIssuePerVersion {
-		err = r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMd)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+
+	return r.HandleVulnerabilityFound(ctx, client, version, vulnerabilityMd)
 }
 
 func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sarifTplFile string) error {
@@ -409,6 +418,55 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 	}
 	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, res.String())
 	return nil
+}
+
+func (r *SecurityScanRepo) HandleVulnerabilityFound(ctx context.Context, client *github.Client, version, vulnerabilityMarkdown string) error {
+	if vulnerabilityMarkdown == "" {
+		// In some cases, an empty markdown file is generated (https://github.com/solo-io/solo-projects/issues/2734)
+		return nil
+	}
+
+	r.scanAggregate.VersionsWithVulnerabilities = append(r.scanAggregate.VersionsWithVulnerabilities, version)
+
+	if r.Opts.CreateGithubIssuePerVersion {
+		r.scanAggregate.GithubIssuesModified += 1
+		return r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMarkdown)
+	}
+
+	return nil
+}
+
+func (r *SecurityScanRepo) StartScan() {
+	// For each repository, initialize a new scan aggregate
+	r.scanAggregate = &ScanAggregate{
+		StartTime:                   time.Now(),
+		VersionsWithVulnerabilities: []string{},
+		GithubIssuesModified:        0,
+	}
+}
+
+func (r *SecurityScanRepo) CompleteScan() {
+	r.scanAggregate.EndTime = time.Now()
+
+	if r.Opts.SlackWebhookUrl == "" {
+		// If there is not a slackWebhookUrl defined, return
+		return
+	}
+
+	ctx := context.Background()
+	slackClient := slackutils.NewSlackClient(&slackutils.SlackNotifications{
+		DefaultUrl: r.Opts.SlackWebhookUrl,
+		RepoUrls:   nil,
+	})
+
+	var sb strings.Builder
+	sb.WriteString("Security Scan Completed \n")
+	sb.WriteString(fmt.Sprintf("Repository: %v", r.Repo))
+	sb.WriteString(fmt.Sprintf("Duration: %v\n", r.scanAggregate.EndTime.Sub(r.scanAggregate.StartTime)))
+	sb.WriteString(fmt.Sprintf("Versions with Vulnerabilities: %v\n", r.scanAggregate.VersionsWithVulnerabilities))
+	sb.WriteString(fmt.Sprintf("Github Issues Modified %v\n", r.scanAggregate.GithubIssuesModified))
+
+	slackClient.Notify(ctx, sb.String())
 }
 
 // Creates/Updates a Github Issue per image
