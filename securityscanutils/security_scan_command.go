@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -381,7 +380,7 @@ func readImageVersionConstraintsFile(opts *options) (map[string][]string, error)
 	imagesPerVersion := make(map[string][]string)
 	imageSet := make(map[string]interface{})
 
-	dat, err := os.ReadFile(opts.imageFile)
+	dat, err := ioutil.ReadFile(opts.imageFile)
 	if err != nil {
 		return nil, err
 	}
