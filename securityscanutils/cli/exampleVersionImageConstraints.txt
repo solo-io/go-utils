@@ -1,0 +1,4 @@
+# comments are skipped, as are empty lines
+
+constraint-a , image1, image2, image3
+constraint-b , image2, image3, image4
