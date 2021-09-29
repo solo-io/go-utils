@@ -217,6 +217,7 @@ func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sar
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
 		if success {
+			fmt.Printf("Security scan for version %s uploaded to github repo github.com/%s/%s\n", version, r.Owner, r.Repo)
 			err = r.UploadSecurityScanToGithub(output, version)
 			if err != nil {
 				return eris.Wrapf(err, "error uploading security scan results sarif to github for version %s", version)
