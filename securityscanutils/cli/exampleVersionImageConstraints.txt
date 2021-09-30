@@ -1,4 +1,6 @@
 # comments are skipped, as are empty lines
-
+# format
 constraint-a , image1, image2, image3
 constraint-b , image2, image3, image4
+#valid example for GME
+# >=0.0.0,enterprise-networking,enterprise-agent,istiod-agent,gloo-mesh-apiserver,gloo-mesh-ui,gloo-mesh-envoy,rbac-webhook
