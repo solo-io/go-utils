@@ -1,0 +1,4 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Add generalized CLI to security scan utils.
+    issueLink: https://github.com/solo-io/go-utils/issues/467
