@@ -266,6 +266,8 @@ func scanRepoImages(opts *options) error {
 func generateSecurityScanForRepo(opts *options) error {
 	// Initialize Auth
 	client, err := githubutils.GetClient(opts.ctx)
+	// Sets the opts.allImages value, which we need for this command
+	readImageVersionConstraintsFile(opts)
 	if err != nil {
 		return err
 	}
