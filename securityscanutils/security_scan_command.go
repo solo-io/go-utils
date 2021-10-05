@@ -344,8 +344,6 @@ func BuildSecurityScanReportForRepo(tags []string, opts *options) error {
 }
 
 func printImageReportForRepo(tag string, opts *options) error {
-
-	fmt.Printf("**number of images for tag %s: %d**\n\n", tag, len(opts.allImages))
 	for _, image := range opts.allImages {
 		fmt.Printf("**%s %s image**\n\n", opts.targetRepoWritten, image)
 		url := "https://storage.googleapis.com/solo-gloo-security-scans/" + opts.targetRepo + "/" + tag + "/" + image + "_cve_report.docgen"
