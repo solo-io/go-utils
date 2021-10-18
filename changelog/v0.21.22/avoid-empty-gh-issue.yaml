@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/solo-projects/issues/2739
+    description: Do not create empty Github issues on trivy scans with no vulnerabilities
