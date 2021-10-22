@@ -74,7 +74,7 @@ var _ = Describe("Security Scan Suite", func() {
 			ExpectDirToHaveFiles(path.Join(markdownDir, "1.7.0"), "discovery_cve_report.docgen", "gloo_cve_report.docgen")
 		})
 
-		It("errors if more than one constraint is matched", func() {
+		It("scans all images from all constraints matched", func() {
 			verConstraint, err := semver.NewConstraint("=v1.7.0")
 			Expect(err).NotTo(HaveOccurred())
 			fmt.Println("Output dir:", outputDir)
@@ -86,8 +86,8 @@ var _ = Describe("Security Scan Suite", func() {
 						OutputDir: outputDir,
 						// Specify redundant constraints
 						ImagesPerVersion: map[string][]string{
-							"v1.7.0":   {"gloo", "discovery"},
-							">=v1.7.0": {"gloo"},
+							">v1.6.0":  {"gloo", "discovery"},
+							">=v1.7.0": {"glooGreaterThan17"},
 						},
 						VersionConstraint:      verConstraint,
 						ImageRepo:              "quay.io/solo-io",
@@ -96,9 +96,8 @@ var _ = Describe("Security Scan Suite", func() {
 				}},
 			}
 
-			err = secScanner.GenerateSecurityScans(context.TODO())
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("version 1.7.0 matched more than one constraint provided"))
+			imagesToScan, err := secScanner.Repos[0].GetImagesToScan(semver.MustParse("v1.7.7"))
+			Expect(imagesToScan).To(ContainElements("gloo", "discovery", "glooGreaterThan17"))
 		})
 
 		It("errors if no constraint is matched", func() {
