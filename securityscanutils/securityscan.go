@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/solo-io/go-utils/stringutils"
+
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/google/go-github/v32/github"
@@ -169,7 +171,13 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 	}
 	var vulnerabilityMd string
 	for _, image := range images {
-		imageWithRepo := fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
+		var imageWithRepo string
+		// if the image contains the repo in it (gcr.io/gloo/image-name), we don't use the Opts.ImageRepo
+		if strings.Contains(image, "/") {
+			imageWithRepo = fmt.Sprintf("%s:%s", image, version)
+		} else {
+			imageWithRepo = fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
+		}
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
 		output := path.Join(outputDir, fileName)
 		_, vulnFound, err := RunTrivyScan(imageWithRepo, version, markdownTplFile, output)
@@ -211,7 +219,13 @@ func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sar
 		return err
 	}
 	for _, image := range images {
-		imageWithRepo := fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
+		var imageWithRepo string
+		// if the image contains the repo in it (gcr.io/gloo/image-name), we don't use the Opts.ImageRepo
+		if strings.Contains(image, "/") {
+			imageWithRepo = fmt.Sprintf("%s:%s", image, version)
+		} else {
+			imageWithRepo = fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
+		}
 		fileName := fmt.Sprintf("%s_cve_report.sarif", image)
 		output := path.Join(outputDir, fileName)
 		success, _, err := RunTrivyScan(imageWithRepo, version, sarifTplFile, output)
@@ -230,27 +244,25 @@ func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sar
 }
 
 func (r *SecurityScanRepo) GetImagesToScan(versionToScan *semver.Version) ([]string, error) {
-	var imagesToScan []string
+	imagesToScan := map[string]interface{}{}
 	for constraintString, images := range r.Opts.ImagesPerVersion {
 		constraint, err := semver.NewConstraint(constraintString)
 		if err != nil {
 			return nil, eris.Wrapf(err, "Error with constraint %s", constraint)
 		}
 		if constraint.Check(versionToScan) {
-			// We want to make sure that each version only matches ONE constraint provided
-			// in the constraint -> []images map, so that we are scanning the right images for each version
-			if imagesToScan != nil {
-				return nil, eris.Errorf(
-					"version %s matched more than one constraint provided, please make all constraints mutually exclusive", versionToScan.String())
+			// For each constraint that the current version to scan passes, we add those images to
+			// the set of images to scan
+			for _, i := range images {
+				imagesToScan[i] = true
 			}
-			imagesToScan = images
 		}
 
 	}
-	if imagesToScan == nil {
+	if len(imagesToScan) == 0 {
 		return nil, eris.Errorf("version %s matched no constraints and has no images to scan", versionToScan.String())
 	}
-	return imagesToScan, nil
+	return stringutils.Keys(imagesToScan), nil
 }
 
 func getReleasePredicateForSecurityScan(versionConstraint *semver.Constraints) *SecurityScanRepositoryReleasePredicate {
