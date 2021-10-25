@@ -83,7 +83,7 @@ var _ = Describe("ChangelogTest", func() {
 			boolValue := new(bool)
 			*boolValue = false
 			skipCIValue := new(bool)
-			*skipCIValue = false
+			*skipCIValue = true
 			expected := changelogutils.ChangelogFile{
 				Entries: []*changelogutils.ChangelogEntry{
 					{
