@@ -24,7 +24,7 @@ type ChangelogEntry struct {
 	DependencyRepo  string             `json:"dependencyRepo,omitempty"`
 	DependencyTag   string             `json:"dependencyTag,omitempty"`
 	ResolvesIssue   *bool              `json:"resolvesIssue,omitempty"`
-	SkipCI			*bool			   `json:"skipCI,omitempty"`
+	SkipCI          *bool              `json:"skipCI,omitempty"`
 }
 
 // default true
