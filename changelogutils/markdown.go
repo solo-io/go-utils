@@ -112,6 +112,11 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 		output = output + "**Fixes**\n\n" + fixes + "\n"
 	}
 
+	docs := renderDocsEntries(changelog)
+	if docs != "" {
+		output = output + "**Docs**\n\n" + docs + "\n"
+	}
+
 	if changelog.Closing != "" {
 		output = output + changelog.Closing + "\n\n"
 	}
@@ -128,6 +133,25 @@ func renderDependencyBumps(changelog *Changelog) string {
 		for _, entry := range file.Entries {
 			if entry.Type == DEPENDENCY_BUMP {
 				output = output + "- " + entry.DependencyOwner + "/" + entry.DependencyRepo + " has been upgraded to " + entry.DependencyTag + ".\n"
+			}
+		}
+	}
+	return output
+}
+
+func renderDocsEntries(changelog *Changelog) string {
+	output := ""
+	for _, file := range changelog.Files {
+		for _, entry := range file.Entries {
+			if entry.Type == DOCS {
+				description := strings.TrimSpace(entry.Description)
+				// optional link
+				if entry.IssueLink != "" {
+					link := strings.TrimSpace(entry.IssueLink)
+					output = output + "- " + description + "(" + link + ")" + "\n"
+				} else {
+					output = output +  "- " + description + "\n"
+				}
 			}
 		}
 	}

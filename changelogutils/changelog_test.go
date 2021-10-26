@@ -348,6 +348,7 @@ var _ = Describe("ChangelogTest", func() {
 		It("can render changelog", func() {
 			changelog := getChangelog("v0.0.1", "blah", "closing",
 				getChangelogFile(
+					getEntry(changelogutils.DOCS, "docs for foo", "foo docs"),
 					getEntry(changelogutils.FIX, "fixes foo    ", "  foo  "), // testing trim space
 					getEntry(changelogutils.BREAKING_CHANGE, "fixes bar", "bar"),
 					getEntry(changelogutils.NEW_FEATURE, "adds baz", "baz")),
@@ -368,6 +369,10 @@ var _ = Describe("ChangelogTest", func() {
 
 - fixes foo (foo)
 - fixes foo2 (foo2)
+
+**Docs**
+
+- docs for foo (foo docs)
 
 closing
 
