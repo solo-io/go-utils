@@ -15,7 +15,6 @@ const (
 	DEPENDENCY_BUMP
 	HELM
 	UPGRADE
-	DOCS
 )
 
 var (
@@ -27,7 +26,6 @@ var (
 		"DEPENDENCY_BUMP": DEPENDENCY_BUMP,
 		"HELM":            HELM,
 		"UPGRADE":         UPGRADE,
-		"DOCS":			   DOCS,
 	}
 
 	_ChangelogEntryValueToType = map[ChangelogEntryType]string{
@@ -38,12 +36,11 @@ var (
 		DEPENDENCY_BUMP: "DEPENDENCY_BUMP",
 		HELM:            "HELM",
 		UPGRADE:         "UPGRADE",
-		DOCS:			 "DOCS",
 	}
 )
 
 func (clt ChangelogEntryType) String() string {
-	return [...]string{"BREAKING_CHANGE", "FIX", "NEW_FEATURE", "NON_USER_FACING", "DEPENDENCY_BUMP", "HELM", "UPGRADE", "DOCS"}[clt]
+	return [...]string{"BREAKING_CHANGE", "FIX", "NEW_FEATURE", "NON_USER_FACING", "DEPENDENCY_BUMP", "HELM", "UPGRADE"}[clt]
 }
 
 func (clt ChangelogEntryType) BreakingChange() bool {

@@ -110,7 +110,7 @@ func (c *changelogReader) ReadChangelogFile(ctx context.Context, path string) (*
 	}
 
 	for _, entry := range changelog.Entries {
-		if entry.Type != NON_USER_FACING && entry.Type != DEPENDENCY_BUMP && entry.Type != DOCS {
+		if entry.Type != NON_USER_FACING && entry.Type != DEPENDENCY_BUMP {
 			if entry.IssueLink == "" {
 				return nil, MissingIssueLinkError
 			}
