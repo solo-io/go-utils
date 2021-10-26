@@ -91,7 +91,7 @@ var _ = Describe("ChangelogTest", func() {
 						Description:   "foo",
 						IssueLink:     "bar",
 						ResolvesIssue: boolValue,
-						SkipCI: skipCIValue,
+						SkipCI:        skipCIValue,
 					},
 				},
 			}
