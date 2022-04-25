@@ -1,0 +1,10 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: golang
+    dependencyRepo: golang.org/x/crypto
+    dependencyTag: v0.0.0-20220315160706-3147a52a75dd
+  - type: DEPENDENCY_BUMP
+    description: Bumped the go version for go.mod
+    dependencyOwner: golang
+    dependencyRepo: go
+    dependencyTag: v1.18
