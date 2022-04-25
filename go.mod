@@ -11,7 +11,7 @@ require (
 	github.com/avast/retry-go v2.2.0+incompatible
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/fsnotify/fsnotify v1.5.3 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.4.1
 	github.com/gogo/protobuf v1.3.1
@@ -28,7 +28,7 @@ require (
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/hashstructure v1.0.0
-	github.com/onsi/ginkgo v1.12.1
+	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.10.1
 	github.com/palantir/go-baseapp v0.2.3
 	github.com/palantir/go-githubapp v0.5.0
@@ -41,14 +41,16 @@ require (
 	github.com/rs/zerolog v1.18.0
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v1.1.3
-	github.com/yuin/goldmark v1.3.3
+	github.com/yuin/goldmark v1.4.1
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
-	golang.org/x/mod v0.4.1
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
+	golang.org/x/tools v0.1.10 // indirect
 	google.golang.org/api v0.42.0
 	google.golang.org/grpc v1.36.0
 	google.golang.org/protobuf v1.25.0
