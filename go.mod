@@ -45,10 +45,11 @@ require (
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/mod v0.4.1
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/api v0.42.0
 	google.golang.org/grpc v1.36.0
 	google.golang.org/protobuf v1.25.0
