@@ -126,31 +126,28 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		if err != nil {
 			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
 		}
+		githubutils.SortReleasesBySemver(partialFilteredReleases)
+		filteredReleases := []*github.RepositoryRelease{}
 
-		patchScrubbedMap := map[string]*github.RepositoryRelease{}
+		// We could use maxint but we dont really care
+		// as we can just check if major minor changed
+		recentMajor := -1
+		recentMinor := -1
 		for _, release := range partialFilteredReleases {
 			version, err := versionutils.ParseVersion(release.GetTagName())
 			if err != nil {
 				continue
 			}
-			noPatch := fmt.Sprintf("%d.%d", version.Major, version.Minor)
-			cur, ok := patchScrubbedMap[noPatch]
-			if !ok {
-				patchScrubbedMap[noPatch] = release
+			if version.Major == recentMajor && version.Minor == recentMinor {
 				continue
 			}
-			curVersion, _ := versionutils.ParseVersion(cur.GetTagName())
-			if version.Patch > curVersion.Patch {
-				patchScrubbedMap[noPatch] = release
-			}
-		}
-		filteredReleases := make([]*github.RepositoryRelease, 0, len(patchScrubbedMap))
 
-		for _, release := range patchScrubbedMap {
+			// This is the largest patch release
+			recentMajor = version.Major
+			recentMinor = version.Minor
 			filteredReleases = append(filteredReleases, release)
 		}
 
-		githubutils.SortReleasesBySemver(filteredReleases)
 		if repo.Opts.CreateGithubIssuePerVersion {
 			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
 				State:  "open",
