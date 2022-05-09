@@ -1,0 +1,4 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/go-utils/issues/478
+    description: Only create scans for the latest patches in a version

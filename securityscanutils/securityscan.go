@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/solo-io/go-utils/stringutils"
+	"github.com/solo-io/go-utils/versionutils"
 
 	"github.com/Masterminds/semver/v3"
 
@@ -121,9 +122,32 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
 		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
 		maxReleasesToScan := math.MaxInt32
-		filteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
+		partialFilteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
 		if err != nil {
 			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
+		}
+
+		patchScrubbedMap := map[string]*github.RepositoryRelease{}
+		for _, release := range partialFilteredReleases {
+			version, err := versionutils.ParseVersion(release.GetTagName())
+			if err != nil {
+				continue
+			}
+			noPatch := fmt.Sprintf("%d.%d", version.Major, version.Minor)
+			cur, ok := patchScrubbedMap[noPatch]
+			if !ok {
+				patchScrubbedMap[noPatch] = release
+				continue
+			}
+			curVersion, _ := versionutils.ParseVersion(cur.GetTagName())
+			if version.Patch > curVersion.Patch {
+				patchScrubbedMap[noPatch] = release
+			}
+		}
+		filteredReleases := make([]*github.RepositoryRelease, 0, len(patchScrubbedMap))
+
+		for _, release := range patchScrubbedMap {
+			filteredReleases = append(filteredReleases, release)
 		}
 
 		githubutils.SortReleasesBySemver(filteredReleases)
