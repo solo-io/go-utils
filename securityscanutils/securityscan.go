@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/solo-io/go-utils/stringutils"
+	"github.com/solo-io/go-utils/versionutils"
 
 	"github.com/Masterminds/semver/v3"
 
@@ -121,12 +122,32 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
 		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
 		maxReleasesToScan := math.MaxInt32
-		filteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
+		partialFilteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
 		if err != nil {
 			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
 		}
+		githubutils.SortReleasesBySemver(partialFilteredReleases)
+		filteredReleases := []*github.RepositoryRelease{}
 
-		githubutils.SortReleasesBySemver(filteredReleases)
+		// We could use maxint but we dont really care
+		// as we can just check if major minor changed
+		recentMajor := -1
+		recentMinor := -1
+		for _, release := range partialFilteredReleases {
+			version, err := versionutils.ParseVersion(release.GetTagName())
+			if err != nil {
+				continue
+			}
+			if version.Major == recentMajor && version.Minor == recentMinor {
+				continue
+			}
+
+			// This is the largest patch release
+			recentMajor = version.Major
+			recentMinor = version.Minor
+			filteredReleases = append(filteredReleases, release)
+		}
+
 		if repo.Opts.CreateGithubIssuePerVersion {
 			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
 				State:  "open",
