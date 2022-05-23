@@ -346,7 +346,7 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	// operation. This timing is in the same ballpark as what k8s finds sensible
 	out, statusCode, err := executeTrivyScanWithRetries(
 		trivyScanArgs, 5,
-		func(attempt int) { time.Sleep(time.Duration((attempt^2)*2) * time.Second) },
+		func(attempt int) { time.Sleep(time.Duration((attempt^2) *2) * time.Second) },
 	)
 
 	// Check if a vulnerability has been found
