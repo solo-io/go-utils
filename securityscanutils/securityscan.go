@@ -340,10 +340,14 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 		"--output", output,
 		image}
 	// Execute the trivy scan, with retries and sleep's between each retry
-	// We noticed flakes when executing the trivy scan and the easiest solution
-	// is to just perform a retry. If this does not resolve the issue, we should
-	// investigate a more robust solution.
-	out, statusCode, err := executeTrivyScanWithRetries(trivyScanArgs)
+	// This can occur due to connectivity issues or epehemeral issues with
+	// the registery. For example sometimes quay has issues providing a given layer
+	// This leads to a total wait time of up to 110 seconds outside of the base
+	// operation. This timing is in the same ballpark as what k8s finds sensible
+	out, statusCode, err := executeTrivyScanWithRetries(
+		trivyScanArgs, 5,
+		func(attempt int) { time.Sleep(time.Duration(attempt^2*2) * time.Second) },
+	)
 
 	// Check if a vulnerability has been found
 	vulnFound := statusCode == VulnerabilityFoundStatusCode
@@ -368,9 +372,16 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	return true, vulnFound, nil
 }
 
-func executeTrivyScanWithRetries(trivyScanArgs []string) ([]byte, int, error) {
-	remainingRetries := 5
-	timeBetweenRetries := time.Second
+func executeTrivyScanWithRetries(trivyScanArgs []string, retryCount int,
+	backoffStrategy func(int)) ([]byte, int, error) {
+	if retryCount == 0 {
+		retryCount = 5
+	}
+	if backoffStrategy == nil {
+		backoffStrategy = func(attempt int) {
+			time.Sleep(time.Second)
+		}
+	}
 
 	var (
 		out        []byte
@@ -378,7 +389,7 @@ func executeTrivyScanWithRetries(trivyScanArgs []string) ([]byte, int, error) {
 		err        error
 	)
 
-	for remainingRetries > 0 {
+	for attempt := 0; attempt < retryCount; attempt++ {
 		trivyScanCmd := exec.Command("trivy", trivyScanArgs...)
 		out, statusCode, err = executils.CombinedOutputWithStatus(trivyScanCmd)
 
@@ -391,9 +402,8 @@ func executeTrivyScanWithRetries(trivyScanArgs []string) ([]byte, int, error) {
 		if IsImageNotFoundErr(string(out)) {
 			return out, statusCode, err
 		}
-		// decrement the remaining retries
-		remainingRetries -= 1
-		time.Sleep(timeBetweenRetries)
+
+		backoffStrategy(attempt)
 	}
 	return out, statusCode, err
 }
