@@ -36,7 +36,9 @@ type SecurityScanner struct {
 	githubClient *github.Client
 }
 
-// SecurityScanRepo
+// SecurityScanRepo is the per repo construct used by securityscanner.
+// This includes the passed in options as well as a way to store
+// all issues that had the trivy label.
 type SecurityScanRepo struct {
 	Repo  string
 	Owner string
@@ -45,6 +47,8 @@ type SecurityScanRepo struct {
 	allGithubIssues []*github.Issue
 }
 
+// SecurityScanOpts is consumed as a struct that details how a given repo should
+// be scanned and reported on.
 type SecurityScanOpts struct {
 	// The following directory structure will be created in your output dir.
 	/*
@@ -99,15 +103,16 @@ type SecurityScanOpts struct {
 	CreateGithubIssuePerLTSVersion bool
 }
 
-// Status code returned by Trivy if a vulnerability is found
+// VulnerabilityFoundStatusCode is Trivy's returned code for a vulnerability.
 const VulnerabilityFoundStatusCode = 52
 
-// Labels that are applied to github issues that security scan generates
+// TrivyLabels  are the set of labels that are applied to github issues
+// which the security scan generates
 var TrivyLabels = []string{"trivy", "vulnerability"}
 
-// Main method to call on SecurityScanner which generates .md and .sarif files
-// in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
-// sarif files will be uploaded to the repository's code-scanning endpoint.
+//  GenerateSecurityScans is the overarching `main` method which generates
+// .md and .sarif files OutputDir as well as optionall uploading scans / issues
+// to github if the toggles are set.
 func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	var err error
 	s.githubClient, err = githubutils.GetClient(ctx)
