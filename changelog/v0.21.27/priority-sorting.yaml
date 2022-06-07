@@ -2,3 +2,4 @@ changelog:
   - type: NEW_FEATURE
     issueLink: https://github.com/solo-io/gloo/issues/6337
     description: Priority Sorting struct.
+    resolvesIssue: false
