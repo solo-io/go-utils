@@ -66,11 +66,11 @@ func (p *PrioritySortedStruct[P, K]) Get(pi PriorityIndex) (K, bool) {
 }
 
 // Process will call the procesFunc over all the elements by priority
-func (p *PrioritySortedStruct[P, K]) Process(processFunc func(el K)) {
+func (p *PrioritySortedStruct[P, K]) Process(processFunc func(el K, pi PriorityIndex)) {
 	for i := 0; i <= p.numberOfPriorities; i++ {
 		m := p.elements[i]
-		for _, v := range m {
-			processFunc(v)
+		for index, v := range m {
+			processFunc(v, PriorityIndex{Priority: i, Index: index})
 		}
 	}
 }

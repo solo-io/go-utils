@@ -216,10 +216,20 @@ var _ = Describe("sort structs", func() {
 				pi := p.Add(i)
 				indexesOfValues[i] = pi
 			}
+			firstThree := 0
 			elementsReceived := make([]int, 0)
-			processFunc := func(value int) {
+			processFunc := func(value int, pi PriorityIndex) {
+				if firstThree < 3 {
+					Expect(numbersToMatch[firstThree]).To(Equal(value))
+					firstThree++
+				}
 				elementsReceived = append(elementsReceived, value)
-				deleted := p.Delete(indexesOfValues[value])
+				piValue, piExists := p.Get(pi)
+				actualIndexValue, indexValueExists := p.Get(indexesOfValues[value])
+				Expect(piExists).To(Equal(true))
+				Expect(indexValueExists).To(Equal(true))
+				Expect(piValue).To(Equal(actualIndexValue))
+				deleted := p.Delete(pi)
 				Expect(deleted).To(Equal(true))
 			}
 			p.Process(processFunc)
