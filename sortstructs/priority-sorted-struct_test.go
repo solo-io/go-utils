@@ -4,16 +4,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/solo-io/go-utils/sortstructs"
+	"golang.org/x/exp/slices"
 )
-
-func contains(s []int, e int) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
 
 func getCount(arr []int, value int) int {
 	count := 0
@@ -38,7 +30,7 @@ func createNumberPriorityList(pl [][]int) (*PrioritySortedStruct[int, int], []Pr
 		numbersToNotMatch = append(numbersToNotMatch, p...)
 	}
 	for i := 0; i <= 100; i++ {
-		if contains(numbersToNotMatch, i) {
+		if slices.Contains(numbersToNotMatch, i) {
 			continue
 		}
 		listOfInserts = append(listOfInserts, p.Add(i))
@@ -279,13 +271,13 @@ var _ = Describe("sort structs", func() {
 			}
 			pl := p.GetPriorityList()
 			l := pl[0:2]
-			Expect(contains(l, numbersToMatch[0])).To(Equal(true))
-			Expect(contains(l, numbersToMatch[3])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[0])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[3])).To(Equal(true))
 			l = pl[2:3]
-			Expect(contains(l, numbersToMatch[1])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[1])).To(Equal(true))
 			l = pl[3:5]
-			Expect(contains(l, numbersToMatch[2])).To(Equal(true))
-			Expect(contains(l, numbersToMatch[4])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[2])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[4])).To(Equal(true))
 		})
 		It("Should have the correct number given multiple priorities", func() {
 			numbersToMatch := []int{5, 16, 7, 19, 25}
@@ -303,18 +295,28 @@ var _ = Describe("sort structs", func() {
 			addValue(p, []int{numbersToMatch[4]}, 3)
 			pl := p.GetPriorityList()
 			l := pl[0:23] // 15 + 6 = 21 + 2
-			Expect(contains(l, numbersToMatch[0])).To(Equal(true))
-			Expect(contains(l, numbersToMatch[3])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[0])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[3])).To(Equal(true))
 			Expect(getCount(l, numbersToMatch[0])).To(Equal(16))
 			Expect(getCount(l, numbersToMatch[3])).To(Equal(7))
 			l = pl[23:43] // 20
-			Expect(contains(l, numbersToMatch[1])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[1])).To(Equal(true))
 			Expect(getCount(l, numbersToMatch[1])).To(Equal(20))
 			l = pl[43:75] // 28 + 4 = 32
-			Expect(contains(l, numbersToMatch[2])).To(Equal(true))
-			Expect(contains(l, numbersToMatch[4])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[2])).To(Equal(true))
+			Expect(slices.Contains(l, numbersToMatch[4])).To(Equal(true))
 			Expect(getCount(l, numbersToMatch[2])).To(Equal(28))
 			Expect(getCount(l, numbersToMatch[4])).To(Equal(4))
+		})
+		It("Should not have the same index for a deleted element", func() {
+			p := NewPrioritySortedStruct([][]int{}, matchInts)
+			p.Add(0)
+			piToDelete := p.Add(1)
+			deleted := p.Delete(piToDelete)
+			Expect(deleted).To(Equal(deleted))
+			piToKeep := p.Add(2)
+			Expect(piToKeep.Index).To(Equal(2))
+			Expect(piToDelete.Index).To(Equal(1))
 		})
 	})
 })

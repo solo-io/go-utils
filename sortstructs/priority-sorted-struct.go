@@ -1,28 +1,30 @@
 package sortstructs
 
+// The default Priority is the last index. The last index is not required in the prioirty list, thus any elements added
+// to the struct will be added to the default priority (last).
 const defaultPrioirty = -1
 
 // PrioritySortedStruct sorts elements by prioirity. Priority lists are unordered.
-// Needs a priority list and a priority match function.
+// Needs a priority list and a get priority function.
 // If a priority does not exist for an added element, it is added to the lowest priority.
 type PrioritySortedStruct[P comparable, K any] struct {
-	// priorityList is the priority of all the elements, where P is the type
+	// priorityList is the priority of all the elements, where P is the type used for priority.
 	priorityList [][]P
-	// getPriorityValue returns the value of the priority from the element
+	// getPriorityValue returns the value of the priority from the element.
 	getPriorityValue func(el K) P
-	// priorityMap maps the value to the priority
+	// priorityMap maps the value to the priority.
 	priorityMap map[P]int
-	// count is the number of elements in the struct
+	// count is the number of elements in the struct.
 	count int
 	// elements are the map of elements structured by their priority.
 	elements []map[int]K
 	// numberOfPriorities is the number of priorities in the priorityList + 1
 	numberOfPriorities int
-	// currentElementNumber is the current element number
-	currentElementNumber int
+	// currentElementIndex is the current element index to be inserted.
+	currentElementIndex int
 }
 
-// PriorityIndex is the priority and index used to locate items
+// PriorityIndex is the priority and index used to locate items.
 type PriorityIndex struct {
 	Priority int
 	Index    int
@@ -56,16 +58,16 @@ func (p *PrioritySortedStruct[P, K]) Init() {
 		}
 	}
 	p.count = 0
-	p.currentElementNumber = 0
+	p.currentElementIndex = 0
 }
 
-// Get returns the element at the index, and if it exists
+// Get returns the element at the index, and if it exists.
 func (p *PrioritySortedStruct[P, K]) Get(pi PriorityIndex) (K, bool) {
 	v, ok := p.elements[pi.Priority][pi.Index]
 	return v, ok
 }
 
-// Process will call the procesFunc over all the elements by priority
+// Process will call the procesFunc over all the elements by priority.
 func (p *PrioritySortedStruct[P, K]) Process(processFunc func(el K, pi PriorityIndex)) {
 	for i := 0; i <= p.numberOfPriorities; i++ {
 		m := p.elements[i]
@@ -75,15 +77,13 @@ func (p *PrioritySortedStruct[P, K]) Process(processFunc func(el K, pi PriorityI
 	}
 }
 
-// GetPriorityList returns an ordered list of the elements by priority
+// GetPriorityList returns an ordered list of the elements by priority.
 func (p *PrioritySortedStruct[P, K]) GetPriorityList() []K {
-	elements := make([]K, p.count)
-	currentIndex := 0
+	elements := make([]K, 0, p.count)
 	for priority := 0; priority <= p.numberOfPriorities; priority++ {
 		mapOfElements := p.elements[priority]
 		for _, el := range mapOfElements {
-			elements[currentIndex] = el
-			currentIndex++
+			elements = append(elements, el)
 		}
 	}
 	return elements
@@ -96,14 +96,14 @@ func (p *PrioritySortedStruct[P, K]) Add(element K) PriorityIndex {
 		// add to the last index of the watches
 		priority = p.numberOfPriorities
 	}
-	p.elements[priority][p.currentElementNumber] = element
-	pi := PriorityIndex{Priority: priority, Index: p.currentElementNumber}
+	p.elements[priority][p.currentElementIndex] = element
+	pi := PriorityIndex{Priority: priority, Index: p.currentElementIndex}
 	p.count++
-	p.currentElementNumber++
+	p.currentElementIndex++
 	return pi
 }
 
-// Delete will delete the element, return if it deleted
+// Delete will delete the element, returns true if it deleted.
 func (p *PrioritySortedStruct[P, K]) Delete(pi PriorityIndex) bool {
 	if p.count == 0 {
 		return false
@@ -122,21 +122,19 @@ func (p *PrioritySortedStruct[P, K]) Len() int {
 	return p.count
 }
 
-// GetPriorityIndexes returns a list of all the indexes for all elements by priority
+// GetPriorityIndexes returns a list of all the indexes for all elements by priority.
 func (p *PrioritySortedStruct[P, K]) GetPriorityIndexes() []PriorityIndex {
-	pi := make([]PriorityIndex, p.Len())
-	currentIndex := 0
+	pi := make([]PriorityIndex, 0, p.Len())
 	for i := 0; i <= p.numberOfPriorities; i++ {
 		m := p.elements[i]
 		for index := range m {
-			pi[currentIndex] = PriorityIndex{Priority: i, Index: index}
-			currentIndex++
+			pi = append(pi, PriorityIndex{Priority: i, Index: index})
 		}
 	}
 	return pi
 }
 
-// getPriorityOfElement returns the priority of element K what ever that is
+// getPriorityOfElement returns the priority of element K.
 func (p *PrioritySortedStruct[P, K]) getPriorityOfElement(element K) int {
 	pv := p.getPriorityValue(element)
 	if p, exists := p.priorityMap[pv]; exists {
