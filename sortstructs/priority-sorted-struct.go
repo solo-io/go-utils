@@ -25,8 +25,8 @@ type PrioritySortedStruct[P comparable, K PriorityValue[P]] struct {
 	elements []map[int]K
 	// numberOfPriorities is the number of priorities in the prioritySets
 	numberOfPriorities int
-	// currentElementIndex is the current element index to be inserted.
-	currentElementIndex int
+	// nextUniqueElementIndex is the next element index to be inserted.
+	nextUniqueElementIndex int
 }
 
 // PriorityIndex is the priority and index used to locate items.
@@ -75,7 +75,7 @@ func (p *PrioritySortedStruct[P, K]) Init() {
 			p.priorityMap[v] = index
 		}
 	}
-	p.currentElementIndex = 0
+	p.nextUniqueElementIndex = 0
 }
 
 // Get returns the element at the index, and if it exists.
@@ -113,9 +113,9 @@ func (p *PrioritySortedStruct[P, K]) Add(element K) PriorityIndex {
 		// add to the last index of the watches
 		priority = p.numberOfPriorities
 	}
-	p.elements[priority][p.currentElementIndex] = element
-	pi := PriorityIndex{Priority: priority, Index: p.currentElementIndex}
-	p.currentElementIndex++
+	p.elements[priority][p.nextUniqueElementIndex] = element
+	pi := PriorityIndex{Priority: priority, Index: p.nextUniqueElementIndex}
+	p.nextUniqueElementIndex++
 	return pi
 }
 
