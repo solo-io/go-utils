@@ -21,8 +21,6 @@ type PrioritySortedStruct[P comparable, K PriorityValue[P]] struct {
 	prioritySets map[int][]P
 	// priorityMap maps the value to the priority.
 	priorityMap map[P]int
-	// count is the number of elements in the struct.
-	count int
 	// elements are the map of elements structured by their priority.
 	elements []map[int]K
 	// numberOfPriorities is the number of priorities in the prioritySets
@@ -77,7 +75,6 @@ func (p *PrioritySortedStruct[P, K]) Init() {
 			p.priorityMap[v] = index
 		}
 	}
-	p.count = 0
 	p.currentElementIndex = 0
 }
 
@@ -99,7 +96,7 @@ func (p *PrioritySortedStruct[P, K]) Process(processFunc func(el K, pi PriorityI
 
 // GetPriorityList returns an ordered list of the elements by priority.
 func (p *PrioritySortedStruct[P, K]) GetPriorityList() []K {
-	elements := make([]K, 0, p.count)
+	elements := make([]K, 0, p.Len())
 	for priority := 0; priority <= p.numberOfPriorities; priority++ {
 		mapOfElements := p.elements[priority]
 		for _, el := range mapOfElements {
@@ -118,19 +115,17 @@ func (p *PrioritySortedStruct[P, K]) Add(element K) PriorityIndex {
 	}
 	p.elements[priority][p.currentElementIndex] = element
 	pi := PriorityIndex{Priority: priority, Index: p.currentElementIndex}
-	p.count++
 	p.currentElementIndex++
 	return pi
 }
 
 // Delete will delete the element, returns true if it deleted.
 func (p *PrioritySortedStruct[P, K]) Delete(pi PriorityIndex) bool {
-	if p.count == 0 {
+	if p.Len() == 0 {
 		return false
 	}
 	if _, ok := p.Get(pi); ok {
 		delete(p.elements[pi.Priority], pi.Index)
-		p.count--
 		return ok
 	} else {
 		return false
@@ -139,7 +134,11 @@ func (p *PrioritySortedStruct[P, K]) Delete(pi PriorityIndex) bool {
 
 // Len will return the number of elements
 func (p *PrioritySortedStruct[P, K]) Len() int {
-	return p.count
+	count := 0
+	for _, el := range p.elements {
+		count += len(el)
+	}
+	return count
 }
 
 // GetPriorityIndexes returns a list of all the indexes for all elements by priority.
