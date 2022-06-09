@@ -1,24 +1,31 @@
 package sortstructs
 
+import (
+	"fmt"
+	"sort"
+)
+
 // The default Priority is the last index. The last index is not required in the prioirty list, thus any elements added
 // to the struct will be added to the default priority (last).
 const defaultPrioirty = -1
 
+type PriorityValue[P comparable] interface {
+	GetPriority() P
+}
+
 // PrioritySortedStruct sorts elements by prioirity. Priority lists are unordered.
 // Needs a priority list and a get priority function.
 // If a priority does not exist for an added element, it is added to the lowest priority.
-type PrioritySortedStruct[P comparable, K any] struct {
-	// priorityList is the priority of all the elements, where P is the type used for priority.
-	priorityList [][]P
-	// getPriorityValue returns the value of the priority from the element.
-	getPriorityValue func(el K) P
+type PrioritySortedStruct[P comparable, K PriorityValue[P]] struct {
+	// prioritySets is the set lists for priorities, where P is the type used for priority.
+	prioritySets map[int][]P
 	// priorityMap maps the value to the priority.
 	priorityMap map[P]int
 	// count is the number of elements in the struct.
 	count int
 	// elements are the map of elements structured by their priority.
 	elements []map[int]K
-	// numberOfPriorities is the number of priorities in the priorityList + 1
+	// numberOfPriorities is the number of priorities in the prioritySets
 	numberOfPriorities int
 	// currentElementIndex is the current element index to be inserted.
 	currentElementIndex int
@@ -30,29 +37,42 @@ type PriorityIndex struct {
 	Index    int
 }
 
-func NewPrioritySortedStruct[P comparable, K any](priorityList [][]P, priorityMatchFunction func(el K) P) *PrioritySortedStruct[P, K] {
+func NewPrioritySortedStruct[P comparable, K PriorityValue[P]](prioritySets map[int][]P) *PrioritySortedStruct[P, K] {
 	p := PrioritySortedStruct[P, K]{
-		priorityList:     priorityList,
-		getPriorityValue: priorityMatchFunction,
+		prioritySets: prioritySets,
 	}
 	p.Init()
 	return &p
 }
 
 func (p *PrioritySortedStruct[P, K]) Init() {
-	p.numberOfPriorities = len(p.priorityList)
+	p.numberOfPriorities = len(p.prioritySets)
+	// need to ensure that the prioriries are in order and there are no missing or skipped Priorities
+	priorities := make([]int, 0)
+	for priority, _ := range p.prioritySets {
+		priorities = append(priorities, priority)
+	}
+	sort.Ints(priorities)
+	currentP := 0
+	for _, p := range priorities {
+		if currentP == p {
+			currentP++
+		} else {
+			panic(fmt.Sprintf("Priorities are not set correct, you are missing priority %d", currentP))
+		}
+	}
 	p.elements = make([]map[int]K, p.numberOfPriorities+1)
-	if p.priorityList != nil {
-		for priorityIndex := range p.priorityList {
+	if p.prioritySets != nil && p.numberOfPriorities > 0 {
+		for priorityIndex := range p.prioritySets {
 			p.elements[priorityIndex] = make(map[int]K)
 		}
 		p.elements[p.numberOfPriorities] = make(map[int]K)
 	} else {
-		// there is only 1 map of elements
+		// there is only one map of elements
 		p.elements[0] = make(map[int]K)
 	}
 	p.priorityMap = make(map[P]int)
-	for index, pl := range p.priorityList {
+	for index, pl := range p.prioritySets {
 		for _, v := range pl {
 			p.priorityMap[v] = index
 		}
@@ -136,7 +156,7 @@ func (p *PrioritySortedStruct[P, K]) GetPriorityIndexes() []PriorityIndex {
 
 // getPriorityOfElement returns the priority of element K.
 func (p *PrioritySortedStruct[P, K]) getPriorityOfElement(element K) int {
-	pv := p.getPriorityValue(element)
+	pv := element.GetPriority()
 	if p, exists := p.priorityMap[pv]; exists {
 		return p
 	} else {
