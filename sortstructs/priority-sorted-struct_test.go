@@ -266,11 +266,11 @@ var _ = Describe("sort structs", func() {
 			Expect(d).To(Equal(true))
 		})
 		It("Should work with structs", func() {
-			prioirtySet := map[int][]string{
+			priortySet := map[int][]string{
 				0: {"first", "fourth"},
 				1: {"second"},
 			}
-			p := NewPrioritySortedStruct[string, MyStruct](prioirtySet)
+			p := NewPrioritySortedStruct[string, MyStruct](priortySet)
 			m := MyStruct{value: "first"}
 			pi := p.Add(m)
 			Expect(pi.Priority).To(Equal(0))

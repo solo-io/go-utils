@@ -5,9 +5,9 @@ import (
 	"sort"
 )
 
-// The default Priority is the last index. The last index is not required in the prioirty list, thus any elements added
+// The default Priority is the last index. The last index is not required in the priority list, thus any elements added
 // to the struct will be added to the default priority (last).
-const defaultPrioirty = -1
+const defaultPriority = -1
 
 type PriorityValue[P comparable] interface {
 	GetPriority() P
@@ -122,7 +122,7 @@ func (p *PrioritySortedStruct[P, K]) GetPriorityList() []K {
 // Add will add the element to the Priority Collection, returns the priority, and element number.
 func (p *PrioritySortedStruct[P, K]) Add(element K) PriorityIndex {
 	priority := p.getPriorityOfElement(element)
-	if priority == defaultPrioirty {
+	if priority == defaultPriority {
 		// add to the last index of the watches
 		priority = len(p.elements) - 1
 	}
@@ -173,6 +173,6 @@ func (p *PrioritySortedStruct[P, K]) getPriorityOfElement(element K) int {
 		return p
 	} else {
 		// default priority is -1
-		return defaultPrioirty
+		return defaultPriority
 	}
 }
