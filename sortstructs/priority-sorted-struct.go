@@ -13,9 +13,19 @@ type PriorityValue[P comparable] interface {
 	GetPriority() P
 }
 
-// PrioritySortedStruct sorts elements by prioirity. Priority lists are unordered.
-// Needs a priority list and a get priority function.
+// PrioritySortedStruct inserts elements into a map indexed in a list by prioirity. Priority lists are unordered.
+// This allows O(1) inserts, gets, and deletes of these elements as long as the client has the index of the element.
+// Indexes are returned on Add() function, when elements are added to the collection.
+//
+// Elements interface the PriorityValue interface, this allows the collection to call the element to get it's priority.
 // If a priority does not exist for an added element, it is added to the lowest priority.
+//
+// The below 1, 2, 4 go first, 10 second, and 17 third. Anything else is processed last
+// {
+//	0: {item1, item2, item4}
+//	1: {item10}
+//	2: {item17}
+// }
 type PrioritySortedStruct[P comparable, K PriorityValue[P]] struct {
 	// priorityMap maps the value to the priority.
 	priorityMap map[P]int
@@ -27,7 +37,7 @@ type PrioritySortedStruct[P comparable, K PriorityValue[P]] struct {
 	elements []map[int]K
 	// nextUniqueElementIndex is the next element index to be inserted.
 	//
-	// Since we have a list of maps we need to ensure that when adding to the struct that the
+	// We have a list of maps we need to ensure that when adding to the struct that the
 	// elements do not replace an element previously inserted. To maintain unique indexes within
 	// the map we have to keep a running index of all the number of elements inserted into the
 	// collection.
@@ -42,13 +52,6 @@ type PriorityIndex struct {
 
 // NewPrioritySortedStruct creates a new Priority Sorted Struct.
 // prioritySets is the set lists for priorities, where P is the type used for priority.
-//
-// the below 1, 2, 4 go first, 10 second, and 17 third. Anything else is processed last
-// {
-//	0: {item1, item2, item4}
-//	1: {item10}
-//	2: {item17}
-// }
 func NewPrioritySortedStruct[P comparable, K PriorityValue[P]](prioritySets map[int][]P) *PrioritySortedStruct[P, K] {
 	// need to ensure that the prioriries are in order and there are no missing or skipped Priorities
 	priorities := make([]int, 0)
