@@ -95,8 +95,8 @@ type SecurityScanOpts struct {
 	CreateGithubIssuePerVersion bool
 
 	// ScanLatestInLTSOnly will only scan the latest version in the LTS
-	// This is nice as it gets what is actionable but is bad as we still
-	// like alerting on older versions whole suite of cves.
+	// This is nice as it gets what is actionable but does not serve to populate
+	// older release vulnerabilities.
 	ScanLatestsInLTSOnly bool
 
 	// Creates github issues for the largest patch versions overriden by CreateGithubIssuePerVersion
@@ -132,44 +132,25 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		os.Remove(sarifTplFile)
 	}()
 
+	// fails fast and does not continue to the next repo if there is an error
 	for _, repo := range s.Repos {
 		opts := repo.Opts
 
 		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
-		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
-		maxReleasesToScan := math.MaxInt32
-		partialFilteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
+		repoFilter := getReleasePredicateForSecurityScan(opts.VersionConstraint)
+		repoLTSFilter := &SecurityScanRepositoryLTSFilter{}
+		filterOption := func(ro *githubutils.RetrievalOptions) {
+			ro.Sort = true
+			ro.MaxReleases = math.MaxInt32
+			ro.Filters = append(ro.Filters, repoFilter)
+			if opts.ScanLatestsInLTSOnly {
+				ro.Filters = append(ro.Filters, repoLTSFilter)
+			}
+		}
+
+		filteredReleases, err := githubutils.GetRepoReleases(ctx, s.githubClient, repo.Owner, repo.Repo, filterOption)
 		if err != nil {
 			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
-		}
-		githubutils.SortReleasesBySemver(partialFilteredReleases)
-
-		maxPatchForMinor := map[string]struct{}{}
-		filteredReleases := []*github.RepositoryRelease{}
-		if !opts.ScanLatestsInLTSOnly {
-			filteredReleases = partialFilteredReleases
-		}
-		// We could use maxint but we dont really care
-		// as we can just check if major minor changed
-		recentMajor := -1
-		recentMinor := -1
-		for _, release := range partialFilteredReleases {
-			version, err := versionutils.ParseVersion(release.GetTagName())
-			if err != nil {
-				continue
-			}
-			if version.Major == recentMajor && version.Minor == recentMinor {
-				continue
-			}
-
-			// This is the largest patch release
-			recentMajor = version.Major
-			recentMinor = version.Minor
-			maxPatchForMinor[version.String()] = struct{}{}
-			if opts.ScanLatestsInLTSOnly {
-				filteredReleases = append(filteredReleases, release)
-			}
-
 		}
 
 		if repo.Opts.CreateGithubIssuePerVersion {
@@ -181,6 +162,13 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 				return eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
 			}
 		}
+
+		if repo.Opts.CreateGithubIssuePerLTSVersion && len(repoLTSFilter.MaxPatchForMinor) == 0 {
+			for _, fr := range filteredReleases {
+				repoLTSFilter.PreFilterCheck(fr)
+			}
+		}
+
 		for _, release := range filteredReleases {
 			// We can swallow the error here, any releases with improper tag names
 			// will not be included in the filtered list
@@ -189,9 +177,12 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
-			_, isMaxPatch := maxPatchForMinor[ver.String()]
-			if repo.Opts.CreateGithubIssuePerVersion || repo.Opts.CreateGithubIssuePerLTSVersion && isMaxPatch {
-				return repo.CreateUpdateVulnerabilityIssue(ctx, s.githubClient, ver.String(), vulnerabilityMd)
+
+			if repo.Opts.CreateGithubIssuePerVersion || repo.Opts.CreateGithubIssuePerLTSVersion && repoLTSFilter.Apply(release) {
+				err = repo.CreateUpdateVulnerabilityIssue(ctx, s.githubClient, ver.String(), vulnerabilityMd)
+				if err != nil {
+					return eris.Wrapf(err, "error updating github issue for version %s", release.GetTagName())
+				}
 			}
 			// Only generate sarif files if we are uploading code scan results
 			// to github
@@ -228,7 +219,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 }
 
 // GetMarkdownScanResults generates the vulenrabiliy report in markdown format
-func (r *SecurityScanRepo) GetMarkdownScanResults(ctx context.Context, client *github.Client, versionToScan *semver.Version, markdownTplFile string) (string, err) {
+func (r *SecurityScanRepo) GetMarkdownScanResults(ctx context.Context, client *github.Client, versionToScan *semver.Version, markdownTplFile string) (string, error) {
 
 	images, err := r.GetImagesToScan(versionToScan)
 	if err != nil {
@@ -327,7 +318,7 @@ func (r *SecurityScanRepo) GetImagesToScan(versionToScan *semver.Version) ([]str
 	return stringutils.Keys(imagesToScan), nil
 }
 
-func getReleasePredicateForSecurityScan(versionConstraint *semver.Constraints) *SecurityScanRepositoryReleasePredicate {
+func getReleasePredicateForSecurityScan(versionConstraint *semver.Constraints) githubutils.RepoFilter {
 	return &SecurityScanRepositoryReleasePredicate{
 		versionConstraint: versionConstraint,
 	}
@@ -342,6 +333,7 @@ type SecurityScanRepositoryReleasePredicate struct {
 	versionConstraint *semver.Constraints
 }
 
+// Apply the predicate and return if the release conforms to the version contstraint.
 func (s *SecurityScanRepositoryReleasePredicate) Apply(release *github.RepositoryRelease) bool {
 	if release.GetPrerelease() || release.GetDraft() {
 		// Do not include pre-releases or drafts
@@ -362,6 +354,40 @@ func (s *SecurityScanRepositoryReleasePredicate) Apply(release *github.Repositor
 
 	// If all checks have passed, include the release
 	return true
+}
+
+// SecurityScanRepositoryLTSFilter is a statefulrepofilter that assumes
+// releases are already sorted by semver.
+type SecurityScanRepositoryLTSFilter struct {
+	recentMajor, recentMinor int
+	MaxPatchForMinor         map[string]struct{}
+}
+
+// Apply the filter and only return if the release is the latest in a branch
+func (s *SecurityScanRepositoryLTSFilter) Apply(release *github.RepositoryRelease) bool {
+	version, err := versionutils.ParseVersion(release.GetTagName())
+	if err != nil {
+		return false
+	}
+	_, isMaxPatchVersion := s.MaxPatchForMinor[version.String()]
+	return isMaxPatchVersion
+}
+
+// PreFilterCheck constructs the map of most recent major minor and therefore
+// defines an LTS release.
+func (s *SecurityScanRepositoryLTSFilter) PreFilterCheck(release *github.RepositoryRelease) {
+	version, err := versionutils.ParseVersion(release.GetTagName())
+	if err != nil {
+		return
+	}
+	if version.Major == s.recentMajor && version.Minor == s.recentMinor {
+		return
+	}
+
+	// This is the largest patch release
+	s.recentMajor = version.Major
+	s.recentMinor = version.Minor
+	s.MaxPatchForMinor[version.String()] = struct{}{}
 }
 
 // Runs trivy scan command

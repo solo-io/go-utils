@@ -145,15 +145,98 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 	return byt, err
 }
 
+// A RepoFilter can check if a release shold be filtered out based on a condition.
+//  In general filters may be stateful and be a StatefulRepoFilter
+type RepoFilter interface {
+	// Apply the filter and return true if it conforms to the flter and should
+	// not be removed.
+	Apply(release *github.RepositoryRelease) bool
+}
+
+// A StatefulRepoFilter has a stateful prerun check and along with a way to determine
+// if a release conforms to our desired filter.
+type StatefulRepoFilter interface {
+	// Apply the filter and return true if it conforms to the flter and should
+	// not be removed.
+	Apply(release *github.RepositoryRelease) bool
+	// PreFilterCheck is a preprocessing state that updates the internal state
+	// of the filter. It should not have sideeffects.
+	PreFilterCheck(release *github.RepositoryRelease)
+}
+
+// RetrievalOption applies the option the passed in set of retrieval options.
+type RetrievalOption func(*RetrievalOptions)
+
+// RetrievalOptions are the list of optional flags on repo-retrieval.
+type RetrievalOptions struct {
+	Sort        bool
+	MaxReleases int
+	Filters     []RepoFilter
+}
+
+// NewCombinedFilter returns a nice combined filter from all the current
+// repofilters that have been set.
+func NewCombinedFilter(filters ...RepoFilter) StatefulRepoFilter {
+	cf := combinedFilter{}
+
+	for _, rf := range filters {
+		if srf, ok := rf.(StatefulRepoFilter); ok {
+			cf.statefulFilters = append(cf.statefulFilters, srf)
+		} else {
+			cf.filters = append(cf.filters, rf)
+		}
+
+	}
+
+	return &cf
+}
+
+type combinedFilter struct {
+	filters         []RepoFilter
+	statefulFilters []StatefulRepoFilter
+}
+
+// Apply all the subfilters and if any reject the release, return false.
+func (c *combinedFilter) Apply(release *github.RepositoryRelease) bool {
+	for _, f := range c.filters {
+		if !f.Apply(release) {
+			return false
+		}
+	}
+	for _, f := range c.statefulFilters {
+		if !f.Apply(release) {
+			return false
+		}
+	}
+	return true
+}
+
+// PreFilterCheck for all the combined stateful filters.
+func (c *combinedFilter) PreFilterCheck(release *github.RepositoryRelease) {
+	for _, f := range c.statefulFilters {
+		f.PreFilterCheck(release)
+	}
+}
+
+// RepositoryReleasePredicate is a non-stateful release contstraint
+// that can be checked to see if a release should be filtered.
+// The easiest form is to check whether a release has a given predicate.
 type RepositoryReleasePredicate interface {
 	Apply(release *github.RepositoryRelease) bool
 }
 
+// AllReleasesPredicate is a filter that filters... well nothing.
 type AllReleasesPredicate struct {
 }
 
+// Apply always returns that the release should not be filtered.
 func (a *AllReleasesPredicate) Apply(_ *github.RepositoryRelease) bool {
 	return true
+}
+
+// PreFilterCheck for all releases is a no-op.
+func (a *AllReleasesPredicate) PreFilterCheck(release *github.RepositoryRelease) {
+	return
 }
 
 func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error) {
@@ -165,8 +248,36 @@ func GetAllRepoReleasesWithMax(ctx context.Context, client *github.Client, owner
 }
 
 func GetRepoReleasesWithPredicateAndMax(ctx context.Context, client *github.Client, owner, repo string, predicate RepositoryReleasePredicate, maxReleases int) ([]*github.RepositoryRelease, error) {
+	opt := func(ro *RetrievalOptions) {
+		ro.MaxReleases = maxReleases
+		ro.Filters = append(ro.Filters, predicate)
+
+	}
+	return GetRepoReleases(ctx, client, owner, repo, opt)
+}
+
+// GetRepoReleases retrieves releases from a repository given a set of retrieval options.
+func GetRepoReleases(ctx context.Context, client *github.Client, owner, repo string, opts ...RetrievalOption) ([]*github.RepositoryRelease, error) {
 	var allReleases []*github.RepositoryRelease
-	for i := MIN_GITHUB_PAGE_NUM; len(allReleases) < maxReleases; i += 1 {
+	ro := RetrievalOptions{}
+
+	for _, opt := range opts {
+		opt(&ro)
+	}
+
+	filter := NewCombinedFilter(ro.Filters...)
+	// uploadFilter := newCombinedFilter(ro.uploadFilters...)
+
+	// This is silly but we dont want to change the exported value
+	i := MIN_GITHUB_PAGE_NUM - 1
+
+	for {
+		// check to see if we have gotten enough releases
+		if len(allReleases) >= ro.MaxReleases {
+			// One more filtering where we check for
+			allReleases = FilterRepositoryReleases(allReleases, filter)
+		}
+
 		releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
 			Page:    i,
 			PerPage: MAX_GITHUB_RESULTS_PER_PAGE,
@@ -175,9 +286,12 @@ func GetRepoReleasesWithPredicateAndMax(ctx context.Context, client *github.Clie
 			return nil, err
 		}
 
-		// Only append releases if they match the predicate
+		// Only append releases if they match the filter (predicate or other functions)
 		// This is required since the Github API does not expose parameters to filter the RepositoryRelease list in the request
-		filteredReleases := FilterRepositoryReleases(releases, predicate)
+		filteredReleases := FilterRepositoryReleases(releases, filter)
+		if ro.Sort {
+			SortReleasesBySemver(filteredReleases)
+		}
 		allReleases = append(allReleases, filteredReleases...)
 
 		// If the number of releases on this page is less than the results per page,
@@ -188,16 +302,25 @@ func GetRepoReleasesWithPredicateAndMax(ctx context.Context, client *github.Clie
 	}
 
 	// Ensure that if we have exceeded the number of maxReleases, we truncate the list
-	if len(allReleases) > maxReleases {
-		allReleases = allReleases[:maxReleases]
+	if len(allReleases) > ro.MaxReleases {
+		allReleases = allReleases[:ro.MaxReleases]
 	}
 	return allReleases, nil
 }
 
-func FilterRepositoryReleases(releases []*github.RepositoryRelease, predicate RepositoryReleasePredicate) []*github.RepositoryRelease {
+// FilterRepositoryReleases applys the filtering logic to rebuild the slice of
+// releases that we care about.
+func FilterRepositoryReleases(releases []*github.RepositoryRelease, filter RepoFilter) []*github.RepositoryRelease {
 	var filteredReleases []*github.RepositoryRelease
+	// in case the filter is stateful
+	if statefulF, ok := filter.(StatefulRepoFilter); ok {
+		for _, release := range releases {
+			statefulF.PreFilterCheck(release)
+		}
+	}
+
 	for _, release := range releases {
-		if predicate.Apply(release) {
+		if filter.Apply(release) {
 			filteredReleases = append(filteredReleases, release)
 		}
 	}
