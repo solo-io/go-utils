@@ -39,6 +39,19 @@ type SecurityScanRepo struct {
 	Owner string
 	Opts  *SecurityScanOpts
 
+	// A set of private properties that are not constructed by the user
+
+	// The RepositoryReleasePredicate used to determine if a particular release
+	// should be run through our scanner
+	scanReleasePredicate githubutils.RepositoryReleasePredicate
+
+	// The RepositoryReleasePredicate used to determine if a vulnerability
+	// associated with a certain release should be uploaded to GitHub
+	createGithubIssuePredicate githubutils.RepositoryReleasePredicate
+
+	// A local cache of all existing GitHub issues
+	// Used to ensure that we are updating existing issues that were created
+	// by previous scans
 	allGithubIssues []*github.Issue
 }
 
@@ -117,12 +130,14 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	}()
 
 	for _, repo := range s.Repos {
-		opts := repo.Opts
+		// Process the user defined options, and configure the non-user controller properties of a SecurityScanRepo
+		err := s.initializeRepoConfiguration(ctx, repo)
+		if err != nil {
+			return err
+		}
 
-		// This predicate filters releases so we only perform scans on the images that are relevant to the repo
-		repoReleasePredicate := getReleasePredicateForSecurityScan(opts.VersionConstraint)
 		maxReleasesToScan := math.MaxInt32
-		partialFilteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repoReleasePredicate, maxReleasesToScan)
+		partialFilteredReleases, err := githubutils.GetRepoReleasesWithPredicateAndMax(ctx, s.githubClient, repo.Owner, repo.Repo, repo.scanReleasePredicate, maxReleasesToScan)
 		if err != nil {
 			return eris.Wrapf(err, "unable to fetch all github releases for github.com/%s/%s", repo.Owner, repo.Repo)
 		}
@@ -148,27 +163,15 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 			filteredReleases = append(filteredReleases, release)
 		}
 
-		if repo.Opts.CreateGithubIssuePerVersion {
-			repo.allGithubIssues, err = githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
-				State:  "open",
-				Labels: TrivyLabels,
-			})
-			if err != nil {
-				return eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
-			}
-		}
 		for _, release := range filteredReleases {
-			// We can swallow the error here, any releases with improper tag names
-			// will not be included in the filtered list
-			ver, _ := semver.NewVersion(release.GetTagName())
-			err = repo.RunMarkdownScan(ctx, s.githubClient, ver, markdownTplFile)
+			err = repo.RunMarkdownScan(ctx, s.githubClient, release, markdownTplFile)
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
 			// Only generate sarif files if we are uploading code scan results
 			// to github
 			if repo.Opts.UploadCodeScanToGithub {
-				err = repo.RunGithubSarifScan(ver, sarifTplFile)
+				err = repo.RunGithubSarifScan(release, sarifTplFile)
 				if err != nil {
 					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
 				}
@@ -179,7 +182,38 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	return nil
 }
 
-func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.Client, versionToScan *semver.Version, markdownTplFile string) error {
+func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo *SecurityScanRepo) error {
+	repoOptions := repo.Opts
+
+	// Initialize a local store of GitHub issues if we will be creating new issues
+	if repoOptions.CreateGithubIssuePerVersion {
+		issues, err := githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
+			State:  "open",
+			Labels: TrivyLabels,
+		})
+		if err != nil {
+			return eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
+		}
+		repo.allGithubIssues = issues
+	}
+
+	// Set the Predicate used to filter releases we wish to scan
+	repo.scanReleasePredicate = getReleasePredicateForSecurityScan(repo.Opts.VersionConstraint)
+
+	// Default to creating a GitHub issue for all releases
+	repo.createGithubIssuePredicate = &githubutils.AllReleasesPredicate{}
+
+	// TODO Add logic to handle instantiating a Predicate that returns true only if Release matches latest LTS
+
+	return nil
+
+}
+
+func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.Client, release *github.RepositoryRelease, markdownTplFile string) error {
+	// We can swallow the error here, any releases with improper tag names
+	// will not be included in the filtered list
+	versionToScan, _ := semver.NewVersion(release.GetTagName())
+
 	images, err := r.GetImagesToScan(versionToScan)
 	if err != nil {
 		return err
@@ -217,7 +251,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 	}
 	// Create / Update Github issue for the repo if a vulnerability is found
 	// and CreateGithubIssuePerVersion is set to true
-	if r.Opts.CreateGithubIssuePerVersion {
+	if r.createGithubIssuePredicate.Apply(release) {
 		if vulnerabilityMd == "" {
 			// We did not find vulnerabilities in any of the images for this version
 			// do not create an empty github issue
@@ -228,7 +262,11 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 	return nil
 }
 
-func (r *SecurityScanRepo) RunGithubSarifScan(versionToScan *semver.Version, sarifTplFile string) error {
+func (r *SecurityScanRepo) RunGithubSarifScan(release *github.RepositoryRelease, sarifTplFile string) error {
+	// We can swallow the error here, any releases with improper tag names
+	// will not be included in the filtered list
+	versionToScan, _ := semver.NewVersion(release.GetTagName())
+
 	images, err := r.GetImagesToScan(versionToScan)
 	if err != nil {
 		return err
