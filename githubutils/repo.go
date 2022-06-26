@@ -156,6 +156,13 @@ func (a *AllReleasesPredicate) Apply(_ *github.RepositoryRelease) bool {
 	return true
 }
 
+type NoReleasesPredicate struct {
+}
+
+func (a *NoReleasesPredicate) Apply(_ *github.RepositoryRelease) bool {
+	return false
+}
+
 func GetAllRepoReleases(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRelease, error) {
 	return GetAllRepoReleasesWithMax(ctx, client, owner, repo, math.MaxInt32)
 }

@@ -202,8 +202,12 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 		versionConstraint: repoOptions.VersionConstraint,
 	}
 
-	// Default to creating a GitHub issue for all releases
-	repo.createGithubIssuePredicate = &githubutils.AllReleasesPredicate{}
+	// Default to not creating any issues
+	repo.createGithubIssuePredicate = &githubutils.NoReleasesPredicate{}
+	if repoOptions.CreateGithubIssuePerVersion {
+		// Create Github issue for all releases, if configured
+		repo.createGithubIssuePredicate = &githubutils.AllReleasesPredicate{}
+	}
 
 	// TODO Add logic to handle instantiating a Predicate that returns true only if Release matches latest LTS
 
