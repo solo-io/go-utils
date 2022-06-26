@@ -198,7 +198,9 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	}
 
 	// Set the Predicate used to filter releases we wish to scan
-	repo.scanReleasePredicate = getReleasePredicateForSecurityScan(repo.Opts.VersionConstraint)
+	repo.scanReleasePredicate = &SecurityScanRepositoryReleasePredicate{
+		versionConstraint: repoOptions.VersionConstraint,
+	}
 
 	// Default to creating a GitHub issue for all releases
 	repo.createGithubIssuePredicate = &githubutils.AllReleasesPredicate{}
@@ -206,7 +208,6 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	// TODO Add logic to handle instantiating a Predicate that returns true only if Release matches latest LTS
 
 	return nil
-
 }
 
 func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.Client, release *github.RepositoryRelease, markdownTplFile string) error {
@@ -322,12 +323,6 @@ func (r *SecurityScanRepo) GetImagesToScan(versionToScan *semver.Version) ([]str
 		return nil, eris.Errorf("version %s matched no constraints and has no images to scan", versionToScan.String())
 	}
 	return stringutils.Keys(imagesToScan), nil
-}
-
-func getReleasePredicateForSecurityScan(versionConstraint *semver.Constraints) *SecurityScanRepositoryReleasePredicate {
-	return &SecurityScanRepositoryReleasePredicate{
-		versionConstraint: versionConstraint,
-	}
 }
 
 // The SecurityScanRepositoryReleasePredicate is responsible for defining which
