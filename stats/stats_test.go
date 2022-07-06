@@ -1,8 +1,10 @@
 package stats_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -57,9 +59,38 @@ var _ = Describe("Stats", func() {
 			})
 
 			It("can handle requests to /logging", func() {
-				response, err := goimpl.Curl(fmt.Sprintf("http://localhost:%d/logging", startupOptions.Port))
+				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
+				Expect(err).NotTo(HaveOccurred())
+
+				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(response).To(Equal("{\"level\":\"info\"}\n"))
+			})
+
+			It("can use /logging to change the level, without restarting", func() {
+				// initially the logLevel = INFO
+				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
+				Expect(err).NotTo(HaveOccurred())
+
+				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(response).To(Equal("{\"level\":\"info\"}\n"))
+
+				// then it's updated to DEBUG
+				setLogLevelRequest, err := buildSetLogLevelRequest(startupOptions.Port, "debug")
+				Expect(err).NotTo(HaveOccurred())
+
+				response, err = goimpl.ExecuteRequest(setLogLevelRequest)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(response).To(Equal("{\"level\":\"debug\"}\n"))
+
+				// we confirm that we return DEBUG moving forward
+				getLogLevelRequest, err = buildGetLogLevelRequest(startupOptions.Port)
+				Expect(err).NotTo(HaveOccurred())
+
+				response, err = goimpl.ExecuteRequest(getLogLevelRequest)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(response).To(Equal("{\"level\":\"debug\"}\n"))
 			})
 		})
 
@@ -92,7 +123,10 @@ var _ = Describe("Stats", func() {
 			})
 
 			It("can handle requests to /logging", func() {
-				response, err := goimpl.Curl(fmt.Sprintf("http://localhost:%d/logging", startupOptions.Port))
+				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
+				Expect(err).NotTo(HaveOccurred())
+
+				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(response).To(Equal("{\"level\":\"error\"}\n"))
 			})
@@ -122,7 +156,10 @@ var _ = Describe("Stats", func() {
 			})
 
 			It("can handle requests to /logging", func() {
-				response, err := goimpl.Curl(fmt.Sprintf("http://localhost:%d/logging", startupOptions.Port))
+				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
+				Expect(err).NotTo(HaveOccurred())
+
+				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(response).To(Equal("{\"level\":\"debug\"}\n"))
 			})
@@ -132,3 +169,23 @@ var _ = Describe("Stats", func() {
 	})
 
 })
+
+func buildGetLogLevelRequest(port int) (*http.Request, error) {
+	url := fmt.Sprintf("http://localhost:%d/logging", port)
+	body := bytes.NewReader([]byte(url))
+
+	return http.NewRequest("GET", url, body)
+}
+
+func buildSetLogLevelRequest(port int, newLevel string) (*http.Request, error) {
+	url := fmt.Sprintf("http://localhost:%d/logging", port)
+	body := bytes.NewReader([]byte(fmt.Sprintf("{\"level\": \"%s\"}", newLevel)))
+
+	req, err := http.NewRequest("PUT", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Context-Type", "application/json")
+
+	return req, nil
+}
