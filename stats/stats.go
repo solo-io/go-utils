@@ -65,7 +65,7 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 	}
 
 	if envLogLevel := os.Getenv(contextutils.LogLevelEnvName); envLogLevel != "" {
-		contextutils.SetLogLevelFromEnv(envLogLevel)
+		contextutils.SetLogLevelFromString(envLogLevel)
 	}
 
 	// The running instance of the Stats server
@@ -91,14 +91,22 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 			Addr:    fmt.Sprintf(":%d", startupOpts.Port),
 			Handler: mux,
 		}
-		_ = server.ListenAndServe()
+		err := server.ListenAndServe()
+		if err == http.ErrServerClosed {
+			contextutils.LoggerFrom(ctx).Infof("Stats server closed")
+		} else {
+			contextutils.LoggerFrom(ctx).Warnf("Stats server closed with unexpected error: %v", err)
+		}
 	}()
 
-	go func(cancelContext context.Context) {
+	go func(parentContext context.Context) {
 		select {
-		case <-cancelContext.Done():
+		case <-parentContext.Done():
 			if server != nil {
-				_ = server.Shutdown(cancelContext)
+				if err := server.Shutdown(parentContext); err != nil {
+					contextutils.LoggerFrom(parentContext).Warnf("Stats server shutdown returned error: %v", err)
+				}
+
 			}
 		}
 	}(ctx)
