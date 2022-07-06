@@ -68,27 +68,29 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 		contextutils.SetLogLevelFromEnv(envLogLevel)
 	}
 
-	mux := new(http.ServeMux)
-
-	mux.Handle("/logging", getLoggingHandler(startupOpts))
-
-	addhandlers = append(addhandlers, addPprof, addStats)
-
-	for _, addhandler := range addhandlers {
-		addhandler(mux, profileDescriptions)
-	}
-
-	// add the index
-	mux.HandleFunc("/", Index)
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", startupOpts.Port),
-		Handler: mux,
-	}
+	// The running instance of the Stats server
+	var server *http.Server
 
 	go RunGoroutineStat()
 
 	go func() {
+		mux := new(http.ServeMux)
+
+		mux.Handle("/logging", getLoggingHandler(startupOpts))
+
+		addhandlers = append(addhandlers, addPprof, addStats)
+
+		for _, addhandler := range addhandlers {
+			addhandler(mux, profileDescriptions)
+		}
+
+		// add the index
+		mux.HandleFunc("/", Index)
+
+		server = &http.Server{
+			Addr:    fmt.Sprintf(":%d", startupOpts.Port),
+			Handler: mux,
+		}
 		_ = server.ListenAndServe()
 	}()
 
