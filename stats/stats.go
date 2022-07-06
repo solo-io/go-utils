@@ -96,9 +96,9 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 
 	go func(cancelContext context.Context) {
 		select {
-		case <-ctx.Done():
+		case <-cancelContext.Done():
 			if server != nil {
-				_ = server.Shutdown(ctx)
+				_ = server.Shutdown(cancelContext)
 			}
 		}
 	}(ctx)
