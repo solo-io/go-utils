@@ -124,8 +124,32 @@ func fromContext(ctx context.Context) *zap.SugaredLogger {
 	return fallbackLogger
 }
 
+func SetLogLevelFromEnv(envLogLevel string) {
+	var setLevel zapcore.Level
+	switch envLogLevel {
+	case "debug":
+		setLevel = zapcore.DebugLevel
+	case "warn":
+		setLevel = zapcore.WarnLevel
+	case "error":
+		setLevel = zapcore.ErrorLevel
+	case "panic":
+		setLevel = zapcore.PanicLevel
+	case "fatal":
+		setLevel = zapcore.FatalLevel
+	default:
+		setLevel = zapcore.InfoLevel
+	}
+
+	SetLogLevel(setLevel)
+}
+
 func SetLogLevel(l zapcore.Level) {
 	level.SetLevel(l)
+}
+
+func GetLogHandler() zap.AtomicLevel {
+	return level
 }
 
 func GetLogLevel() zapcore.Level {

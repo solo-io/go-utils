@@ -14,7 +14,6 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/zpages"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -60,28 +59,8 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 		return
 	}
 
-	var logLevel zap.AtomicLevel
 	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
-		var setLevel zapcore.Level
-		switch envLogLevel {
-		case "debug":
-			setLevel = zapcore.DebugLevel
-		case "warn":
-			setLevel = zapcore.WarnLevel
-		case "error":
-			setLevel = zapcore.ErrorLevel
-		case "panic":
-			setLevel = zapcore.PanicLevel
-		case "fatal":
-			setLevel = zapcore.FatalLevel
-		default:
-			setLevel = zapcore.InfoLevel
-		}
-
-		contextutils.SetLogLevel(setLevel)
-
-	} else if startupOpts.LogLevel != nil {
-		logLevel = *startupOpts.LogLevel
+		contextutils.SetLogLevelFromEnv(envLogLevel)
 	}
 
 	go RunGoroutineStat()
@@ -89,7 +68,7 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 	go func() {
 		mux := new(http.ServeMux)
 
-		mux.Handle("/logging", logLevel)
+		mux.Handle("/logging", getLoggingHandler(startupOpts))
 
 		addhandlers = append(addhandlers, addPprof, addStats)
 
@@ -101,6 +80,16 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 		mux.HandleFunc("/", Index)
 		http.ListenAndServe(fmt.Sprintf(":%d", startupOpts.Port), mux)
 	}()
+}
+
+func getLoggingHandler(startupOpts StartupOptions) zap.AtomicLevel {
+	// If the AtomicLevel is configured in StartupOptions, respect that
+	if startupOpts.LogLevel != nil {
+		return *startupOpts.LogLevel
+	}
+
+	// Fallback to the existing AtomicLevel
+	return contextutils.GetLogHandler()
 }
 
 func addPprof(mux *http.ServeMux, profiles map[string]string) {
