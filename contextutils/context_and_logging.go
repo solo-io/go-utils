@@ -37,6 +37,8 @@ var (
 	level zap.AtomicLevel
 )
 
+const LogLevelEnvName = "LOG_LEVEL"
+
 func buildProductionLogger() (*zap.Logger, error) {
 	config := zap.NewProductionConfig()
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder

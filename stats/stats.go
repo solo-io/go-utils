@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -54,32 +55,51 @@ func ConditionallyStartStatsServer(addhandlers ...func(mux *http.ServeMux, profi
 }
 
 func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
+	StartCancellableStatsServerWithPort(context.Background(), startupOpts, addhandlers...)
+}
+
+func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts StartupOptions, addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
 	// if the env var was provided (i.e., startup is conditional) and the value of that env var is not the expected value, then return and do nothing
 	if startupOpts.EnvVar != "" && os.Getenv(startupOpts.EnvVar) != startupOpts.EnabledValue {
 		return
 	}
 
-	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
+	if envLogLevel := os.Getenv(contextutils.LogLevelEnvName); envLogLevel != "" {
 		contextutils.SetLogLevelFromEnv(envLogLevel)
+	}
+
+	mux := new(http.ServeMux)
+
+	mux.Handle("/logging", getLoggingHandler(startupOpts))
+
+	addhandlers = append(addhandlers, addPprof, addStats)
+
+	for _, addhandler := range addhandlers {
+		addhandler(mux, profileDescriptions)
+	}
+
+	// add the index
+	mux.HandleFunc("/", Index)
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", startupOpts.Port),
+		Handler: mux,
 	}
 
 	go RunGoroutineStat()
 
 	go func() {
-		mux := new(http.ServeMux)
-
-		mux.Handle("/logging", getLoggingHandler(startupOpts))
-
-		addhandlers = append(addhandlers, addPprof, addStats)
-
-		for _, addhandler := range addhandlers {
-			addhandler(mux, profileDescriptions)
-		}
-
-		// add the index
-		mux.HandleFunc("/", Index)
-		http.ListenAndServe(fmt.Sprintf(":%d", startupOpts.Port), mux)
+		_ = server.ListenAndServe()
 	}()
+
+	go func(cancelContext context.Context) {
+		select {
+		case <-ctx.Done():
+			if server != nil {
+				_ = server.Shutdown(ctx)
+			}
+		}
+	}(ctx)
 }
 
 func getLoggingHandler(startupOpts StartupOptions) zap.AtomicLevel {
