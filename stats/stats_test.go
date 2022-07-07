@@ -44,7 +44,7 @@ var _ = Describe("Stats", func() {
 			// Tests in this suite expect the log level to be INFO to start
 			contextutils.SetLogLevel(zapcore.InfoLevel)
 
-			err := os.Setenv(contextutils.LogLevelEnvName, "")
+			err := os.Unsetenv(contextutils.LogLevelEnvName)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

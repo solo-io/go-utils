@@ -27,6 +27,6 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	err := os.Setenv(stats.DefaultEnvVar, "")
+	err := os.Unsetenv(stats.DefaultEnvVar)
 	Expect(err).NotTo(HaveOccurred())
 })
