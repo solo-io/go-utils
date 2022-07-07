@@ -26,7 +26,7 @@ func NextStatsBindPort() int {
 }
 
 func AdvanceBindPort(p *int32) int32 {
-	return atomic.AddInt32(p, 1) + int32(config.GinkgoConfig.ParallelNode*1000)
+	return atomic.AddInt32(p, 1) + int32(config.GinkgoConfig.ParallelNode)
 }
 
 var _ = Describe("Stats", func() {
