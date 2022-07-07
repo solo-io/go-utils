@@ -58,7 +58,7 @@ func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mu
 	StartCancellableStatsServerWithPort(context.Background(), startupOpts, addhandlers...)
 }
 
-func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts StartupOptions, addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
+func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts StartupOptions, customAddHandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
 	// if the env var was provided (i.e., startup is conditional) and the value of that env var is not the expected value, then return and do nothing
 	if startupOpts.EnvVar != "" && os.Getenv(startupOpts.EnvVar) != startupOpts.EnabledValue {
 		return
@@ -68,48 +68,55 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 		contextutils.SetLogLevelFromString(envLogLevel)
 	}
 
+	go RunCancellableGoroutineStat(ctx)
+
 	// The running instance of the Stats server
 	var server *http.Server
 
-	go RunGoroutineStat()
+	addHandlers := append(customAddHandlers, addPprof, addStats)
+	go runGoroutineServerListenAndServe(ctx, startupOpts, server, addHandlers...)
+	go runGoroutineShutdownServer(ctx, server)
+}
 
-	go func() {
-		mux := new(http.ServeMux)
+func runGoroutineServerListenAndServe(
+	ctx context.Context,
+	startupOpts StartupOptions,
+	server *http.Server,
+	addHandlers ...func(mux *http.ServeMux, profiles map[string]string),
+) {
+	mux := new(http.ServeMux)
 
-		mux.Handle("/logging", getLoggingHandler(startupOpts))
+	mux.Handle("/logging", getLoggingHandler(startupOpts))
 
-		addhandlers = append(addhandlers, addPprof, addStats)
+	for _, addHandler := range addHandlers {
+		addHandler(mux, profileDescriptions)
+	}
 
-		for _, addhandler := range addhandlers {
-			addhandler(mux, profileDescriptions)
-		}
+	// add the index
+	mux.HandleFunc("/", Index)
 
-		// add the index
-		mux.HandleFunc("/", Index)
+	server = &http.Server{
+		Addr:    fmt.Sprintf(":%d", startupOpts.Port),
+		Handler: mux,
+	}
+	err := server.ListenAndServe()
+	if err == http.ErrServerClosed {
+		contextutils.LoggerFrom(ctx).Infof("Stats server closed")
+	} else {
+		contextutils.LoggerFrom(ctx).Warnf("Stats server closed with unexpected error: %v", err)
+	}
+}
 
-		server = &http.Server{
-			Addr:    fmt.Sprintf(":%d", startupOpts.Port),
-			Handler: mux,
-		}
-		err := server.ListenAndServe()
-		if err == http.ErrServerClosed {
-			contextutils.LoggerFrom(ctx).Infof("Stats server closed")
-		} else {
-			contextutils.LoggerFrom(ctx).Warnf("Stats server closed with unexpected error: %v", err)
-		}
-	}()
-
-	go func(parentContext context.Context) {
-		select {
-		case <-parentContext.Done():
-			if server != nil {
-				if err := server.Shutdown(parentContext); err != nil {
-					contextutils.LoggerFrom(parentContext).Warnf("Stats server shutdown returned error: %v", err)
-				}
-
+func runGoroutineShutdownServer(ctx context.Context, server *http.Server) {
+	select {
+	case <-ctx.Done():
+		if server != nil {
+			if err := server.Shutdown(ctx); err != nil {
+				contextutils.LoggerFrom(ctx).Warnf("Stats server shutdown returned error: %v", err)
 			}
+
 		}
-	}(ctx)
+	}
 }
 
 func getLoggingHandler(startupOpts StartupOptions) zap.AtomicLevel {
