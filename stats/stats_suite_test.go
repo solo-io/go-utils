@@ -1,10 +1,10 @@
 package stats_test
 
 import (
+	"os"
 	"testing"
 
-	"github.com/solo-io/go-utils/contextutils"
-	"go.uber.org/zap/zapcore"
+	"github.com/solo-io/go-utils/stats"
 
 	"github.com/onsi/ginkgo/reporters"
 
@@ -22,6 +22,11 @@ func TestStats(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	// Tests in this suite expect the log level to be INFO to start
-	contextutils.SetLogLevel(zapcore.InfoLevel)
+	err := os.Setenv(stats.DefaultEnvVar, stats.DefaultEnabledValue)
+	Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = AfterSuite(func() {
+	err := os.Setenv(stats.DefaultEnvVar, "")
+	Expect(err).NotTo(HaveOccurred())
 })

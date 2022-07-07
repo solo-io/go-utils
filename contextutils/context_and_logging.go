@@ -128,6 +128,7 @@ func fromContext(ctx context.Context) *zap.SugaredLogger {
 
 func SetLogLevelFromString(logLevel string) {
 	var setLevel zapcore.Level
+
 	switch logLevel {
 	case "debug":
 		setLevel = zapcore.DebugLevel

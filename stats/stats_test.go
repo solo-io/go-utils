@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync/atomic"
+
+	"github.com/onsi/ginkgo/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,6 +19,16 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var statsServerPort = int32(stats.DefaultPort)
+
+func NextStatsBindPort() int {
+	return int(AdvanceBindPort(&statsServerPort))
+}
+
+func AdvanceBindPort(p *int32) int32 {
+	return atomic.AddInt32(p, 1) + int32(config.GinkgoConfig.ParallelNode*1000)
+}
+
 var _ = Describe("Stats", func() {
 
 	Context("StartStatsSeverWithPort", func() {
@@ -23,18 +36,20 @@ var _ = Describe("Stats", func() {
 		var (
 			ctx    context.Context
 			cancel context.CancelFunc
-
-			resetEnvVars func()
 		)
 
 		BeforeEach(func() {
 			ctx, cancel = context.WithCancel(context.Background())
+
+			// Tests in this suite expect the log level to be INFO to start
+			contextutils.SetLogLevel(zapcore.InfoLevel)
+
+			err := os.Setenv(contextutils.LogLevelEnvName, "")
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
 			cancel()
-
-			resetEnvVars()
 		})
 
 		When("StartOptions are default", func() {
@@ -45,30 +60,13 @@ var _ = Describe("Stats", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
-
-				originalEnvValue := os.Getenv(startupOptions.EnvVar)
-				err := os.Setenv(startupOptions.EnvVar, startupOptions.EnabledValue)
-				Expect(err).NotTo(HaveOccurred())
-
-				resetEnvVars = func() {
-					err := os.Setenv(startupOptions.EnvVar, originalEnvValue)
-					Expect(err).NotTo(HaveOccurred())
-				}
+				startupOptions.Port = NextStatsBindPort()
 
 				stats.StartCancellableStatsServerWithPort(ctx, startupOptions)
 			})
 
 			It("can handle requests to /logging", func() {
-				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
-				Expect(err).NotTo(HaveOccurred())
-
-				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(response).To(Equal("{\"level\":\"info\"}\n"))
-			})
-
-			It("can use /logging to change the level, without restarting", func() {
-				// initially the logLevel = INFO
+				By("GET request to /logging to get log level")
 				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -76,15 +74,15 @@ var _ = Describe("Stats", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(response).To(Equal("{\"level\":\"info\"}\n"))
 
-				// then it's updated to DEBUG
-				setLogLevelRequest, err := buildSetLogLevelRequest(startupOptions.Port, "debug")
+				By("PUT request to /logging to change log level ")
+				setLogLevelRequest, err := buildSetLogLevelRequest(startupOptions.Port, zapcore.DebugLevel)
 				Expect(err).NotTo(HaveOccurred())
 
 				response, err = goimpl.ExecuteRequest(setLogLevelRequest)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(response).To(Equal("{\"level\":\"debug\"}\n"))
 
-				// we confirm that we return DEBUG moving forward
+				By("GET request to /logging to confirm it returns new log level")
 				getLogLevelRequest, err = buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -102,27 +100,16 @@ var _ = Describe("Stats", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
+				startupOptions.Port = NextStatsBindPort()
 
-				originalEnvValue := os.Getenv(startupOptions.EnvVar)
-				err := os.Setenv(startupOptions.EnvVar, startupOptions.EnabledValue)
+				err := os.Setenv(contextutils.LogLevelEnvName, zapcore.ErrorLevel.String())
 				Expect(err).NotTo(HaveOccurred())
-
-				originalLogLevel := os.Getenv(contextutils.LogLevelEnvName)
-				err = os.Setenv(contextutils.LogLevelEnvName, "error")
-				Expect(err).NotTo(HaveOccurred())
-
-				resetEnvVars = func() {
-					err = os.Setenv(startupOptions.EnvVar, originalEnvValue)
-					Expect(err).NotTo(HaveOccurred())
-
-					err = os.Setenv(contextutils.LogLevelEnvName, originalLogLevel)
-					Expect(err).NotTo(HaveOccurred())
-				}
 
 				stats.StartCancellableStatsServerWithPort(ctx, startupOptions)
 			})
 
 			It("can handle requests to /logging", func() {
+				By("GET request to /logging to confirm it returns value set by LOG_LEVEL")
 				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -140,22 +127,15 @@ var _ = Describe("Stats", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
+				startupOptions.Port = NextStatsBindPort()
 				customLogLevel := zap.NewAtomicLevelAt(zapcore.DebugLevel)
 				startupOptions.LogLevel = &customLogLevel
-
-				originalEnvValue := os.Getenv(startupOptions.EnvVar)
-				err := os.Setenv(startupOptions.EnvVar, startupOptions.EnabledValue)
-				Expect(err).NotTo(HaveOccurred())
-
-				resetEnvVars = func() {
-					err := os.Setenv(startupOptions.EnvVar, originalEnvValue)
-					Expect(err).NotTo(HaveOccurred())
-				}
 
 				stats.StartCancellableStatsServerWithPort(ctx, startupOptions)
 			})
 
 			It("can handle requests to /logging", func() {
+				By("GET request to /logging to confirm it returns value set by StartupOptions.LogLevel")
 				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -177,9 +157,9 @@ func buildGetLogLevelRequest(port int) (*http.Request, error) {
 	return http.NewRequest("GET", url, body)
 }
 
-func buildSetLogLevelRequest(port int, newLevel string) (*http.Request, error) {
+func buildSetLogLevelRequest(port int, level zapcore.Level) (*http.Request, error) {
 	url := fmt.Sprintf("http://localhost:%d/logging", port)
-	body := bytes.NewReader([]byte(fmt.Sprintf("{\"level\": \"%s\"}", newLevel)))
+	body := bytes.NewReader([]byte(fmt.Sprintf("{\"level\": \"%s\"}", level.String())))
 
 	req, err := http.NewRequest("PUT", url, body)
 	if err != nil {
