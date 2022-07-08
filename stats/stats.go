@@ -92,6 +92,7 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 			Addr:    fmt.Sprintf(":%d", startupOpts.Port),
 			Handler: mux,
 		}
+		contextutils.LoggerFrom(ctx).Infof("Stats server starting at %s", server.Addr)
 		err := server.ListenAndServe()
 		if err == http.ErrServerClosed {
 			contextutils.LoggerFrom(ctx).Infof("Stats server closed")

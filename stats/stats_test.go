@@ -38,9 +38,6 @@ var _ = Describe("Stats", func() {
 
 			err := os.Unsetenv(contextutils.LogLevelEnvName)
 			Expect(err).NotTo(HaveOccurred())
-
-			// Initialize startupOptions to default value
-			startupOptions = stats.DefaultStartupOptions()
 		})
 
 		AfterEach(func() {
@@ -51,7 +48,7 @@ var _ = Describe("Stats", func() {
 			EventuallyPortAvailable(startupOptions.Port)
 		})
 
-		When("StartOptions are default", func() {
+		When("StartupOptions are default", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
@@ -77,7 +74,7 @@ var _ = Describe("Stats", func() {
 			})
 		})
 
-		When("StartOptions are default and LOG_LEVEL set", func() {
+		When("StartupOptions are default and LOG_LEVEL set", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
@@ -96,7 +93,7 @@ var _ = Describe("Stats", func() {
 			})
 		})
 
-		When("StartOptions.LogLevel is set", func() {
+		When("StartupOptions.LogLevel is set", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
@@ -137,7 +134,7 @@ func EventuallyRequestReturnsLoggingResponse(request *http.Request, logLevel zap
 
 	EventuallyWithOffset(1, func() (string, error) {
 		return goimpl.ExecuteRequest(request)
-	}, time.Second*5, time.Second).Should(Equal(expectedResponse))
+	}, time.Second*5, time.Millisecond*100).Should(Equal(expectedResponse))
 }
 
 func buildGetLogLevelRequest(port int) (*http.Request, error) {
