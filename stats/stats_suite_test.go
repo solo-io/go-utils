@@ -1,6 +1,7 @@
 package stats_test
 
 import (
+	"net/http"
 	"os"
 	"testing"
 
@@ -24,6 +25,8 @@ func TestStats(t *testing.T) {
 var _ = BeforeSuite(func() {
 	err := os.Setenv(stats.DefaultEnvVar, stats.DefaultEnabledValue)
 	Expect(err).NotTo(HaveOccurred())
+
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
 })
 
 var _ = AfterSuite(func() {

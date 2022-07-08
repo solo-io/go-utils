@@ -74,49 +74,43 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 	var server *http.Server
 
 	addHandlers := append(customAddHandlers, addPprof, addStats)
-	go runGoroutineServerListenAndServe(ctx, startupOpts, server, addHandlers...)
-	go runGoroutineShutdownServer(ctx, server)
-}
 
-func runGoroutineServerListenAndServe(
-	ctx context.Context,
-	startupOpts StartupOptions,
-	server *http.Server,
-	addHandlers ...func(mux *http.ServeMux, profiles map[string]string),
-) {
-	mux := new(http.ServeMux)
+	// Run the server in a goroutine
+	go func() {
+		mux := new(http.ServeMux)
 
-	mux.Handle("/logging", getLoggingHandler(startupOpts))
+		mux.Handle("/logging", getLoggingHandler(startupOpts))
 
-	for _, addHandler := range addHandlers {
-		addHandler(mux, profileDescriptions)
-	}
-
-	// add the index
-	mux.HandleFunc("/", Index)
-
-	server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", startupOpts.Port),
-		Handler: mux,
-	}
-	err := server.ListenAndServe()
-	if err == http.ErrServerClosed {
-		contextutils.LoggerFrom(ctx).Infof("Stats server closed")
-	} else {
-		contextutils.LoggerFrom(ctx).Warnf("Stats server closed with unexpected error: %v", err)
-	}
-}
-
-func runGoroutineShutdownServer(ctx context.Context, server *http.Server) {
-	select {
-	case <-ctx.Done():
-		if server != nil {
-			if err := server.Shutdown(ctx); err != nil {
-				contextutils.LoggerFrom(ctx).Warnf("Stats server shutdown returned error: %v", err)
-			}
-
+		for _, addHandler := range addHandlers {
+			addHandler(mux, profileDescriptions)
 		}
-	}
+
+		// add the index
+		mux.HandleFunc("/", Index)
+
+		server = &http.Server{
+			Addr:    fmt.Sprintf(":%d", startupOpts.Port),
+			Handler: mux,
+		}
+		err := server.ListenAndServe()
+		if err == http.ErrServerClosed {
+			contextutils.LoggerFrom(ctx).Infof("Stats server closed")
+		} else {
+			contextutils.LoggerFrom(ctx).Warnf("Stats server closed with unexpected error: %v", err)
+		}
+	}()
+
+	// Run a separate goroutine to handle the server shutdown when the context is cancelled
+	go func() {
+		select {
+		case <-ctx.Done():
+			if server != nil {
+				if err := server.Shutdown(ctx); err != nil {
+					contextutils.LoggerFrom(ctx).Warnf("Stats server shutdown returned error: %v", err)
+				}
+			}
+		}
+	}()
 }
 
 func getLoggingHandler(startupOpts StartupOptions) zap.AtomicLevel {

@@ -4,30 +4,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
-	"sync/atomic"
-
-	"github.com/onsi/ginkgo/config"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/stats"
 	"github.com/solo-io/go-utils/testutils/goimpl"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-var statsServerPort = int32(stats.DefaultPort)
-
-func NextStatsBindPort() int {
-	return int(AdvanceBindPort(&statsServerPort))
-}
-
-func AdvanceBindPort(p *int32) int32 {
-	return atomic.AddInt32(p, 1) + int32(config.GinkgoConfig.ParallelNode)
-}
 
 var _ = Describe("Stats", func() {
 
@@ -50,6 +40,10 @@ var _ = Describe("Stats", func() {
 
 		AfterEach(func() {
 			cancel()
+
+			// Ensure that after we cancel the context, which initiates a shutdown of the server,
+			// that we wait for the port to be released, so we can start up a next server on the subsequent test
+			EventuallyPortAvailable(stats.DefaultPort)
 		})
 
 		When("StartOptions are default", func() {
@@ -60,7 +54,6 @@ var _ = Describe("Stats", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
-				startupOptions.Port = NextStatsBindPort()
 
 				stats.StartCancellableStatsServerWithPort(ctx, startupOptions)
 			})
@@ -100,7 +93,6 @@ var _ = Describe("Stats", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
-				startupOptions.Port = NextStatsBindPort()
 
 				err := os.Setenv(contextutils.LogLevelEnvName, zapcore.ErrorLevel.String())
 				Expect(err).NotTo(HaveOccurred())
@@ -127,7 +119,6 @@ var _ = Describe("Stats", func() {
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
-				startupOptions.Port = NextStatsBindPort()
 				customLogLevel := zap.NewAtomicLevelAt(zapcore.DebugLevel)
 				startupOptions.LogLevel = &customLogLevel
 
@@ -149,6 +140,19 @@ var _ = Describe("Stats", func() {
 	})
 
 })
+
+func EventuallyPortAvailable(port int) {
+	EventuallyWithOffset(1, func() error {
+		timeout := time.Millisecond * 100
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", fmt.Sprintf("%d", port)), timeout)
+		if err != nil {
+			// nothing listening on this port, we can proceed because the server has been shutdown
+			return nil
+		}
+		_ = conn.Close()
+		return eris.New(fmt.Sprintf("connection still open on port %d, expected it to be closed", port))
+	}, time.Second*3, time.Millisecond*100).ShouldNot(HaveOccurred())
+}
 
 func buildGetLogLevelRequest(port int) (*http.Request, error) {
 	url := fmt.Sprintf("http://localhost:%d/logging", port)
