@@ -103,10 +103,9 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 	// Run a separate goroutine to handle the server shutdown when the context is cancelled
 	go func() {
 		<-ctx.Done()
-			if server != nil {
-				if err := server.Shutdown(ctx); err != nil {
-					contextutils.LoggerFrom(ctx).Warnf("Stats server shutdown returned error: %v", err)
-				}
+		if server != nil {
+			if err := server.Shutdown(ctx); err != nil {
+				contextutils.LoggerFrom(ctx).Warnf("Stats server shutdown returned error: %v", err)
 			}
 		}
 	}()
