@@ -26,6 +26,8 @@ var _ = Describe("Stats", func() {
 		var (
 			ctx    context.Context
 			cancel context.CancelFunc
+
+			startupOptions stats.StartupOptions
 		)
 
 		BeforeEach(func() {
@@ -36,6 +38,9 @@ var _ = Describe("Stats", func() {
 
 			err := os.Unsetenv(contextutils.LogLevelEnvName)
 			Expect(err).NotTo(HaveOccurred())
+
+			// Initialize startupOptions to default value
+			startupOptions = stats.DefaultStartupOptions()
 		})
 
 		AfterEach(func() {
@@ -43,14 +48,10 @@ var _ = Describe("Stats", func() {
 
 			// Ensure that after we cancel the context, which initiates a shutdown of the server,
 			// that we wait for the port to be released, so we can start up a next server on the subsequent test
-			EventuallyPortAvailable(stats.DefaultPort)
+			EventuallyPortAvailable(startupOptions.Port)
 		})
 
 		When("StartOptions are default", func() {
-
-			var (
-				startupOptions stats.StartupOptions
-			)
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
@@ -87,10 +88,6 @@ var _ = Describe("Stats", func() {
 
 		When("StartOptions are default and LOG_LEVEL set", func() {
 
-			var (
-				startupOptions stats.StartupOptions
-			)
-
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
 
@@ -112,10 +109,6 @@ var _ = Describe("Stats", func() {
 		})
 
 		When("StartOptions.LogLevel is set", func() {
-
-			var (
-				startupOptions stats.StartupOptions
-			)
 
 			BeforeEach(func() {
 				startupOptions = stats.DefaultStartupOptions()
