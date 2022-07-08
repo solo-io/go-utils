@@ -63,26 +63,17 @@ var _ = Describe("Stats", func() {
 				By("GET request to /logging to get log level")
 				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
-
-				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(response).To(Equal("{\"level\":\"info\"}\n"))
+				EventuallyRequestReturnsLoggingResponse(getLogLevelRequest, zapcore.InfoLevel)
 
 				By("PUT request to /logging to change log level ")
 				setLogLevelRequest, err := buildSetLogLevelRequest(startupOptions.Port, zapcore.DebugLevel)
 				Expect(err).NotTo(HaveOccurred())
-
-				response, err = goimpl.ExecuteRequest(setLogLevelRequest)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(response).To(Equal("{\"level\":\"debug\"}\n"))
+				EventuallyRequestReturnsLoggingResponse(setLogLevelRequest, zapcore.DebugLevel)
 
 				By("GET request to /logging to confirm it returns new log level")
 				getLogLevelRequest, err = buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
-
-				response, err = goimpl.ExecuteRequest(getLogLevelRequest)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(response).To(Equal("{\"level\":\"debug\"}\n"))
+				EventuallyRequestReturnsLoggingResponse(getLogLevelRequest, zapcore.DebugLevel)
 			})
 		})
 
@@ -101,10 +92,7 @@ var _ = Describe("Stats", func() {
 				By("GET request to /logging to confirm it returns value set by LOG_LEVEL")
 				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
-
-				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(response).To(Equal("{\"level\":\"error\"}\n"))
+				EventuallyRequestReturnsLoggingResponse(getLogLevelRequest, zapcore.ErrorLevel)
 			})
 		})
 
@@ -122,10 +110,7 @@ var _ = Describe("Stats", func() {
 				By("GET request to /logging to confirm it returns value set by StartupOptions.LogLevel")
 				getLogLevelRequest, err := buildGetLogLevelRequest(startupOptions.Port)
 				Expect(err).NotTo(HaveOccurred())
-
-				response, err := goimpl.ExecuteRequest(getLogLevelRequest)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(response).To(Equal("{\"level\":\"debug\"}\n"))
+				EventuallyRequestReturnsLoggingResponse(getLogLevelRequest, zapcore.DebugLevel)
 			})
 
 		})
@@ -145,6 +130,14 @@ func EventuallyPortAvailable(port int) {
 		_ = conn.Close()
 		return eris.New(fmt.Sprintf("connection still open on port %d, expected it to be closed", port))
 	}, time.Second*3, time.Millisecond*100).ShouldNot(HaveOccurred())
+}
+
+func EventuallyRequestReturnsLoggingResponse(request *http.Request, logLevel zapcore.Level) {
+	expectedResponse := fmt.Sprintf("{\"level\":\"%s\"}\n", logLevel.String())
+
+	EventuallyWithOffset(1, func() (string, error) {
+		return goimpl.ExecuteRequest(request)
+	}, time.Second*5, time.Second).Should(Equal(expectedResponse))
 }
 
 func buildGetLogLevelRequest(port int) (*http.Request, error) {
