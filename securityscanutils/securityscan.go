@@ -9,24 +9,16 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
-	"os/exec"
 	"path"
-	"strconv"
 	"strings"
-	"time"
-
-	"github.com/solo-io/go-utils/stringutils"
-	"github.com/solo-io/go-utils/versionutils"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/solo-io/go-utils/stringutils"
 
 	"github.com/google/go-github/v32/github"
-	"github.com/solo-io/go-utils/osutils/executils"
-
 	"github.com/imroc/req"
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/githubutils"
-	"github.com/solo-io/go-utils/log"
 )
 
 type SecurityScanner struct {
@@ -46,16 +38,8 @@ type SecurityScanRepo struct {
 	// should be run through our scanner
 	scanReleasePredicate githubutils.RepositoryReleasePredicate
 
-	// The RepositoryReleasePredicate used to determine if a vulnerability
-	// associated with a certain release should be uploaded to GitHub
-	createGithubIssuePredicate githubutils.RepositoryReleasePredicate
-
-	// A local cache of all existing GitHub issues
-	// Used to ensure that we are updating existing issues that were created
-	// by previous scans
-	allGithubIssues []*github.Issue
-
-
+	// The writer responsible for generating Github Issues for certain releases
+	githubIssueWriter *GithubIssueWriter
 }
 
 type SecurityScanOpts struct {
@@ -106,12 +90,6 @@ type SecurityScanOpts struct {
 	CreateGithubIssuePerLtsVersion bool
 }
 
-// Status code returned by Trivy if a vulnerability is found
-const VulnerabilityFoundStatusCode = 52
-
-// Labels that are applied to github issues that security scan generates
-var TrivyLabels = []string{"trivy", "vulnerability"}
-
 // Main method to call on SecurityScanner which generates .md and .sarif files
 // in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
 // sarif files will be uploaded to the repository's code-scanning endpoint.
@@ -142,7 +120,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		}
 
 		for _, release := range repo.releasesToScan {
-			err = repo.RunMarkdownScan(ctx, s.githubClient, release, markdownTplFile)
+			err = repo.RunMarkdownScan(ctx, release, markdownTplFile)
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
@@ -163,18 +141,6 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo *SecurityScanRepo) error {
 	repoOptions := repo.Opts
 
-	// Initialize a local store of GitHub issues if we will be creating new issues
-	if repoOptions.CreateGithubIssuePerVersion {
-		issues, err := githubutils.GetAllIssues(ctx, s.githubClient, repo.Owner, repo.Repo, &github.IssueListByRepoOptions{
-			State:  "open",
-			Labels: TrivyLabels,
-		})
-		if err != nil {
-			return eris.Wrapf(err, "error fetching all issues from github.com/%s/%s", repo.Owner, repo.Repo)
-		}
-		repo.allGithubIssues = issues
-	}
-
 	// Set the Predicate used to filter releases we wish to scan
 	repo.scanReleasePredicate = &SecurityScanRepositoryReleasePredicate{
 		versionConstraint: repoOptions.VersionConstraint,
@@ -189,25 +155,28 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	githubutils.SortReleasesBySemver(releasesToScan)
 	repo.releasesToScan = releasesToScan
 
-
+	// Initialize a local store of GitHub issues if we will be creating new issues
+	githubRepo := GithubRepo{
+		RepoName: repo.Repo,
+		Owner:    repo.Owner,
+	}
 	// Default to not creating any issues
-	repo.createGithubIssuePredicate = &githubutils.NoReleasesPredicate{}
+	var issuePredicate githubutils.RepositoryReleasePredicate = &githubutils.NoReleasesPredicate{}
 	if repoOptions.CreateGithubIssuePerVersion {
 		// Create Github issue for all releases, if configured
-		repo.createGithubIssuePredicate = &githubutils.AllReleasesPredicate{}
+		issuePredicate = &githubutils.AllReleasesPredicate{}
 	}
 
 	if repoOptions.CreateGithubIssuePerLtsVersion {
 		// Create Github issues for all releases in the set
-		repo.createGithubIssuePredicate = &SetRepositoryReleasePredicate{
-			releaseSet: getLTSReleasesOnly(releasesToScan),
-		}
+		issuePredicate = NewLTSOnlyRepositoryReleasePredicate(releasesToScan)
 	}
+	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
 
 	return nil
 }
 
-func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.Client, release *github.RepositoryRelease, markdownTplFile string) error {
+func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.RepositoryRelease, markdownTplFile string) error {
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
@@ -249,15 +218,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, client *github.C
 	}
 	// Create / Update Github issue for the repo if a vulnerability is found
 	// and CreateGithubIssuePerVersion is set to true
-	if r.createGithubIssuePredicate.Apply(release) {
-		if vulnerabilityMd == "" {
-			// We did not find vulnerabilities in any of the images for this version
-			// do not create an empty github issue
-			return nil
-		}
-		return r.CreateUpdateVulnerabilityIssue(ctx, client, version, vulnerabilityMd)
-	}
-	return nil
+	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
 }
 
 func (r *SecurityScanRepo) RunGithubSarifScan(release *github.RepositoryRelease, sarifTplFile string) error {
@@ -322,159 +283,6 @@ func (r *SecurityScanRepo) GetImagesToScan(versionToScan *semver.Version) ([]str
 	return stringutils.Keys(imagesToScan), nil
 }
 
-func getLTSReleasesOnly(releases []*github.RepositoryRelease) []*github.RepositoryRelease {
-	// We could use maxint but we dont really care
-	// as we can just check if major minor changed
-	var ltsOnlyReleases []*github.RepositoryRelease
-
-	recentMajor := -1
-	recentMinor := -1
-	for _, release := range releases {
-		version, err := versionutils.ParseVersion(release.GetTagName())
-		if err != nil {
-			continue
-		}
-		if version.Major == recentMajor && version.Minor == recentMinor {
-			continue
-		}
-
-		// This is the largest patch release
-		recentMajor = version.Major
-		recentMinor = version.Minor
-		ltsOnlyReleases = append(ltsOnlyReleases, release)
-	}
-
-	return ltsOnlyReleases
-}
-
-type SetRepositoryReleasePredicate struct {
-	releaseSet []*github.RepositoryRelease
-}
-
-func (s *SetRepositoryReleasePredicate) Apply(release *github.RepositoryRelease) bool {
-
-	// TODO
-	// return true if release is in the releaseSet
-	// return false otherswise
-	return false
-}
-
-// The SecurityScanRepositoryReleasePredicate is responsible for defining which
-// github.RepositoryRelease artifacts should be included in the bulk security scan
-// At the moment, the two requirements are that:
-// 1. The release is not a pre-release or draft
-// 2. The release matches the configured version constraint
-type SecurityScanRepositoryReleasePredicate struct {
-	versionConstraint *semver.Constraints
-}
-
-func (s *SecurityScanRepositoryReleasePredicate) Apply(release *github.RepositoryRelease) bool {
-	if release.GetPrerelease() || release.GetDraft() {
-		// Do not include pre-releases or drafts
-		return false
-	}
-
-	versionToTest, err := semver.NewVersion(release.GetTagName())
-	if err != nil {
-		// If we are unable to parse the release version, we do not include it in the filtered list
-		log.Warnf("unable to parse release version %s", release.GetTagName())
-		return false
-	}
-
-	if !s.versionConstraint.Check(versionToTest) {
-		// If the release version does not pass the version constraint, do not include
-		return false
-	}
-
-	// If all checks have passed, include the release
-	return true
-}
-
-// Runs trivy scan command
-// Returns (trivy scan ran successfully, vulnerabilities found, error running trivy scan)
-func RunTrivyScan(image, version, templateFile, output string) (bool, bool, error) {
-	// Ensure Trivy is installed and on PATH
-	_, err := exec.LookPath("trivy")
-	if err != nil {
-		return false, false, eris.Wrap(err, "trivy is not on PATH, make sure that the trivy v0.18 is installed and on PATH")
-	}
-	trivyScanArgs := []string{"image",
-		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
-		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
-		"--severity", "HIGH,CRITICAL",
-		"--format", "template",
-		"--template", "@" + templateFile,
-		"--output", output,
-		image}
-	// Execute the trivy scan, with retries and sleep's between each retry
-	// This can occur due to connectivity issues or epehemeral issues with
-	// the registery. For example sometimes quay has issues providing a given layer
-	// This leads to a total wait time of up to 110 seconds outside of the base
-	// operation. This timing is in the same ballpark as what k8s finds sensible
-	out, statusCode, err := executeTrivyScanWithRetries(
-		trivyScanArgs, 5,
-		func(attempt int) { time.Sleep(time.Duration((attempt^2)*2) * time.Second) },
-	)
-
-	// Check if a vulnerability has been found
-	vulnFound := statusCode == VulnerabilityFoundStatusCode
-	// err will be non-nil if there is a non-zero status code
-	// so if the status code is the special "vulnerability found" status code,
-	// we don't want to report it as a regular error
-	if !vulnFound && err != nil {
-		// delete empty trivy output file that may have been created
-		_ = os.Remove(output)
-		// swallow error if image is not found error, so that we can continue scanning releases
-		// even if some releases failed and we didn't publish images for those releases
-		// this error used to happen if a release was a pre-release and therefore images
-		// weren't pushed to the container registry.
-		// we have since filtered out non-release images from being scanned so this warning
-		// shouldn't occur, but leaving here in case there was another edge case we missed
-		if IsImageNotFoundErr(string(out)) {
-			log.Warnf("image %s not found for version %s", image, version)
-			return false, false, nil
-		}
-		return false, false, eris.Wrapf(err, "error running trivy scan on image %s, version %s, Logs: \n%s", image, version, string(out))
-	}
-	return true, vulnFound, nil
-}
-
-func executeTrivyScanWithRetries(trivyScanArgs []string, retryCount int,
-	backoffStrategy func(int)) ([]byte, int, error) {
-	if retryCount == 0 {
-		retryCount = 5
-	}
-	if backoffStrategy == nil {
-		backoffStrategy = func(attempt int) {
-			time.Sleep(time.Second)
-		}
-	}
-
-	var (
-		out        []byte
-		statusCode int
-		err        error
-	)
-
-	for attempt := 0; attempt < retryCount; attempt++ {
-		trivyScanCmd := exec.Command("trivy", trivyScanArgs...)
-		out, statusCode, err = executils.CombinedOutputWithStatus(trivyScanCmd)
-
-		// If there is no error, don't retry
-		if err == nil {
-			return out, statusCode, err
-		}
-
-		// If there is no image, don't retry
-		if IsImageNotFoundErr(string(out)) {
-			return out, statusCode, err
-		}
-
-		backoffStrategy(attempt)
-	}
-	return out, statusCode, err
-}
-
 type SarifMetadata struct {
 	Ref       string `json:"ref"`
 	CommitSha string `json:"commit_sha"`
@@ -522,44 +330,4 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 	}
 	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, res.String())
 	return nil
-}
-
-// Creates/Updates a Github Issue per image
-// The github issue will have the markdown table report of the image's vulnerabilities
-// example: https://github.com/solo-io/solo-projects/issues/2458
-func (r *SecurityScanRepo) CreateUpdateVulnerabilityIssue(ctx context.Context, client *github.Client, version, vulnerabilityMarkdown string) error {
-	issueTitle := fmt.Sprintf("Security Alert: %s", version)
-	issueRequest := &github.IssueRequest{
-		Title:  github.String(issueTitle),
-		Body:   github.String(vulnerabilityMarkdown),
-		Labels: &TrivyLabels,
-	}
-	createNewIssue := true
-
-	for _, issue := range r.allGithubIssues {
-		// If issue already exists, update existing issue with new security scan
-		if issue.GetTitle() == issueTitle {
-			// Only create new issue if issue does not already exist
-			createNewIssue = false
-			err := githubutils.UpdateIssue(ctx, client, r.Owner, r.Repo, issue.GetNumber(), issueRequest)
-			if err != nil {
-				return eris.Wrapf(err, "error updating issue with issue request %+v", issueRequest)
-			}
-			break
-		}
-	}
-	if createNewIssue {
-		_, err := githubutils.CreateIssue(ctx, client, r.Owner, r.Repo, issueRequest)
-		if err != nil {
-			return eris.Wrapf(err, "error creating issue with issue request %+v", issueRequest)
-		}
-	}
-	return nil
-}
-
-func IsImageNotFoundErr(logs string) bool {
-	if strings.Contains(logs, "No such image: ") {
-		return true
-	}
-	return false
 }
