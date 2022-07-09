@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -14,7 +15,6 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/zpages"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -55,52 +55,71 @@ func ConditionallyStartStatsServer(addhandlers ...func(mux *http.ServeMux, profi
 }
 
 func StartStatsServerWithPort(startupOpts StartupOptions, addhandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
+	StartCancellableStatsServerWithPort(context.Background(), startupOpts, addhandlers...)
+}
+
+func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts StartupOptions, customAddHandlers ...func(mux *http.ServeMux, profiles map[string]string)) {
 	// if the env var was provided (i.e., startup is conditional) and the value of that env var is not the expected value, then return and do nothing
 	if startupOpts.EnvVar != "" && os.Getenv(startupOpts.EnvVar) != startupOpts.EnabledValue {
 		return
 	}
 
-	var logLevel zap.AtomicLevel
-	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
-		var setLevel zapcore.Level
-		switch envLogLevel {
-		case "debug":
-			setLevel = zapcore.DebugLevel
-		case "warn":
-			setLevel = zapcore.WarnLevel
-		case "error":
-			setLevel = zapcore.ErrorLevel
-		case "panic":
-			setLevel = zapcore.PanicLevel
-		case "fatal":
-			setLevel = zapcore.FatalLevel
-		default:
-			setLevel = zapcore.InfoLevel
-		}
-
-		contextutils.SetLogLevel(setLevel)
-
-	} else if startupOpts.LogLevel != nil {
-		logLevel = *startupOpts.LogLevel
+	if envLogLevel := os.Getenv(contextutils.LogLevelEnvName); envLogLevel != "" {
+		contextutils.SetLogLevelFromString(envLogLevel)
 	}
 
-	go RunGoroutineStat()
+	go RunCancellableGoroutineStat(ctx)
 
+	// The running instance of the Stats server
+	var server *http.Server
+
+	addHandlers := append(customAddHandlers, addPprof, addStats)
+
+	// Run the server in a goroutine
 	go func() {
 		mux := new(http.ServeMux)
 
-		mux.Handle("/logging", logLevel)
+		mux.Handle("/logging", getLoggingHandler(startupOpts))
 
-		addhandlers = append(addhandlers, addPprof, addStats)
-
-		for _, addhandler := range addhandlers {
-			addhandler(mux, profileDescriptions)
+		for _, addHandler := range addHandlers {
+			addHandler(mux, profileDescriptions)
 		}
 
 		// add the index
 		mux.HandleFunc("/", Index)
-		http.ListenAndServe(fmt.Sprintf(":%d", startupOpts.Port), mux)
+
+		server = &http.Server{
+			Addr:    fmt.Sprintf(":%d", startupOpts.Port),
+			Handler: mux,
+		}
+		contextutils.LoggerFrom(ctx).Infof("Stats server starting at %s", server.Addr)
+		err := server.ListenAndServe()
+		if err == http.ErrServerClosed {
+			contextutils.LoggerFrom(ctx).Infof("Stats server closed")
+		} else {
+			contextutils.LoggerFrom(ctx).Warnf("Stats server closed with unexpected error: %v", err)
+		}
 	}()
+
+	// Run a separate goroutine to handle the server shutdown when the context is cancelled
+	go func() {
+		<-ctx.Done()
+		if server != nil {
+			if err := server.Shutdown(ctx); err != nil {
+				contextutils.LoggerFrom(ctx).Warnf("Stats server shutdown returned error: %v", err)
+			}
+		}
+	}()
+}
+
+func getLoggingHandler(startupOpts StartupOptions) zap.AtomicLevel {
+	// If the AtomicLevel is configured in StartupOptions, respect that
+	if startupOpts.LogLevel != nil {
+		return *startupOpts.LogLevel
+	}
+
+	// Fallback to the existing AtomicLevel
+	return contextutils.GetLogHandler()
 }
 
 func addPprof(mux *http.ServeMux, profiles map[string]string) {

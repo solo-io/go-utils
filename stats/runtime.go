@@ -25,14 +25,24 @@ func init() {
 }
 
 func RunGoroutineStat() {
+	RunCancellableGoroutineStat(context.Background())
+}
+
+func RunCancellableGoroutineStat(ctx context.Context) {
 	numgoroutines := int64(0)
 	for {
-		time.Sleep(time.Second)
-		newnumgoroutines := int64(runtime.NumGoroutine())
-		diff := newnumgoroutines - numgoroutines
-		numgoroutines = newnumgoroutines
-		if diff != 0 {
-			stats.Record(context.TODO(), MNumGoRoutines.M(diff))
+		select {
+		default:
+			time.Sleep(time.Second)
+			newnumgoroutines := int64(runtime.NumGoroutine())
+			diff := newnumgoroutines - numgoroutines
+			numgoroutines = newnumgoroutines
+			if diff != 0 {
+				stats.Record(context.TODO(), MNumGoRoutines.M(diff))
+			}
+		case <-ctx.Done():
+			return
 		}
+
 	}
 }
