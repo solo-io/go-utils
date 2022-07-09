@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var _ = FDescribe("Stats", func() {
+var _ = Describe("Stats", func() {
 
 	Context("StartStatsSeverWithPort", func() {
 
