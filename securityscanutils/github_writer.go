@@ -19,6 +19,10 @@ func (r GithubRepo) Address() string {
 	return fmt.Sprintf("github.com/%s/%s", r.Owner, r.RepoName)
 }
 
+// GithubIssueWriter is responsible for creating Github issues
+// to track vulnerabilities that have been discovered in images within a release.
+// It is configured with a Predicate that filters which releases to
+// write issues for, and which to skip
 type GithubIssueWriter struct {
 	// The details about the Github repository
 	repo GithubRepo
@@ -47,8 +51,10 @@ func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate
 // Labels that are applied to github issues that security scan generates
 var labels = []string{"trivy", "vulnerability"}
 
+// getAllGithubIssues returns the set of open issues in a Github repository that contain the trivy labels
 func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.Issue, error) {
 	if g.allGithubIssues != nil {
+		// Maintain a local cache of issue to avoid re-requesting each time
 		return g.allGithubIssues, nil
 	}
 
@@ -67,6 +73,12 @@ func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.I
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
 func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, release *github.RepositoryRelease, vulnerabilityMarkdown string) error {
+	if vulnerabilityMarkdown == "" {
+		// There we no vulnerabilities discovered for this release
+		// do not create an empty github issue
+		return nil
+	}
+
 	if !g.shouldWriteIssue(release) {
 		// The GithubIssueWriter can be configured to only write issues for certain releases
 		return nil
@@ -89,7 +101,6 @@ func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, 
 		return eris.Wrapf(err, "failed to get all github issues for repo")
 	}
 
-	// TODO - We could avoid iterating over the issues by indexing them by Title
 	for _, issue := range issues {
 		// If issue already exists, update existing issue with new security scan
 		if issue.GetTitle() == issueTitle {

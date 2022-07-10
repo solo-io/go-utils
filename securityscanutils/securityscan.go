@@ -87,7 +87,11 @@ type SecurityScanOpts struct {
 	// Creates github issue if image vulnerabilities are found
 	CreateGithubIssuePerVersion bool
 
-	CreateGithubIssuePerLtsVersion bool
+	// Only create github issue if:
+	// 	1. Image vulnerabilities are found
+	//	2. The version is the latest patch version (Major.Minor.Patch)
+	// If set to true, will override the behavior of CreateGithubIssuePerVersion
+	CreateGithubIssueForLatestPatchVersion bool
 }
 
 // Main method to call on SecurityScanner which generates .md and .sarif files
@@ -124,8 +128,8 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
-			// Only generate sarif files if we are uploading code scan results
-			// to github
+
+			// Only generate sarif files if we are uploading code scan results to github
 			if repo.Opts.UploadCodeScanToGithub {
 				err = repo.RunGithubSarifScan(release, sarifTplFile)
 				if err != nil {
@@ -138,13 +142,13 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	return nil
 }
 
+// initializeRepoConfiguration processes the user defined options
+// and configures the non-user controller properties of a SecurityScanRepo
 func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo *SecurityScanRepo) error {
 	repoOptions := repo.Opts
 
 	// Set the Predicate used to filter releases we wish to scan
-	repo.scanReleasePredicate = &SecurityScanRepositoryReleasePredicate{
-		versionConstraint: repoOptions.VersionConstraint,
-	}
+	repo.scanReleasePredicate = NewSecurityScanRepositoryReleasePredicate(repoOptions.VersionConstraint)
 
 	// Get the full set of releases that we expect to scan
 	maxReleasesToScan := math.MaxInt32
@@ -167,9 +171,9 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 		issuePredicate = &githubutils.AllReleasesPredicate{}
 	}
 
-	if repoOptions.CreateGithubIssuePerLtsVersion {
+	if repoOptions.CreateGithubIssueForLatestPatchVersion {
 		// Create Github issues for all releases in the set
-		issuePredicate = NewLTSOnlyRepositoryReleasePredicate(releasesToScan)
+		issuePredicate = NewLatestPatchRepositoryReleasePredicate(releasesToScan)
 	}
 	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
 
@@ -217,7 +221,6 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 
 	}
 	// Create / Update Github issue for the repo if a vulnerability is found
-	// and CreateGithubIssuePerVersion is set to true
 	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
 }
 

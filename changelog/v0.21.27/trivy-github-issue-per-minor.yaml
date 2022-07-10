@@ -1,0 +1,15 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/469
+    resolvesIssue: false
+    description: >
+      Ensure the SecurityScanner scans all images for a set of minor versions.
+      Previously, the scanner would only scan the latest patch release, which would cause docs which depend
+      on these scans (as Gloo Edge does) to show empty scans.
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/478
+    resolvesIssue: true
+    description: >
+      Expose a new option 'CreateGithubIssueForLatestPatchVersion', which when enabled, will ensure that the
+      SecurityScanner only creates Github issues to track the latest patch version as opposed to creating
+      an issue for every version (which it has historically done)
