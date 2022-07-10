@@ -37,6 +37,8 @@ var (
 	level zap.AtomicLevel
 )
 
+const LogLevelEnvName = "LOG_LEVEL"
+
 func buildProductionLogger() (*zap.Logger, error) {
 	config := zap.NewProductionConfig()
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
@@ -124,8 +126,33 @@ func fromContext(ctx context.Context) *zap.SugaredLogger {
 	return fallbackLogger
 }
 
+func SetLogLevelFromString(logLevel string) {
+	var setLevel zapcore.Level
+
+	switch logLevel {
+	case "debug":
+		setLevel = zapcore.DebugLevel
+	case "warn":
+		setLevel = zapcore.WarnLevel
+	case "error":
+		setLevel = zapcore.ErrorLevel
+	case "panic":
+		setLevel = zapcore.PanicLevel
+	case "fatal":
+		setLevel = zapcore.FatalLevel
+	default:
+		setLevel = zapcore.InfoLevel
+	}
+
+	SetLogLevel(setLevel)
+}
+
 func SetLogLevel(l zapcore.Level) {
 	level.SetLevel(l)
+}
+
+func GetLogHandler() zap.AtomicLevel {
+	return level
 }
 
 func GetLogLevel() zapcore.Level {

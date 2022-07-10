@@ -15,7 +15,13 @@ func Curl(url string) (string, error) {
 		return "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	return ExecuteRequest(req)
+}
+
+// ExecuteRequest provides some of the functionality you would expect from the curl command.
+// This saves you from having to call the curl binary in environments where that binary is not available.
+func ExecuteRequest(request *http.Request) (string, error) {
+	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return "", err
 	}
