@@ -197,16 +197,10 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 }
 
 func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.RepositoryRelease, markdownTplFile string) error {
-	logger := contextutils.LoggerFrom(ctx)
-
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
-
-	start := time.Now()
-	logger.Debugf("Choosing images to scan")
 	images, err := r.GetImagesToScan(versionToScan)
-	logger.Debugf("Images selected after: %s", time.Since(start).String())
 	if err != nil {
 		return err
 	}
