@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/solo-io/go-utils/contextutils"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v32/github"
 	"github.com/rotisserie/eris"
@@ -73,6 +75,8 @@ func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.I
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
 func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, release *github.RepositoryRelease, vulnerabilityMarkdown string) error {
+	logger := contextutils.LoggerFrom(ctx)
+
 	if vulnerabilityMarkdown == "" {
 		// There we no vulnerabilities discovered for this release
 		// do not create an empty github issue
@@ -80,6 +84,7 @@ func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, 
 	}
 
 	if !g.shouldWriteIssue(release) {
+		logger.Debugf("GithubIssueWriter skipping release %s", release.GetTagName())
 		// The GithubIssueWriter can be configured to only write issues for certain releases
 		return nil
 	}
@@ -95,6 +100,7 @@ func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, 
 		Labels: &labels,
 	}
 	createNewIssue := true
+	logger.Debugf("GithubIssueWriter attempting to create or update issue: %s", issueTitle)
 
 	issues, err := g.getAllGithubIssues(ctx)
 	if err != nil {

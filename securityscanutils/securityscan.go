@@ -11,6 +11,9 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
+
+	"github.com/solo-io/go-utils/contextutils"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/solo-io/go-utils/stringutils"
@@ -98,6 +101,8 @@ type SecurityScanOpts struct {
 // in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
 // sarif files will be uploaded to the repository's code-scanning endpoint.
 func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
+	logger := contextutils.LoggerFrom(ctx)
+
 	var err error
 	s.githubClient, err = githubutils.GetClient(ctx)
 	if err != nil {
@@ -124,6 +129,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		}
 
 		for _, release := range repo.releasesToScan {
+			releaseStart := time.Now()
 			err = repo.RunMarkdownScan(ctx, release, markdownTplFile)
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
@@ -136,6 +142,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
 				}
 			}
+			logger.Debugf("Completed running markdown scan for release %s after %s", release.GetTagName(), time.Since(releaseStart).String())
 		}
 
 	}
@@ -145,10 +152,15 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 // initializeRepoConfiguration processes the user defined options
 // and configures the non-user controller properties of a SecurityScanRepo
 func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo *SecurityScanRepo) error {
+	logger := contextutils.LoggerFrom(ctx)
+	logger.Debugf("Processing user defined configuration for repository (%s, %s)", repo.Owner, repo.Repo)
+
 	repoOptions := repo.Opts
 
 	// Set the Predicate used to filter releases we wish to scan
 	repo.scanReleasePredicate = NewSecurityScanRepositoryReleasePredicate(repoOptions.VersionConstraint)
+
+	logger.Debugf("Scanning github repo for releases that match version constraint: %s", repoOptions.VersionConstraint)
 
 	// Get the full set of releases that we expect to scan
 	maxReleasesToScan := math.MaxInt32
@@ -158,6 +170,8 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	}
 	githubutils.SortReleasesBySemver(releasesToScan)
 	repo.releasesToScan = releasesToScan
+
+	logger.Debugf("Number of github releases to scan: %d", len(releasesToScan))
 
 	// Initialize a local store of GitHub issues if we will be creating new issues
 	githubRepo := GithubRepo{
@@ -176,7 +190,9 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 		issuePredicate = NewLatestPatchRepositoryReleasePredicate(releasesToScan)
 	}
 	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 
+	logger.Debugf("Completed processing user defined configuration.")
 	return nil
 }
 
