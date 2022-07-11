@@ -85,6 +85,11 @@ func executeTrivyScanWithRetries(trivyScanArgs []string, retryCount int,
 		trivyScanCmd := exec.Command("trivy", trivyScanArgs...)
 		out, statusCode, err = executils.CombinedOutputWithStatus(trivyScanCmd)
 
+		// If we receive the expected status code, the scan completed, don't retry
+		if statusCode == VulnerabilityFoundStatusCode {
+			return out, statusCode, nil
+		}
+
 		// If there is no error, don't retry
 		if err == nil {
 			return out, statusCode, err
