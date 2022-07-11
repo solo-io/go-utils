@@ -1,4 +1,0 @@
-changelog:
-  - type: FIX
-    issueLink: https://github.com/solo-io/go-utils/issues/486
-    description: Removes hardcoded timeout in grpcutils.
