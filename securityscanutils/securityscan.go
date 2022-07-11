@@ -137,7 +137,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 
 			// Only generate sarif files if we are uploading code scan results to github
 			if repo.Opts.UploadCodeScanToGithub {
-				err = repo.RunGithubSarifScan(release, sarifTplFile)
+				err = repo.RunGithubSarifScan(ctx, release, sarifTplFile)
 				if err != nil {
 					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
 				}
@@ -197,11 +197,16 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 }
 
 func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.RepositoryRelease, markdownTplFile string) error {
+	logger := contextutils.LoggerFrom(ctx)
+
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
 
+	start := time.Now()
+	logger.Debugf("Choosing images to scan")
 	images, err := r.GetImagesToScan(versionToScan)
+	logger.Debugf("Images selected after: %s", time.Since(start).String())
 	if err != nil {
 		return err
 	}
@@ -222,7 +227,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		}
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
 		output := path.Join(outputDir, fileName)
-		_, vulnFound, err := RunTrivyScan(imageWithRepo, version, markdownTplFile, output)
+		_, vulnFound, err := RunTrivyScan(ctx, imageWithRepo, version, markdownTplFile, output)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
@@ -240,7 +245,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
 }
 
-func (r *SecurityScanRepo) RunGithubSarifScan(release *github.RepositoryRelease, sarifTplFile string) error {
+func (r *SecurityScanRepo) RunGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
@@ -265,7 +270,7 @@ func (r *SecurityScanRepo) RunGithubSarifScan(release *github.RepositoryRelease,
 		}
 		fileName := fmt.Sprintf("%s_cve_report.sarif", image)
 		output := path.Join(outputDir, fileName)
-		success, _, err := RunTrivyScan(imageWithRepo, version, sarifTplFile, output)
+		success, _, err := RunTrivyScan(ctx, imageWithRepo, version, sarifTplFile, output)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}

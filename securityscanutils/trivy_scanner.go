@@ -1,11 +1,14 @@
 package securityscanutils
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/solo-io/go-utils/contextutils"
 
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/log"
@@ -17,7 +20,7 @@ const VulnerabilityFoundStatusCode = 52
 
 // Runs trivy scan command
 // Returns (trivy scan ran successfully, vulnerabilities found, error running trivy scan)
-func RunTrivyScan(image, version, templateFile, output string) (bool, bool, error) {
+func RunTrivyScan(ctx context.Context, image, version, templateFile, output string) (bool, bool, error) {
 	// Ensure Trivy is installed and on PATH
 	_, err := exec.LookPath("trivy")
 	if err != nil {
@@ -37,7 +40,7 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	// This leads to a total wait time of up to 110 seconds outside of the base
 	// operation. This timing is in the same ballpark as what k8s finds sensible
 	out, statusCode, err := executeTrivyScanWithRetries(
-		trivyScanArgs, 5,
+		ctx, trivyScanArgs, 5,
 		func(attempt int) { time.Sleep(time.Duration((attempt^2)*2) * time.Second) },
 	)
 
@@ -64,8 +67,9 @@ func RunTrivyScan(image, version, templateFile, output string) (bool, bool, erro
 	return true, vulnFound, nil
 }
 
-func executeTrivyScanWithRetries(trivyScanArgs []string, retryCount int,
+func executeTrivyScanWithRetries(ctx context.Context, trivyScanArgs []string, retryCount int,
 	backoffStrategy func(int)) ([]byte, int, error) {
+	logger := contextutils.LoggerFrom(ctx)
 	if retryCount == 0 {
 		retryCount = 5
 	}
@@ -83,7 +87,9 @@ func executeTrivyScanWithRetries(trivyScanArgs []string, retryCount int,
 
 	for attempt := 0; attempt < retryCount; attempt++ {
 		trivyScanCmd := exec.Command("trivy", trivyScanArgs...)
+		attemptStart := time.Now()
 		out, statusCode, err = executils.CombinedOutputWithStatus(trivyScanCmd)
+		logger.Debugf("Trivy returned %s after %s", statusCode, time.Since(attemptStart).String())
 
 		// If we receive the expected status code, the scan completed, don't retry
 		if statusCode == VulnerabilityFoundStatusCode {
