@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"text/template"
+	"time"
 
 	"net/http"
 	"net/http/pprof"
@@ -105,8 +106,10 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 	go func() {
 		<-ctx.Done()
 		if server != nil {
-			if err := server.Shutdown(ctx); err != nil {
-				contextutils.LoggerFrom(ctx).Warnf("Stats server shutdown returned error: %v", err)
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer shutdownCancel()
+			if err := server.Shutdown(shutdownCtx); err != nil {
+				contextutils.LoggerFrom(shutdownCtx).Warnf("Stats server shutdown returned error: %v", err)
 			}
 		}
 	}()

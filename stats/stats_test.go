@@ -126,7 +126,7 @@ func EventuallyPortAvailable(port int) {
 		}
 		_ = conn.Close()
 		return eris.New(fmt.Sprintf("connection still open on port %d, expected it to be closed", port))
-	}, time.Second*3, time.Millisecond*100).ShouldNot(HaveOccurred())
+	}, time.Second*5, time.Millisecond*100).ShouldNot(HaveOccurred())
 }
 
 func EventuallyRequestReturnsLoggingResponse(request *http.Request, logLevel zapcore.Level) {
@@ -141,18 +141,18 @@ func buildGetLogLevelRequest(port int) (*http.Request, error) {
 	url := fmt.Sprintf("http://localhost:%d/logging", port)
 	body := bytes.NewReader([]byte(url))
 
-	return http.NewRequest("GET", url, body)
+	return http.NewRequest(http.MethodGet, url, body)
 }
 
 func buildSetLogLevelRequest(port int, level zapcore.Level) (*http.Request, error) {
 	url := fmt.Sprintf("http://localhost:%d/logging", port)
 	body := bytes.NewReader([]byte(fmt.Sprintf("{\"level\": \"%s\"}", level.String())))
 
-	req, err := http.NewRequest("PUT", url, body)
+	req, err := http.NewRequest(http.MethodPut, url, body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Context-Type", "application/json")
+	req.Header.Add("Content-Type", "application/json")
 
 	return req, nil
 }
