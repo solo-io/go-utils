@@ -29,6 +29,9 @@ type DialOpts struct {
 
 	// additional options the caller wishes to inject
 	ExtraOptions []grpc.DialOption
+
+	// duration to wait for a connection to be established
+	Timeout time.Duration
 }
 
 func (o DialOpts) Dial(ctx context.Context) (*grpc.ClientConn, error) {
@@ -59,6 +62,12 @@ func (o DialOpts) Dial(ctx context.Context) (*grpc.ClientConn, error) {
 		opts = append(opts, grpc.WithAuthority(o.Authority))
 	}
 	opts = append(opts, o.ExtraOptions...)
+
+	ctx, cancelFn := context.WithTimeout(ctx, (time.Minute * 1))
+	if o.Timeout > 0 {
+		ctx, cancelFn = context.WithTimeout(ctx, o.Timeout)
+	}
+	defer cancelFn()
 
 	cc, err := grpc.DialContext(ctx, o.Address, opts...)
 	if err != nil {

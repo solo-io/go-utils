@@ -129,7 +129,13 @@ func (s *serverImpl) GoListen(ctx context.Context, addr string) error {
 }
 
 func newClient(ctx context.Context, addr string) (test_api.TestServiceClient, error) {
-	cc, err := DialOpts{Address: addr, Insecure: true, ReconnectOnNetworkFailures: true}.Dial(ctx)
+	opts := DialOpts{
+		Address:                    addr,
+		Insecure:                   true,
+		ReconnectOnNetworkFailures: true,
+	}
+
+	cc, err := opts.Dial(ctx)
 	if err != nil {
 		return nil, err
 	}
