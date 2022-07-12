@@ -30,7 +30,7 @@ type DialOpts struct {
 	// additional options the caller wishes to inject
 	ExtraOptions []grpc.DialOption
 
-	// duration to wait for a connection to be established
+ 	// duration to wait for a connection to be established. if zero, defaults to 1 minute
 	Timeout time.Duration
 }
 
