@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"sort"
 
@@ -19,15 +18,13 @@ const (
 	glooRepoName = "gloo"
 )
 
-// In order to run these tests, you'll need to have trivy installed
-// and on the PATH
 var _ = Describe("Security Scan Suite", func() {
+
 	var (
 		outputDir string
 	)
 
 	BeforeEach(func() {
-		checkTrivyInstall()
 		var err error
 		outputDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -39,6 +36,7 @@ var _ = Describe("Security Scan Suite", func() {
 	})
 
 	Context("Security Scanner", func() {
+
 		It("works", func() {
 			verConstraint, err := semver.NewConstraint("=v1.6.0 || =v1.7.0")
 			Expect(err).NotTo(HaveOccurred())
@@ -126,13 +124,6 @@ var _ = Describe("Security Scan Suite", func() {
 		})
 	})
 })
-
-// Trivy should be installed on PATH
-func checkTrivyInstall() {
-	path, err := exec.LookPath("trivy")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, path).NotTo(BeEmpty())
-}
 
 // Accepts a list of file names and passes all tests only if the directory path passed in
 // as dir includes all fileNames passed in.

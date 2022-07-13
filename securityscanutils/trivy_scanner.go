@@ -11,21 +11,28 @@ import (
 	"github.com/solo-io/go-utils/contextutils"
 
 	"github.com/rotisserie/eris"
-	"github.com/solo-io/go-utils/log"
-	"github.com/solo-io/go-utils/osutils/executils"
 )
 
 // Status code returned by Trivy if a vulnerability is found
 const VulnerabilityFoundStatusCode = 52
 
-// Runs trivy scan command
-// Returns (trivy scan ran successfully, vulnerabilities found, error running trivy scan)
-func RunTrivyScan(ctx context.Context, image, version, templateFile, output string) (bool, bool, error) {
-	// Ensure Trivy is installed and on PATH
-	_, err := exec.LookPath("trivy")
-	if err != nil {
-		return false, false, eris.Wrap(err, "trivy is not on PATH, make sure that the trivy v0.18 is installed and on PATH")
+type CmdExecutor func(cmd *exec.Cmd) ([]byte, int, error)
+
+type TrivyScanner struct {
+	executeCommand      CmdExecutor
+	scanBackoffStrategy func(int)
+	scanMaxRetries      int
+}
+
+func NewTrivyScanner(executeCommand CmdExecutor) *TrivyScanner {
+	return &TrivyScanner{
+		executeCommand:      executeCommand,
+		scanBackoffStrategy: func(attempt int) { time.Sleep(time.Duration((attempt^2)*2) * time.Second) },
+		scanMaxRetries:      5,
 	}
+}
+
+func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, output string) (bool, bool, error) {
 	trivyScanArgs := []string{"image",
 		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
 		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
@@ -34,50 +41,26 @@ func RunTrivyScan(ctx context.Context, image, version, templateFile, output stri
 		"--template", "@" + templateFile,
 		"--output", output,
 		image}
+
 	// Execute the trivy scan, with retries and sleep's between each retry
 	// This can occur due to connectivity issues or epehemeral issues with
-	// the registery. For example sometimes quay has issues providing a given layer
+	// the registry. For example sometimes quay has issues providing a given layer
 	// This leads to a total wait time of up to 110 seconds outside of the base
 	// operation. This timing is in the same ballpark as what k8s finds sensible
-	out, statusCode, err := executeTrivyScanWithRetries(
-		ctx, trivyScanArgs, 5,
-		func(attempt int) { time.Sleep(time.Duration((attempt^2)*2) * time.Second) },
-	)
+	scanCompleted, vulnerabilityFound, err := t.executeScanWithRetries(ctx, trivyScanArgs)
 
-	// Check if a vulnerability has been found
-	vulnFound := statusCode == VulnerabilityFoundStatusCode
-	// err will be non-nil if there is a non-zero status code
-	// so if the status code is the special "vulnerability found" status code,
-	// we don't want to report it as a regular error
-	if !vulnFound && err != nil {
-		// delete empty trivy output file that may have been created
+	if !scanCompleted {
+		// delete the empty trivy output file that may have been created
 		_ = os.Remove(output)
-		// swallow error if image is not found error, so that we can continue scanning releases
-		// even if some releases failed and we didn't publish images for those releases
-		// this error used to happen if a release was a pre-release and therefore images
-		// weren't pushed to the container registry.
-		// we have since filtered out non-release images from being scanned so this warning
-		// shouldn't occur, but leaving here in case there was another edge case we missed
-		if IsImageNotFoundErr(string(out)) {
-			log.Warnf("image %s not found for version %s", image, version)
-			return false, false, nil
-		}
-		return false, false, eris.Wrapf(err, "error running trivy scan on image %s, version %s, Logs: \n%s", image, version, string(out))
 	}
-	return true, vulnFound, nil
+
+	return scanCompleted, vulnerabilityFound, err
 }
 
-func executeTrivyScanWithRetries(ctx context.Context, trivyScanArgs []string, retryCount int,
-	backoffStrategy func(int)) ([]byte, int, error) {
+// executeScanWithRetries executes a trivy command (with retries and backoff)
+// and returns a tuple of (scanCompleted, vulnerabilitiesFound, error)
+func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []string) (bool, bool, error) {
 	logger := contextutils.LoggerFrom(ctx)
-	if retryCount == 0 {
-		retryCount = 5
-	}
-	if backoffStrategy == nil {
-		backoffStrategy = func(attempt int) {
-			time.Sleep(time.Second)
-		}
-	}
 
 	var (
 		out        []byte
@@ -85,30 +68,41 @@ func executeTrivyScanWithRetries(ctx context.Context, trivyScanArgs []string, re
 		err        error
 	)
 
-	for attempt := 0; attempt < retryCount; attempt++ {
-		trivyScanCmd := exec.Command("trivy", trivyScanArgs...)
+	for attempt := 0; attempt < t.scanMaxRetries; attempt++ {
+		trivyScanCmd := exec.Command("trivy", scanArgs...)
 		attemptStart := time.Now()
-		out, statusCode, err = executils.CombinedOutputWithStatus(trivyScanCmd)
-		logger.Debugf("Trivy returned %s after %s", statusCode, time.Since(attemptStart).String())
+		out, statusCode, err = t.executeCommand(trivyScanCmd)
+		logger.Debugf("Trivy returned %d after %s", statusCode, time.Since(attemptStart).String())
 
 		// If we receive the expected status code, the scan completed, don't retry
 		if statusCode == VulnerabilityFoundStatusCode {
-			return out, statusCode, nil
+			return true, true, nil
 		}
 
-		// If there is no error, don't retry
+		// If there is no error, the scan completed and no vulnerability was found, don't retry
 		if err == nil {
-			return out, statusCode, err
+			return true, false, err
 		}
 
 		// If there is no image, don't retry
+
 		if IsImageNotFoundErr(string(out)) {
-			return out, statusCode, err
+			logger.Warnf("Trivy scan with args [%v] produced image not found error", scanArgs)
+
+			// swallow error if image is not found error, so that we can continue scanning releases
+			// even if some releases failed and we didn't publish images for those releases
+			// this error used to happen if a release was a pre-release and therefore images
+			// weren't pushed to the container registry.
+			// we have since filtered out non-release images from being scanned so this warning
+			// shouldn't occur, but leaving here in case there was another edge case we missed
+			return false, false, nil
 		}
 
-		backoffStrategy(attempt)
+		t.scanBackoffStrategy(attempt)
 	}
-	return out, statusCode, err
+
+	// We only reach here if we exhausted our retries
+	return false, false, eris.Errorf("Trivy scan with args [%v] did not complete after %d attempts", scanArgs, t.scanMaxRetries)
 }
 
 func IsImageNotFoundErr(logs string) bool {
