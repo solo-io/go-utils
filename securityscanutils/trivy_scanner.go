@@ -33,6 +33,11 @@ func NewTrivyScanner(executeCommand CmdExecutor) *TrivyScanner {
 }
 
 func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, output string) (bool, bool, error) {
+	//logger := contextutils.LoggerFrom(ctx)
+	//logger.Debugf("RUNNING SCANIMAGE")
+	//logger.Debugf("image: " + image)
+	//logger.Debugf("templateFile: " + templateFile)
+	//logger.Debugf("output: " + output)
 	trivyScanArgs := []string{"image",
 		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
 		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
@@ -71,6 +76,7 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 	for attempt := 0; attempt < t.scanMaxRetries; attempt++ {
 		trivyScanCmd := exec.Command("trivy", scanArgs...)
 		attemptStart := time.Now()
+		logger.Debugf("Command: " + trivyScanCmd.String())
 		out, statusCode, err = t.executeCommand(trivyScanCmd)
 		logger.Debugf("Trivy returned %d after %s", statusCode, time.Since(attemptStart).String())
 
