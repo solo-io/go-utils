@@ -3,14 +3,15 @@ package securityscanutils_test
 import (
 	"context"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/osutils/executils"
-	. "github.com/solo-io/go-utils/securityscanutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/osutils/executils"
+	. "github.com/solo-io/go-utils/securityscanutils"
 )
 
 var _ = Describe("Trivy Scanner", func() {
