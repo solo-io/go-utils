@@ -1,0 +1,3 @@
+changelog:
+  - type: FIX
+    description: Trivy scan time greatly reduced due to exit code detection preventing duplicate runs and backoff delays
