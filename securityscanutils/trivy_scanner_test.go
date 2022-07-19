@@ -2,7 +2,6 @@ package securityscanutils_test
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -69,15 +68,14 @@ var _ = Describe("Trivy Scanner", func() {
 
 	FContext("Benchmark", func() {
 		It("Should do repeated scans efficiently", func() {
+			inputImage = "quay.io/solo-io/gloo:1.11.1"
 			attemptStart := time.Now()
-			imagesToScan := []string{"gloo", "discovery", "rate-limit"}
-			for _, imageName := range imagesToScan {
-				inputImage = fmt.Sprintf("quay.io/solo-io/%s:1.11.1", imageName)
+			for i := 0; i < 10; i++ {
 				_, _, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 				Expect(err).NotTo(HaveOccurred())
 			}
 			attemptEnd := time.Since(attemptStart)
-			Expect(attemptEnd).To(BeNumerically("<", 4*time.Second))
+			Expect(attemptEnd).To(BeNumerically("<", 20*time.Second))
 		})
 	})
 })
