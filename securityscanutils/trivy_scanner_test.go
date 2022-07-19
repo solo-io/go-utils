@@ -2,20 +2,33 @@ package securityscanutils_test
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
-
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/solo-io/go-utils/osutils/executils"
 	. "github.com/solo-io/go-utils/securityscanutils"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 var _ = Describe("Trivy Scanner", func() {
 	var (
-		outputDir string
+		t                         *TrivyScanner
+		inputImage                string
+		inputMarkdownTemplateFile string
+		outputDir, outputFile     string
+		err                       error
 	)
 
 	JustBeforeEach(func() {
+		t = NewTrivyScanner(executils.CombinedOutputWithStatus)
+		inputMarkdownTemplateFile, err = GetTemplateFile(MarkdownTrivyTemplate)
+		Expect(err).NotTo(HaveOccurred())
+		outputDir, err := ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+		outputFile = filepath.Join(outputDir, "test_report.docgen")
 	})
 
 	JustAfterEach(func() {
@@ -23,31 +36,47 @@ var _ = Describe("Trivy Scanner", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	When("Vulnerabilities exist", func() {
-		markdownTplFile, err := GetTemplateFile(MarkdownTrivyTemplate)
+	It("Finds vulnerabilities", func() {
+		inputImage = "quay.io/solo-io/gloo:1.11.1"
+		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+
 		Expect(err).NotTo(HaveOccurred())
-		outputDir, err = ioutil.TempDir("", "")
+		Expect(completed).To(Equal(true))
+		Expect(vulnFound).To(Equal(true))
+	})
+
+	It("Cannot find Image", func() {
+		inputImage = "quay.io/solo-io/gloo:1.11.13245"
+		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+
 		Expect(err).NotTo(HaveOccurred())
-
-		t := NewTrivyScanner(nil)
-		testImage := "quay.io/solo-io/gloo:1.11.1"
-		a, b, c := t.ScanImage(context.TODO(), testImage, markdownTplFile, outputDir)
-		a, b, c = a, b, c
-	})
-
-	When("Image is not found", func() {
+		Expect(completed).To(Equal(false))
+		Expect(vulnFound).To(Equal(false))
 
 	})
 
-	When("Exec returns error", func() {
+	It("Returns error from Exec via Timeout", func() {
+		inputImage = "quay.io/solo-io/gloo:1.11.1"
+		completed, vulnFound, err := t.ScanImage(context.TODO(), "", "", "")
+
+		//Error occurs when all trivy scan arguments are empty
+		Expect(err).To(HaveOccurred())
+		Expect(completed).To(Equal(false))
+		Expect(vulnFound).To(Equal(false))
 
 	})
 
-	Context("Benchmark", func() {
-
+	FContext("Benchmark", func() {
 		It("Should do repeated scans efficiently", func() {
-
+			attemptStart := time.Now()
+			imagesToScan := []string{"gloo", "discovery", "rate-limit"}
+			for _, imageName := range imagesToScan {
+				inputImage = fmt.Sprintf("quay.io/solo-io/%s:1.11.1", imageName)
+				_, _, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			attemptEnd := time.Since(attemptStart)
+			Expect(attemptEnd).To(BeNumerically("<", 4*time.Second))
 		})
 	})
-
 })
