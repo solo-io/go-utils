@@ -66,7 +66,7 @@ var _ = Describe("Trivy Scanner", func() {
 
 	})
 
-	FContext("Benchmark", func() {
+	Context("Benchmark", func() {
 		It("Should do repeated scans efficiently", func() {
 			inputImage = "quay.io/solo-io/gloo:1.11.1"
 			attemptStart := time.Now()
