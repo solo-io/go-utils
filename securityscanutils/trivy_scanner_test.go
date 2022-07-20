@@ -2,12 +2,13 @@ package securityscanutils_test
 
 import (
 	"context"
-	"github.com/rotisserie/eris"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"github.com/rotisserie/eris"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
