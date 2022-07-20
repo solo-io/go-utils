@@ -61,7 +61,6 @@ func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, outpu
 // and returns a tuple of (scanCompleted, vulnerabilitiesFound, error)
 func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []string) (bool, bool, error) {
 	logger := contextutils.LoggerFrom(ctx)
-
 	var (
 		out        []byte
 		statusCode int
@@ -70,17 +69,18 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 	attemptStart := time.Now()
 	for attempt := 0; attempt < t.scanMaxRetries; attempt++ {
 		trivyScanCmd := exec.Command("trivy", scanArgs...)
+		imageUri := scanArgs[11]
 		out, statusCode, err = t.executeCommand(trivyScanCmd)
 
 		// If we receive the expected status code, the scan completed, don't retry
 		if statusCode == VulnerabilityFoundStatusCode {
-			logger.Debugf("Trivy found vulnerabilies after %s", time.Since(attemptStart).String())
+			logger.Debugf("Trivy found vulnerabilies in after %s on %s", time.Since(attemptStart).String(), imageUri)
 			return true, true, nil
 		}
 
 		// If there is no error, the scan completed and no vulnerability was found, don't retry
 		if err == nil {
-			logger.Debugf("Trivy returned %d after %s", statusCode, time.Since(attemptStart).String())
+			logger.Debugf("Trivy returned %d after %s on %s", statusCode, time.Since(attemptStart).String(), imageUri)
 			return true, false, err
 		}
 
