@@ -2,8 +2,10 @@ package securityscanutils_test
 
 import (
 	"context"
+	"github.com/rotisserie/eris"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -13,7 +15,7 @@ import (
 	. "github.com/solo-io/go-utils/securityscanutils"
 )
 
-var _ = Describe("Trivy Scanner", func() {
+var _ = FDescribe("Trivy Scanner", func() {
 	var (
 		t                         *TrivyScanner
 		inputImage                string
@@ -29,6 +31,7 @@ var _ = Describe("Trivy Scanner", func() {
 		outputDir, err := ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 		outputFile = filepath.Join(outputDir, "test_report.docgen")
+		inputImage = "quay.io/solo-io/gloo:1.11.1"
 	})
 
 	JustAfterEach(func() {
@@ -37,7 +40,6 @@ var _ = Describe("Trivy Scanner", func() {
 	})
 
 	It("Finds vulnerabilities", func() {
-		inputImage = "quay.io/solo-io/gloo:1.11.1"
 		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -56,7 +58,6 @@ var _ = Describe("Trivy Scanner", func() {
 	})
 
 	It("Returns error from Exec via Timeout", func() {
-		inputImage = "quay.io/solo-io/gloo:1.11.1"
 		completed, vulnFound, err := t.ScanImage(context.TODO(), "", "", "")
 
 		//Error occurs when all trivy scan arguments are empty
@@ -66,16 +67,42 @@ var _ = Describe("Trivy Scanner", func() {
 
 	})
 
+	It("Returns the correct status code with mock executor returning no errors", func() {
+		MockCmdExecutor := func(cmd *exec.Cmd) ([]byte, int, error) {
+			return nil, 12345, nil
+		}
+		tMock := NewTrivyScanner(MockCmdExecutor)
+		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+
+		Expect(err).To(BeNil())
+		Expect(completed).To(Equal(true))
+		Expect(vulnFound).To(Equal(false))
+	})
+
+	It("Times out while backing off and retrying when mock executor returns error", func() {
+		MockCmdExecutor := func(cmd *exec.Cmd) ([]byte, int, error) {
+			return nil, 12345, eris.Errorf("This is a fake error")
+		}
+		tMock := NewTrivyScanner(MockCmdExecutor)
+		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+
+		Expect(err).To(HaveOccurred())
+		Expect(completed).To(Equal(false))
+		Expect(vulnFound).To(Equal(false))
+	})
+
 	Context("Benchmark", func() {
 		It("Should do repeated scans efficiently", func() {
 			inputImage = "quay.io/solo-io/gloo:1.11.1"
 			attemptStart := time.Now()
-			for i := 0; i < 10; i++ {
+			samples := 25
+			//for reference: when testing locally these samples were all between 535.581875ms and 879.919541ms
+			for i := 0; i < samples; i++ {
 				_, _, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 				Expect(err).NotTo(HaveOccurred())
 			}
 			attemptEnd := time.Since(attemptStart)
-			Expect(attemptEnd).To(BeNumerically("<", 20*time.Second))
+			Expect(attemptEnd).To(BeNumerically("<", 30*time.Second))
 		})
 	})
 })

@@ -67,23 +67,20 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 		statusCode int
 		err        error
 	)
-
+	attemptStart := time.Now()
 	for attempt := 0; attempt < t.scanMaxRetries; attempt++ {
 		trivyScanCmd := exec.Command("trivy", scanArgs...)
-		attemptStart := time.Now()
-		if t.executeCommand == nil {
-			return false, false, eris.Errorf("TrivyScanner has no executeCommand function defined")
-		}
 		out, statusCode, err = t.executeCommand(trivyScanCmd)
-		logger.Debugf("Trivy returned %d after %s", statusCode, time.Since(attemptStart).String())
 
 		// If we receive the expected status code, the scan completed, don't retry
 		if statusCode == VulnerabilityFoundStatusCode {
+			logger.Debugf("Trivy found vulnerabilies after %s", time.Since(attemptStart).String())
 			return true, true, nil
 		}
 
 		// If there is no error, the scan completed and no vulnerability was found, don't retry
 		if err == nil {
+			logger.Debugf("Trivy returned %d after %s", statusCode, time.Since(attemptStart).String())
 			return true, false, err
 		}
 
@@ -103,7 +100,6 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 
 		t.scanBackoffStrategy(attempt)
 	}
-
 	// We only reach here if we exhausted our retries
 	return false, false, eris.Errorf("Trivy scan with args [%v] did not complete after %d attempts", scanArgs, t.scanMaxRetries)
 }
