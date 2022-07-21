@@ -16,7 +16,7 @@ import (
 	. "github.com/solo-io/go-utils/securityscanutils"
 )
 
-var _ = FDescribe("Trivy Scanner", func() {
+var _ = Describe("Trivy Scanner", func() {
 	var (
 		t                         *TrivyScanner
 		inputImage                string
