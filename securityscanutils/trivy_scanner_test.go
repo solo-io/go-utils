@@ -16,7 +16,7 @@ import (
 	. "github.com/solo-io/go-utils/securityscanutils"
 )
 
-var _ = Describe("Trivy Scanner", func() {
+var _ = FDescribe("Trivy Scanner", func() {
 	var (
 		t                         *TrivyScanner
 		inputImage                string
@@ -41,6 +41,9 @@ var _ = Describe("Trivy Scanner", func() {
 	})
 
 	It("Finds vulnerabilities", func() {
+		t = NewTrivyScanner(func(cmd *exec.Cmd) ([]byte, int, error) {
+			return nil, VulnerabilityFoundStatusCode, nil
+		})
 		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -49,7 +52,9 @@ var _ = Describe("Trivy Scanner", func() {
 	})
 
 	It("Cannot find Image", func() {
-		inputImage = "quay.io/solo-io/gloo:1.11.13245"
+		t = NewTrivyScanner(func(cmd *exec.Cmd) ([]byte, int, error) {
+			return []byte("Error containing the string 'No such image: '"), VulnerabilityFoundStatusCode + 1, eris.Errorf("Unread error")
+		})
 		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -59,7 +64,10 @@ var _ = Describe("Trivy Scanner", func() {
 	})
 
 	It("Returns error from Exec via Timeout", func() {
-		completed, vulnFound, err := t.ScanImage(context.TODO(), "", "", "")
+		t = NewTrivyScanner(func(cmd *exec.Cmd) ([]byte, int, error) {
+			return nil, VulnerabilityFoundStatusCode + 1, eris.Errorf("Unread error")
+		})
+		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 
 		//Error occurs when all trivy scan arguments are empty
 		Expect(err).To(HaveOccurred())
@@ -92,12 +100,14 @@ var _ = Describe("Trivy Scanner", func() {
 		Expect(vulnFound).To(Equal(false))
 	})
 
-	Context("Benchmark", func() {
+	Context("Benchmark against Docker repo", func() {
 		It("Should do repeated scans efficiently", func() {
 			inputImage = "quay.io/solo-io/gloo:1.11.1"
 			attemptStart := time.Now()
 			samples := 25
 			//for reference: when testing locally these samples were all between 535.581875ms and 879.919541ms
+			//The goal of this test is to ensure the backoff strategy is not being excessively triggered as this
+			//would slow scanning down significantly
 			for i := 0; i < samples; i++ {
 				_, _, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 				Expect(err).NotTo(HaveOccurred())

@@ -23,7 +23,7 @@ func TestSecurityScanUtil(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	// This test suite require that trivy is installed
+	// This test suite requires that Trivy is installed and present in the PATH
 	contextutils.SetLogLevel(zapcore.DebugLevel)
 
 	path, err := exec.LookPath("trivy")

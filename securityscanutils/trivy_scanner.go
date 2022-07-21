@@ -85,7 +85,6 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 		}
 
 		// If there is no image, don't retry
-
 		if IsImageNotFoundErr(string(out)) {
 			logger.Warnf("Trivy scan with args [%v] produced image not found error", scanArgs)
 
@@ -98,6 +97,7 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 			return false, false, nil
 		}
 
+		//This backoff strategy is intended to handle network issues(i.e. an http 5xx error)
 		t.scanBackoffStrategy(attempt)
 	}
 	// We only reach here if we exhausted our retries
