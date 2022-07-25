@@ -142,7 +142,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 
 			// Only generate sarif files if we are uploading code scan results to github
 			if repo.Opts.UploadCodeScanToGithub {
-				err = repo.RunGithubSarifScan(ctx, release, sarifTplFile)
+				err = repo.runGithubSarifScan(ctx, release, sarifTplFile)
 				if err != nil {
 					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
 				}
@@ -252,7 +252,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
 }
 
-func (r *SecurityScanRepo) RunGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {
+func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())

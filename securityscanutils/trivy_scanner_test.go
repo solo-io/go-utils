@@ -78,7 +78,7 @@ var _ = Describe("Trivy Scanner", func() {
 
 	It("Returns the correct status code with mock executor returning no errors", func() {
 		MockCmdExecutor := func(cmd *exec.Cmd) ([]byte, int, error) {
-			return nil, 12345, nil
+			return nil, VulnerabilityFoundStatusCode + 1, nil
 		}
 		tMock := NewTrivyScanner(MockCmdExecutor)
 		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
@@ -90,7 +90,7 @@ var _ = Describe("Trivy Scanner", func() {
 
 	It("Times out while backing off and retrying when mock executor returns error", func() {
 		MockCmdExecutor := func(cmd *exec.Cmd) ([]byte, int, error) {
-			return nil, 12345, eris.Errorf("This is a fake error")
+			return nil, VulnerabilityFoundStatusCode + 1, eris.Errorf("This is a fake error")
 		}
 		tMock := NewTrivyScanner(MockCmdExecutor)
 		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
