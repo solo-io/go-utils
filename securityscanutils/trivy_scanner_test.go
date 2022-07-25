@@ -106,6 +106,8 @@ var _ = Describe("Trivy Scanner", func() {
 			attemptStart := time.Now()
 			samples := 25
 			//for reference: when testing locally these samples were all between 535.581875ms and 879.919541ms
+			//Each of these scans should run only once, if the scan backsoff then the tests will take significantly
+			//longer (i.e. ~2:30s vs ~45s)
 			//The goal of this test is to ensure the backoff strategy is not being excessively triggered as this
 			//would slow scanning down significantly
 			for i := 0; i < samples; i++ {
