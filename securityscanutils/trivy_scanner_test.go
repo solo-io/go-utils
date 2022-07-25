@@ -2,13 +2,11 @@ package securityscanutils_test
 
 import (
 	"context"
+	"github.com/rotisserie/eris"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
-
-	"github.com/rotisserie/eris"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -100,22 +98,14 @@ var _ = Describe("Trivy Scanner", func() {
 		Expect(vulnFound).To(Equal(false))
 	})
 
-	Context("Benchmark against Docker repo", func() {
+	Context("Trivy integration tests", func() {
 		It("Should do repeated scans efficiently", func() {
 			inputImage = "quay.io/solo-io/gloo:1.11.1"
-			attemptStart := time.Now()
-			samples := 25
-			//for reference: when testing locally these samples were all between 535.581875ms and 879.919541ms
-			//Each of these scans should run only once, if the scan backsoff then the tests will take significantly
-			//longer (i.e. ~2:30s vs ~45s)
-			//The goal of this test is to ensure the backoff strategy is not being excessively triggered as this
-			//would slow scanning down significantly
+			samples := 8
 			for i := 0; i < samples; i++ {
 				_, _, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 				Expect(err).NotTo(HaveOccurred())
 			}
-			attemptEnd := time.Since(attemptStart)
-			Expect(attemptEnd).To(BeNumerically("<", 30*time.Second))
 		})
 	})
 })
