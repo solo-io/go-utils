@@ -98,8 +98,8 @@ var _ = Describe("Trivy Scanner", func() {
 		Expect(vulnFound).To(Equal(false))
 	})
 
-	Context("Trivy integration tests", func() {
-		It("Should do repeated scans efficiently", func() {
+	Context("Trivy Integration Tests", func() {
+		It("Should do repeated scans without flaking", func() {
 			inputImage = "quay.io/solo-io/gloo:1.11.1"
 			samples := 8
 			for i := 0; i < samples; i++ {
