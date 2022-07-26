@@ -1,0 +1,6 @@
+changelog:
+  - type: BREAKING_CHANGE
+    issueLink: https://github.com/solo-io/go-utils/issues/490
+    description: >
+      Greatly reduced trivy scan time by detecting exit codes to prevent duplicate runs and backoff delays. In the
+      process some originally public functions were made private.

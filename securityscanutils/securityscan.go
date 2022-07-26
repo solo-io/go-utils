@@ -9,9 +9,12 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/solo-io/go-utils/osutils/executils"
 
 	"github.com/solo-io/go-utils/contextutils"
 
@@ -40,6 +43,8 @@ type SecurityScanRepo struct {
 	// The RepositoryReleasePredicate used to determine if a particular release
 	// should be run through our scanner
 	scanReleasePredicate githubutils.RepositoryReleasePredicate
+
+	trivyScanner *TrivyScanner
 
 	// The writer responsible for generating Github Issues for certain releases
 	githubIssueWriter *GithubIssueWriter
@@ -137,7 +142,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 
 			// Only generate sarif files if we are uploading code scan results to github
 			if repo.Opts.UploadCodeScanToGithub {
-				err = repo.RunGithubSarifScan(release, sarifTplFile)
+				err = repo.runGithubSarifScan(ctx, release, sarifTplFile)
 				if err != nil {
 					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
 				}
@@ -154,6 +159,12 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo *SecurityScanRepo) error {
 	logger := contextutils.LoggerFrom(ctx)
 	logger.Debugf("Processing user defined configuration for repository (%s, %s)", repo.Owner, repo.Repo)
+
+	// Ensure Trivy is installed and on PATH
+	_, err := exec.LookPath("trivy")
+	if err != nil {
+		return eris.Wrap(err, "trivy is not on PATH, make sure that the trivy is installed and on PATH")
+	}
 
 	repoOptions := repo.Opts
 
@@ -192,6 +203,8 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
 	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 
+	repo.trivyScanner = NewTrivyScanner(executils.CombinedOutputWithStatus)
+
 	logger.Debugf("Completed processing user defined configuration.")
 	return nil
 }
@@ -200,7 +213,6 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
-
 	images, err := r.GetImagesToScan(versionToScan)
 	if err != nil {
 		return err
@@ -222,7 +234,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		}
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
 		output := path.Join(outputDir, fileName)
-		_, vulnFound, err := RunTrivyScan(imageWithRepo, version, markdownTplFile, output)
+		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
@@ -240,7 +252,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
 }
 
-func (r *SecurityScanRepo) RunGithubSarifScan(release *github.RepositoryRelease, sarifTplFile string) error {
+func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
@@ -265,7 +277,7 @@ func (r *SecurityScanRepo) RunGithubSarifScan(release *github.RepositoryRelease,
 		}
 		fileName := fmt.Sprintf("%s_cve_report.sarif", image)
 		output := path.Join(outputDir, fileName)
-		success, _, err := RunTrivyScan(imageWithRepo, version, sarifTplFile, output)
+		success, _, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, sarifTplFile, output)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
