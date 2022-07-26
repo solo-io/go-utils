@@ -1,4 +1,0 @@
-changelog:
-  - type: FIX
-    issueLink: https://github.com/solo-io/go-utils/issues/490
-    description: Greatly reduced trivy scan time by detecting exit codes to prevent duplicate runs and backoff delays.
