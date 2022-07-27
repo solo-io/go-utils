@@ -1,0 +1,4 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/490
+    description: fixed typo in trivy logs
