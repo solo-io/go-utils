@@ -49,8 +49,6 @@ func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, outpu
 	// This leads to a total wait time of up to 110 seconds outside of the base
 	// operation. This timing is in the same ballpark as what k8s finds sensible
 	scanCompleted, vulnerabilityFound, err := t.executeScanWithRetries(ctx, trivyScanArgs)
-	a, _ := os.ReadFile(output)
-	a = a
 	if !scanCompleted {
 		// delete the empty trivy output file that may have been created
 		_ = os.Remove(output)
