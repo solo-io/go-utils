@@ -25,6 +25,7 @@ type options struct {
 	repoCachedReleasesFile string
 	minScannedVersion      string
 	imageFile              string
+	ignoreFileContents     string
 	// Values with defaults
 	repoOwner                   string
 	imageRepo                   string
@@ -259,7 +260,7 @@ func scanRepoImages(opts *options) error {
 			},
 		},
 	}
-	return scanner.GenerateSecurityScans(opts.ctx)
+	return scanner.GenerateSecurityScans(opts.ctx, opts.ignoreFileContents)
 }
 
 // Generates security scan log for releases

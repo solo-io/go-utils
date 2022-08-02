@@ -32,7 +32,7 @@ func NewTrivyScanner(executeCommand CmdExecutor) *TrivyScanner {
 	}
 }
 
-func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, output string) (bool, bool, error) {
+func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, output, ignoreFile string) (bool, bool, error) {
 	trivyScanArgs := []string{"image",
 		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
 		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
@@ -40,6 +40,7 @@ func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, outpu
 		"--format", "template",
 		"--template", "@" + templateFile,
 		"--output", output,
+		"--ignorefile", ignoreFile,
 		image}
 
 	// Execute the trivy scan, with retries and sleep's between each retry
@@ -48,7 +49,8 @@ func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, outpu
 	// This leads to a total wait time of up to 110 seconds outside of the base
 	// operation. This timing is in the same ballpark as what k8s finds sensible
 	scanCompleted, vulnerabilityFound, err := t.executeScanWithRetries(ctx, trivyScanArgs)
-
+	a, _ := os.ReadFile(output)
+	a = a
 	if !scanCompleted {
 		// delete the empty trivy output file that may have been created
 		_ = os.Remove(output)

@@ -43,7 +43,7 @@ var _ = Describe("Trivy Scanner", func() {
 		t = NewTrivyScanner(func(cmd *exec.Cmd) ([]byte, int, error) {
 			return nil, VulnerabilityFoundStatusCode, nil
 		})
-		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, "")
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(completed).To(Equal(true))
@@ -54,7 +54,7 @@ var _ = Describe("Trivy Scanner", func() {
 		t = NewTrivyScanner(func(cmd *exec.Cmd) ([]byte, int, error) {
 			return []byte("Error containing the string 'No such image: '"), VulnerabilityFoundStatusCode + 1, eris.Errorf("Unread error")
 		})
-		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, "")
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(completed).To(Equal(false))
@@ -66,7 +66,7 @@ var _ = Describe("Trivy Scanner", func() {
 		t = NewTrivyScanner(func(cmd *exec.Cmd) ([]byte, int, error) {
 			return nil, VulnerabilityFoundStatusCode + 1, eris.Errorf("Unread error")
 		})
-		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, "")
 
 		//Error occurs when all trivy scan arguments are empty
 		Expect(err).To(HaveOccurred())
@@ -80,7 +80,7 @@ var _ = Describe("Trivy Scanner", func() {
 			return nil, VulnerabilityFoundStatusCode + 1, nil
 		}
 		tMock := NewTrivyScanner(MockCmdExecutor)
-		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, "")
 
 		Expect(err).To(BeNil())
 		Expect(completed).To(Equal(true))
@@ -92,7 +92,7 @@ var _ = Describe("Trivy Scanner", func() {
 			return nil, VulnerabilityFoundStatusCode + 1, eris.Errorf("This is a fake error")
 		}
 		tMock := NewTrivyScanner(MockCmdExecutor)
-		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+		completed, vulnFound, err := tMock.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, "")
 
 		Expect(err).To(HaveOccurred())
 		Expect(completed).To(Equal(false))
@@ -104,9 +104,21 @@ var _ = Describe("Trivy Scanner", func() {
 			inputImage = "quay.io/solo-io/gloo:1.11.1"
 			samples := 8
 			for i := 0; i < samples; i++ {
-				_, _, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
+				_, _, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, "")
 				Expect(err).NotTo(HaveOccurred())
 			}
+		})
+
+		It("ignores CVEs in trivyIgnore", func() {
+			ignoreFile, err := ioutil.TempFile("", "")
+			Expect(err).NotTo(HaveOccurred())
+			ignoreFile.WriteString("CVE-2021-32690 \nCVE-2022-1996")
+
+			inputImage = "quay.io/solo-io/gloo:1.9.21"
+			completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, ignoreFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completed).To(Equal(true))
+			Expect(vulnFound).To(Equal(false))
 		})
 	})
 })

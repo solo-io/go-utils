@@ -105,7 +105,7 @@ type SecurityScanOpts struct {
 // Main method to call on SecurityScanner which generates .md and .sarif files
 // in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
 // sarif files will be uploaded to the repository's code-scanning endpoint.
-func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
+func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context, ignoreFileContent string) error {
 	logger := contextutils.LoggerFrom(ctx)
 
 	var err error
@@ -126,6 +126,13 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		os.Remove(sarifTplFile)
 	}()
 
+	//Recreate a .trivyignore file locally
+	ignoreFile, err := ioutil.TempFile("", "")
+	if err != nil {
+		return err
+	}
+	ignoreFile.WriteString(ignoreFileContent)
+
 	for _, repo := range s.Repos {
 		// Process the user defined options, and configure the non-user controller properties of a SecurityScanRepo
 		err := s.initializeRepoConfiguration(ctx, repo)
@@ -135,14 +142,14 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 
 		for _, release := range repo.releasesToScan {
 			releaseStart := time.Now()
-			err = repo.RunMarkdownScan(ctx, release, markdownTplFile)
+			err = repo.RunMarkdownScan(ctx, release, markdownTplFile, ignoreFile.Name())
 			if err != nil {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
 
 			// Only generate sarif files if we are uploading code scan results to github
 			if repo.Opts.UploadCodeScanToGithub {
-				err = repo.runGithubSarifScan(ctx, release, sarifTplFile)
+				err = repo.runGithubSarifScan(ctx, release, sarifTplFile, ignoreFile.Name())
 				if err != nil {
 					return eris.Wrapf(err, "error generating github sarif file from security scan for version %s", release.GetTagName())
 				}
@@ -151,6 +158,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		}
 
 	}
+	defer os.Remove(ignoreFile.Name()) // Cleanup local clone when done
 	return nil
 }
 
@@ -209,7 +217,7 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	return nil
 }
 
-func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.RepositoryRelease, markdownTplFile string) error {
+func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.RepositoryRelease, markdownTplFile, ignoreFile string) error {
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
@@ -234,7 +242,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		}
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
 		output := path.Join(outputDir, fileName)
-		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output)
+		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output, ignoreFile)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
@@ -252,7 +260,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
 }
 
-func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {
+func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile, ignoreFile string) error {
 	// We can swallow the error here, any releases with improper tag names
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
@@ -277,7 +285,7 @@ func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *gith
 		}
 		fileName := fmt.Sprintf("%s_cve_report.sarif", image)
 		output := path.Join(outputDir, fileName)
-		success, _, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, sarifTplFile, output)
+		success, _, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, sarifTplFile, output, ignoreFile)
 		if err != nil {
 			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 		}
