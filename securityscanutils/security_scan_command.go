@@ -25,7 +25,6 @@ type options struct {
 	repoCachedReleasesFile string
 	minScannedVersion      string
 	imageFile              string
-	ignoreFileContents     string
 	// Values with defaults
 	repoOwner                   string
 	imageRepo                   string
