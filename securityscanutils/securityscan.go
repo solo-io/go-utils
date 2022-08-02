@@ -31,7 +31,8 @@ type SecurityScanner struct {
 	Repos        []*SecurityScanRepo
 	githubClient *github.Client
 
-	//trivyIgnore file contents
+	// trivyignore file contents
+	// A trivyignore file contains a newline separated list of CVEs in the form CVE-20XX-XXXX to be ignored in trivy scans
 	TrivyIgnoreContents string
 }
 
