@@ -260,7 +260,7 @@ func scanRepoImages(opts *options) error {
 			},
 		},
 	}
-	return scanner.GenerateSecurityScans(opts.ctx, opts.ignoreFileContents)
+	return scanner.GenerateSecurityScans(opts.ctx)
 }
 
 // Generates security scan log for releases

@@ -30,6 +30,9 @@ import (
 type SecurityScanner struct {
 	Repos        []*SecurityScanRepo
 	githubClient *github.Client
+
+	//trivyIgnore file contents
+	trivyIgnoreContents string
 }
 
 type SecurityScanRepo struct {
@@ -105,7 +108,7 @@ type SecurityScanOpts struct {
 // Main method to call on SecurityScanner which generates .md and .sarif files
 // in OutputDir as defined above per repo. If UploadCodeScanToGithub is true,
 // sarif files will be uploaded to the repository's code-scanning endpoint.
-func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context, ignoreFileContent string) error {
+func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	logger := contextutils.LoggerFrom(ctx)
 
 	var err error
@@ -131,7 +134,8 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context, ignoreFileC
 	if err != nil {
 		return err
 	}
-	ignoreFile.WriteString(ignoreFileContent)
+	ignoreFile.WriteString(s.trivyIgnoreContents)
+	defer os.Remove(ignoreFile.Name())
 
 	for _, repo := range s.Repos {
 		// Process the user defined options, and configure the non-user controller properties of a SecurityScanRepo
@@ -156,9 +160,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context, ignoreFileC
 			}
 			logger.Debugf("Completed running markdown scan for release %s after %s", release.GetTagName(), time.Since(releaseStart).String())
 		}
-
 	}
-	defer os.Remove(ignoreFile.Name()) // Cleanup local clone when done
 	return nil
 }
 

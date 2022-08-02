@@ -59,7 +59,7 @@ var _ = Describe("Security Scan Suite", func() {
 			}
 
 			// Run security scan
-			err = secScanner.GenerateSecurityScans(context.TODO(), "")
+			err = secScanner.GenerateSecurityScans(context.TODO())
 			Expect(err).NotTo(HaveOccurred())
 
 			ExpectDirToHaveFiles(outputDir, "gloo")
@@ -118,7 +118,7 @@ var _ = Describe("Security Scan Suite", func() {
 				}},
 			}
 
-			err = secScanner.GenerateSecurityScans(context.TODO(), "")
+			err = secScanner.GenerateSecurityScans(context.TODO())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("version 1.7.0 matched no constraints and has no images to scan"))
 		})
