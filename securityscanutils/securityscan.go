@@ -32,7 +32,7 @@ type SecurityScanner struct {
 	githubClient *github.Client
 
 	//trivyIgnore file contents
-	trivyIgnoreContents string
+	TrivyIgnoreContents string
 }
 
 type SecurityScanRepo struct {
@@ -134,7 +134,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	ignoreFile.WriteString(s.trivyIgnoreContents)
+	ignoreFile.WriteString(s.TrivyIgnoreContents)
 	defer os.Remove(ignoreFile.Name())
 
 	for _, repo := range s.Repos {
