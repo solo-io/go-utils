@@ -1,4 +1,0 @@
-changelog:
-  - type: BREAKING_CHANGE
-    issueLink: https://github.com/solo-io/solo-projects/issues/3907
-    description: Changed variout trivy scan function headers to allow trivyignore files/file contents.
