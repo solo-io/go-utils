@@ -76,7 +76,7 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 
 		// If we receive the expected status code, the scan completed, don't retry
 		if statusCode == VulnerabilityFoundStatusCode {
-			logger.Debugf("Trivy found vulnerabilies in after %s on %s", time.Since(attemptStart).String(), imageUri)
+			logger.Debugf("Trivy found vulnerabilies after %s in %s", time.Since(attemptStart).String(), imageUri)
 			return true, true, nil
 		}
 
