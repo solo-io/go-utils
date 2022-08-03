@@ -22,13 +22,18 @@ type TrivyScanner struct {
 	executeCommand      CmdExecutor
 	scanBackoffStrategy func(int)
 	scanMaxRetries      int
+
+	// trivyignore file contents
+	// A trivyignore file contains a newline separated list of CVEs in the form CVE-20XX-XXXX to be ignored in trivy scans
+	trivyIgnoreContents string
 }
 
-func NewTrivyScanner(executeCommand CmdExecutor) *TrivyScanner {
+func NewTrivyScanner(executeCommand CmdExecutor, trivyIgnoreContents string) *TrivyScanner {
 	return &TrivyScanner{
 		executeCommand:      executeCommand,
 		scanBackoffStrategy: func(attempt int) { time.Sleep(time.Duration((attempt^2)*2) * time.Second) },
 		scanMaxRetries:      5,
+		trivyIgnoreContents: trivyIgnoreContents,
 	}
 }
 
@@ -69,7 +74,7 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 	attemptStart := time.Now()
 	for attempt := 0; attempt < t.scanMaxRetries; attempt++ {
 		trivyScanCmd := exec.Command("trivy", scanArgs...)
-		imageUri := scanArgs[11]
+		imageUri := scanArgs[len(scanArgs)-1]
 		out, statusCode, err = t.executeCommand(trivyScanCmd)
 
 		// If we receive the expected status code, the scan completed, don't retry

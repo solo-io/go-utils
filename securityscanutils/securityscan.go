@@ -30,10 +30,6 @@ import (
 type SecurityScanner struct {
 	Repos        []*SecurityScanRepo
 	githubClient *github.Client
-
-	// trivyignore file contents
-	// A trivyignore file contains a newline separated list of CVEs in the form CVE-20XX-XXXX to be ignored in trivy scans
-	TrivyIgnoreContents string
 }
 
 type SecurityScanRepo struct {
@@ -130,20 +126,28 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 		os.Remove(sarifTplFile)
 	}()
 
-	//Recreate a .trivyignore file locally
-	ignoreFile, err := ioutil.TempFile("", "")
-	if err != nil {
-		return err
-	}
-	ignoreFile.WriteString(s.TrivyIgnoreContents)
-	defer os.Remove(ignoreFile.Name())
-
 	for _, repo := range s.Repos {
 		// Process the user defined options, and configure the non-user controller properties of a SecurityScanRepo
 		err := s.initializeRepoConfiguration(ctx, repo)
 		if err != nil {
 			return err
 		}
+
+		//Recreate a .trivyignore file locally
+		ignoreFile, err := ioutil.TempFile("", "")
+		if err != nil {
+			return err
+		}
+		_, err = ignoreFile.WriteString(repo.trivyScanner.trivyIgnoreContents)
+		if err != nil {
+			return err
+		}
+		defer func(name string) {
+			err := os.Remove(name)
+			if err != nil {
+
+			}
+		}(ignoreFile.Name())
 
 		for _, release := range repo.releasesToScan {
 			releaseStart := time.Now()
@@ -214,7 +218,11 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
 	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 
-	repo.trivyScanner = NewTrivyScanner(executils.CombinedOutputWithStatus)
+	trivyIgnore := ""
+	if repo.trivyScanner != nil {
+		trivyIgnore = repo.trivyScanner.trivyIgnoreContents
+	}
+	repo.trivyScanner = NewTrivyScanner(executils.CombinedOutputWithStatus, trivyIgnore)
 
 	logger.Debugf("Completed processing user defined configuration.")
 	return nil
