@@ -72,6 +72,48 @@ var _ = Describe("Security Scan Suite", func() {
 			ExpectDirToHaveFiles(path.Join(markdownDir, "1.7.0"), "discovery_cve_report.docgen", "gloo_cve_report.docgen")
 		})
 
+		It("ignores CVEs in trivyignore", func() {
+			verConstraint, err := semver.NewConstraint("=v1.6.0 || =v1.7.0")
+			Expect(err).NotTo(HaveOccurred())
+			fmt.Println("Output dir:", outputDir)
+			secScanner := &SecurityScanner{
+				Repos: []*SecurityScanRepo{{
+					Repo:  glooRepoName,
+					Owner: "solo-io",
+					TrivyScanner: &TrivyScanner{
+						TrivyIgnoreContents: "CVE-2021-36159 \nCVE-2021-30139",
+					},
+					Opts: &SecurityScanOpts{
+						OutputDir: outputDir,
+						ImagesPerVersion: map[string][]string{
+							"v1.6.0": {"gloo"},
+							"v1.7.0": {"gloo", "discovery"},
+						},
+						VersionConstraint:      verConstraint,
+						ImageRepo:              "quay.io/solo-io",
+						UploadCodeScanToGithub: false,
+					},
+				}},
+			}
+
+			// Run security scan
+			err = secScanner.GenerateSecurityScans(context.TODO())
+			Expect(err).NotTo(HaveOccurred())
+
+			ExpectDirToHaveFiles(outputDir, "gloo")
+			// Have a directory for each repo we scanned
+			markdownDir := path.Join(outputDir, "gloo", "markdown_results")
+			// Have a directory for each version we scanned
+			ExpectDirToHaveFiles(markdownDir, "1.6.0", "1.7.0")
+			// Expect there to be a generated generated file for each image per version
+			ExpectDirToHaveFiles(path.Join(markdownDir, "1.6.0"), "gloo_cve_report.docgen")
+			ExpectDirToHaveFiles(path.Join(markdownDir, "1.7.0"), "discovery_cve_report.docgen", "gloo_cve_report.docgen")
+
+			cveReport, err := os.ReadFile(path.Join(markdownDir, "1.6.0", "gloo_cve_report.docgen"))
+			Expect(string(cveReport)).ToNot(ContainSubstring("cve-2021-36159"))
+			Expect(string(cveReport)).ToNot(ContainSubstring("cve-2021-30139"))
+		})
+
 		It("scans all images from all constraints matched", func() {
 			verConstraint, err := semver.NewConstraint("=v1.7.0")
 			Expect(err).NotTo(HaveOccurred())

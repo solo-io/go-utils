@@ -2,6 +2,7 @@ package securityscanutils
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -25,7 +26,7 @@ type TrivyScanner struct {
 
 	// trivyignore file contents
 	// A trivyignore file contains a newline separated list of CVEs in the form CVE-20XX-XXXX to be ignored in trivy scans
-	trivyIgnoreContents string
+	TrivyIgnoreContents string
 }
 
 func NewTrivyScanner(executeCommand CmdExecutor, trivyIgnoreContents string) *TrivyScanner {
@@ -33,11 +34,27 @@ func NewTrivyScanner(executeCommand CmdExecutor, trivyIgnoreContents string) *Tr
 		executeCommand:      executeCommand,
 		scanBackoffStrategy: func(attempt int) { time.Sleep(time.Duration((attempt^2)*2) * time.Second) },
 		scanMaxRetries:      5,
-		trivyIgnoreContents: trivyIgnoreContents,
+		TrivyIgnoreContents: trivyIgnoreContents,
 	}
 }
 
-func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, output, ignoreFile string) (bool, bool, error) {
+func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, output, ignoreFileContents string) (bool, bool, error) {
+	//Recreate a .trivyignore file locally
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		return false, false, err
+	}
+	_, err = file.WriteString(ignoreFileContents)
+	if err != nil {
+		return false, false, err
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+
+		}
+	}(file.Name())
+
 	trivyScanArgs := []string{"image",
 		// Trivy will return a specific status code (which we have specified) if a vulnerability is found
 		"--exit-code", strconv.Itoa(VulnerabilityFoundStatusCode),
@@ -45,7 +62,7 @@ func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, outpu
 		"--format", "template",
 		"--template", "@" + templateFile,
 		"--output", output,
-		"--ignorefile", ignoreFile,
+		"--ignorefile", file.Name(),
 		image}
 
 	// Execute the trivy scan, with retries and sleep's between each retry
