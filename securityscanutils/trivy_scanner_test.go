@@ -108,14 +108,5 @@ var _ = Describe("Trivy Scanner", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
-
-		FIt("ignores CVEs in trivyIgnore", func() {
-			inputImage = "quay.io/solo-io/gloo:1.9.21"
-
-			completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile, "CVE-2021-32690 \nCVE-2022-1996")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completed).To(Equal(true))
-			Expect(vulnFound).To(Equal(false))
-		})
 	})
 })
