@@ -2,6 +2,7 @@ package securityscanutils
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -42,6 +43,8 @@ func (t *TrivyScanner) ScanImage(ctx context.Context, image, templateFile, outpu
 		"--output", output,
 		image}
 
+	fmt.Println(os.Getwd())
+	panic(nil)
 	// Execute the trivy scan, with retries and sleep's between each retry
 	// This can occur due to connectivity issues or epehemeral issues with
 	// the registry. For example sometimes quay has issues providing a given layer
