@@ -133,7 +133,7 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(enterpriseReleases
 		if idx < len(enterpriseSorted)-1 {
 			earlierVersion = &enterpriseSorted[idx+1]
 		}
-		// If earlier version doesn't have a OSS dependency, look for next version that does to compute changelog diff
+		// If earlier version doesn't have an OSS dependency, look for next version that does to compute changelog diff
 		if earlierVersion != nil {
 			for i := 1; g.releaseDepMap[*earlierVersion] == nil && idx+i < len(enterpriseSorted)-1; i, earlierVersion = i+1, &enterpriseSorted[idx+i] {
 			}
@@ -146,9 +146,16 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(enterpriseReleases
 			var finalChangelogNotes = NewChangelogNotes()
 			for _, version := range depVersions {
 				//prefix := fmt.Sprintf("(From OSS %s) ", getGithubReleaseMarkdownLink(version.String(), g.RepoOwner, g.openSourceRepo))
-				finalChangelogNotes.AddWithDependentVersion(osReleases.GetChangelogNotes(version), version)
+				notes, err := osReleases.GetChangelogNotes(version)
+				if err != nil {
+					return nil, err
+				}
+				finalChangelogNotes.AddWithDependentVersion(notes, version)
 			}
-			minorReleaseChangelogNotes := enterpriseReleases.GetChangelogNotes(eRelease)
+			minorReleaseChangelogNotes, err := enterpriseReleases.GetChangelogNotes(eRelease)
+			if err != nil {
+				return nil, err
+			}
 			minorReleaseChangelogNotes.HeaderSuffix = fmt.Sprintf(" (Uses OSS %s)", getGithubReleaseMarkdownLink(currentOSDep.String(), g.opts.RepoOwner, g.opts.DependentRepo))
 			minorReleaseChangelogNotes.Add(finalChangelogNotes)
 		}
