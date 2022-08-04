@@ -94,6 +94,10 @@ type ValidationSettings struct {
 
 	// If non-empty, then the validator will reject a changelog if the version's label is not contained in this slice
 	AllowedLabels []string `json:"allowedLabels"`
+
+	// If non-empty, then the validator will not consider the directories named. Directories should be listed relative to
+	// working directory of "changelog/"
+	IgnoredDirectories []string `json:"ignoredDirectories"`
 }
 
 type changelogValidator struct {
@@ -103,7 +107,9 @@ type changelogValidator struct {
 	code   vfsutils.MountedRepo
 	// list of arbitrary labels whos order is used to tie-break tag comparisons between
 	// versions with different labels. Labels ordered earlier are greater.
-	labelOrder []string
+	labelOrder  []string
+	ignoredDirs map[string]struct{}
+	settings    *ValidationSettings
 }
 
 func (c *changelogValidator) ShouldCheckChangelog(ctx context.Context) (bool, error) {
@@ -148,6 +154,10 @@ func (c *changelogValidator) ValidateChangelog(ctx context.Context) (*ChangelogF
 }
 
 func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, error) {
+	if err := c.getValidationSettings(ctx); err != nil {
+		return "", err
+	}
+
 	latestTag, err := c.client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, c.base)
 	if err != nil {
 		return "", ListReleasesError(err)
@@ -164,6 +174,9 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 			} else {
 				continue
 			}
+		}
+		if _, ok := c.ignoredDirs[child.Name()]; ok {
+			continue
 		}
 		if !versionutils.MatchesRegex(child.Name()) {
 			return "", InvalidChangelogSubdirectoryNameError(child.Name())
@@ -207,19 +220,16 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 	newFeature := false
 	releaseStableApi := false
 
-	// get settings now to ensure this function returns an error on invalid settings
-	settings, err := c.getValidationSettings(ctx)
-	if err != nil {
+	if c.settings == nil {
 		// validation settings should be defined in a "validation.yaml" file, or fall back to default.
 		// if an error is returned, that means there was a settings file, but it was malformed, and we
 		// propagate such an error to ensure the branch stays clean
-		return err
+		return eris.New("nil validation settings")
 	}
-
 	// If the settings contain specific allowed labels, ensure the label used here, if any, is in the list
-	if changelog.Version.Label != "" && len(settings.AllowedLabels) > 0 {
-		if !stringutils.ContainsString(changelog.Version.Label, settings.AllowedLabels) {
-			return InvalidLabelError(changelog.Version.Label, settings.AllowedLabels)
+	if changelog.Version.Label != "" && len(c.settings.AllowedLabels) > 0 {
+		if !stringutils.ContainsString(changelog.Version.Label, c.settings.AllowedLabels) {
+			return InvalidLabelError(changelog.Version.Label, c.settings.AllowedLabels)
 		}
 	}
 
@@ -254,7 +264,7 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		return UnexpectedProposedVersionError(expectedVersion.String(), changelog.Version.String())
 	}
 
-	if changelog.Version.Label == "" && expectedVersion.Label == "" && !settings.RelaxSemverValidation {
+	if changelog.Version.Label == "" && expectedVersion.Label == "" && !c.settings.RelaxSemverValidation {
 		// since this isn't a labeled release or a stable release, the version should be incremented
 		// based on semver rules.
 		if changelog.Version.LabelVersion == 0 && !changelog.Version.Equals(expectedVersion) {
@@ -303,8 +313,21 @@ func IsKnownChangelogFile(path string) bool {
 	return stringutils.ContainsString(path, knownFiles)
 }
 
-func (c *changelogValidator) getValidationSettings(ctx context.Context) (*ValidationSettings, error) {
-	return GetValidationSettings(ctx, c.code, c.client)
+func (c *changelogValidator) getValidationSettings(ctx context.Context) error {
+	c.ignoredDirs = make(map[string]struct{})
+	vs, err := GetValidationSettings(ctx, c.code, c.client)
+	if err != nil {
+		return err
+	}
+
+	c.settings = vs
+	if len(vs.IgnoredDirectories) > 0 {
+		for i := range vs.IgnoredDirectories {
+			c.ignoredDirs[vs.IgnoredDirectories[i]] = struct{}{}
+		}
+	}
+
+	return nil
 }
 
 func GetValidationSettings(ctx context.Context, code vfsutils.MountedRepo, client githubutils.RepoClient) (*ValidationSettings, error) {

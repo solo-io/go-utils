@@ -32,6 +32,10 @@ var _ = Describe("changelog validator utils", func() {
 		nestedErr  = eris.Errorf("")
 	)
 
+	noValidationSettingsExist := func() {
+		repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(false, nil)
+	}
+
 	BeforeEach(func() {
 		ctrl = gomock.NewController(test)
 		code = NewMockMountedRepo(ctrl)
@@ -129,10 +133,6 @@ var _ = Describe("changelog validator utils", func() {
 		relaxedValidationSettingsExists := func() {
 			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil)
 			code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(validationYaml), nil)
-		}
-
-		noValidationSettingsExist := func() {
-			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(false, nil)
 		}
 
 		getChangelogDir := func(tag string) os.FileInfo {
@@ -235,6 +235,7 @@ var _ = Describe("changelog validator utils", func() {
 
 		Context("validating proposed tag", func() {
 			BeforeEach(func() {
+				noValidationSettingsExist()
 				file1 := github.CommitFile{Filename: &path1, Status: &added}
 				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 				repoClient.EXPECT().
@@ -325,9 +326,6 @@ var _ = Describe("changelog validator utils", func() {
 				code.EXPECT().
 					GetFileContents(ctx, path3).
 					Return([]byte(validChangelog2), nil)
-				repoClient.EXPECT().
-					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
-					Return(false, nil)
 				expected := changelogutils.AddedChangelogInOldVersionError(nextTag)
 				file, err := validator.ValidateChangelog(ctx)
 				Expect(file).To(BeNil())
@@ -721,8 +719,7 @@ var _ = Describe("changelog validator utils", func() {
 			})
 		})
 
-		Context("invalid settings", func() {
-
+		Context("settings with ignored directories", func() {
 			setup := func() {
 				file1 := github.CommitFile{Filename: &path1, Status: &added}
 				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
@@ -731,16 +728,42 @@ var _ = Describe("changelog validator utils", func() {
 					Return(&cc, nil)
 				code.EXPECT().
 					GetFileContents(ctx, path1).
-					Return([]byte(validBreakingChangelog), nil).Times(2)
+					Return([]byte(validChangelog1), nil).AnyTimes()
 				repoClient.EXPECT().
 					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return("v0.5.0", nil)
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
-					Return([]os.FileInfo{getChangelogDir(tag)}, nil)
+					Return([]os.FileInfo{getChangelogDir("test"), getChangelogDir(tag)}, nil)
 				code.EXPECT().
 					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, tag)).
 					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
+			}
+
+			ignoredDirsSettingsExists := func() {
+				repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil)
+				code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(ignoredDirsYaml), nil)
+			}
+			It("ignores a directory listed in ignoredDirectories", func() {
+				setup()
+				ignoredDirsSettingsExists()
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).NotTo(BeNil())
+				Expect(err).To(BeNil())
+			})
+
+		})
+
+		Context("invalid settings", func() {
+			setup := func() {
+				file1 := github.CommitFile{Filename: &path1, Status: &added}
+				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
+				repoClient.EXPECT().
+					CompareCommits(ctx, base, sha).
+					Return(&cc, nil)
+				code.EXPECT().
+					GetFileContents(ctx, path1).
+					Return([]byte(validBreakingChangelog), nil)
 			}
 
 			It("propagates error if checking for validation.yaml existence fails", func() {
@@ -825,5 +848,9 @@ relaxSemverValidation: true
 allowedLabels:
 - beta
 - rc
+`
+	ignoredDirsYaml = `
+ignoredDirectories:
+- test
 `
 )
