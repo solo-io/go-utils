@@ -1,0 +1,5 @@
+changelog:
+  - type: NON_USER_FACING
+    issueLink: https://github.com/solo-io/go-utils/issues/496
+    description: Return an error when we are unable to retrieve ChangelogNotes for a release
+    resolvesIssue: false
