@@ -158,18 +158,18 @@ func (r *ReleaseData) GetReleasesSorted() []Version {
 	return versions
 }
 
-func (r *ReleaseData) GetChangelogNotes(v Version) *ChangelogNotes {
+func (r *ReleaseData) GetChangelogNotes(v Version) (*ChangelogNotes, error) {
 	if r == nil || r.Releases == nil {
-		return nil
+		return nil, fmt.Errorf("nil ReleaseData or Releases")
 	}
 	release, ok := r.Releases[GetMajorAndMinorVersion(&v)]
 	if !ok {
-		return nil
+		return nil, fmt.Errorf("no release found for version %+v", GetMajorAndMinorVersion(&v))
 	}
 	if release.ChangelogNotes == nil {
-		return nil
+		return nil, fmt.Errorf("release for version %+v does not have ChangelogNotes", GetMajorAndMinorVersion(&v))
 	}
-	return release.ChangelogNotes[v]
+	return release.ChangelogNotes[v], nil
 
 }
 
