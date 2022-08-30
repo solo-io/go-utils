@@ -24,7 +24,7 @@ func ScanVersionCommand(ctx context.Context, globalFlags *internal.GlobalFlags) 
 
 	cmd := &cobra.Command{
 		Use:   "scan-version",
-		Short: "Run a Trivy scan (only reports HIGH and CRITICAL-level vulnerabilities) against a set of images for a single version",
+		Short: "Run Trivy scans against images for a single version",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scanResults := doScanVersion(ctx, opts)
 			if scanResults != nil {

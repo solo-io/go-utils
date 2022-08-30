@@ -26,9 +26,9 @@ func FormatResultsCommand(ctx context.Context, globalFlags *internal.GlobalFlags
 	}
 
 	cmd := &cobra.Command{
-		Use:     "format-results",
-		Aliases: []string{"gen-security-scan-md"}, // this is the previous name of the command
-		Short:   "[TODO]",
+		Use:     "gen-security-scan-md",
+		Aliases: []string{"format-results"},
+		Short:   "pull down security scan files from gcloud bucket and generate docs markdown file",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doFormatResults(ctx, opts)
 		},

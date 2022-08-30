@@ -19,8 +19,7 @@ func ScanRepoCommand(ctx context.Context, globalFlags *internal.GlobalFlags) *co
 
 	cmd := &cobra.Command{
 		Use:   "scan-repo",
-		Short: "Scan a set of images/versions produced from a single github repository",
-		Long:  "Runs Trivy scans (only reports HIGH and CRITICAL-level vulnerabilities) against images from the repo specified and upload scan results to google cloud bucket",
+		Short: "Run Trivy scans against images for the repo specified and upload scan results to a google cloud bucket",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doScanRepo(ctx, opts)
 		},
