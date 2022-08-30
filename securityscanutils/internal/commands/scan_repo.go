@@ -18,7 +18,6 @@ func ScanRepoCommand(ctx context.Context, globalFlags *internal.GlobalFlags) *co
 
     cmd := &cobra.Command{
         Use:   "scan-repo",
-        Aliases: []string{"repo", "r"},
         Short: "Scan a set of images/versions produced from a single github repository",
         Long:  "Runs Trivy scans (only reports HIGH and CRITICAL-level vulnerabilities) against images from the repo specified and upload scan results to google cloud bucket",
         RunE: func(cmd *cobra.Command, args []string) error {
@@ -81,7 +80,6 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
                     ImagesPerVersion:            imagesPerVersion,
                     VersionConstraint:           releaseVersionConstraint,
                     ImageRepo:                   opts.imageRepository,
-                    UploadCodeScanToGithub: false, // deprecated (unused, we should remove this feature)
                     CreateGithubIssuePerVersion: opts.vulnerabilityAction == "github-issue-all",
                     CreateGithubIssueForLatestPatchVersion: opts.vulnerabilityAction == "github-issue-latest",
                 },
