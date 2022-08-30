@@ -32,8 +32,8 @@ func RootCommand(ctx context.Context) *cobra.Command {
     globalFlags.AddToFlags(cmd.PersistentFlags())
 
     cmd.AddCommand(
-        ScanBatchCommand(ctx, globalFlags),
-        ScanOneCommand(ctx, globalFlags),
+        ScanRepoCommand(ctx, globalFlags),
+        ScanVersionCommand(ctx, globalFlags),
 
         FormatResultsCommand(ctx, globalFlags))
 

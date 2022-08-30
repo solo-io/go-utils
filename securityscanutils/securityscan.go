@@ -127,7 +127,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 	}()
 
 	for _, repo := range s.Repos {
-		// Process the user defined options, and configure the non-user controller properties of a SecurityScanRepo
+		// Process the user defined options, and configure the non-user controlled properties of a SecurityScanRepo
 		err := s.initializeRepoConfiguration(ctx, repo)
 		if err != nil {
 			return err

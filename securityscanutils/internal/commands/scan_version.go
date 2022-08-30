@@ -16,17 +16,17 @@ import (
     "path"
 )
 
-func ScanOneCommand(ctx context.Context, globalFlags *internal.GlobalFlags) *cobra.Command {
-    opts := &scanOneOptions{
+func ScanVersionCommand(ctx context.Context, globalFlags *internal.GlobalFlags) *cobra.Command {
+    opts := &scanVersionOptions{
         GlobalFlags: globalFlags,
     }
 
     cmd := &cobra.Command{
-        Use:     "scan-one",
-        Aliases: []string{"scan"},
-        Short:   "TODO",
+        Use:     "scan-version",
+        Aliases: []string{"version", "v"},
+        Short:   "Run a Trivy scan (only reports HIGH and CRITICAL-level vulnerabilities) against a set of images for a single version",
         RunE: func(cmd *cobra.Command, args []string) error {
-            return doScanOne(ctx, opts)
+            return doScanVersion(ctx, opts)
         },
     }
 
@@ -35,7 +35,7 @@ func ScanOneCommand(ctx context.Context, globalFlags *internal.GlobalFlags) *cob
     return cmd
 }
 
-type scanOneOptions struct {
+type scanVersionOptions struct {
     *internal.GlobalFlags
 
     imageRepository string
@@ -43,17 +43,17 @@ type scanOneOptions struct {
     imageNames []string
 }
 
-func (o *scanOneOptions) addToFlags(flags *pflag.FlagSet) {
-    flags.StringVarP(&o.imageRepository, "repository", "r", securityscanutils.QUAY_REPOSITORY, "image repository to scan")
-    flags.StringVarP(&o.imageRepository, "version", "v", "", "version to scan")
+func (o *scanVersionOptions) addToFlags(flags *pflag.FlagSet) {
+    flags.StringVarP(&o.imageRepository, "image-repo", "r", securityscanutils.QuayRepository, "image repository to scan")
+    flags.StringVarP(&o.imageVersion, "version", "t", "", "version to scan")
     flags.StringSliceVar(&o.imageNames, "images", []string{}, "comma separated list of images to scan")
 
     cliutils.MustMarkFlagRequired(flags, "version")
     cliutils.MustMarkFlagRequired(flags, "images")
 }
 
-func doScanOne(ctx context.Context, opts *scanOneOptions) error {
-    contextutils.LoggerFrom(ctx).Infof("Starting ScanOne with version=%s", opts.imageVersion)
+func doScanVersion(ctx context.Context, opts *scanVersionOptions) error {
+    contextutils.LoggerFrom(ctx).Infof("Starting ScanVersion with version=%s", opts.imageVersion)
 
     trivyScanner := securityscanutils.NewTrivyScanner(executils.CombinedOutputWithStatus)
 
@@ -65,7 +65,7 @@ func doScanOne(ctx context.Context, opts *scanOneOptions) error {
         _ = os.Remove(templateFile)
     }()
 
-    versionedOutputDir := path.Join(securityscanutils.OUTPUT_SCAN_DIRECTORY, opts.imageVersion)
+    versionedOutputDir := path.Join(securityscanutils.OutputScanDirectory, opts.imageVersion)
     err = os.MkdirAll(versionedOutputDir, os.ModePerm)
     if err != nil {
         return err
@@ -78,7 +78,7 @@ func doScanOne(ctx context.Context, opts *scanOneOptions) error {
 
         scanCompleted, vulnerabilityFound, scanErr := trivyScanner.ScanImage(ctx, image, templateFile, outputFile)
         contextutils.LoggerFrom(ctx).Infof(
-            "Scaned Image: %v, ScanCompleted: %v, VulnerabilityFound: %v, Error: %v",
+            "Scanned Image: %v, ScanCompleted: %v, VulnerabilityFound: %v, Error: %v",
             image, scanCompleted, vulnerabilityFound, scanErr)
 
         if vulnerabilityFound {

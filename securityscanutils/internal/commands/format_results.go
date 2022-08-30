@@ -14,7 +14,7 @@ func FormatResultsCommand(ctx context.Context, globalFlags *internal.GlobalFlags
 
     cmd := &cobra.Command{
         Use:   "format-results",
-        Aliases: []string{"format"},
+        Aliases: []string{"format", "f"},
         Short: "[TODO]",
         RunE: func(cmd *cobra.Command, args []string) error {
             return doFormatResults(ctx, opts)

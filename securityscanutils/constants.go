@@ -1,10 +1,10 @@
 package securityscanutils
 
 const (
-	REPOSITORY_OWNER = "solo-io"
+	GithubRepositoryOwner = "solo-io"
 
-	QUAY_REPOSITORY = "quay.io/solo-io"
+	QuayRepository = "quay.io/solo-io"
 
-	OUTPUT_SCAN_DIRECTORY = "_output/scans"
+	OutputScanDirectory = "_output/scans"
 )
 
