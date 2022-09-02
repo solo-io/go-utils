@@ -75,7 +75,7 @@ func (b *simpleGitBot) Start(ctx context.Context, plugins ...Plugin) error {
 	}
 	webhookHandler := githubapp.NewDefaultEventDispatcher(b.config.Github, githubHandler)
 	server.Mux().Handle(pat.Post(githubapp.DefaultWebhookRoute), webhookHandler)
-	server.Mux().Handle(pat.New("/debug/pprof/"), http.DefaultServeMux)
+	server.Mux().Handle(pat.Get("/debug/pprof/*"), http.DefaultServeMux)
 	server.Mux().Handle(pat.New("/"), _200ok())
 
 	// Start is blocking
