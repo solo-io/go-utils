@@ -1,0 +1,3 @@
+changelog:
+- type: NON_USER_FACING
+  description: added ability to validate changelogs in a subdirectory by specifying `activeSubdirectory` in "validation.yaml".  This should enable users to have less sprawling changelog directorys as time progresses.

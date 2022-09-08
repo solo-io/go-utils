@@ -52,6 +52,26 @@ func NewChangelogReader(code vfsutils.MountedRepo) ChangelogReader {
 	return &changelogReader{code: code}
 }
 
+func (c *changelogReader) GetChangelogDirectory(ctx context.Context) (string, error) {
+	// ripped from validator.go.GetValidationSettings(...).  Working assumption is that
+	// client.FileExists is redundant, as code.GetFileContents should _also_ fail when
+	// no client is present
+	var settings ValidationSettings
+	bytes, err := c.code.GetFileContents(ctx, GetValidationSettingsPath())
+	if err != nil {
+		return "", UnableToGetSettingsError(err)
+	}
+
+	if err := yaml.Unmarshal(bytes, &settings); err != nil {
+		return "", UnableToGetSettingsError(err)
+	}
+
+	if settings.ActiveSubdirectory != "" {
+		return "changelog/" + settings.ActiveSubdirectory, err
+	}
+	return "changelog", err
+}
+
 func (c *changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*Changelog, error) {
 	version, err := versionutils.ParseVersion(tag)
 	if err != nil {
@@ -60,7 +80,12 @@ func (c *changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*
 	changelog := Changelog{
 		Version: version,
 	}
-	changelogPath := filepath.Join(ChangelogDirectory, tag)
+	dir, err := c.GetChangelogDirectory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	changelogPath := filepath.Join(dir, tag)
 	files, err := c.code.ListFiles(ctx, changelogPath)
 	if err != nil {
 		return nil, UnableToListFilesError(err, changelogPath)

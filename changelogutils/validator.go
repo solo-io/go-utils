@@ -94,6 +94,9 @@ type ValidationSettings struct {
 
 	// If non-empty, then the validator will reject a changelog if the version's label is not contained in this slice
 	AllowedLabels []string `json:"allowedLabels"`
+
+	// defaults to "".  When set, allows for a nested processing schema.  ex: "v1.10" would mean only files in "changelog/v1.10" would be processed
+	ActiveSubdirectory string `json:"activeSubdirectory"`
 }
 
 type changelogValidator struct {
@@ -107,14 +110,18 @@ type changelogValidator struct {
 }
 
 func (c *changelogValidator) ShouldCheckChangelog(ctx context.Context) (bool, error) {
-	masterHasChangelog, err := c.client.DirectoryExists(ctx, MasterBranch, ChangelogDirectory)
+	dir, err := c.GetChangelogDirectory(ctx)
+	if err != nil {
+		return false, err
+	}
+	masterHasChangelog, err := c.client.DirectoryExists(ctx, MasterBranch, dir)
 	if err != nil {
 		return false, err
 	} else if masterHasChangelog {
 		return true, nil
 	}
 
-	branchHasChangelog, err := c.client.DirectoryExists(ctx, c.code.GetSha(), ChangelogDirectory)
+	branchHasChangelog, err := c.client.DirectoryExists(ctx, c.code.GetSha(), dir)
 	if err != nil {
 		return false, err
 	}
@@ -139,8 +146,13 @@ func (c *changelogValidator) ValidateChangelog(ctx context.Context) (*ChangelogF
 		return nil, err
 	}
 
+	dir, err := c.GetChangelogDirectory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// validate commit file for tag
-	if !strings.HasPrefix(commitFile.GetFilename(), fmt.Sprintf("%s/%s", ChangelogDirectory, proposedTag)) {
+	if !strings.HasPrefix(commitFile.GetFilename(), fmt.Sprintf("%s/%s", dir, proposedTag)) {
 		return nil, AddedChangelogInOldVersionError(proposedTag)
 	}
 
@@ -152,14 +164,20 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 	if err != nil {
 		return "", ListReleasesError(err)
 	}
-	children, err := c.code.ListFiles(ctx, ChangelogDirectory)
+
+	dir, err := c.GetChangelogDirectory(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	children, err := c.code.ListFiles(ctx, dir)
 	if err != nil {
 		return "", err
 	}
 	proposedVersion := ""
 	for _, child := range children {
 		if !child.IsDir() {
-			if !IsKnownChangelogFile(filepath.Join(ChangelogDirectory, child.Name())) {
+			if !IsKnownChangelogFile(filepath.Join(dir, child.Name())) {
 				return "", UnexpectedFileInChangelogDirectoryError(child.Name())
 			} else {
 				continue
@@ -286,6 +304,7 @@ func GetChangelogFilesAdded(ctx context.Context, client githubutils.RepoClient, 
 	}
 	var changelogFiles []github.CommitFile
 	for _, file := range commitComparison.Files {
+		// leaving ChangelogDirectory hardcoded to "changelog" is a non-issue here, since we are lazy prefix matching against "changelog/*"
 		if strings.HasPrefix(file.GetFilename(), fmt.Sprintf("%s/", ChangelogDirectory)) {
 			if !IsKnownChangelogFile(file.GetFilename()) && file.GetStatus() == githubutils.COMMIT_FILE_STATUS_ADDED {
 				changelogFiles = append(changelogFiles, *file)
@@ -296,6 +315,8 @@ func GetChangelogFilesAdded(ctx context.Context, client githubutils.RepoClient, 
 }
 
 func GetValidationSettingsPath() string {
+	// leaving ChangelogDirectory hardcoded to "changelog" is a non-issue here, since even _if_  ActiveSubdirectory is set, we still only
+	// want to consider 1 (top-level) settings file
 	return fmt.Sprintf("%s/%s", ChangelogDirectory, ValidationSettingsFile)
 }
 
@@ -305,6 +326,18 @@ func IsKnownChangelogFile(path string) bool {
 
 func (c *changelogValidator) getValidationSettings(ctx context.Context) (*ValidationSettings, error) {
 	return GetValidationSettings(ctx, c.code, c.client)
+}
+
+func (c *changelogValidator) GetChangelogDirectory(ctx context.Context) (string, error) {
+	// as a potential optimization, we could make ValidationSettings a singleton to prevent continually reading from a remote GH
+	// during a single validation operation.  I've elected to _not_ do so here, since I'm not totally sure if `changelogValidator`'s are
+	// used in a "1 and done" capacity.  Calling this out "in case"
+	settings, err := c.getValidationSettings(ctx)
+
+	if settings.ActiveSubdirectory != "" {
+		return "changelog/" + settings.ActiveSubdirectory, err
+	}
+	return "changelog", err
 }
 
 func GetValidationSettings(ctx context.Context, code vfsutils.MountedRepo, client githubutils.RepoClient) (*ValidationSettings, error) {
