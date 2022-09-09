@@ -62,6 +62,8 @@ type Changelog struct {
 }
 
 const (
+	// all functions in this file that use ChangelogDirectory are marked deprecated.  The hope
+	// is we don't need to account for the "ActiveSubdirectory" setting which was added _after_ said deprecation
 	ChangelogDirectory = "changelog"
 	SummaryFile        = "summary.md"
 	ClosingFile        = "closing.md"
