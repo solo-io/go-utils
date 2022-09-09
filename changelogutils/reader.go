@@ -53,13 +53,11 @@ func NewChangelogReader(code vfsutils.MountedRepo) ChangelogReader {
 }
 
 func (c *changelogReader) GetChangelogDirectory(ctx context.Context) (string, error) {
-	// ripped from validator.go.GetValidationSettings(...).  Working assumption is that
-	// client.FileExists is redundant, as code.GetFileContents should _also_ fail when
-	// no client is present
 	var settings ValidationSettings
 	bytes, err := c.code.GetFileContents(ctx, GetValidationSettingsPath())
 	if err != nil {
-		return "", UnableToGetSettingsError(err)
+		// unable to read validtion.yaml ~= "validation.yaml is not there"
+		return "changelog", nil
 	}
 
 	if err := yaml.Unmarshal(bytes, &settings); err != nil {
