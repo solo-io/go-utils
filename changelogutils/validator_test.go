@@ -43,7 +43,16 @@ var _ = Describe("changelog validator utils", func() {
 		ctrl.Finish()
 	})
 
+	relaxedValidationSettingsExists := func() {
+		repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil).AnyTimes()
+		code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(validationYaml), nil).AnyTimes()
+	}
+
 	Context("should check changelog", func() {
+		BeforeEach(func() {
+			code.EXPECT().GetSha().Return(sha)
+			relaxedValidationSettingsExists()
+		})
 		It("should check if master has changelog", func() {
 			repoClient.EXPECT().
 				DirectoryExists(ctx, changelogutils.MasterBranch, changelogutils.ChangelogDirectory).
@@ -126,13 +135,8 @@ var _ = Describe("changelog validator utils", func() {
 			path3 = filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename3)
 		)
 
-		relaxedValidationSettingsExists := func() {
-			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil)
-			code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(validationYaml), nil)
-		}
-
 		noValidationSettingsExist := func() {
-			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(false, nil)
+			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(false, nil).AnyTimes()
 		}
 
 		getChangelogDir := func(tag string) os.FileInfo {
@@ -175,6 +179,11 @@ var _ = Describe("changelog validator utils", func() {
 			}
 		}
 
+		allowedLabelsSettingsExists := func() {
+			repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil).AnyTimes()
+			code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(allowedLabelsYaml), nil).AnyTimes()
+		}
+
 		BeforeEach(func() {
 			// so should check returns true
 			repoClient.EXPECT().
@@ -184,6 +193,7 @@ var _ = Describe("changelog validator utils", func() {
 		})
 
 		It("propagates error comparing commits", func() {
+			allowedLabelsSettingsExists()
 			repoClient.EXPECT().
 				CompareCommits(ctx, base, sha).
 				Return(nil, nestedErr)
@@ -193,6 +203,7 @@ var _ = Describe("changelog validator utils", func() {
 		})
 
 		It("errors when no changelog file added", func() {
+			allowedLabelsSettingsExists()
 			cc := github.CommitsComparison{}
 			repoClient.EXPECT().
 				CompareCommits(ctx, base, sha).
@@ -205,6 +216,7 @@ var _ = Describe("changelog validator utils", func() {
 		})
 
 		It("errors when more than one changelog file added", func() {
+			allowedLabelsSettingsExists()
 			file1 := github.CommitFile{Filename: &path1, Status: &added}
 			file2 := github.CommitFile{Filename: &path2, Status: &added}
 			cc := github.CommitsComparison{Files: []*github.CommitFile{&file1, &file2}}
@@ -219,6 +231,7 @@ var _ = Describe("changelog validator utils", func() {
 		})
 
 		It("errors when getting changelog file contents fails", func() {
+			allowedLabelsSettingsExists()
 			file1 := github.CommitFile{Filename: &path1, Status: &added}
 			cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 			repoClient.EXPECT().
@@ -235,6 +248,7 @@ var _ = Describe("changelog validator utils", func() {
 
 		Context("validating proposed tag", func() {
 			BeforeEach(func() {
+				relaxedValidationSettingsExists()
 				file1 := github.CommitFile{Filename: &path1, Status: &added}
 				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
 				repoClient.EXPECT().
@@ -263,6 +277,7 @@ var _ = Describe("changelog validator utils", func() {
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
 					Return([]os.FileInfo{&unexpectedFile}, nil)
+				relaxedValidationSettingsExists()
 
 				expected := changelogutils.UnexpectedFileInChangelogDirectoryError(unexpectedFile.name)
 				file, err := validator.ValidateChangelog(ctx)
@@ -277,6 +292,7 @@ var _ = Describe("changelog validator utils", func() {
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
 					Return([]os.FileInfo{getChangelogDir("invalid-tag")}, nil)
+				relaxedValidationSettingsExists()
 
 				expected := changelogutils.InvalidChangelogSubdirectoryNameError("invalid-tag")
 				file, err := validator.ValidateChangelog(ctx)
@@ -291,6 +307,7 @@ var _ = Describe("changelog validator utils", func() {
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
 					Return([]os.FileInfo{getChangelogDir(tag)}, nil)
+				relaxedValidationSettingsExists()
 
 				expected := changelogutils.NoNewVersionsFoundError(tag)
 				file, err := validator.ValidateChangelog(ctx)
@@ -305,6 +322,7 @@ var _ = Describe("changelog validator utils", func() {
 				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
 					Return([]os.FileInfo{getChangelogDir("v0.5.2"), getChangelogDir("v0.5.3")}, nil)
+				relaxedValidationSettingsExists()
 
 				expected := changelogutils.MultipleNewVersionsFoundError(tag, "v0.5.2", "v0.5.3")
 				file, err := validator.ValidateChangelog(ctx)
@@ -317,6 +335,9 @@ var _ = Describe("changelog validator utils", func() {
 					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
 					Return(tag, nil)
 				code.EXPECT().
+					GetFileContents(ctx, "changelog/validation.yaml").
+					Return([]byte(""), nil).AnyTimes()
+				code.EXPECT().
 					ListFiles(ctx, changelogutils.ChangelogDirectory).
 					Return([]os.FileInfo{getChangelogDir(nextTag)}, nil)
 				code.EXPECT().
@@ -327,7 +348,7 @@ var _ = Describe("changelog validator utils", func() {
 					Return([]byte(validChangelog2), nil)
 				repoClient.EXPECT().
 					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
-					Return(false, nil)
+					Return(false, nil).AnyTimes()
 				expected := changelogutils.AddedChangelogInOldVersionError(nextTag)
 				file, err := validator.ValidateChangelog(ctx)
 				Expect(file).To(BeNil())
@@ -340,6 +361,9 @@ var _ = Describe("changelog validator utils", func() {
 
 			BeforeEach(func() {
 				noValidationSettingsExist()
+				code.EXPECT().
+					GetFileContents(ctx, "changelog/validation.yaml").
+					Return([]byte(""), nil).AnyTimes()
 			})
 
 			Context("major version zero 0.y.z", func() {
@@ -495,6 +519,9 @@ var _ = Describe("changelog validator utils", func() {
 
 			BeforeEach(func() {
 				relaxedValidationSettingsExists()
+				code.EXPECT().
+					GetFileContents(ctx, "changelog/validation.yaml").
+					Return([]byte(""), nil).AnyTimes()
 			})
 
 			Context("major version zero 0.y.z", func() {
@@ -625,6 +652,7 @@ var _ = Describe("changelog validator utils", func() {
 		Context("label workflow", func() {
 
 			labelWorkflow := func(lastTag, nextTag, contents string, settingsFunc func()) {
+				relaxedValidationSettingsExists()
 				path := filepath.Join(changelogutils.ChangelogDirectory, nextTag, filename1)
 				file1 := github.CommitFile{Filename: &path, Status: &added}
 				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
@@ -699,11 +727,6 @@ var _ = Describe("changelog validator utils", func() {
 					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
 			}
 
-			allowedLabelsSettingsExists := func() {
-				repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil)
-				code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(allowedLabelsYaml), nil)
-			}
-
 			It("accepts a label in allowed labels", func() {
 				setup("v0.5.1-beta1")
 				allowedLabelsSettingsExists()
@@ -718,71 +741,6 @@ var _ = Describe("changelog validator utils", func() {
 				file, err := validator.ValidateChangelog(ctx)
 				Expect(file).To(BeNil())
 				Expect(err.Error()).To(Equal(changelogutils.InvalidLabelError("foo", []string{"beta", "rc"}).Error()))
-			})
-		})
-
-		Context("invalid settings", func() {
-
-			setup := func() {
-				file1 := github.CommitFile{Filename: &path1, Status: &added}
-				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1}}
-				repoClient.EXPECT().
-					CompareCommits(ctx, base, sha).
-					Return(&cc, nil)
-				code.EXPECT().
-					GetFileContents(ctx, path1).
-					Return([]byte(validBreakingChangelog), nil).Times(2)
-				repoClient.EXPECT().
-					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
-					Return("v0.5.0", nil)
-				code.EXPECT().
-					ListFiles(ctx, changelogutils.ChangelogDirectory).
-					Return([]os.FileInfo{getChangelogDir(tag)}, nil)
-				code.EXPECT().
-					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, tag)).
-					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
-			}
-
-			It("propagates error if checking for validation.yaml existence fails", func() {
-				setup()
-				emptyErr := eris.Errorf("")
-				repoClient.EXPECT().
-					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
-					Return(false, emptyErr)
-				file, err := validator.ValidateChangelog(ctx)
-				Expect(file).To(BeNil())
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal(changelogutils.UnableToGetSettingsError(emptyErr).Error()))
-			})
-
-			It("propagates error if reading validation.yaml fails", func() {
-				setup()
-				emptyErr := eris.Errorf("")
-				repoClient.EXPECT().
-					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
-					Return(true, nil)
-				code.EXPECT().
-					GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).
-					Return(nil, emptyErr)
-				file, err := validator.ValidateChangelog(ctx)
-				Expect(file).To(BeNil())
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal(changelogutils.UnableToGetSettingsError(emptyErr).Error()))
-			})
-
-			It("propagates error if marshalling validation.yaml fails", func() {
-				setup()
-				emptyErr := eris.Errorf("")
-				repoClient.EXPECT().
-					FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).
-					Return(true, nil)
-				code.EXPECT().
-					GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).
-					Return([]byte("fakeyaml"), nil)
-				file, err := validator.ValidateChangelog(ctx)
-				Expect(file).To(BeNil())
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(ContainSubstring(changelogutils.UnableToGetSettingsError(emptyErr).Error()))
 			})
 		})
 

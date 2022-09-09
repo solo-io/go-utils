@@ -110,10 +110,7 @@ type changelogValidator struct {
 }
 
 func (c *changelogValidator) ShouldCheckChangelog(ctx context.Context) (bool, error) {
-	dir, err := c.GetChangelogDirectory(ctx)
-	if err != nil {
-		return false, err
-	}
+	dir := c.GetChangelogDirectory(ctx)
 	masterHasChangelog, err := c.client.DirectoryExists(ctx, MasterBranch, dir)
 	if err != nil {
 		return false, err
@@ -146,13 +143,8 @@ func (c *changelogValidator) ValidateChangelog(ctx context.Context) (*ChangelogF
 		return nil, err
 	}
 
-	dir, err := c.GetChangelogDirectory(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// validate commit file for tag
-	if !strings.HasPrefix(commitFile.GetFilename(), fmt.Sprintf("%s/%s", dir, proposedTag)) {
+	if !strings.HasPrefix(commitFile.GetFilename(), fmt.Sprintf("%s/%s", c.GetChangelogDirectory(ctx), proposedTag)) {
 		return nil, AddedChangelogInOldVersionError(proposedTag)
 	}
 
@@ -165,11 +157,7 @@ func (c *changelogValidator) validateProposedTag(ctx context.Context) (string, e
 		return "", ListReleasesError(err)
 	}
 
-	dir, err := c.GetChangelogDirectory(ctx)
-	if err != nil {
-		return "", err
-	}
-
+	dir := c.GetChangelogDirectory(ctx)
 	children, err := c.code.ListFiles(ctx, dir)
 	if err != nil {
 		return "", err
@@ -328,16 +316,16 @@ func (c *changelogValidator) getValidationSettings(ctx context.Context) (*Valida
 	return GetValidationSettings(ctx, c.code, c.client)
 }
 
-func (c *changelogValidator) GetChangelogDirectory(ctx context.Context) (string, error) {
+func (c *changelogValidator) GetChangelogDirectory(ctx context.Context) string {
 	// as a potential optimization, we could make ValidationSettings a singleton to prevent continually reading from a remote GH
 	// during a single validation operation.  I've elected to _not_ do so here, since I'm not totally sure if `changelogValidator`'s are
 	// used in a "1 and done" capacity.  Calling this out "in case"
-	settings, err := c.getValidationSettings(ctx)
+	settings, _ := c.getValidationSettings(ctx) // suppressing error, because we _should_ always know the changelog dir
 
-	if settings.ActiveSubdirectory != "" {
-		return "changelog/" + settings.ActiveSubdirectory, err
+	if settings != nil && settings.ActiveSubdirectory != "" {
+		return "changelog/" + settings.ActiveSubdirectory
 	}
-	return "changelog", err
+	return "changelog"
 }
 
 func GetValidationSettings(ctx context.Context, code vfsutils.MountedRepo, client githubutils.RepoClient) (*ValidationSettings, error) {

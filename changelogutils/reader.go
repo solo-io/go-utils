@@ -52,22 +52,23 @@ func NewChangelogReader(code vfsutils.MountedRepo) ChangelogReader {
 	return &changelogReader{code: code}
 }
 
-func (c *changelogReader) GetChangelogDirectory(ctx context.Context) (string, error) {
+func (c *changelogReader) GetChangelogDirectory(ctx context.Context) string {
 	var settings ValidationSettings
 	bytes, err := c.code.GetFileContents(ctx, GetValidationSettingsPath())
 	if err != nil {
 		// unable to read validtion.yaml ~= "validation.yaml is not there"
-		return "changelog", nil
+		return "changelog"
 	}
 
 	if err := yaml.Unmarshal(bytes, &settings); err != nil {
-		return "", UnableToGetSettingsError(err)
+		// suppressing error, because we _should_ always know the changelog dir
+		return "changelog"
 	}
 
 	if settings.ActiveSubdirectory != "" {
-		return "changelog/" + settings.ActiveSubdirectory, err
+		return "changelog/" + settings.ActiveSubdirectory
 	}
-	return "changelog", err
+	return "changelog"
 }
 
 func (c *changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*Changelog, error) {
@@ -78,10 +79,7 @@ func (c *changelogReader) GetChangelogForTag(ctx context.Context, tag string) (*
 	changelog := Changelog{
 		Version: version,
 	}
-	dir, err := c.GetChangelogDirectory(ctx)
-	if err != nil {
-		return nil, err
-	}
+	dir := c.GetChangelogDirectory(ctx)
 
 	changelogPath := filepath.Join(dir, tag)
 	files, err := c.code.ListFiles(ctx, changelogPath)

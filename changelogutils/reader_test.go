@@ -94,6 +94,9 @@ var _ = Describe("ReaderTest", func() {
 			mockCode.EXPECT().
 				ListFiles(ctx, changelogDir).
 				Return(nil, nestedErr)
+			mockCode.EXPECT().
+				GetFileContents(ctx, "changelog/validation.yaml").
+				Return([]byte(""), nil)
 
 			expected := changelogutils.UnableToListFilesError(nestedErr, changelogDir)
 			changelog, err := reader.GetChangelogForTag(ctx, tag)
@@ -106,6 +109,9 @@ var _ = Describe("ReaderTest", func() {
 			mockCode.EXPECT().
 				ListFiles(ctx, changelogDir).
 				Return(files, nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, "changelog/validation.yaml").
+				Return([]byte(""), nil)
 
 			expected := changelogutils.UnexpectedDirectoryError("foo", changelogDir)
 
@@ -123,6 +129,9 @@ var _ = Describe("ReaderTest", func() {
 			mockCode.EXPECT().
 				GetFileContents(ctx, path).
 				Return([]byte(contents), err)
+			mockCode.EXPECT().
+				GetFileContents(ctx, "changelog/validation.yaml").
+				Return([]byte(""), nil)
 			return path
 		}
 
@@ -220,6 +229,9 @@ var _ = Describe("ReaderTest", func() {
 			mockCode.EXPECT().
 				ListFiles(ctx, changelogDir).
 				Return(files, nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, "changelog/validation.yaml").
+				Return([]byte(""), nil)
 			mockCode.EXPECT().
 				GetFileContents(ctx, filepath.Join(changelogDir, "1.yaml")).
 				Return([]byte(validChangelog1), nil)
@@ -322,6 +334,9 @@ var _ = Describe("ReaderTest", func() {
 				ListFiles(ctx, rcDir).
 				Return(files, nil)
 			mockCode.EXPECT().
+				GetFileContents(ctx, "changelog/validation.yaml").
+				Return([]byte(""), nil)
+			mockCode.EXPECT().
 				GetFileContents(ctx, filepath.Join(rcDir, "1.yaml")).
 				Return([]byte(validChangelog3), nil)
 
@@ -353,6 +368,9 @@ var _ = Describe("ReaderTest", func() {
 			mockCode.EXPECT().
 				ListFiles(ctx, changelogDir).
 				Return(files, nil)
+			mockCode.EXPECT().
+				GetFileContents(ctx, "changelog/validation.yaml").
+				Return([]byte(""), nil)
 			mockCode.EXPECT().
 				GetFileContents(ctx, filepath.Join(changelogDir, "1.yaml")).
 				Return([]byte(validStableReleaseChangelog), nil)
