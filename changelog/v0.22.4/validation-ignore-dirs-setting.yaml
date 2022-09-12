@@ -1,0 +1,5 @@
+CHANGELOG:
+- type: NON_USER_FACING
+  description: |
+    Add changelog validation setting to explicitly list directories which should
+    be ignored when crawling changelog/ directory
