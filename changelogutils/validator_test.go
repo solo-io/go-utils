@@ -48,6 +48,11 @@ var _ = Describe("changelog validator utils", func() {
 		code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(validationYaml), nil).AnyTimes()
 	}
 
+	requireLabelSettingsExists := func() {
+		repoClient.EXPECT().FileExists(ctx, sha, changelogutils.GetValidationSettingsPath()).Return(true, nil).AnyTimes()
+		code.EXPECT().GetFileContents(ctx, changelogutils.GetValidationSettingsPath()).Return([]byte(requireLabelsYaml), nil).AnyTimes()
+	}
+
 	Context("should check changelog", func() {
 		BeforeEach(func() {
 			code.EXPECT().GetSha().Return(sha)
@@ -772,12 +777,44 @@ var _ = Describe("changelog validator utils", func() {
 				Expect(err).To(BeNil())
 			})
 		})
+
+		Context("require label settings", func() {
+
+			It("properly ignores validation when computing new changelog files", func() {
+				requireLabelSettingsExists()
+				validationPath := changelogutils.GetValidationSettingsPath()
+				file1 := github.CommitFile{Filename: &path1, Status: &added}
+				file2 := github.CommitFile{Filename: &validationPath, Status: &added}
+				cc := github.CommitsComparison{Files: []*github.CommitFile{&file1, &file2}}
+				repoClient.EXPECT().
+					CompareCommits(ctx, base, sha).
+					Return(&cc, nil)
+				code.EXPECT().
+					GetFileContents(ctx, path1).
+					Return([]byte(validChangelog1), nil).Times(2)
+				repoClient.EXPECT().
+					FindLatestTagIncludingPrereleaseBeforeSha(ctx, base).
+					Return("v0.5.0", nil)
+				code.EXPECT().
+					ListFiles(ctx, changelogutils.ChangelogDirectory).
+					Return([]os.FileInfo{getChangelogDir(tag)}, nil)
+				code.EXPECT().
+					ListFiles(ctx, filepath.Join(changelogutils.ChangelogDirectory, tag)).
+					Return([]os.FileInfo{&mockFileInfo{name: filename1, isDir: false}}, nil)
+				file, err := validator.ValidateChangelog(ctx)
+				Expect(file).To(BeNil())
+				Expect(err).To(MatchError(changelogutils.ExpectedVersionLabelError(tag)))
+			})
+		})
 	})
 })
 
 const (
 	validationYaml = `
 relaxSemverValidation: true
+`
+	requireLabelsYaml = `
+requireLabel: true
 `
 	allowedLabelsYaml = `
 allowedLabels:

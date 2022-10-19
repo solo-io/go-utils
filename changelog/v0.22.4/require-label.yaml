@@ -1,0 +1,4 @@
+changelog:
+- type: NEW_FEATURE
+  description: Add require label to changelog validation to ensure we have valid version
+  issueLink: https://github.com/solo-io/go-utils/issues/503
