@@ -780,7 +780,7 @@ var _ = Describe("changelog validator utils", func() {
 
 		Context("require label settings", func() {
 
-			It("properly ignores validation when computing new changelog files", func() {
+			It("properly errors without a label on erroneous new changelog files", func() {
 				requireLabelSettingsExists()
 				validationPath := changelogutils.GetValidationSettingsPath()
 				file1 := github.CommitFile{Filename: &path1, Status: &added}
