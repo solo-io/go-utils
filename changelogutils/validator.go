@@ -65,6 +65,9 @@ var (
 	InvalidLabelError = func(label string, allowed []string) error {
 		return eris.Errorf("Changelog version has label %s, which isn't in the list of allowed labels: %v", label, allowed)
 	}
+	ExpectedVersionLabelError = func(actual string) error {
+		return eris.Errorf("Expected version %s to to have a semver label suffix", actual)
+	}
 )
 
 type ChangelogValidator interface {
@@ -91,6 +94,11 @@ type ValidationSettings struct {
 	// If true, then the validator will skip checks to enforce how version numbers are incremented, allowing for more flexible
 	// versioning for new features or breaking changes
 	RelaxSemverValidation bool `json:"relaxSemverValidation"`
+
+	// If true, then the validator will require a changelog version with a label.
+	// This is useful to enforce version schemes like we use for envoy-gloo / envoy-gloo-ee, which always have the form:
+	// $ENVOY_VERSION-$PATCH_NUM
+	RequireLabel bool `json:"requireLabel"`
 
 	// If non-empty, then the validator will reject a changelog if the version's label is not contained in this slice
 	AllowedLabels []string `json:"allowedLabels"`
@@ -220,6 +228,10 @@ func (c *changelogValidator) validateVersionBump(ctx context.Context, latestTag 
 		// if an error is returned, that means there was a settings file, but it was malformed, and we
 		// propagate such an error to ensure the branch stays clean
 		return err
+	}
+
+	if settings.RequireLabel && len(changelog.Version.Label) == 0 {
+		return ExpectedVersionLabelError(changelog.Version.String())
 	}
 
 	// If the settings contain specific allowed labels, ensure the label used here, if any, is in the list
