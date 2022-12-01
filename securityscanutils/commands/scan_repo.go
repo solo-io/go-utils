@@ -17,7 +17,10 @@ func ScanRepoCommand(ctx context.Context, rootOptions *RootOptions) *cobra.Comma
 	}
 
 	cmd := &cobra.Command{
-		Use:   "scan-repo",
+		Use: "scan-repo",
+		Aliases: []string{
+			"run-security-scan",
+		},
 		Short: "Run Trivy scans against images for the repo specified and upload scan results to a google cloud bucket",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doScanRepo(ctx, opts)
