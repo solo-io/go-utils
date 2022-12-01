@@ -5,6 +5,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/solo-io/go-utils/contextutils"
+	"go.uber.org/zap/zapcore"
+
 	"github.com/spf13/pflag"
 
 	"github.com/fatih/color"
@@ -21,7 +24,7 @@ func RootCommand(ctx context.Context) *cobra.Command {
 		Short: "CLI for identifying CVEs in images",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if rootOptions.Verbose {
-				logrus.SetLevel(logrus.DebugLevel)
+				contextutils.SetLogLevel(zapcore.DebugLevel)
 			}
 		},
 		SilenceErrors: true,
