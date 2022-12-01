@@ -26,8 +26,8 @@ func FormatResultsCommand(ctx context.Context, rootFlags *RootOptions) *cobra.Co
     }
 
     cmd := &cobra.Command{
-        Use:   "gen-security-scan-md",
-        Short: "pull down security scan files from gcloud bucket and generate docs markdown file",
+        Use:   "format-results",
+        Short: "Pull down security scan files from gcloud bucket and generate docs markdown file",
         RunE: func(cmd *cobra.Command, args []string) error {
             return doFormatResults(ctx, opts)
         },
