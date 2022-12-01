@@ -1,16 +1,17 @@
 package main
 
 import (
-    "context"
-    "github.com/solo-io/go-utils/securityscanutils/commands"
-    "log"
+	"context"
+	"log"
+
+	"github.com/solo-io/go-utils/securityscanutils/commands"
 )
 
 func main() {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    cmd := commands.RootCommand(ctx)
-    if err := cmd.Execute(); err != nil {
-        log.Fatalf("unable to run: %v\n", err)
-    }
+	cmd := commands.RootCommand(ctx)
+	if err := cmd.Execute(); err != nil {
+		log.Fatalf("unable to run: %v\n", err)
+	}
 }
