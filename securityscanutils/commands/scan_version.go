@@ -3,14 +3,15 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/solo-io/go-utils/cliutils"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/osutils/executils"
 	"github.com/solo-io/go-utils/securityscanutils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"os"
-	"path"
 )
 
 func ScanVersionCommand(ctx context.Context, rootOptions *RootOptions) *cobra.Command {
