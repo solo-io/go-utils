@@ -1,0 +1,7 @@
+changelog:
+  - type: BREAKING_CHANGE
+    issueLink: https://github.com/solo-io/go-utils/issues/469
+    resolvesIssue: false
+    description: >
+      Add scan-version command to CVE CLI which allows for easier scans of a single version (tag)
+      of multiple images.
