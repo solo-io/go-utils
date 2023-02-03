@@ -19,3 +19,5 @@ test-report.json
 junit*.xml
 *cov
 .bin
+
+*.test
