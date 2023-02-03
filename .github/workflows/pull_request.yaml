@@ -45,6 +45,7 @@ jobs:
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
+        TEST_PKG: ./... # Run all tests
       run: make test
     - uses: testspace-com/setup-testspace@v1
       with:
