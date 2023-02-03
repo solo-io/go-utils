@@ -1,16 +1,13 @@
 package grpcutils_test
 
 import (
-	"testing"
+    "testing"
 
-	"github.com/onsi/ginkgo/reporters"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
 )
 
 func TestGrpc(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Grpc Suite", []Reporter{junitReporter})
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Grpc Suite")
 }

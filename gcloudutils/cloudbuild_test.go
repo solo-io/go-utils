@@ -1,75 +1,75 @@
 package gcloudutils_test
 
 import (
-	"encoding/json"
+    "encoding/json"
 
-	"github.com/solo-io/go-utils/gcloudutils"
+    "github.com/solo-io/go-utils/gcloudutils"
 
-	"google.golang.org/api/cloudbuild/v1"
+    "google.golang.org/api/cloudbuild/v1"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
 )
 
 var (
-	bfs  cloudbuild.Build
-	bfr  cloudbuild.Build
-	bfrt cloudbuild.Build
+    bfs  cloudbuild.Build
+    bfr  cloudbuild.Build
+    bfrt cloudbuild.Build
 )
 
 const (
-	devDeploy = "dev-deploy"
-	tag_name  = "v0.1.0"
+    devDeploy = "dev-deploy"
+    tag_name  = "v0.1.0"
 )
 
 var _ = BeforeSuite(func() {
-	var err error
-	err = json.Unmarshal([]byte(buildFromSource), &bfs)
-	Expect(err).NotTo(HaveOccurred())
-	err = json.Unmarshal([]byte(buildFromRepo), &bfr)
-	Expect(err).NotTo(HaveOccurred())
-	err = json.Unmarshal([]byte(buildFromRepoTag), &bfrt)
-	Expect(err).NotTo(HaveOccurred())
+    var err error
+    err = json.Unmarshal([]byte(buildFromSource), &bfs)
+    Expect(err).NotTo(HaveOccurred())
+    err = json.Unmarshal([]byte(buildFromRepo), &bfr)
+    Expect(err).NotTo(HaveOccurred())
+    err = json.Unmarshal([]byte(buildFromRepoTag), &bfrt)
+    Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = Describe("github test", func() {
 
-	Context("repo name", func() {
-		It("can find the repo name from repo source", func() {
-			Expect(gcloudutils.GetRepoName(&bfr)).To(Equal(devDeploy))
-		})
-	})
+    Context("repo name", func() {
+        It("can find the repo name from repo source", func() {
+            Expect(gcloudutils.GetRepoName(&bfr)).To(Equal(devDeploy))
+        })
+    })
 
-	Context("tag name", func() {
+    Context("tag name", func() {
 
-		It("can find tag name from source", func() {
-			tag := gcloudutils.GetReleaseVersionTag(&bfrt)
-			Expect(tag).To(Equal(tag_name))
-		})
+        It("can find tag name from source", func() {
+            tag := gcloudutils.GetReleaseVersionTag(&bfrt)
+            Expect(tag).To(Equal(tag_name))
+        })
 
-		It("returns empty string if no tag exists", func() {
-			tag := gcloudutils.GetReleaseVersionTag(&bfr)
-			Expect(tag).To(Equal(""))
-		})
-	})
+        It("returns empty string if no tag exists", func() {
+            tag := gcloudutils.GetReleaseVersionTag(&bfr)
+            Expect(tag).To(Equal(""))
+        })
+    })
 
-	Context("tags", func() {
-		It("can find release tag from tags", func() {
-			tag := gcloudutils.GetReleaseVersionTag(&bfs)
-			Expect(tag).To(Equal(tag_name))
-		})
+    Context("tags", func() {
+        It("can find release tag from tags", func() {
+            tag := gcloudutils.GetReleaseVersionTag(&bfs)
+            Expect(tag).To(Equal(tag_name))
+        })
 
-		It("can find sha from tags", func() {
-			tag := gcloudutils.GetTargetCommitSh(&bfs)
-			Expect(tag).To(Equal("world"))
-		})
+        It("can find sha from tags", func() {
+            tag := gcloudutils.GetTargetCommitSh(&bfs)
+            Expect(tag).To(Equal("world"))
+        })
 
-		It("can find repo name from tags", func() {
-			tag := gcloudutils.GetRepoName(&bfs)
-			Expect(tag).To(Equal(devDeploy))
+        It("can find repo name from tags", func() {
+            tag := gcloudutils.GetRepoName(&bfs)
+            Expect(tag).To(Equal(devDeploy))
 
-		})
-	})
+        })
+    })
 })
 
 const buildFromSource = `

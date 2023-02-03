@@ -45,9 +45,7 @@ jobs:
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
-      run: |
-        go install -v github.com/onsi/ginkgo/ginkgo@v1.16.5 && export PATH=$PATH:$(go env GOPATH)/bin/
-        ginkgo -r -failFast -randomizeSuites -randomizeAllSpecs -skipPackage=./installutils/kubeinstall,./debugutils/test
+      run: make test
     - uses: testspace-com/setup-testspace@v1
       with:
         domain: solo-io.testspace.com
