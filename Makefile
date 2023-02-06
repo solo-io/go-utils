@@ -22,7 +22,7 @@ help: ## Output the self-documenting make targets
 #----------------------------------------------------------------------------------
 ROOT_DIR := $(shell pwd)
 DEPSGOBIN:= $(ROOT_DIR)/.bin
-OUTPUT_DIR := $(ROOT_DIR)._output
+OUTPUT_DIR := $(ROOT_DIR)/._output
 
 export PATH:=$(DEPSGOBIN):$(PATH)
 export GOBIN:=$(DEPSGOBIN)
@@ -41,6 +41,15 @@ format-code: install-go-tools
 	goimports -w .
 
 #----------------------------------------------------------------------------------
+# Clean
+#----------------------------------------------------------------------------------
+
+.PHONY: clean
+clean: ## Clean any local assets
+	rm -rf _output
+	find * -type f -name '*.test' -exec rm {} \;
+
+#----------------------------------------------------------------------------------
 # Tests
 #----------------------------------------------------------------------------------
 
@@ -48,7 +57,7 @@ GINKGO_VERSION ?= 2.5.0 # match our go.mod
 GINKGO_ENV ?= GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore ACK_GINKGO_DEPRECATIONS=$(GINKGO_VERSION)
 GINKGO_FLAGS ?= -v -tags=purego -compilers=4 -fail-fast -randomize-suites -randomize-all -skip-package=./installutils/kubeinstall,./debugutils/test
 GINKGO_REPORT_FLAGS ?= --json-report=test-report.json --junit-report=junit.xml -output-dir=$(OUTPUT_DIR)
-GINKGO_COVERAGE_FLAGS := --cover --covermode=count --coverprofile=coverage.cov
+GINKGO_COVERAGE_FLAGS ?= --cover --covermode=count --coverprofile=coverage.cov
 TEST_PKG ?= ./... # Default to run all tests
 
 # This is a way for a user executing `make test` to be able to provide flags which we do not include by default
