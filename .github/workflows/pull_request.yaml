@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - 'master'
+    - 'main'
   pull_request:
 
 jobs:
@@ -40,7 +41,7 @@ jobs:
           ${{ runner.os }}-go
     - uses: azure/setup-kubectl@v1
       with:
-        version: 'v1.18.0'
+        version: 'v1.24.7'
     - uses: engineerd/setup-kind@v0.5.0
     - name: Run tests
       env:

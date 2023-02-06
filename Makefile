@@ -20,7 +20,10 @@ help: ## Output the self-documenting make targets
 #----------------------------------------------------------------------------------
 # Repo setup
 #----------------------------------------------------------------------------------
-DEPSGOBIN:=$(shell pwd)/.bin
+ROOT_DIR := $(shell pwd)
+DEPSGOBIN:= $(ROOT_DIR)/.bin
+OUTPUT_DIR := $(ROOT_DIR)._output
+
 export PATH:=$(DEPSGOBIN):$(PATH)
 export GOBIN:=$(DEPSGOBIN)
 
@@ -46,6 +49,7 @@ GINKGO_ENV ?= GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore ACK_GINKGO_DEPRECATIO
 GINKGO_FLAGS ?= -v -tags=purego -compilers=4 -fail-fast -randomize-suites -randomize-all -skip-package=./installutils/kubeinstall,./debugutils/test
 GINKGO_REPORT_FLAGS ?= --json-report=test-report.json --junit-report=junit.xml -output-dir=$(OUTPUT_DIR)
 GINKGO_COVERAGE_FLAGS := --cover --covermode=count --coverprofile=coverage.cov
+TEST_PKG ?= ./... # Default to run all tests
 
 # This is a way for a user executing `make test` to be able to provide flags which we do not include by default
 # For example, you may want to run tests multiple times, or with various timeouts
