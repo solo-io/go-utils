@@ -13,8 +13,8 @@ require (
 	github.com/fgrosse/zaptest v1.1.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.4.1
-	github.com/gogo/protobuf v1.3.2
-	github.com/golang/mock v1.6.0
+	github.com/gogo/protobuf v1.3.1
+	github.com/golang/mock v1.5.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-github/v32 v32.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
@@ -32,13 +32,13 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rotisserie/eris v0.1.1
 	github.com/rs/zerolog v1.18.0
-	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/afero v1.6.0
-	github.com/spf13/cobra v1.4.0
+	github.com/sirupsen/logrus v1.7.0
+	github.com/spf13/afero v1.2.2
+	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/yuin/goldmark v1.4.13
 	go.opencensus.io v0.24.0
-	go.uber.org/zap v1.19.0
+	go.uber.org/zap v1.10.0
 	goji.io v2.0.2+incompatible
 	golang.org/x/mod v0.6.0
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
@@ -68,7 +68,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
-	github.com/fsnotify/fsnotify v1.5.3 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -93,8 +92,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/prometheus/client_golang v1.12.1 // indirect
+	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
@@ -107,10 +105,9 @@ require (
 	github.com/src-d/gcfg v1.4.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/zenazn/goji v0.9.1-0.20160507202103-64eb34159fe5 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/atomic v1.4.0 // indirect
+	go.uber.org/multierr v1.1.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
