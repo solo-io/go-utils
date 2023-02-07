@@ -9,7 +9,7 @@ import (
 
 func TestGithubutils(t *testing.T) {
 	// TODO (sam-h)
-	Skip("Temporarily skip tests as they are known to be rate-limited")
+	return
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Githubutils Suite")
 }
