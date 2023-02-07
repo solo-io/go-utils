@@ -18,6 +18,11 @@ const (
 	SemverMinimumVersion  = "v0.0.1"
 )
 
+// SpeciallyOrderedPrefixes are prefixes that are ordered in a special way
+// This is exported so that consuming packages can specify their own special labels
+// These formats take precedence over alphanumeric ordering for labels
+var SpeciallyOrderedPrefixes = []string{"rc", "beta", "dev"}
+
 var (
 	InvalidSemverVersionError = func(tag string) error {
 		return eris.Errorf("Tag %s is not a valid semver version, must be of the form vX.Y.Z[-<label>#]", tag)
@@ -125,17 +130,25 @@ func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 		return false, true
 	}
 
-	if v.Label != lesser.Label {
-		return false, false
+	if v.Label == lesser.Label {
+		if v.LabelVersion > lesser.LabelVersion {
+			return true, true
+		} else if v.LabelVersion < lesser.LabelVersion {
+			return false, true
+		}
 	}
 
-	if v.LabelVersion > lesser.LabelVersion {
-		return true, true
-	} else if v.LabelVersion < lesser.LabelVersion {
-		return false, true
+	// impose additional ordering based on our special labels
+	for _, label := range SpeciallyOrderedPrefixes {
+		if strings.HasPrefix(v.Label, label) {
+			return true, true
+		}
+		if strings.HasPrefix(lesser.Label, label) {
+			return false, true
+		}
 	}
 
-	return false, true
+	return false, false
 }
 
 // In order, returns isGreaterThanOrEqualTo, isDeterminable
@@ -174,14 +187,16 @@ func (v Version) MustIsGreaterThanOrEqualTo(lesser Version) bool {
 	return v.MustIsGreaterThan(lesser)
 }
 
-// for incomparable versions, default to alphanumeric sort on label
+// MustIsGreaterThan is like IsGreaterThan, but for incomparable versions, default to alphanumeric sort on label
 // e.g. 1.0.0-foo1 > 1.0.0-bar2
 func (v Version) MustIsGreaterThan(lesser Version) bool {
 	isGtr, determinable := v.IsGreaterThan(lesser)
 	if determinable {
 		return isGtr
 	}
-	// if we can't compare versions (i.e., different labels) then default to alphanumeric sort
+	// if we can't compare versions (i.e., different labels not in our special set)
+	// then default to alphanumeric sort
+
 	return v.Label > lesser.Label
 }
 
