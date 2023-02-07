@@ -136,6 +136,7 @@ func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 		} else if v.LabelVersion < lesser.LabelVersion {
 			return false, true
 		}
+		return false, false
 	}
 
 	// impose additional ordering based on our special labels

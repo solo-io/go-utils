@@ -24,7 +24,7 @@ var _ = FDescribe("ChangelogTest", func() {
 		getProposedTag := func(latestTag, changelogDir, tag string) error {
 			fs := afero.NewOsFs()
 			actualTag, actualErr := changelogutils.GetProposedTag(fs, latestTag, changelogDir)
-			Expect(actualTag).To(BeEquivalentTo(tag), actualErr)
+			Expect(actualTag).To(BeEquivalentTo(tag), fmt.Sprintf("%v", actualErr))
 			return actualErr
 		}
 
