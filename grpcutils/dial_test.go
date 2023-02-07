@@ -10,7 +10,7 @@ import (
 	"github.com/solo-io/go-utils/grpcutils/test_api"
 
 	"github.com/hashicorp/go-multierror"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 )

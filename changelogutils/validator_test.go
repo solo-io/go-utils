@@ -5,11 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	. "github.com/onsi/ginkgo/extensions/table"
-
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-github/v32/github"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/changelogutils"

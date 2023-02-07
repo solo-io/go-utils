@@ -6,19 +6,13 @@ import (
 
 	"github.com/solo-io/go-utils/stats"
 
-	"github.com/onsi/ginkgo/reporters"
-
-	"github.com/solo-io/go-utils/log"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 func TestStats(t *testing.T) {
 	RegisterFailHandler(Fail)
-	log.DefaultOut = GinkgoWriter
-	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Stats Suite", []Reporter{junitReporter})
+	RunSpecs(t, "Stats Suite")
 }
 
 var _ = BeforeSuite(func() {

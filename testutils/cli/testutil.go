@@ -5,7 +5,7 @@ import (
 
 	"github.com/Netflix/go-expect"
 	"github.com/hinshun/vt10x"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/surveyutils"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"

@@ -6,7 +6,7 @@ import (
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/vfsutils"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

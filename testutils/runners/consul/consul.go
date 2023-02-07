@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/testutils/runners"
 )

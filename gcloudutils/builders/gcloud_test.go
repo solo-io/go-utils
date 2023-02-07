@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"cloud.google.com/go/storage"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

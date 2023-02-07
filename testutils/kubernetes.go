@@ -13,7 +13,7 @@ import (
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/threadsafe"
 
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/pkg/errors"
 )
 
