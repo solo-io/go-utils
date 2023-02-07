@@ -1,5 +1,6 @@
 changelog:
   - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/issues/0000
     description: >
       Allow for an overridable set of specially ordered changelog endings.
       Historically we have only used one ending so this is not considered technically breaking.
