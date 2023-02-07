@@ -8,8 +8,6 @@ import (
 )
 
 func TestGithubutils(t *testing.T) {
-	// TODO (sam-h)
-	return
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Githubutils Suite")
 }
