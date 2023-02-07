@@ -21,8 +21,8 @@ help: ## Output the self-documenting make targets
 # Repo setup
 #----------------------------------------------------------------------------------
 ROOT_DIR := $(shell pwd)
-DEPSGOBIN:= $(ROOT_DIR)/.bin
-OUTPUT_DIR := $(ROOT_DIR)/._output
+OUTPUT_DIR := $(ROOT_DIR)/_output
+DEPSGOBIN:= $(OUTPUT_DIR)/.bin
 
 export PATH:=$(DEPSGOBIN):$(PATH)
 export GOBIN:=$(DEPSGOBIN)
@@ -46,7 +46,7 @@ format-code: install-go-tools
 
 .PHONY: clean
 clean: ## Clean any local assets
-	rm -rf _output
+	rm -rf $(OUTPUT_DIR)
 	find * -type f -name '*.test' -exec rm {} \;
 
 #----------------------------------------------------------------------------------
@@ -71,10 +71,10 @@ install-test-tools:
 .PHONY: test
 test: install-test-tools ## Run tests in the {TEST_PKG}
 	$(GINKGO_ENV) ginkgo \
-		$(GINKGO_FLAGS) $(GINKGO_REPORT_FLAGS) $(GINKGO_USER_FLAGS) \
-		$(TEST_PKG)
+	$(GINKGO_FLAGS) $(GINKGO_REPORT_FLAGS) $(GINKGO_USER_FLAGS) \
+	$(TEST_PKG)
 
 .PHONY: test-with-coverage
 test-with-coverage: GINKGO_FLAGS += $(GINKGO_COVERAGE_FLAGS) ## Run tests in the {TEST_PKG} with coverage
 test-with-coverage: test
-	go tool cover -html coverage.cov
+	go tool cover -html $(OUTPUT_DIR)/coverage.cov
