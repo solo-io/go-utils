@@ -39,10 +39,6 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go
-    - uses: azure/setup-kubectl@v1
-      with:
-        version: 'v1.24.7'
-    - uses: engineerd/setup-kind@v0.5.0
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
