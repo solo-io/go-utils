@@ -23,7 +23,7 @@ jobs:
       uses: google-github-actions/auth@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account: ${{ secrets.GCP_SA_KEY }}
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
         create_credentials_file: true
         export_environment_variables: true
     - name: Setup GCloud SDK
