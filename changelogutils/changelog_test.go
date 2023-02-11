@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var _ = FDescribe("ChangelogTest", func() {
+var _ = Describe("ChangelogTest", func() {
 
 	var _ = Context("GetProposedTag", func() {
 		getProposedTag := func(latestTag, changelogDir, tag string) error {
