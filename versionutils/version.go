@@ -133,10 +133,10 @@ func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 	if v.Label == lesser.Label {
 		if v.LabelVersion > lesser.LabelVersion {
 			return true, true
-		} else if v.LabelVersion < lesser.LabelVersion {
-			return false, true
 		}
-		return false, false
+		// is determinabley not greater than
+		return false, true
+
 	}
 
 	// impose additional ordering based on our special labels
