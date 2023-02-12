@@ -141,10 +141,12 @@ func (v Version) IsGreaterThan(lesser Version) (bool, bool) {
 
 	// impose additional ordering based on our special labels
 	for _, label := range SpeciallyOrderedPrefixes {
-		if strings.HasPrefix(v.Label, label) {
+
+		if v.Label == label {
+			// we know that they arent the same so we can return immediately
 			return true, true
 		}
-		if strings.HasPrefix(lesser.Label, label) {
+		if lesser.Label == label {
 			return false, true
 		}
 	}
