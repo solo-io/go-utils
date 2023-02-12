@@ -21,6 +21,7 @@ const (
 // SpeciallyOrderedPrefixes are prefixes that are ordered in a special way
 // This is exported so that consuming packages can specify their own special labels
 // These formats take precedence over alphanumeric ordering for labels
+// Labels take are ordered in increasing order of precedence
 var SpeciallyOrderedPrefixes = []string{"rc", "beta", "dev"}
 
 var (
