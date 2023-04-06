@@ -9,13 +9,13 @@ on:
 jobs:
   test:
     name: Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.4.0
+      uses: styfle/cancel-workflow-action@0.11.0
       with:
         access_token: ${{ github.token }}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - uses: google-github-actions/setup-gcloud@v0.2.1
@@ -29,19 +29,22 @@ jobs:
         wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.deb
         sudo dpkg -i trivy_0.18.3_Linux-64bit.deb
     - name: Set up Go 1.18.1
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v3
       with:
         go-version: 1.18.1
-    - uses: actions/cache@v1
+    - uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go
-    - uses: azure/setup-kubectl@v1
+    - uses: azure/setup-kubectl@v3
       with:
         version: 'v1.18.0'
-    - uses: engineerd/setup-kind@v0.5.0
+    - name: Install kind
+      uses: helm/kind-action@v1.5.0
+      with:
+        install_only: true
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
