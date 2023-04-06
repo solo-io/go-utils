@@ -3,7 +3,7 @@ package hashutils
 import (
 	"github.com/golang/mock/gomock"
 	"github.com/mitchellh/hashstructure"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rotisserie/eris"
 	mock_hashutils "github.com/solo-io/go-utils/hashutils/mocks"

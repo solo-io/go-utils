@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/go-github/v32/github"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"

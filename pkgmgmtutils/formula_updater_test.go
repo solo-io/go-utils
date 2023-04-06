@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types"
 	mock_formula_updater_types "github.com/solo-io/go-utils/pkgmgmtutils/formula_updater_types/mocks"

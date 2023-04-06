@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - 'master'
+    - 'main'
   pull_request:
 
 jobs:
@@ -18,12 +19,17 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - uses: google-github-actions/setup-gcloud@v0.2.1
+    - name: Setup GCloud Auth
+      uses: google-github-actions/auth@v1
       with:
-        version: '290.0.1'
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        create_credentials_file: true
+        export_environment_variables: true
+    - name: Setup GCloud SDK
+      uses: google-github-actions/setup-gcloud@v1.1.0
+      with:
+        version: '>= 386.0.0'
     - name: Install Trivy
       run: |
         wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.deb
@@ -38,19 +44,11 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go
-    - uses: azure/setup-kubectl@v3
-      with:
-        version: 'v1.18.0'
-    - name: Install kind
-      uses: helm/kind-action@v1.5.0
-      with:
-        install_only: true
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
-      run: |
-        go install -v github.com/onsi/ginkgo/ginkgo@v1.16.5 && export PATH=$PATH:$(go env GOPATH)/bin/
-        ginkgo -r -failFast -randomizeSuites -randomizeAllSpecs -skipPackage=./installutils/kubeinstall,./debugutils/test
+        TEST_PKG: ./... # Run all tests
+      run: make test
     - uses: testspace-com/setup-testspace@v1
       with:
         domain: solo-io.testspace.com

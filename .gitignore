@@ -12,3 +12,11 @@ vendor
 
 # junit
 junit.xml
+
+_output
+
+test-report.json
+junit*.xml
+*cov
+
+*.test

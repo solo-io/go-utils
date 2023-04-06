@@ -1,0 +1,6 @@
+changelog:
+  - type: BREAKING_CHANGE
+    issueLink: https://github.com/solo-io/gloo/issues/7222
+    resolvesIssue: false
+    description: >
+      Upgrade Ginkgo from v1 to v2, using https://onsi.github.io/ginkgo/MIGRATING_TO_V2 as a helpful guide.

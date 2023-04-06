@@ -8,6 +8,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/onsi/ginkgo/v2"
+	"github.com/pkg/errors"
 )
 
 func RunCommand(workingDir string, verbose bool, args ...string) error {
