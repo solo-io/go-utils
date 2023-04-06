@@ -2,9 +2,13 @@ package exec
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/onsi/ginkgo"
+	"github.com/pkg/errors"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/pkg/errors"
@@ -25,7 +29,10 @@ func RunCommandInput(input, workingDir string, verbose bool, args ...string) err
 }
 
 func RunCommandInputOutput(input, workingDir string, verbose bool, args ...string) (string, error) {
-	cmd := exec.Command(args[0], args[1:]...)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	cmd.Dir = workingDir
 	cmd.Env = os.Environ()
 	if len(input) > 0 {
