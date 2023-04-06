@@ -1,0 +1,4 @@
+- type: NON_USER_FACING
+  issueLink: https://github.com/solo-io/solo-projects/issues/4708
+  resolvesIssue: false
+  description: Removed actions/cache as this is made redundant by actions/setup-go@v4.

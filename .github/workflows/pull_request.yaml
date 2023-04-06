@@ -35,15 +35,9 @@ jobs:
         wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.deb
         sudo dpkg -i trivy_0.18.3_Linux-64bit.deb
     - name: Set up Go 1.18.1
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
         go-version: 1.18.1
-    - uses: actions/cache@v3
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
