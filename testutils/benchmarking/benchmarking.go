@@ -90,8 +90,11 @@ func TimeForFuncToComplete(f func()) float64 {
 	realRuntime := realDuration2 - realDuration1
 	fmt.Printf("realUserRuntime: %v\n", realRuntime)
 
-	fmt.Printf("utime: %f\n", userRuntime.Seconds())
-	Expect(userRuntime.Seconds()).Should(
+	fmt.Printf("utime:         %f\n", userRuntime.Seconds())
+	fmt.Printf("utime + stime: %f\n", realRuntime.Seconds())
+	Expect(realRuntime.Seconds()).Should(
 		BeNumerically(">", 0))
+
+	// TODO(marco): let's leave it as is so I don't need to adjust the thresholds for now
 	return userRuntime.Seconds()
 }
