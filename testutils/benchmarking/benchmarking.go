@@ -61,9 +61,24 @@ func TimeForFuncToComplete(f func()) float64 {
 	}
 	debug.SetGCPercent(prevGc)
 	runtime.UnlockOSThread()
+
+	fmt.Printf("rusage1: %v\n", rusage1)
+	fmt.Printf("rusage2: %v\n", rusage2)
+
 	duration1 := time.Duration(rusage1.Utime.Nano())
 	duration2 := time.Duration(rusage2.Utime.Nano())
+
+	fmt.Printf("duration1: %v\n", duration1)
+	fmt.Printf("duration2: %v\n", duration2)
+	fmt.Printf("duration1.nano: %v\n", duration1.Nanoseconds())
+	fmt.Printf("duration2.nano: %v\n", duration2.Nanoseconds())
+
 	userRuntime := duration2 - duration1
+
+	fmt.Printf("userRuntime: %v\n", userRuntime)
+	fmt.Printf("userRuntime.Seconds: %v\n", userRuntime.Seconds())
+	fmt.Printf("userRuntime.Nanos: %v\n", userRuntime.Nanoseconds())
+
 	fmt.Printf("utime: %f\n", userRuntime.Seconds())
 	Expect(userRuntime.Seconds()).Should(
 		BeNumerically(">", 0))
