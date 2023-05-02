@@ -68,16 +68,27 @@ func TimeForFuncToComplete(f func()) float64 {
 	duration1 := time.Duration(rusage1.Utime.Nano())
 	duration2 := time.Duration(rusage2.Utime.Nano())
 
-	fmt.Printf("duration1: %v\n", duration1)
-	fmt.Printf("duration2: %v\n", duration2)
-	fmt.Printf("duration1.nano: %v\n", duration1.Nanoseconds())
-	fmt.Printf("duration2.nano: %v\n", duration2.Nanoseconds())
+	fmt.Printf("utime1: %v\n", duration1)
+	fmt.Printf("utime2: %v\n", duration2)
+	fmt.Printf("utime1.nano: %v\n", duration1.Nanoseconds())
+	fmt.Printf("utime2.nano: %v\n", duration2.Nanoseconds())
+
+	stime1 := time.Duration(rusage1.Stime.Nano())
+	stime2 := time.Duration(rusage2.Stime.Nano())
+	fmt.Printf("stime1: %v\n", stime1)
+	fmt.Printf("stime2: %v\n", stime2)
+	fmt.Printf("stime1.nano: %v\n", stime1.Nanoseconds())
+	fmt.Printf("stime2.nano: %v\n", stime2.Nanoseconds())
 
 	userRuntime := duration2 - duration1
-
 	fmt.Printf("userRuntime: %v\n", userRuntime)
 	fmt.Printf("userRuntime.Seconds: %v\n", userRuntime.Seconds())
 	fmt.Printf("userRuntime.Nanos: %v\n", userRuntime.Nanoseconds())
+
+	realDuration1 := duration1 + stime1
+	realDuration2 := duration2 + stime2
+	realRuntime := realDuration2 - realDuration1
+	fmt.Printf("realUserRuntime: %v\n", realRuntime)
 
 	fmt.Printf("utime: %f\n", userRuntime.Seconds())
 	Expect(userRuntime.Seconds()).Should(
