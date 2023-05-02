@@ -87,7 +87,7 @@ type Result struct {
 }
 
 // Measure returns the time it took to execute the given function. It only compiles on Linux.
-// Most often you will want  to run the code you want to test in a loop to get more sizeable readings, e.g.:
+// Most often you will want to run the code you want to test in a loop to get more sizeable readings, e.g.:
 //
 //	results := benchmarking.Measure(func() {
 //		for i := 0; i < 100; i++ {
