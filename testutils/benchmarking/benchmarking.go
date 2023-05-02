@@ -2,11 +2,12 @@ package benchmarking
 
 import (
 	"fmt"
-	errors "github.com/rotisserie/eris"
 	"runtime"
 	"runtime/debug"
 	"syscall"
 	"time"
+
+	errors "github.com/rotisserie/eris"
 
 	. "github.com/onsi/gomega"
 )
@@ -21,7 +22,35 @@ import (
 //     has helped improve reliability of benchmarks
 //   - we could still explore running tests with nice and/or ionice
 //   - could also further explore running the tests with docker flags --cpu-shares set
+//
+// Deprecated: use Measure instead.
+func ExpectFuncToComplete(f func(), runtimeThresholdInSeconds float64) {
+	var rusage1 syscall.Rusage
+	var rusage2 syscall.Rusage
+	runtime.LockOSThread()                                    // important to lock OS thread to ensure we are the only goroutine being benchmarked
+	prevGc := debug.SetGCPercent(-1)                          // might just be paranoid, but disable gc while benchmarking
+	err := syscall.Getrusage(syscall.RUSAGE_THREAD, &rusage1) // RUSAGE_THREAD system call only works/compiles on linux
+	if err != nil {
+		Expect(err).ToNot(HaveOccurred())
+	}
+	f()
+	err = syscall.Getrusage(syscall.RUSAGE_THREAD, &rusage2)
+	if err != nil {
+		Expect(err).ToNot(HaveOccurred())
+	}
+	debug.SetGCPercent(prevGc)
+	runtime.UnlockOSThread()
+	duration1 := time.Duration(rusage1.Utime.Nano())
+	duration2 := time.Duration(rusage2.Utime.Nano())
+	userRuntime := duration2 - duration1
+	fmt.Printf("utime: %f\n", userRuntime.Seconds())
+	Expect(userRuntime.Seconds()).Should(And(
+		BeNumerically("<=", runtimeThresholdInSeconds),
+		BeNumerically(">", 0)))
+}
 
+// TimeForFuncToComplete returns the time the given function spend executing in user mode.
+// Deprecated: use Measure instead.
 func TimeForFuncToComplete(f func()) float64 {
 	var rusage1 syscall.Rusage
 	var rusage2 syscall.Rusage
