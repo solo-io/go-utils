@@ -91,7 +91,7 @@ type Result struct {
 //
 //	results := benchmarking.Measure(func() {
 //		for i := 0; i < 100; i++ {
-//			myFastTestFunc()
+//			funcToTest()
 //		}
 //	})
 //
