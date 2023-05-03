@@ -101,6 +101,7 @@ type Result struct {
 // Further ideas for improvement:
 //   - we could explore running tests with nice and/or ionice
 //   - could also further explore running the tests with docker flags --cpu-shares set
+//   - consider setting GOMAXPROCS when running the tests to ensure we run in a single thread
 func Measure(f func()) (Result, error) {
 
 	before, after, err := doMeasure(f)
