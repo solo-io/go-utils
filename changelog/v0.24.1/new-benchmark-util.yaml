@@ -1,0 +1,8 @@
+changelog:
+- type: FIX
+  issueLink: https://github.com/solo-io/go-utils/issues/511
+  description: >
+    Added the `Measure` function to the `benchmarking` test utility package. 
+    The new function measures the portion of time a given test function spent in user mode, 
+    in kernel mode, and on both of them combined. The other functions in the same package have been deprecated
+    and will be removed when other repositories will stop depending on them.
