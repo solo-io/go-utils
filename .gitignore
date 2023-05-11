@@ -20,3 +20,6 @@ junit*.xml
 *cov
 
 *.test
+
+# ignore intermediate files that gomock sometimes generates
+**/gomock_reflect*
