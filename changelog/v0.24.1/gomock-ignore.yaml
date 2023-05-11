@@ -1,0 +1,6 @@
+changelog:
+- type: NON_USER_FACING
+  description: >
+    Add intermediate files that gomock sometimes generates to .gitignore
+  issueLink: https://github.com/solo-io/solo-projects/issues/4810
+  resolvesIssue: false
