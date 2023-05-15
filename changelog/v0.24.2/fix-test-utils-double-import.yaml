@@ -1,0 +1,6 @@
+changelog:
+  - type: FIX
+    description: >
+      Fix issue where testutils was importing two different versions of the `ginkgo` and `errors` packages.
+    issueLink: https://github.com/solo-io/gloo/issues/8164
+    resolvesIssue: false
