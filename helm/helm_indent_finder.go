@@ -1,6 +1,7 @@
 package helm
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -97,11 +98,16 @@ func (s *Spaces) ContainsOnlySpaces() bool {
 	return true
 }
 
+type PreviousInfo struct {
+	NumOfSpaces    int
+	BeganWithArray bool
+}
+
 func FindHelmChartWhiteSpaces(data string) [][]string {
 	lines := strings.Split(string(data), "\n")
 	// we want to count each line, if the number of spaces at the begining is equal to 0, +2, or -2 from the previous line
 	// then we want to continue to the next line. Else we want to throw an error.
-	previousNumOfSpaces := 0
+	previous := PreviousInfo{NumOfSpaces: 0, BeganWithArray: false}
 	badWindows := [][]string{}
 	specialBreak := false
 	for currentIndex, line := range lines {
@@ -109,26 +115,32 @@ func FindHelmChartWhiteSpaces(data string) [][]string {
 		if s.StartsWithComment() {
 			continue
 		}
-		// impact of this change, went from  20178 --> 10266 changes
+
+		// if the line is empty we do not care about it
 		if s.IsEmptyLine() {
 			continue
 		}
 		shouldContinue := false
 		currentNumOfSpaces := s.GetNumberOfSpacesAtBeginning()
 		beginsWithArray := s.BeginsWithArray()
+		if beginsWithArray {
+			fmt.Println("here")
+		}
 		// next level is the next accpetable number of spaces
-		nextLevel := previousNumOfSpaces + 2
-		isCurrentLevel := previousNumOfSpaces == currentNumOfSpaces
+		nextLevel := previous.NumOfSpaces + 2
+		twoLevels := previous.NumOfSpaces + 4
+		isCurrentLevel := previous.NumOfSpaces == currentNumOfSpaces
+		isTwoLevelsAway := currentNumOfSpaces == twoLevels
 		isNextLevel := currentNumOfSpaces == nextLevel
-		isSmallerLevel := currentNumOfSpaces < previousNumOfSpaces
+		isSmallerLevel := currentNumOfSpaces < previous.NumOfSpaces
 
 		// adding the barDash logic went from 10266 --> 546
 		if isSmallerLevel && specialBreak {
 			// we are now exiting the barDash
 			specialBreak = false
 		} else if specialBreak {
-			// if we are in a barDash, just continue regardless,
-			// until we exit the barDash
+			// if we are in a specialBreak, just continue regardless,
+			// until we exit the specialBreak
 			continue
 		}
 		// // this means an empty line has occured, and it contains only spaces, so move on to the next line
@@ -136,26 +148,23 @@ func FindHelmChartWhiteSpaces(data string) [][]string {
 			continue
 		}
 		// always set the previous number of spaces, regardless
-		// this made the errors go from 546 --> 189
 		if beginsWithArray && (isCurrentLevel || isSmallerLevel) {
 			// add 2 to current level because the array can be on current level or next level
 			// if on current level, the next line should be on the next level
-			previousNumOfSpaces = currentNumOfSpaces + 2
+			previous = PreviousInfo{NumOfSpaces: currentNumOfSpaces + 2, BeganWithArray: beginsWithArray}
 		} else {
-			previousNumOfSpaces = currentNumOfSpaces
+			previous = PreviousInfo{NumOfSpaces: currentNumOfSpaces, BeganWithArray: beginsWithArray}
 		}
 
 		if isCurrentLevel || isNextLevel || isSmallerLevel {
 			shouldContinue = true
 			// if the current is less than previous, we are moving out of an object or array
 			// if it is an empty line we need to ignore it, nothing happens
+		} else if previous.BeganWithArray && isTwoLevelsAway {
+			shouldContinue = true
 		} else {
 			windowLines := Window(lines, currentIndex, 6)
 			badWindows = append(badWindows, windowLines)
-			// for _, l := range windowLines {
-			// 	fmt.Println(l)
-			// }
-			// panic(line)
 		}
 		// just record that there is a bar dash
 		if s.HasSpecialBreak() {
