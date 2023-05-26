@@ -109,9 +109,11 @@ type PreviousInfo struct {
 }
 
 type HelmDetectOptions struct {
+	// DetectWhiteSpacesInEmptyLines is used to detect white spaces in empty lines
 	DetectWhiteSpacesInEmptyLines bool
 }
 
+// returns the windows of the helm chart that contain white spacing and formatting issues.
 func FindHelmChartWhiteSpaces(data string, opts HelmDetectOptions) [][]string {
 	lines := strings.Split(string(data), "\n")
 	// we want to count each line, if the number of spaces at the begining is equal to 0, +2, or -2 from the previous line

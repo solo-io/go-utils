@@ -2,7 +2,6 @@ package helm_test
 
 import (
 	"fmt"
-	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,9 +24,29 @@ spec:
 			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
+		It("should pass with a comment line", func() {
+			data := `
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+              # app: gloo
+    gloo: rate-limit
+spec:
+`
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			Expect(len(badWindows)).To(Equal(0))
+		})
 		It("should not detect empty lines", func() {
 			data := `
 
+`
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			Expect(len(badWindows)).To(Equal(0))
+		})
+		It("should not detect empty lines with spaces", func() {
+			data := `
+        
 `
 			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
@@ -151,7 +170,9 @@ metadata:
 			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(1))
 		})
-		It("should find that the array is off by one", func() {
+		It("should find that the array is off by 4 spaces", func() {
+			// note the - "" is off by 4 spaces, this is acceptable
+			// this is whithin the array formatting specs. Same line, 2 spaces, or 4 spaces.
 			data := `
 resource:
   release: gloo-ee-test
@@ -219,19 +240,5 @@ resources:
 			Entry("should accept >", ">"),
 			Entry("should accept >-", ">+"),
 			Entry("should accept >+", ">-"))
-	})
-	It("should run the chat", func() {
-		data, err := os.ReadFile("chart.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		badWindows := helm.FindHelmChartWhiteSpaces(string(data), opts)
-		for _, w := range badWindows {
-			for _, l := range w {
-				fmt.Println(l)
-			}
-			fmt.Println("------------------------------------------------------------------------")
-			fmt.Println("------------------------------------------------------------------------")
-			fmt.Println("------------------------------------------------------------------------")
-		}
-		fmt.Println(fmt.Sprintf("%d number of bad windows", len(badWindows)))
 	})
 })
