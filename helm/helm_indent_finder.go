@@ -1,7 +1,6 @@
 package helm
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -84,8 +83,14 @@ func (s *Spaces) IsEmptyLine() bool {
 
 // if the last section contians a bar dash (|-)
 func (s *Spaces) HasSpecialBreak() bool {
+	specialBreaks := []string{"|", "|-", "|+", ">", ">+", ">-"}
 	chars := s.spaces[len(s.spaces)-1]
-	return chars == "|-" || chars == ">-" || chars == "|"
+	for _, specialBreak := range specialBreaks {
+		if chars == specialBreak {
+			return true
+		}
+	}
+	return false
 }
 
 // returns true if the line only contains spaces
@@ -103,7 +108,11 @@ type PreviousInfo struct {
 	BeganWithArray bool
 }
 
-func FindHelmChartWhiteSpaces(data string) [][]string {
+type HelmDetectOptions struct {
+	DetectWhiteSpacesInEmptyLines bool
+}
+
+func FindHelmChartWhiteSpaces(data string, opts HelmDetectOptions) [][]string {
 	lines := strings.Split(string(data), "\n")
 	// we want to count each line, if the number of spaces at the begining is equal to 0, +2, or -2 from the previous line
 	// then we want to continue to the next line. Else we want to throw an error.
@@ -112,20 +121,23 @@ func FindHelmChartWhiteSpaces(data string) [][]string {
 	specialBreak := false
 	for currentIndex, line := range lines {
 		s := NewSpaces(line)
-		if s.StartsWithComment() {
+		startsWithComment := s.StartsWithComment()
+		if startsWithComment {
 			continue
 		}
-
+		isEmptyLine := s.IsEmptyLine()
 		// if the line is empty we do not care about it
-		if s.IsEmptyLine() {
+		if isEmptyLine {
+			continue
+		}
+		containsOnlySpaces := s.ContainsOnlySpaces()
+		// if we do not detect white spaces continue
+		if !opts.DetectWhiteSpacesInEmptyLines && containsOnlySpaces {
 			continue
 		}
 		shouldContinue := false
 		currentNumOfSpaces := s.GetNumberOfSpacesAtBeginning()
 		beginsWithArray := s.BeginsWithArray()
-		if beginsWithArray {
-			fmt.Println("here")
-		}
 		// next level is the next accpetable number of spaces
 		nextLevel := previous.NumOfSpaces + 2
 		twoLevels := previous.NumOfSpaces + 4
@@ -134,7 +146,6 @@ func FindHelmChartWhiteSpaces(data string) [][]string {
 		isNextLevel := currentNumOfSpaces == nextLevel
 		isSmallerLevel := currentNumOfSpaces < previous.NumOfSpaces
 
-		// adding the barDash logic went from 10266 --> 546
 		if isSmallerLevel && specialBreak {
 			// we are now exiting the barDash
 			specialBreak = false
@@ -144,9 +155,18 @@ func FindHelmChartWhiteSpaces(data string) [][]string {
 			continue
 		}
 		// // this means an empty line has occured, and it contains only spaces, so move on to the next line
-		if (isCurrentLevel || isNextLevel) && s.ContainsOnlySpaces() {
+		if (isCurrentLevel || isNextLevel) && containsOnlySpaces {
 			continue
 		}
+
+		if isCurrentLevel || isNextLevel || isSmallerLevel {
+			shouldContinue = true
+			// if the current is less than previous, we are moving out of an object or array
+			// if it is an empty line we need to ignore it, nothing happens
+		} else if previous.BeganWithArray && isTwoLevelsAway {
+			shouldContinue = true
+		}
+
 		// always set the previous number of spaces, regardless
 		if beginsWithArray && (isCurrentLevel || isSmallerLevel) {
 			// add 2 to current level because the array can be on current level or next level
@@ -156,22 +176,15 @@ func FindHelmChartWhiteSpaces(data string) [][]string {
 			previous = PreviousInfo{NumOfSpaces: currentNumOfSpaces, BeganWithArray: beginsWithArray}
 		}
 
-		if isCurrentLevel || isNextLevel || isSmallerLevel {
-			shouldContinue = true
-			// if the current is less than previous, we are moving out of an object or array
-			// if it is an empty line we need to ignore it, nothing happens
-		} else if previous.BeganWithArray && isTwoLevelsAway {
-			shouldContinue = true
-		} else {
-			windowLines := Window(lines, currentIndex, 6)
-			badWindows = append(badWindows, windowLines)
-		}
 		// just record that there is a bar dash
 		if s.HasSpecialBreak() {
 			specialBreak = true
 		}
 		if shouldContinue {
 			continue
+		} else {
+			windowLines := Window(lines, currentIndex, 6)
+			badWindows = append(badWindows, windowLines)
 		}
 	}
 	return badWindows

@@ -10,6 +10,7 @@ import (
 )
 
 var _ = Describe("helm indent finder", func() {
+	var opts helm.HelmDetectOptions
 	Context("should pass on the following", func() {
 		It("should not detect fine yaml", func() {
 			data := `
@@ -21,14 +22,14 @@ metadata:
     gloo: rate-limit
 spec:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should not detect empty lines", func() {
 			data := `
 
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 	})
@@ -46,7 +47,7 @@ metadata:
   namespace: default
 spec:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(2))
 		})
 		It("should detect white space at the end of an line", func() {
@@ -59,18 +60,20 @@ metadata:
     gloo: rate-limit
 spec:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should detect empty lines with spaces", func() {
+			opts := helm.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
 			data := `
  
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(1))
 		})
 
 		It("should detect a single white space in the yaml", func() {
+			opts := helm.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
 			// the line after the comment has 1 space in it
 			data := `
 roleRef:
@@ -86,10 +89,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(1))
 		})
 		It("should detect a single white spaces in the yaml", func() {
+			opts := helm.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
 			data := `
       
       
@@ -104,7 +108,7 @@ kind: Service
 metadata:
   labels:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(2))
 		})
 	})
@@ -125,7 +129,7 @@ metadata:
   verbs:
     - '*'
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should find that the array is off by one", func() {
@@ -144,7 +148,7 @@ metadata:
   verbs:
     - '*'
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(1))
 		})
 		It("should find that the array is off by one", func() {
@@ -163,14 +167,63 @@ rules:
       - nodes/metrics
       - services
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
+		It("should accept arrays", func() {
+			data := `
+resources:
+  something:
+    there:
+      should:
+        be:
+          envFrom:
+            - configMapRef:
+                name: gloo-ee-test-observability-config
+            - secretRef:
+                name: gloo-ee-test-observability-secrets
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10101
+`
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			Expect(len(badWindows)).To(Equal(0))
+		})
+	})
+
+	Describe("special breaks", func() {
+		DescribeTable("should accept special breaks", func(specialBreak string) {
+			data := fmt.Sprintf(`
+resources:
+  envoy.json: %s
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+`, specialBreak)
+			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			Expect(len(badWindows)).To(Equal(0))
+		}, Entry("should accept |-", "|-"),
+			Entry("should accept |", "|"),
+			Entry("should accept |+", "|+"),
+			Entry("should accept >", ">"),
+			Entry("should accept >-", ">+"),
+			Entry("should accept >+", ">-"))
 	})
 	It("should run the chat", func() {
 		data, err := os.ReadFile("chart.yaml")
 		Expect(err).NotTo(HaveOccurred())
-		badWindows := helm.FindHelmChartWhiteSpaces(string(data))
+		badWindows := helm.FindHelmChartWhiteSpaces(string(data), opts)
 		for _, w := range badWindows {
 			for _, l := range w {
 				fmt.Println(l)
