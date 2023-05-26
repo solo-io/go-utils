@@ -71,14 +71,7 @@ func (s *Spaces) StartsWithComment() bool {
 }
 
 func (s *Spaces) IsEmptyLine() bool {
-	if len(s.spaces) == 0 {
-		return true
-	}
-	// only if there is a single entry and it is empty
-	// also this could be a empty line with a single space in it,
-	// the building of the helm chart will look for that, So it should not be a concern for us.
-	// we will not be able to build a helm chart if there is a single/multiple spaces in a line only
-	return s.spaces[0] == "" && len(s.spaces) == 1
+	return s.line == ""
 }
 
 // if the last section contians a bar dash (|-)
