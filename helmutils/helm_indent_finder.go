@@ -5,7 +5,7 @@ import (
 )
 
 /*
-	FindHelmChartWhiteSpaces is used to find unuasual spaces in helm charts, that could cause issues.
+	FindHelmChartWhiteSpaces is used to find unusual spaces in helm charts, that could cause issues.
 	For example, if a line is indented by 2 spaces, and the next line is indented by 6 spaces, this could cause issues.
 	The line would need to be indented by 4 spaces instead.
 
