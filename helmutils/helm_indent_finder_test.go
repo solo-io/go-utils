@@ -1,15 +1,15 @@
-package helm_test
+package helmutils_test
 
 import (
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/solo-io/go-utils/helm"
+	"github.com/solo-io/go-utils/helmutils"
 )
 
-var _ = Describe("helm indent finder", func() {
-	var opts helm.HelmDetectOptions
+var _ = Describe("helmutils indent finder", func() {
+	var opts helmutils.HelmDetectOptions
 	Context("should pass on the following", func() {
 		It("should not detect fine yaml", func() {
 			data := `
@@ -21,7 +21,7 @@ metadata:
     gloo: rate-limit
 spec:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should pass with a comment line", func() {
@@ -34,26 +34,26 @@ metadata:
     gloo: rate-limit
 spec:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should not detect empty lines", func() {
 			data := `
 
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should not detect empty lines with spaces", func() {
 			data := `
         
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 	})
 
-	Describe("dealing with white spaces in helm", func() {
+	Describe("dealing with white spaces in helmutils", func() {
 		It("should be able to detect 4 spaces, when it should be 2", func() {
 			data := `
 apiVersion: v1
@@ -66,7 +66,7 @@ metadata:
   namespace: default
 spec:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(2))
 		})
 		It("should detect white space at the end of an line", func() {
@@ -79,20 +79,20 @@ metadata:
     gloo: rate-limit
 spec:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should detect empty lines with spaces", func() {
-			opts := helm.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
+			opts := helmutils.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
 			data := `
  
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(1))
 		})
 
 		It("should detect a single white space in the yaml", func() {
-			opts := helm.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
+			opts := helmutils.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
 			// the line after the comment has 1 space in it
 			data := `
 roleRef:
@@ -108,11 +108,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(1))
 		})
 		It("should detect a single white spaces in the yaml", func() {
-			opts := helm.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
+			opts := helmutils.HelmDetectOptions{DetectWhiteSpacesInEmptyLines: true}
 			data := `
       
       
@@ -127,12 +127,12 @@ kind: Service
 metadata:
   labels:
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(2))
 		})
 	})
 
-	Describe("dealing with arrays in helm", func() {
+	Describe("dealing with arrays in helmutils", func() {
 		It("should be ok with array in array", func() {
 			data := `
   resources:
@@ -148,7 +148,7 @@ metadata:
   verbs:
     - '*'
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should find that the array is off by one", func() {
@@ -167,7 +167,7 @@ metadata:
   verbs:
     - '*'
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(1))
 		})
 		It("should find that the array is off by 4 spaces", func() {
@@ -188,7 +188,7 @@ rules:
       - nodes/metrics
       - services
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 		It("should accept arrays", func() {
@@ -207,7 +207,7 @@ resources:
         runAsNonRoot: true
         runAsUser: 10101
 `
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		})
 	})
@@ -232,7 +232,7 @@ resources:
         ]
       },
 `, specialBreak)
-			badWindows := helm.FindHelmChartWhiteSpaces(data, opts)
+			badWindows := helmutils.FindHelmChartWhiteSpaces(data, opts)
 			Expect(len(badWindows)).To(Equal(0))
 		}, Entry("should accept |-", "|-"),
 			Entry("should accept |", "|"),

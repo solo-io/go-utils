@@ -1,5 +1,5 @@
 changelog:
-- type: NON_USER_FACING
+- type: NEW_FEATURE
   description: >
     Ability to scan Helm charts for issues related to formatting.
   issueLink: https://github.com/solo-io/gloo/issues/8268

@@ -1,4 +1,4 @@
-package helm_test
+package helmutils_test
 
 import (
 	"testing"
