@@ -1,0 +1,6 @@
+changelog:
+- type: NEW_FEATURE
+  description: >
+    Ability to scan Helm charts for issues related to formatting. Use the `helmutils.FindHelmChartWhiteSpaces()` with it's host of options, to use this functionality.
+  issueLink: https://github.com/solo-io/gloo/issues/8268
+  resolvesIssue: false
