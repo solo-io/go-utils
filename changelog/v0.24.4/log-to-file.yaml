@@ -1,6 +1,6 @@
 changelog:
 - type: NEW_FEATURE
   description: >
-    Ability to scan Helm charts for issues related to formatting. Use the `helmutils.FindHelmChartWhiteSpaces()` with it's host of options, to use this functionality.
-  issueLink: https://github.com/solo-io/gloo/issues/8268
+    Add ability to log to a file by setting the LOG_TO_FILE_LOCATION environment variable. This is needed to support AWS Fargate, which can not collect logs from STDOUT.
+  issueLink: https://github.com/solo-io/gloo/issues/7299
   resolvesIssue: false
