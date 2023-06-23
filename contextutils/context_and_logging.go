@@ -38,8 +38,8 @@ var (
 )
 
 const (
-	LogLevelEnvName   = "LOG_LEVEL"
-	LogToFileLocation = "LOG_TO_FILE_LOCATION"
+	LogLevelEnvName          = "LOG_LEVEL"
+	LogToFileLocationEnvName = "LOG_TO_FILE_LOCATION"
 )
 
 func buildProductionLogger() (*zap.Logger, error) {
@@ -48,8 +48,8 @@ func buildProductionLogger() (*zap.Logger, error) {
 
 	// For non-splt logging, allow the user/environment to specify a log file location.
 	// When we log to a file, we will not log it STDOUT.
-	if os.Getenv(LogToFileLocation) != "" {
-		config.OutputPaths = []string{os.Getenv(LogToFileLocation)}
+	if os.Getenv(LogToFileLocationEnvName) != "" {
+		config.OutputPaths = []string{os.Getenv(LogToFileLocationEnvName)}
 	}
 
 	level = zap.NewAtomicLevel()
