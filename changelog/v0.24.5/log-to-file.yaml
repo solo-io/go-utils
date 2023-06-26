@@ -1,6 +1,6 @@
 changelog:
 - type: NEW_FEATURE
   description: >
-    Add the ability to log to a file by setting the LOG_TO_FILE_LOCATION environment variable. This is needed to support AWS Fargate, which can not collect logs from STDOUT.
+    Add ability to log to a file by setting the LOG_TO_FILE_LOCATION environment variable. This is needed to support AWS Fargate, which can not collect logs from STDOUT.
   issueLink: https://github.com/solo-io/gloo/issues/7299
   resolvesIssue: false
