@@ -37,11 +37,21 @@ var (
 	level zap.AtomicLevel
 )
 
-const LogLevelEnvName = "LOG_LEVEL"
+const (
+	LogLevelEnvName          = "LOG_LEVEL"
+	LogToFileLocationEnvName = "LOG_TO_FILE_LOCATION"
+)
 
 func buildProductionLogger() (*zap.Logger, error) {
 	config := zap.NewProductionConfig()
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	// For non-splt logging, allow the user/environment to specify a log file location.
+	// When we log to a file, we will not log it STDOUT.
+	if os.Getenv(LogToFileLocationEnvName) != "" {
+		config.OutputPaths = []string{os.Getenv(LogToFileLocationEnvName)}
+	}
+
 	level = zap.NewAtomicLevel()
 	config.Level = level
 	return config.Build()
