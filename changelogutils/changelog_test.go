@@ -184,6 +184,15 @@ var _ = Describe("ChangelogTest", func() {
 				IssueLink:   issue,
 			}
 		}
+		getDependencyBumpEntry := func(description, owner, repo, tag string) *changelogutils.ChangelogEntry {
+			return &changelogutils.ChangelogEntry{
+				Type:            changelogutils.DEPENDENCY_BUMP,
+				Description:     description,
+				DependencyOwner: owner,
+				DependencyRepo:  repo,
+				DependencyTag:   tag,
+			}
+		}
 
 		BeforeEach(func() {
 			fs = afero.NewMemMapFs()
@@ -369,6 +378,106 @@ closing
 
 `
 			Expect(output).To(BeEquivalentTo(expected))
+		})
+
+		When("multiple changelog files bump the same dependency", func() {
+			It("can correctly render changelog with valid semver dependency bumps ", func() {
+				changelog := getChangelog("v0.0.1", "blah", "closing",
+					getChangelogFile(
+						getEntry(changelogutils.NEW_FEATURE, "adds baz", "baz"),
+						getDependencyBumpEntry("bumps foo/bar", "foo", "bar", "v1.0.0"),
+						getDependencyBumpEntry("bump owner/repo", "owner", "repo", "v0.6.0")),
+					getChangelogFile(
+						getEntry(changelogutils.NON_USER_FACING, "fixes foo3", "foo3"),
+						getDependencyBumpEntry("bumps foo/bar", "foo", "bar", "v1.0.1"),
+					),
+					getChangelogFile(
+						getDependencyBumpEntry("bump owner/repo", "owner", "repo", "v0.5.9"),
+						getDependencyBumpEntry("bump test/test", "test", "test", "v0.0.1"),
+						getDependencyBumpEntry("bumps foo/bar", "foo", "bar", "v1.0.0")),
+				)
+				output := changelogutils.GenerateChangelogMarkdown(changelog)
+				expected := `blah
+
+**Dependency Bumps**
+
+- foo/bar has been upgraded to v1.0.1.
+- owner/repo has been upgraded to v0.6.0.
+- test/test has been upgraded to v0.0.1.
+
+**New Features**
+
+- adds baz (baz)
+
+closing
+
+`
+				Expect(output).To(BeEquivalentTo(expected))
+			})
+
+			It("renders multiple bumps on same dependency if not using semantic versioning", func() {
+				changelog := getChangelog("v0.0.1", "blah", "closing",
+					getChangelogFile(
+						getDependencyBumpEntry("bumps foo/bar", "foo", "bar", "v1.0.0"),
+						// While 0.6.0 is "higher" than v"0.5.9", it is not a valid semver version, so it will still be rendered
+						getDependencyBumpEntry("bump owner/repo", "owner", "repo", "0.6.0")),
+					getChangelogFile(
+						getDependencyBumpEntry("bumps foo/bar", "foo", "bar", "1.0.1"),
+						getDependencyBumpEntry("bump owner/repo", "owner", "repo", "v0.5.0"),
+					),
+					getChangelogFile(
+						// Will not duplicate the non-semantic version bump, as it is already present in the changelog
+						getDependencyBumpEntry("bump owner/repo", "owner", "repo", "0.6.0"),
+						getDependencyBumpEntry("bump owner/repo", "owner", "repo", "v0.5.9")),
+				)
+				output := changelogutils.GenerateChangelogMarkdown(changelog)
+				expected := `blah
+
+**Dependency Bumps**
+
+- foo/bar has been upgraded to 1.0.1.
+- foo/bar has been upgraded to v1.0.0.
+- owner/repo has been upgraded to 0.6.0.
+- owner/repo has been upgraded to v0.5.9.
+
+closing
+
+`
+				Expect(output).To(BeEquivalentTo(expected))
+			})
+
+			// TODO: Add Entry that "v1.0.0-rc1" is newer than "v1.0.0-patch1"
+			// Due to how semver handles comparison, the postfixes are compared alphabetically, so "rc" is considered "newer" than "patch", which is not true.
+			DescribeTable("renders latest dependency bumps with version post-fixes", func(olderRelease, newerRelease string) {
+				changelog := getChangelog("v0.0.1", "blah", "closing",
+					getChangelogFile(
+						getDependencyBumpEntry("bumps foo/bar", "foo", "bar", olderRelease),
+					),
+					getChangelogFile(
+						getDependencyBumpEntry("bumps foo/bar", "foo", "bar", newerRelease),
+					),
+				)
+				output := changelogutils.GenerateChangelogMarkdown(changelog)
+				expected := fmt.Sprintf(`blah
+
+**Dependency Bumps**
+
+- foo/bar has been upgraded to %s.
+
+closing
+
+`, newerRelease)
+				Expect(output).To(BeEquivalentTo(expected))
+			},
+				Entry("renders latest `beta` bump", "v1.0.0-beta1", "v1.0.0-beta2"),
+				Entry("renders latest `rc` bump", "v1.0.0-rc1", "v1.0.0-rc10"),
+				// The following two entries are essentially the same, since semver compares the versioning first, the `-` tags second.
+				Entry("renders latest LTS release after release candidate", "v1.0.0-rc1", "v1.0.0"),
+				Entry("renders latest LTS release after beta", "v1.0.0-beta1", "v1.0.0"),
+				Entry("renders a beta that is greater than an LTS release", "v1.0.5", "v1.1.0-beta1"),
+				// Semver comparison renders everything after a valid semver alphabetically, so `v1.0.0-patch1` is considered "greater" than `v1.0.0-rc1`
+				Entry("renders a release candidate that is greater than an LTS release", "v1.0.0-beta1", "v1.0.0-patch1"),
+			)
 		})
 
 		It("can render changelog with only fixes and closing", func() {
