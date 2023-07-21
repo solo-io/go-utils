@@ -7,8 +7,16 @@ changelog:
   - type: DEPENDENCY_BUMP
     dependencyOwner: onsi
     dependencyRepo: ginkgo/v2
-    dependencyTag: v2.8.5
+    dependencyTag: v2.9.5
   - type: DEPENDENCY_BUMP
     dependencyOwner: onsi
     dependencyRepo: gomega
     dependencyTag: v1.27.7
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: go.uber.org
+    dependencyRepo: zap
+    dependencyTag: v1.24.0
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: sirupsen
+    dependencyRepo: logrus
+    dependencyTag: v1.9.0
