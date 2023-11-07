@@ -1,0 +1,11 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >
+      Normalizes and decodes map interfaces that can have (deeply nested) numbers of type json.Number
+      by setting those to either to int64 or float64.
+
+      Usually you don't need to normalize a map[string]interface{}, that you are decoding into a struct with mapstructure
+      Unless, you will use it with `structpb.NewValue()` which doesn't handle that type and throws an invalid type error.
+
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/12608
+    resolvesIssue: false
