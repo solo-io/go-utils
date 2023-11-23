@@ -21,7 +21,8 @@ type MinorReleaseGroupedChangelogGenerator struct {
 	opts   Options
 }
 
-/**
+/*
+*
 Groups releases by their minor version:
 v1.8
 - v1.8.2

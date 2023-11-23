@@ -53,7 +53,7 @@ clean: ## Clean any local assets
 # Tests
 #----------------------------------------------------------------------------------
 
-GINKGO_VERSION ?= 2.5.0 # match our go.mod
+GINKGO_VERSION ?= $(shell echo $(shell go list -m github.com/onsi/ginkgo/v2) | cut -d' ' -f2)
 GINKGO_ENV ?= GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore ACK_GINKGO_DEPRECATIONS=$(GINKGO_VERSION)
 GINKGO_FLAGS ?= -v -tags=purego -compilers=4 -fail-fast -race -randomize-suites -randomize-all -skip-package=./installutils/kubeinstall,./debugutils/test
 GINKGO_REPORT_FLAGS ?= --json-report=test-report.json --junit-report=junit.xml -output-dir=$(OUTPUT_DIR)
@@ -66,7 +66,7 @@ GINKGO_USER_FLAGS ?=
 
 .PHONY: install-test-tools
 install-test-tools:
-	go install github.com/onsi/ginkgo/v2/ginkgo@v$(GINKGO_VERSION)
+	go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
 .PHONY: test
 test: install-test-tools ## Run tests in the {TEST_PKG}

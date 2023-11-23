@@ -77,7 +77,7 @@ func (c *cliEncoder) clone() *cliEncoder {
 	return clone
 }
 
-//EncodeEntry implements the distinguishing features of this encoder type.
+// EncodeEntry implements the distinguishing features of this encoder type.
 func (c cliEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	final := c.clone()
 	for _, f := range fields {

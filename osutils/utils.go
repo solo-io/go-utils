@@ -11,8 +11,10 @@ var (
 	}
 )
 
-/**
-  Returns error if the environment variable is empty
+/*
+*
+
+	Returns error if the environment variable is empty
 */
 func GetEnvE(envVar string) (string, error) {
 	env := os.Getenv(envVar)

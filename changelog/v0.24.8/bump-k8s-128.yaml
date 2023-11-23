@@ -1,0 +1,22 @@
+changelog:
+- type: NON_USER_FACING
+  description: >
+    Bump dependencies to support Kubernetes 1.28
+  issueLink: https://github.com/solo-io/gloo/issues/8515
+  resolvesIssue: false
+- type: DEPENDENCY_BUMP
+  dependencyOwner: onsi
+  dependencyRepo: ginkgo/v2
+  dependencyTag: v2.11.0
+- type: DEPENDENCY_BUMP
+  dependencyOwner: onsi
+  dependencyRepo: gomega
+  dependencyTag: v1.27.10
+- type: DEPENDENCY_BUMP
+  dependencyOwner: sirupsen
+  dependencyRepo: logrus
+  dependencyTag: v1.9.3
+- type: DEPENDENCY_BUMP
+  dependencyOwner: go.uber.org
+  dependencyRepo: zap
+  dependencyTag: v1.25.0

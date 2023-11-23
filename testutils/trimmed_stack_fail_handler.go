@@ -9,7 +9,7 @@ import (
 	"runtime/debug"
 )
 
-//PrintTrimmedStack helps you find the line of the failing assertion without producing excessive noise.
+// PrintTrimmedStack helps you find the line of the failing assertion without producing excessive noise.
 // This is achieved by printing a stack trace and pruning lines associated with known overhead.
 // With this fail handler, you do not need to count stack offsets ExpectWithOffset(x, ...) and can just Expect(...)
 func PrintTrimmedStack() {
