@@ -20,3 +20,6 @@ changelog:
   dependencyOwner: go.uber.org
   dependencyRepo: zap
   dependencyTag: v1.25.0
+- type: NON_USER_FACING
+  description: >
+    Modify repo_client tests so that they do not hit the GH rate limit
