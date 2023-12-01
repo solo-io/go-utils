@@ -1,4 +1,9 @@
 changelog:
+- type: DEPENDENCY_BUMP
+  description: Bumped the go version for go.mod
+  dependencyOwner: golang
+  dependencyRepo: go
+  dependencyTag: v1.19
 - type: NON_USER_FACING
   description: >
     Bump dependencies to support Kubernetes 1.28
