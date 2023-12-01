@@ -66,10 +66,10 @@ func NewMergedReleaseGeneratorWithDepFn(opts Options, client *github.Client, dep
 }
 
 /*
- The merged release generator has 3 steps:
- 1. Fetches enterprise repo release notes
- 2. Gets open source dependency for each enterprise version
- 3. Merges open source release notes into enterprise version release notes
+The merged release generator has 3 steps:
+1. Fetches enterprise repo release notes
+2. Gets open source dependency for each enterprise version
+3. Merges open source release notes into enterprise version release notes
 */
 func (g *MergedReleaseGenerator) GenerateJSON(ctx context.Context) (string, error) {
 	var err error
@@ -209,9 +209,9 @@ func getPkgVersionFromGoMod(goMod, repoOwner, repo string) (*Version, error) {
 }
 
 /*
- Enterprise changelogs have the option to "merge" open source changelogs. The following function retrieves and returns
- the open source version that an enterprise version depends on. It checks out the enterprise go.mod at the release version
- and looks for the open source dependency ({RepoOwner}/{DependentRepo}).
+Enterprise changelogs have the option to "merge" open source changelogs. The following function retrieves and returns
+the open source version that an enterprise version depends on. It checks out the enterprise go.mod at the release version
+and looks for the open source dependency ({RepoOwner}/{DependentRepo}).
 */
 func (g *MergedReleaseGenerator) GetOpenSourceDependency(enterpriseVersion *Version) (*Version, error) {
 	files, err := githubutils.GetFilesFromGit(context.TODO(), g.client, g.opts.RepoOwner, g.opts.MainRepo, enterpriseVersion.String(), "go.mod")

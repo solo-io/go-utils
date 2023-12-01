@@ -45,13 +45,13 @@ type SafeHasher interface {
 }
 
 /*
-	hash one or more values
-	order matters
+hash one or more values
+order matters
 
-	This function returns the hashed result of all values passed into it.
-	Any objects passed into it which fulfill the SafeHasher interface will be hashed this was,
-	or using reflection if not. SafeHasher should be preferred. If no hasher is provided one will be provided.
-	If a hasher is passed in, the returned hash can be ignored in favor of the hasher.
+This function returns the hashed result of all values passed into it.
+Any objects passed into it which fulfill the SafeHasher interface will be hashed this was,
+or using reflection if not. SafeHasher should be preferred. If no hasher is provided one will be provided.
+If a hasher is passed in, the returned hash can be ignored in favor of the hasher.
 */
 func HashAllSafe(hasher hash.Hash64, values ...interface{}) (uint64, error) {
 	if hasher == nil {
@@ -78,10 +78,10 @@ func hashValueSafe(hasher hash.Hash64, val interface{}) error {
 }
 
 /*
-	This function takes in any number of resources and attempts to compare
-	them as safe hashers.
-	If any are not safe hashers it will return !ok. If they are all safe hashers,
-	it will compare the equality of all of them
+This function takes in any number of resources and attempts to compare
+them as safe hashers.
+If any are not safe hashers it will return !ok. If they are all safe hashers,
+it will compare the equality of all of them
 */
 func HashableEqual(val1 interface{}, val2 interface{}) (equal bool, ok bool) {
 	val1Hasher, ok1 := interface{}(val1).(interface {
@@ -99,9 +99,9 @@ func HashableEqual(val1 interface{}, val2 interface{}) (equal bool, ok bool) {
 }
 
 /*
-	This function will hash anything, and panic if it fails.
-	If the object is a `SafeHasher` than it will use the generated Hasher, otherwise
-	it will use the hashstructure library.
+This function will hash anything, and panic if it fails.
+If the object is a `SafeHasher` than it will use the generated Hasher, otherwise
+it will use the hashstructure library.
 */
 func MustHash(val interface{}) uint64 {
 	hasher, ok := interface{}(val).(interface {

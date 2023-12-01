@@ -136,24 +136,43 @@ var _ = Describe("repo client utils", func() {
 		Expect(err).To(BeNil())
 	})
 
-	It("can properly find the most recent tag before a sha", func() {
+	Context("Can properly find the most recent tag before an SHA", func() {
 		// This test is pretty slow, these are cumbersome calls but wanted to make sure it works, including paging when necessary
-		client = githubutils.NewRepoClient(githubClient, owner, "gloo")
-		tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "b38d03cfba74e228be02115801cacf2adc7a8a11")
-		Expect(err).To(BeNil())
-		Expect(tag).To(Equal("v0.20.10"))
-		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "bfa85ee40fce48bb448ec206356e8a723bc7fab1")
-		Expect(err).To(BeNil())
-		Expect(tag).To(Equal("v0.20.9"))
-		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "aecc817f3ebb782befdbd9ba2ea8cd0219118d1b")
-		Expect(err).To(BeNil())
-		Expect(tag).To(Equal("v1.0.0-rc1"))
-		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "5f9e50306b97d5b8a14c2baf1024637bd93323d6")
-		Expect(err).To(BeNil())
-		Expect(tag).To(Equal("v0.20.2")) // first release before feature-rc1
-		tag, err = client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "5f5fae36aed27e2a0db54ff848f4a8926ab5d98b")
-		Expect(err).To(BeNil())
-		Expect(tag).To(Equal("v0.18.19"))
-	})
+		// As more releases are cut, the no of API requests can grow due to pagination - this can lead to CI failing
+		// `403 API rate limit of 5000 still exceeded until 2023-11-28 17:49:31 +0000 UTC, not making remote request. [rate reset in 7m52s]`
+		// To prevent this failure, this test needs to be periodically updated to test against more recent releases
+		BeforeEach(func() {
+			client = githubutils.NewRepoClient(githubClient, owner, "gloo")
+		})
 
+		It("properly finds the most recent release tag matching an SHA", func() {
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "36c4ba020048c4556ef8650d011ddb16368a4fef")
+			Expect(err).To(BeNil())
+			Expect(tag).To(Equal("v1.15.16"))
+		})
+
+		It("properly finds the most recent beta release tag before an SHA", func() {
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "f3e76e63a1643c76cab3ad883944ae3e5182f2e7")
+			Expect(err).To(BeNil())
+			Expect(tag).To(Equal("v2.0.0-beta1"))
+		})
+
+		It("properly finds the most recent pre-release release tag before an SHA", func() {
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "1406a40283e691102a8133917efbe4ec97d8792b")
+			Expect(err).To(BeNil())
+			Expect(tag).To(Equal("v1.15.10"))
+		})
+
+		It("properly finds the most recent RC release tag before an SHA", func() {
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "8680ad631dd3ffd325bde9b40d13c0a190229f5d")
+			Expect(err).To(BeNil())
+			Expect(tag).To(Equal("v1.15.0-rc3"))
+		})
+
+		It("properly finds the most recent release tag before an SHA with pagination", func() {
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "4ac2822d6d762795b61da055085c77c0df53487c")
+			Expect(err).To(BeNil())
+			Expect(tag).To(Equal("v1.15.9"))
+		})
+	})
 })

@@ -40,8 +40,8 @@ type StartupOptions struct {
 }
 
 // return options indicating that the server should:
-//	* start up only if DefaultEnvVar is set to DefaultEnabledValue
-//	* listen on DefaultPort
+//   - start up only if DefaultEnvVar is set to DefaultEnabledValue
+//   - listen on DefaultPort
 func DefaultStartupOptions() StartupOptions {
 	return StartupOptions{
 		EnvVar:       DefaultEnvVar,

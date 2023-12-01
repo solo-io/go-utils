@@ -20,7 +20,7 @@ func BuildCliLogger(pathElements []string, outputModeEnvVar string) *zap.Sugared
 	return buildCliLoggerOptions(pathElements, outputModeEnvVar, nil)
 }
 
-//BuildMockedCliLogger is the test-environment counterpart of BuildCliLogger
+// BuildMockedCliLogger is the test-environment counterpart of BuildCliLogger
 // It stores log output in buffers that can be inspected by tests.
 func BuildMockedCliLogger(pathElements []string, outputModeEnvVar string, mockTargets *MockTargets) *zap.SugaredLogger {
 	return buildCliLoggerOptions(pathElements, outputModeEnvVar, mockTargets)
@@ -39,7 +39,7 @@ func buildCliLoggerOptions(pathElements []string, outputModeEnvVar string, mockT
 	return logger
 }
 
-//FilePathFromHomeDir is a utility that makes it easier to find the absolute path to a file, given its file path
+// FilePathFromHomeDir is a utility that makes it easier to find the absolute path to a file, given its file path
 // elements relative to its home directory.
 // pathElementsRelativeToHome is passed as an array to avoid os-specific directory delimiter complications
 // example: []string{".config","default.yaml"}
