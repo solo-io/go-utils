@@ -251,7 +251,6 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			if err != nil {
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
-			vulnerabilityMd += fmt.Sprintf("# %s\n\n", imageWithRepo)
 			if r.Opts.DeveloperDebugInstructions != "" {
 				vulnerabilityMd += fmt.Sprintf("%s\n\n", r.Opts.DeveloperDebugInstructions)
 			}
