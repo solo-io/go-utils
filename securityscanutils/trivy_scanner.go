@@ -2,12 +2,13 @@ package securityscanutils
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/solo-io/go-utils/contextutils"
 

@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/solo-io/go-utils/cliutils"
 	"github.com/solo-io/go-utils/securityscanutils"

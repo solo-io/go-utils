@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"math"
 	"os"
@@ -14,6 +13,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/solo-io/go-utils/osutils/executils"
 
