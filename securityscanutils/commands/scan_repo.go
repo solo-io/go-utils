@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-
 	"github.com/Masterminds/semver/v3"
 	"github.com/solo-io/go-utils/cliutils"
 	"github.com/solo-io/go-utils/securityscanutils"
@@ -43,8 +42,9 @@ type scanRepoOptions struct {
 	//  github-issue-all: create a github issue for every version where a vulnerability is discovered
 	vulnerabilityAction string
 
-	releaseVersionConstraint    string
-	imagesVersionConstraintFile string
+	releaseVersionConstraint       string
+	imagesVersionConstraintFile    string
+	developerDebugInstructionsFile string
 }
 
 func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
@@ -55,6 +55,7 @@ func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
 
 	flags.StringVarP(&m.releaseVersionConstraint, "release-constraint", "c", "", "version constraint for releases to scan")
 	flags.StringVarP(&m.imagesVersionConstraintFile, "image-constraint-file", "i", "", "name of file with mapping of version to images")
+	flags.StringVarP(&m.developerDebugInstructionsFile, "developer-debug-help-file", "d", "", "name of file with developer debug instructions")
 
 	cliutils.MustMarkFlagRequired(flags, "github-repo")
 	cliutils.MustMarkFlagRequired(flags, "release-constraint")
@@ -67,6 +68,10 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 		return err
 	}
 	imagesPerVersion, err := GetImagesPerVersionFromFile(opts.imagesVersionConstraintFile)
+	if err != nil {
+		return err
+	}
+	devDebugInstructions, err := GetDeveloperDebugInstructionsFromFile(opts.developerDebugInstructionsFile)
 	if err != nil {
 		return err
 	}
@@ -83,6 +88,7 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 					ImageRepo:                              opts.imageRepository,
 					CreateGithubIssuePerVersion:            opts.vulnerabilityAction == "github-issue-all",
 					CreateGithubIssueForLatestPatchVersion: opts.vulnerabilityAction == "github-issue-latest",
+					DeveloperDebugInstructions:             devDebugInstructions,
 				},
 			},
 		},

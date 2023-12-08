@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"math"
 	"os"
@@ -100,6 +101,9 @@ type SecurityScanOpts struct {
 	//	2. The version is the latest patch version (Major.Minor.Patch)
 	// If set to true, will override the behavior of CreateGithubIssuePerVersion
 	CreateGithubIssueForLatestPatchVersion bool
+
+	// Instructions for developers to reproduce the vulnerability scans locally.
+	DeveloperDebugInstructions string
 }
 
 // Main method to call on SecurityScanner which generates .md and .sarif files
@@ -236,7 +240,10 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		output := path.Join(outputDir, fileName)
 		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output)
 		if err != nil {
-			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
+			if !errors.Is(err, ImageNotFoundError) {
+				return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
+			}
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s", imageWithRepo, ImageNotFoundError)
 		}
 
 		if vulnFound {
@@ -244,7 +251,11 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			if err != nil {
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
-			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n\n", imageWithRepo, trivyScanMd)
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n", imageWithRepo)
+			if r.Opts.DeveloperDebugInstructions != "" {
+				vulnerabilityMd += fmt.Sprintf("%s\n\n", r.Opts.DeveloperDebugInstructions)
+			}
+			vulnerabilityMd += fmt.Sprintf("%s\n\n", trivyScanMd)
 		}
 
 	}
