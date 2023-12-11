@@ -70,8 +70,17 @@ type SecurityScanOpts struct {
 	   │  ├─ repo2/
 	   │  │  ├─ 1.4.13/
 	   │  │  ├─ 1.5.1/
+	   ├─ github_issue_results/
+	   │  ├─ repo1/
+	   │  │  ├─ 1.4.12.md
+	   │  │  ├─ 1.5.0.md
+	   │  ├─ repo2/
+	   │  │  ├─ 1.4.13.md
+	   │  │  ├─ 1.5.1.md
 	*/
 	OutputDir string
+	// Output the would-be github issue Markdown to local files
+	OutputResultLocally bool
 	// A mapping of version constraints to images scanned.
 	// If 1.6 had images "gloo", "discovery" and 1.7 introduced a new image "rate-limit",
 	// the map would look like:
@@ -224,8 +233,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		return err
 	}
 	version := versionToScan.String()
-	outputDir := path.Join(r.Opts.OutputDir, r.Repo, "markdown_results", version)
-	err = os.MkdirAll(outputDir, os.ModePerm)
+	trivyScanOutputDir := path.Join(r.Opts.OutputDir, r.Repo, "markdown_results", version)
+	err = os.MkdirAll(trivyScanOutputDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -239,7 +248,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			imageWithRepo = fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
 		}
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
-		output := path.Join(outputDir, fileName)
+		output := path.Join(trivyScanOutputDir, fileName)
 		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output)
 		if err != nil {
 			if !errors.Is(err, ImageNotFoundError) {
@@ -257,8 +266,14 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		}
 
 	}
+	localOutputFilename := ""
+	if r.Opts.OutputResultLocally {
+		githubIssueOutputDir := path.Join(r.Opts.OutputDir, r.Repo, "github_issue_results")
+		err = os.MkdirAll(githubIssueOutputDir, os.ModePerm)
+		localOutputFilename = path.Join(githubIssueOutputDir, version+".md")
+	}
 	// Create / Update Github issue for the repo if a vulnerability is found
-	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd, r.Opts.AdditionalContext)
+	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd, r.Opts.AdditionalContext, localOutputFilename)
 }
 
 func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {

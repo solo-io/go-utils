@@ -41,6 +41,7 @@ type scanRepoOptions struct {
 	//  none (default): do nothing when a vulnerability is discovered
 	//  github-issue-latest (preferred): create a github issue only for the latest patch version of each minor version, when a vulnerability is discovered
 	//  github-issue-all: create a github issue for every version where a vulnerability is discovered
+	//  output-locally: create a file in the generated output dir containing the final Markdown for each repo / version
 	vulnerabilityAction string
 
 	releaseVersionConstraint    string
@@ -52,7 +53,7 @@ func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(&m.githubRepository, "github-repo", "g", "", "github repository to scan")
 	flags.StringVarP(&m.imageRepository, "image-repo", "r", securityscanutils.QuayRepository, "image repository to scan")
 
-	flags.StringVarP(&m.vulnerabilityAction, "vulnerability-action", "a", "none", "action to take when a vulnerability is discovered {none, github-issue-all, github-issue-latest}")
+	flags.StringVarP(&m.vulnerabilityAction, "vulnerability-action", "a", "none", "action to take when a vulnerability is discovered {none, github-issue-all, github-issue-latest, output-locally}")
 
 	flags.StringVarP(&m.releaseVersionConstraint, "release-constraint", "c", "", "version constraint for releases to scan")
 	flags.StringVarP(&m.imagesVersionConstraintFile, "image-constraint-file", "i", "", "name of file with mapping of version to images")
@@ -87,6 +88,7 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 					ImagesPerVersion:                       imagesPerVersion,
 					VersionConstraint:                      releaseVersionConstraint,
 					ImageRepo:                              opts.imageRepository,
+					OutputResultLocally:                    opts.vulnerabilityAction == "output-locally",
 					CreateGithubIssuePerVersion:            opts.vulnerabilityAction == "github-issue-all",
 					CreateGithubIssueForLatestPatchVersion: opts.vulnerabilityAction == "github-issue-latest",
 					AdditionalContext:                      additionalContext,

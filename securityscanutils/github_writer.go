@@ -3,6 +3,7 @@ package securityscanutils
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/solo-io/go-utils/contextutils"
 
@@ -74,7 +75,13 @@ func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.I
 // Creates/Updates a Github Issue per image
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
-func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, release *github.RepositoryRelease, vulnerabilityMarkdown, developerDebugInstructions string) error {
+func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(
+	ctx context.Context,
+	release *github.RepositoryRelease,
+	vulnerabilityMarkdown string,
+	developerDebugInstructions string,
+	outputLocalFilename string,
+) error {
 	logger := contextutils.LoggerFrom(ctx)
 
 	if vulnerabilityMarkdown == "" {
@@ -85,6 +92,13 @@ func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, 
 
 	if developerDebugInstructions != "" {
 		vulnerabilityMarkdown = fmt.Sprintf("%s\n%s", developerDebugInstructions, vulnerabilityMarkdown)
+	}
+
+	if outputLocalFilename != "" {
+		err := g.outputResultsLocally(outputLocalFilename, vulnerabilityMarkdown)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !g.shouldWriteIssue(release) {
@@ -134,4 +148,16 @@ func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, 
 
 func (g *GithubIssueWriter) shouldWriteIssue(release *github.RepositoryRelease) bool {
 	return g.createGithubIssuePredicate.Apply(release)
+}
+
+func (g *GithubIssueWriter) outputResultsLocally(filename, contents string) error {
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(f, contents)
+	if err != nil {
+		return err
+	}
+	return nil
 }
