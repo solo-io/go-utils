@@ -92,12 +92,9 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 		if isImageNotFoundErr(string(out)) {
 			logger.Warnf("Trivy scan with args [%v] produced image not found error", scanArgs)
 
-			// swallow error if image is not found error, so that we can continue scanning releases
-			// even if some releases failed and we didn't publish images for those releases
-			// this error used to happen if a release was a pre-release and therefore images
-			// weren't pushed to the container registry.
-			// we have since filtered out non-release images from being scanned so this warning
-			// shouldn't occur, but leaving here in case there was another edge case we missed
+			// Indicate the scan has not yet completed and no vulnerability was found but there was an ImageNotFoundError.
+			// The upstream handler should check specifically for this error to ensure that the remaining images for
+			// the specified version are scanned.
 			return false, false, ImageNotFoundError
 		}
 
