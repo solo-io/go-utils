@@ -49,7 +49,8 @@ var _ = Describe("Security Scan Suite", func() {
 						OutputDir: outputDir,
 						ImagesPerVersion: map[string][]string{
 							"v1.6.0": {"gloo"},
-							"v1.7.0": {"gloo", "discovery"},
+							// Scan should continue in the case an image cannot be found
+							"v1.7.0": {"thisimagecannotbefound", "gloo", "discovery"},
 						},
 						VersionConstraint:      verConstraint,
 						ImageRepo:              "quay.io/solo-io",
@@ -67,7 +68,7 @@ var _ = Describe("Security Scan Suite", func() {
 			markdownDir := path.Join(outputDir, "gloo", "markdown_results")
 			// Have a directory for each version we scanned
 			ExpectDirToHaveFiles(markdownDir, "1.6.0", "1.7.0")
-			// Expect there to be a generated generated file for each image per version
+			// Expect there to be a generated docgen file for each image per version
 			ExpectDirToHaveFiles(path.Join(markdownDir, "1.6.0"), "gloo_cve_report.docgen")
 			ExpectDirToHaveFiles(path.Join(markdownDir, "1.7.0"), "discovery_cve_report.docgen", "gloo_cve_report.docgen")
 		})
