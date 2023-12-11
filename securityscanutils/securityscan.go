@@ -252,15 +252,12 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			if err != nil {
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
-			if r.Opts.DeveloperDebugInstructions != "" {
-				vulnerabilityMd += fmt.Sprintf("%s\n\n", r.Opts.DeveloperDebugInstructions)
-			}
-			vulnerabilityMd += fmt.Sprintf("%s\n\n", trivyScanMd)
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n\n", imageWithRepo, trivyScanMd)
 		}
 
 	}
 	// Create / Update Github issue for the repo if a vulnerability is found
-	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
+	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd, r.Opts.DeveloperDebugInstructions)
 }
 
 func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {

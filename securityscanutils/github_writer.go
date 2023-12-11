@@ -74,13 +74,17 @@ func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.I
 // Creates/Updates a Github Issue per image
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
-func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, release *github.RepositoryRelease, vulnerabilityMarkdown string) error {
+func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, release *github.RepositoryRelease, vulnerabilityMarkdown, developerDebugInstructions string) error {
 	logger := contextutils.LoggerFrom(ctx)
 
 	if vulnerabilityMarkdown == "" {
 		// There we no vulnerabilities discovered for this release
 		// do not create an empty github issue
 		return nil
+	}
+
+	if developerDebugInstructions != "" {
+		vulnerabilityMarkdown = fmt.Sprintf("%s\n%s", developerDebugInstructions, vulnerabilityMarkdown)
 	}
 
 	if !g.shouldWriteIssue(release) {
