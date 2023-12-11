@@ -103,8 +103,9 @@ type SecurityScanOpts struct {
 	// If set to true, will override the behavior of CreateGithubIssuePerVersion
 	CreateGithubIssueForLatestPatchVersion bool
 
-	// Instructions for developers to reproduce the vulnerability scans locally.
-	DeveloperDebugInstructions string
+	// Additional context to add to the top of the generated vulnerability report.
+	// Example: This could be used to provide debug instructions to developers.
+	AdditionalContext string
 }
 
 // Main method to call on SecurityScanner which generates .md and .sarif files
@@ -257,7 +258,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 
 	}
 	// Create / Update Github issue for the repo if a vulnerability is found
-	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd, r.Opts.DeveloperDebugInstructions)
+	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd, r.Opts.AdditionalContext)
 }
 
 func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {

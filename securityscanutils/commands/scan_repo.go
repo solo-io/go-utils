@@ -43,9 +43,9 @@ type scanRepoOptions struct {
 	//  github-issue-all: create a github issue for every version where a vulnerability is discovered
 	vulnerabilityAction string
 
-	releaseVersionConstraint       string
-	imagesVersionConstraintFile    string
-	developerDebugInstructionsFile string
+	releaseVersionConstraint    string
+	imagesVersionConstraintFile string
+	additionalContextFile       string
 }
 
 func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
@@ -56,7 +56,7 @@ func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
 
 	flags.StringVarP(&m.releaseVersionConstraint, "release-constraint", "c", "", "version constraint for releases to scan")
 	flags.StringVarP(&m.imagesVersionConstraintFile, "image-constraint-file", "i", "", "name of file with mapping of version to images")
-	flags.StringVarP(&m.developerDebugInstructionsFile, "developer-debug-help-file", "d", "", "name of file with developer debug instructions")
+	flags.StringVarP(&m.additionalContextFile, "additional-context-file", "d", "", "name of file with any additional context to add to the top of the generated vulnerability report")
 
 	cliutils.MustMarkFlagRequired(flags, "github-repo")
 	cliutils.MustMarkFlagRequired(flags, "release-constraint")
@@ -72,7 +72,7 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 	if err != nil {
 		return err
 	}
-	devDebugInstructions, err := GetDeveloperDebugInstructionsFromFile(opts.developerDebugInstructionsFile)
+	additionalContext, err := GetAdditionalContextFromFile(opts.additionalContextFile)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 					ImageRepo:                              opts.imageRepository,
 					CreateGithubIssuePerVersion:            opts.vulnerabilityAction == "github-issue-all",
 					CreateGithubIssueForLatestPatchVersion: opts.vulnerabilityAction == "github-issue-latest",
-					DeveloperDebugInstructions:             devDebugInstructions,
+					AdditionalContext:                      additionalContext,
 				},
 			},
 		},

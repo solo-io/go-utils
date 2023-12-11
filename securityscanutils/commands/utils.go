@@ -46,8 +46,8 @@ func GetImagesPerVersionFromFile(constraintsFile string) (map[string][]string, e
 	return imagesPerVersion, nil
 }
 
-func GetDeveloperDebugInstructionsFromFile(devDebugFile string) (string, error) {
-	contents, err := ioutil.ReadFile(devDebugFile)
+func GetAdditionalContextFromFile(filename string) (string, error) {
+	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
