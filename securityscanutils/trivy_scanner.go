@@ -18,7 +18,7 @@ import (
 // Status code returned by Trivy if a vulnerability is found
 const VulnerabilityFoundStatusCode = 52
 
-var ImageNotFoundError = errors.New("❗IMAGE MISSING UNEXPECTEDLY❗")
+var imageNotFoundError = errors.New("❗IMAGE MISSING UNEXPECTEDLY❗")
 
 type CmdExecutor func(cmd *exec.Cmd) ([]byte, int, error)
 
@@ -89,13 +89,13 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 		}
 
 		// If there is no image, don't retry
-		if isImageNotFoundErr(string(out)) {
+		if IsImageNotFoundErr(string(out)) {
 			logger.Warnf("Trivy scan with args [%v] produced image not found error", scanArgs)
 
-			// Indicate the scan has not yet completed and no vulnerability was found but there was an ImageNotFoundError.
+			// Indicate the scan has not yet completed and no vulnerability was found but there was an imageNotFoundError.
 			// The upstream handler should check specifically for this error to ensure that the remaining images for
 			// the specified version are scanned.
-			return false, false, ImageNotFoundError
+			return false, false, imageNotFoundError
 		}
 
 		//This backoff strategy is intended to handle network issues(i.e. an http 5xx error)
@@ -105,6 +105,6 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 	return false, false, eris.Errorf("Trivy scan with args [%v] did not complete after %d attempts", scanArgs, t.scanMaxRetries)
 }
 
-func isImageNotFoundErr(logs string) bool {
+func IsImageNotFoundErr(logs string) bool {
 	return strings.Contains(logs, "No such image: ")
 }
