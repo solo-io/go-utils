@@ -217,6 +217,12 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
 	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 
+	// Set up the directory structure for local output
+	if repo.Opts.OutputResultLocally {
+		githubIssueOutputDir := path.Join(repo.Opts.OutputDir, repo.Repo, "github_issue_results")
+		err = os.MkdirAll(githubIssueOutputDir, os.ModePerm)
+	}
+
 	repo.trivyScanner = NewTrivyScanner(executils.CombinedOutputWithStatus)
 
 	logger.Debugf("Completed processing user defined configuration.")
@@ -267,9 +273,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	}
 	localOutputFilename := ""
 	if r.Opts.OutputResultLocally {
-		githubIssueOutputDir := path.Join(r.Opts.OutputDir, r.Repo, "github_issue_results")
-		err = os.MkdirAll(githubIssueOutputDir, os.ModePerm)
-		localOutputFilename = path.Join(githubIssueOutputDir, version+".md")
+		localOutputFilename = path.Join(r.Opts.OutputDir, r.Repo, "github_issue_results", version+".md")
 	}
 	// Create / Update Github issue for the repo if a vulnerability is found
 	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd, r.Opts.AdditionalContext, localOutputFilename)
