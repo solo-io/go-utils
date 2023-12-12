@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/solo-io/go-utils/securityscanutils/issuewriter"
 	"math"
 	"os"
 	"os/exec"
@@ -47,8 +48,8 @@ type SecurityScanRepo struct {
 
 	trivyScanner *TrivyScanner
 
-	// The writer responsible for generating Github Issues for certain releases
-	githubIssueWriter *GithubIssueWriter
+	// The writer responsible for generating Issues for certain releases
+	issueWriter issuewriter.IssueWriter
 }
 
 type SecurityScanOpts struct {
@@ -69,7 +70,7 @@ type SecurityScanOpts struct {
 	   │  ├─ repo2/
 	   │  │  ├─ 1.4.13/
 	   │  │  ├─ 1.5.1/
-	   ├─ github_issue_results/
+	   ├─ issue_results/
 	   │  ├─ repo1/
 	   │  │  ├─ 1.4.12.md
 	   │  │  ├─ 1.5.0.md
@@ -199,12 +200,13 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	logger.Debugf("Number of github releases to scan: %d", len(releasesToScan))
 
 	// Initialize a local store of GitHub issues if we will be creating new issues
-	githubRepo := GithubRepo{
+	githubRepo := issuewriter.GithubRepo{
 		RepoName: repo.Repo,
 		Owner:    repo.Owner,
 	}
 	// Default to not creating any issues
 	var issuePredicate githubutils.RepositoryReleasePredicate = &githubutils.NoReleasesPredicate{}
+	useGithubWriter := repoOptions.CreateGithubIssuePerVersion || repoOptions.CreateGithubIssueForLatestPatchVersion
 	if repoOptions.CreateGithubIssuePerVersion {
 		// Create Github issue for all releases, if configured
 		issuePredicate = &githubutils.AllReleasesPredicate{}
@@ -214,14 +216,17 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 		// Create Github issues for all releases in the set
 		issuePredicate = NewLatestPatchRepositoryReleasePredicate(releasesToScan)
 	}
-	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
-	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
-
-	// Set up the directory structure for local output
-	if repo.Opts.OutputResultLocally {
-		githubIssueOutputDir := path.Join(repo.Opts.OutputDir, repo.Repo, "github_issue_results")
-		err = os.MkdirAll(githubIssueOutputDir, os.ModePerm)
+	if useGithubWriter {
+		repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+	} else if repo.Opts.OutputResultLocally {
+		repo.issueWriter, err = issuewriter.NewLocalIssueWriter(githubRepo, path.Join(repo.Opts.OutputDir, githubRepo.RepoName, "issue_results"))
+		if err != nil {
+			return err
+		}
+	} else {
+		repo.issueWriter = issuewriter.NewNoopWriter()
 	}
+	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 
 	repo.trivyScanner = NewTrivyScanner(executils.CombinedOutputWithStatus)
 
@@ -271,12 +276,11 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		}
 
 	}
-	localOutputFilename := ""
-	if r.Opts.OutputResultLocally {
-		localOutputFilename = path.Join(r.Opts.OutputDir, r.Repo, "github_issue_results", version+".md")
+	if vulnerabilityMd != "" && r.Opts.AdditionalContext != "" {
+		vulnerabilityMd = fmt.Sprintf("%s\n%s", r.Opts.AdditionalContext, vulnerabilityMd)
 	}
-	// Create / Update Github issue for the repo if a vulnerability is found
-	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd, r.Opts.AdditionalContext, localOutputFilename)
+	// Create / Update issue for the repo if a vulnerability is found
+	return r.issueWriter.Write(ctx, release, vulnerabilityMd)
 }
 
 func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {

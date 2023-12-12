@@ -1,15 +1,12 @@
-package securityscanutils
+package issuewriter
 
 import (
 	"context"
 	"fmt"
-	"os"
-
-	"github.com/solo-io/go-utils/contextutils"
-
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v32/github"
 	"github.com/rotisserie/eris"
+	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/githubutils"
 )
 
@@ -42,7 +39,9 @@ type GithubIssueWriter struct {
 	allGithubIssues []*github.Issue
 }
 
-func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate) *GithubIssueWriter {
+var giw IssueWriter = &GithubIssueWriter{}
+
+func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate) IssueWriter {
 	return &GithubIssueWriter{
 		repo:                       repo,
 		client:                     client,
@@ -75,12 +74,10 @@ func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.I
 // Creates/Updates a Github Issue per image
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
-func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(
+func (g *GithubIssueWriter) Write(
 	ctx context.Context,
 	release *github.RepositoryRelease,
 	vulnerabilityMarkdown string,
-	developerDebugInstructions string,
-	outputLocalFilename string,
 ) error {
 	logger := contextutils.LoggerFrom(ctx)
 
@@ -88,17 +85,6 @@ func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(
 		// There we no vulnerabilities discovered for this release
 		// do not create an empty github issue
 		return nil
-	}
-
-	if developerDebugInstructions != "" {
-		vulnerabilityMarkdown = fmt.Sprintf("%s\n%s", developerDebugInstructions, vulnerabilityMarkdown)
-	}
-
-	if outputLocalFilename != "" {
-		err := g.outputResultsLocally(outputLocalFilename, vulnerabilityMarkdown)
-		if err != nil {
-			return err
-		}
 	}
 
 	if !g.shouldWriteIssue(release) {
@@ -148,16 +134,4 @@ func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(
 
 func (g *GithubIssueWriter) shouldWriteIssue(release *github.RepositoryRelease) bool {
 	return g.createGithubIssuePredicate.Apply(release)
-}
-
-func (g *GithubIssueWriter) outputResultsLocally(filename, contents string) error {
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintf(f, contents)
-	if err != nil {
-		return err
-	}
-	return nil
 }

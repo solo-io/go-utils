@@ -67,8 +67,8 @@ var _ = Describe("Security Scan Suite", func() {
 			ExpectDirToHaveFiles(outputDir, "gloo")
 			// Have a markdown file for each version we scanned
 			glooDir := path.Join(outputDir, "gloo")
-			ExpectDirToHaveFiles(glooDir, "github_issue_results", "markdown_results")
-			githubIssueDir := path.Join(glooDir, "github_issue_results")
+			ExpectDirToHaveFiles(glooDir, "issue_results", "markdown_results")
+			githubIssueDir := path.Join(glooDir, "issue_results")
 			ExpectDirToHaveFiles(githubIssueDir, "1.6.0.md", "1.7.0.md")
 			// Have a directory for each repo we scanned
 			markdownDir := path.Join(outputDir, "gloo", "markdown_results")
