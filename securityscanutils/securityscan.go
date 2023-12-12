@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
@@ -258,7 +257,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		}
 
 		if vulnFound {
-			trivyScanMd, err := ioutil.ReadFile(output)
+			trivyScanMd, err := os.ReadFile(output)
 			if err != nil {
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
@@ -355,7 +354,7 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 	if err != nil {
 		return err
 	}
-	sarifFileBytes, err := ioutil.ReadFile(fileName)
+	sarifFileBytes, err := os.ReadFile(fileName)
 	if err != nil {
 		return eris.Wrapf(err, "error reading sarif file %s", fileName)
 	}

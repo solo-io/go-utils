@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -114,7 +115,7 @@ func doFormatResults(ctx context.Context, opts *formatResultsOptions) error {
 }
 
 func getCachedReleases(fileName string) []*github.RepositoryRelease {
-	bArray, err := ioutil.ReadFile(fileName)
+	bArray, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil
 	}
@@ -225,7 +226,7 @@ func readImageVersionConstraintsFile(opts *formatResultsOptions) (map[string][]s
 	imagesPerVersion := make(map[string][]string)
 	imageSet := make(map[string]interface{})
 
-	dat, err := ioutil.ReadFile(opts.imageFile)
+	dat, err := os.ReadFile(opts.imageFile)
 	if err != nil {
 		return nil, err
 	}
