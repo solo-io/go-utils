@@ -18,7 +18,9 @@ import (
 // Status code returned by Trivy if a vulnerability is found
 const VulnerabilityFoundStatusCode = 52
 
-var imageNotFoundError = errors.New("❗IMAGE MISSING UNEXPECTEDLY❗")
+var RecoverableErr = errors.New("Recoverable")
+var UnrecoverableErr = errors.New("Unrecoverable")
+var ImageNotFoundError = eris.Wrap(RecoverableErr, "❗IMAGE MISSING UNEXPECTEDLY❗")
 
 type CmdExecutor func(cmd *exec.Cmd) ([]byte, int, error)
 
@@ -85,24 +87,24 @@ func (t *TrivyScanner) executeScanWithRetries(ctx context.Context, scanArgs []st
 		// If there is no error, the scan completed and no vulnerability was found, don't retry
 		if err == nil {
 			logger.Debugf("Trivy returned %d after %s on %s", statusCode, time.Since(attemptStart).String(), imageUri)
-			return true, false, err
+			return true, false, nil
 		}
 
 		// If there is no image, don't retry
 		if IsImageNotFoundErr(string(out)) {
 			logger.Warnf("Trivy scan with args [%v] produced image not found error", scanArgs)
 
-			// Indicate the scan has not yet completed and no vulnerability was found but there was an imageNotFoundError.
+			// Indicate the scan has not yet completed and no vulnerability was found but there was an ImageNotFoundError.
 			// The upstream handler should check specifically for this error to ensure that the remaining images for
 			// the specified version are scanned.
-			return false, false, imageNotFoundError
+			return false, false, ImageNotFoundError
 		}
 
 		//This backoff strategy is intended to handle network issues(i.e. an http 5xx error)
 		t.scanBackoffStrategy(attempt)
 	}
 	// We only reach here if we exhausted our retries
-	return false, false, eris.Errorf("Trivy scan with args [%v] did not complete after %d attempts", scanArgs, t.scanMaxRetries)
+	return false, false, eris.Wrapf(UnrecoverableErr, "Trivy scan with args [%v] did not complete after %d attempts", scanArgs, t.scanMaxRetries)
 }
 
 func IsImageNotFoundErr(logs string) bool {

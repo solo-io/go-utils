@@ -250,10 +250,10 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		output := path.Join(trivyScanOutputDir, fileName)
 		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output)
 		if err != nil {
-			if !errors.Is(err, imageNotFoundError) {
+			if errors.Is(err, UnrecoverableErr) {
 				return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 			}
-			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s", imageWithRepo, imageNotFoundError)
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s", imageWithRepo, err)
 		}
 
 		if vulnFound {
