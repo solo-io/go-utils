@@ -6,13 +6,14 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/solo-io/go-utils/securityscanutils/issuewriter"
 	"math"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/solo-io/go-utils/securityscanutils/issuewriter"
 
 	"github.com/pkg/errors"
 

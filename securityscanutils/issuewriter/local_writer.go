@@ -3,10 +3,11 @@ package issuewriter
 import (
 	"context"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
-	"github.com/google/go-github/v32/github"
 	"os"
 	"path"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/google/go-github/v32/github"
 )
 
 type LocalIssueWriter struct {

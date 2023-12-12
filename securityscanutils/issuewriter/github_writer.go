@@ -3,6 +3,7 @@ package issuewriter
 import (
 	"context"
 	"fmt"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v32/github"
 	"github.com/rotisserie/eris"
