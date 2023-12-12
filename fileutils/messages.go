@@ -1,7 +1,7 @@
 package fileutils
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/ghodss/yaml"
 	"github.com/gogo/protobuf/proto"
@@ -18,11 +18,11 @@ func WriteToFile(filename string, pb proto.Message) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filename, data, 0644)
+	return os.WriteFile(filename, data, 0644)
 }
 
 func ReadFileInto(filename string, v proto.Message) error {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return eris.Errorf("error reading file: %v", err)
 	}

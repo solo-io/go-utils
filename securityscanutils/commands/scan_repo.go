@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/solo-io/go-utils/fileutils"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/solo-io/go-utils/cliutils"
@@ -73,7 +74,7 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 	if err != nil {
 		return err
 	}
-	additionalContext, err := GetAdditionalContextFromFile(opts.additionalContextFile)
+	additionalContext, err := fileutils.ReadFileString(opts.additionalContextFile)
 	if err != nil {
 		return err
 	}

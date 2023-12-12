@@ -45,11 +45,3 @@ func GetImagesPerVersionFromFile(constraintsFile string) (map[string][]string, e
 
 	return imagesPerVersion, nil
 }
-
-func GetAdditionalContextFromFile(filename string) (string, error) {
-	contents, err := os.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	return string(contents), nil
-}
