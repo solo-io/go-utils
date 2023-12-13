@@ -3,14 +3,12 @@ changelog:
     issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13499
     description: >
       Scanner includes an optional Developer Debug Instructions section on reported vulnerabilities.
-  - type: NEW_FEATURE
-    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13499
-    description: >
-      Scanner evaluates pre-release images, such as `*-beta1` and `*-rc2`.
+    resolvesIssue: false
   - type: BREAKING_CHANGE
     issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13499
     description: >
       Create `IssueWriter` interface with implementations as `NoopWriter`, `GithubIssueWriter`, and `LocalIssueWriter`.
+    resolvesIssue: false
   - type: FIX
     issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13501
     description: >
