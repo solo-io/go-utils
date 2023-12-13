@@ -2,7 +2,7 @@ changelog:
   - type: NEW_FEATURE
     issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13499
     description: >
-      Scanner includes an optional Developer Debug Instructions section on reported vulnerabilities.
+      Scanner includes an optional Additional Context section on reported vulnerabilities.
     resolvesIssue: false
   - type: BREAKING_CHANGE
     issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13499
