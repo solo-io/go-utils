@@ -72,7 +72,7 @@ func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.I
 	return g.allGithubIssues, nil
 }
 
-// Creates/Updates a Github Issue per image
+// Creates/Updates a Github Issue per release
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
 func (g *GithubIssueWriter) Write(

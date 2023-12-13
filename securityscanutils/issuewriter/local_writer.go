@@ -12,23 +12,19 @@ import (
 
 // LocalIssueWriter writes the scan results to a file on the local file system.
 type LocalIssueWriter struct {
-	// The details about the GitHub repository
-	repo GithubRepo
-
 	// The directory in which to create files
 	outputDir string
 }
 
 var _ IssueWriter = &LocalIssueWriter{}
 
-func NewLocalIssueWriter(repo GithubRepo, outputDir string) (IssueWriter, error) {
+func NewLocalIssueWriter(outputDir string) (IssueWriter, error) {
 	// Set up the directory structure for local output
 	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 	return &LocalIssueWriter{
-		repo:      repo,
 		outputDir: outputDir,
 	}, nil
 }
