@@ -11,7 +11,7 @@ import (
 // The securityScanRepositoryReleasePredicate is responsible for defining which
 // github.RepositoryRelease artifacts should be included in the bulk security scan
 // At the moment, the two requirements are that:
-// 1. The release is not a draft
+// 1. The release is not a pre-release or draft
 // 2. The release matches the configured version constraint
 type securityScanRepositoryReleasePredicate struct {
 	versionConstraint *semver.Constraints
@@ -24,7 +24,10 @@ func NewSecurityScanRepositoryReleasePredicate(constraint *semver.Constraints) *
 }
 
 func (s *securityScanRepositoryReleasePredicate) Apply(release *github.RepositoryRelease) bool {
-	if release.GetDraft() {
+	// Note: GetPrerelease() is referring to a pre-release in GitHub. The term pre-release is
+	// slightly overloaded between GitHub and semver. We _do_ want to scan semver pre-releases
+	// as those correspond to GitHub releases whose tag matches the pattern of a semver pre-release.
+	if release.GetPrerelease() || release.GetDraft() {
 		// Do not include pre-releases or drafts
 		return false
 	}
