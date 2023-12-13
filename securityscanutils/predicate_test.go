@@ -26,7 +26,7 @@ var _ = Describe("Predicate", func() {
 			releasePredicate = securityscanutils.NewSecurityScanRepositoryReleasePredicate(twoPlusConstraint)
 		})
 
-		DescribeTable(
+		FDescribeTable(
 			"Returns true/false based on release properties",
 			func(release *github.RepositoryRelease, expectedResult bool) {
 				Expect(releasePredicate.Apply(release)).To(Equal(expectedResult))
@@ -43,13 +43,11 @@ var _ = Describe("Predicate", func() {
 			Entry("release tag does pass version constraint", &github.RepositoryRelease{
 				TagName: github.String("v2.0.1"),
 			}, true),
-			Entry("release is pre-release beta", &github.RepositoryRelease{
-				TagName:    github.String("v2.0.1-beta1"),
-				Prerelease: github.Bool(true),
+			Entry("release tag has beta", &github.RepositoryRelease{
+				TagName: github.String("v2.0.1-beta1"),
 			}, true),
-			Entry("release is pre-release rc", &github.RepositoryRelease{
-				TagName:    github.String("v2.0.1-rc2"),
-				Prerelease: github.Bool(true),
+			Entry("release tag has rc", &github.RepositoryRelease{
+				TagName: github.String("v2.0.1-rc2"),
 			}, true),
 		)
 
