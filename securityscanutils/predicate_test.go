@@ -26,7 +26,7 @@ var _ = Describe("Predicate", func() {
 			releasePredicate = securityscanutils.NewSecurityScanRepositoryReleasePredicate(twoPlusConstraint)
 		})
 
-		FDescribeTable(
+		DescribeTable(
 			"Returns true/false based on release properties",
 			func(release *github.RepositoryRelease, expectedResult bool) {
 				Expect(releasePredicate.Apply(release)).To(Equal(expectedResult))
