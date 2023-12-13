@@ -220,7 +220,7 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	if useGithubWriter {
 		repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
 	} else if repo.Opts.OutputResultLocally {
-		repo.issueWriter, err = issuewriter.NewLocalIssueWriter(githubRepo, path.Join(repo.Opts.OutputDir, githubRepo.RepoName, "issue_results"))
+		repo.issueWriter, err = issuewriter.NewLocalIssueWriter(path.Join(repo.Opts.OutputDir, githubRepo.RepoName, "issue_results"))
 		if err != nil {
 			return err
 		}
