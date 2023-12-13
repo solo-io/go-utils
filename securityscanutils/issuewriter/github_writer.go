@@ -40,7 +40,7 @@ type GithubIssueWriter struct {
 	allGithubIssues []*github.Issue
 }
 
-var giw IssueWriter = &GithubIssueWriter{}
+var _ IssueWriter = &GithubIssueWriter{}
 
 func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate) IssueWriter {
 	return &GithubIssueWriter{

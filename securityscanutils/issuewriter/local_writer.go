@@ -10,12 +10,16 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
+// LocalIssueWriter writes the scan results to a file on the local file system.
 type LocalIssueWriter struct {
-	repo      GithubRepo
+	// The details about the GitHub repository
+	repo GithubRepo
+
+	// The directory in which to create files
 	outputDir string
 }
 
-var liw IssueWriter = &LocalIssueWriter{}
+var _ IssueWriter = &LocalIssueWriter{}
 
 func NewLocalIssueWriter(repo GithubRepo, outputDir string) (IssueWriter, error) {
 	// Set up the directory structure for local output
@@ -29,7 +33,7 @@ func NewLocalIssueWriter(repo GithubRepo, outputDir string) (IssueWriter, error)
 	}, nil
 }
 
-func (l *LocalIssueWriter) Write(ctx context.Context, release *github.RepositoryRelease, contents string) error {
+func (l *LocalIssueWriter) Write(_ context.Context, release *github.RepositoryRelease, contents string) error {
 	version, err := semver.NewVersion(release.GetTagName())
 	if err != nil {
 		return err
