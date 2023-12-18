@@ -49,6 +49,9 @@ var _ = Describe("Predicate", func() {
 			Entry("release tag has rc", &github.RepositoryRelease{
 				TagName: github.String("v2.0.1-rc2"),
 			}, true),
+			Entry("release is a pre-release", &github.RepositoryRelease{
+				Prerelease: github.Bool(true),
+			}, false),
 		)
 
 	})
