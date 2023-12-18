@@ -24,6 +24,9 @@ func NewSecurityScanRepositoryReleasePredicate(constraint *semver.Constraints) *
 }
 
 func (s *securityScanRepositoryReleasePredicate) Apply(release *github.RepositoryRelease) bool {
+	// Note: GetPrerelease() is referring to a pre-release in GitHub. The term pre-release is
+	// slightly overloaded between GitHub and semver. We _do_ want to scan semver pre-releases
+	// as those correspond to GitHub releases whose tag matches the pattern of a semver pre-release.
 	if release.GetPrerelease() || release.GetDraft() {
 		// Do not include pre-releases or drafts
 		return false

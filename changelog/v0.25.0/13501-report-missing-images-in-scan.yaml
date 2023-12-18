@@ -1,0 +1,15 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13499
+    description: >
+      Scanner includes an optional Additional Context section on reported vulnerabilities.
+    resolvesIssue: false
+  - type: BREAKING_CHANGE
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13499
+    description: >
+      Create `IssueWriter` interface with implementations as `NoopWriter`, `GithubIssueWriter`, and `LocalIssueWriter`.
+    resolvesIssue: false
+  - type: FIX
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13501
+    description: >
+      Scanner continues to scan remaining images if one image cannot be found.

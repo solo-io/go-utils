@@ -6,13 +6,16 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/solo-io/go-utils/securityscanutils/issuewriter"
+
+	"github.com/pkg/errors"
 
 	"github.com/solo-io/go-utils/osutils/executils"
 
@@ -46,8 +49,8 @@ type SecurityScanRepo struct {
 
 	trivyScanner *TrivyScanner
 
-	// The writer responsible for generating Github Issues for certain releases
-	githubIssueWriter *GithubIssueWriter
+	// The writer responsible for generating Issues for certain releases
+	issueWriter issuewriter.IssueWriter
 }
 
 type SecurityScanOpts struct {
@@ -68,8 +71,17 @@ type SecurityScanOpts struct {
 	   │  ├─ repo2/
 	   │  │  ├─ 1.4.13/
 	   │  │  ├─ 1.5.1/
+	   ├─ issue_results/
+	   │  ├─ repo1/
+	   │  │  ├─ 1.4.12.md
+	   │  │  ├─ 1.5.0.md
+	   │  ├─ repo2/
+	   │  │  ├─ 1.4.13.md
+	   │  │  ├─ 1.5.1.md
 	*/
 	OutputDir string
+	// Output the would-be github issue Markdown to local files
+	OutputResultLocally bool
 	// A mapping of version constraints to images scanned.
 	// If 1.6 had images "gloo", "discovery" and 1.7 introduced a new image "rate-limit",
 	// the map would look like:
@@ -100,6 +112,10 @@ type SecurityScanOpts struct {
 	//	2. The version is the latest patch version (Major.Minor.Patch)
 	// If set to true, will override the behavior of CreateGithubIssuePerVersion
 	CreateGithubIssueForLatestPatchVersion bool
+
+	// Additional context to add to the top of the generated vulnerability report.
+	// Example: This could be used to provide debug instructions to developers.
+	AdditionalContext string
 }
 
 // Main method to call on SecurityScanner which generates .md and .sarif files
@@ -185,12 +201,13 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	logger.Debugf("Number of github releases to scan: %d", len(releasesToScan))
 
 	// Initialize a local store of GitHub issues if we will be creating new issues
-	githubRepo := GithubRepo{
+	githubRepo := issuewriter.GithubRepo{
 		RepoName: repo.Repo,
 		Owner:    repo.Owner,
 	}
 	// Default to not creating any issues
 	var issuePredicate githubutils.RepositoryReleasePredicate = &githubutils.NoReleasesPredicate{}
+	useGithubWriter := repoOptions.CreateGithubIssuePerVersion || repoOptions.CreateGithubIssueForLatestPatchVersion
 	if repoOptions.CreateGithubIssuePerVersion {
 		// Create Github issue for all releases, if configured
 		issuePredicate = &githubutils.AllReleasesPredicate{}
@@ -200,8 +217,19 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 		// Create Github issues for all releases in the set
 		issuePredicate = NewLatestPatchRepositoryReleasePredicate(releasesToScan)
 	}
-	repo.githubIssueWriter = NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
-	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
+	if useGithubWriter {
+		repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+		logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
+	} else if repo.Opts.OutputResultLocally {
+		repo.issueWriter, err = issuewriter.NewLocalIssueWriter(path.Join(repo.Opts.OutputDir, githubRepo.RepoName, "issue_results"))
+		if err != nil {
+			return err
+		}
+		logger.Debugf("LocalIssueWriter configured with Predicate: %+v", issuePredicate)
+	} else {
+		repo.issueWriter = issuewriter.NewNoopWriter()
+		logger.Debugf("NoopIssueWriter configured with Predicate: %+v", issuePredicate)
+	}
 
 	repo.trivyScanner = NewTrivyScanner(executils.CombinedOutputWithStatus)
 
@@ -218,8 +246,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		return err
 	}
 	version := versionToScan.String()
-	outputDir := path.Join(r.Opts.OutputDir, r.Repo, "markdown_results", version)
-	err = os.MkdirAll(outputDir, os.ModePerm)
+	trivyScanOutputDir := path.Join(r.Opts.OutputDir, r.Repo, "markdown_results", version)
+	err = os.MkdirAll(trivyScanOutputDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -233,14 +261,17 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			imageWithRepo = fmt.Sprintf("%s/%s:%s", r.Opts.ImageRepo, image, version)
 		}
 		fileName := fmt.Sprintf("%s_cve_report.docgen", image)
-		output := path.Join(outputDir, fileName)
+		output := path.Join(trivyScanOutputDir, fileName)
 		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output)
 		if err != nil {
-			return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
+			if errors.Is(err, UnrecoverableErr) {
+				return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
+			}
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s", imageWithRepo, err)
 		}
 
 		if vulnFound {
-			trivyScanMd, err := ioutil.ReadFile(output)
+			trivyScanMd, err := os.ReadFile(output)
 			if err != nil {
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
@@ -248,8 +279,11 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		}
 
 	}
-	// Create / Update Github issue for the repo if a vulnerability is found
-	return r.githubIssueWriter.CreateUpdateVulnerabilityIssue(ctx, release, vulnerabilityMd)
+	if vulnerabilityMd != "" && r.Opts.AdditionalContext != "" {
+		vulnerabilityMd = fmt.Sprintf("%s\n%s", r.Opts.AdditionalContext, vulnerabilityMd)
+	}
+	// Create / Update issue for the repo if a vulnerability is found
+	return r.issueWriter.Write(ctx, release, vulnerabilityMd)
 }
 
 func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {
@@ -331,7 +365,7 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 	if err != nil {
 		return err
 	}
-	sarifFileBytes, err := ioutil.ReadFile(fileName)
+	sarifFileBytes, err := os.ReadFile(fileName)
 	if err != nil {
 		return eris.Wrapf(err, "error reading sarif file %s", fileName)
 	}

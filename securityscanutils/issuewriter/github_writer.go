@@ -1,14 +1,13 @@
-package securityscanutils
+package issuewriter
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/solo-io/go-utils/contextutils"
-
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v32/github"
 	"github.com/rotisserie/eris"
+	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/githubutils"
 )
 
@@ -41,7 +40,9 @@ type GithubIssueWriter struct {
 	allGithubIssues []*github.Issue
 }
 
-func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate) *GithubIssueWriter {
+var _ IssueWriter = &GithubIssueWriter{}
+
+func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate) IssueWriter {
 	return &GithubIssueWriter{
 		repo:                       repo,
 		client:                     client,
@@ -71,10 +72,14 @@ func (g *GithubIssueWriter) getAllGithubIssues(ctx context.Context) ([]*github.I
 	return g.allGithubIssues, nil
 }
 
-// Creates/Updates a Github Issue per image
+// Creates/Updates a Github Issue per release
 // The github issue will have the markdown table report of the image's vulnerabilities
 // example: https://github.com/solo-io/solo-projects/issues/2458
-func (g *GithubIssueWriter) CreateUpdateVulnerabilityIssue(ctx context.Context, release *github.RepositoryRelease, vulnerabilityMarkdown string) error {
+func (g *GithubIssueWriter) Write(
+	ctx context.Context,
+	release *github.RepositoryRelease,
+	vulnerabilityMarkdown string,
+) error {
 	logger := contextutils.LoggerFrom(ctx)
 
 	if vulnerabilityMarkdown == "" {

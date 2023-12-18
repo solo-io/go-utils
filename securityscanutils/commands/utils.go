@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/rotisserie/eris"
@@ -20,7 +20,7 @@ func GetImagesPerVersionFromFile(constraintsFile string) (map[string][]string, e
 	imagesPerVersion := make(map[string][]string)
 	imageSet := make(map[string]interface{})
 
-	dat, err := ioutil.ReadFile(constraintsFile)
+	dat, err := os.ReadFile(constraintsFile)
 	if err != nil {
 		return nil, err
 	}

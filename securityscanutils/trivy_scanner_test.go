@@ -56,7 +56,7 @@ var _ = Describe("Trivy Scanner", func() {
 		})
 		completed, vulnFound, err := t.ScanImage(context.TODO(), inputImage, inputMarkdownTemplateFile, outputFile)
 
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).To(MatchError(ImageNotFoundError))
 		Expect(completed).To(Equal(false))
 		Expect(vulnFound).To(Equal(false))
 

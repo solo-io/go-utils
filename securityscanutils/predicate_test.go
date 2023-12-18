@@ -20,7 +20,7 @@ var _ = Describe("Predicate", func() {
 		)
 
 		BeforeEach(func() {
-			twoPlusConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", "v2.0.0"))
+			twoPlusConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", "v2.0.0-0"))
 			Expect(err).NotTo(HaveOccurred())
 
 			releasePredicate = securityscanutils.NewSecurityScanRepositoryReleasePredicate(twoPlusConstraint)
@@ -34,9 +34,6 @@ var _ = Describe("Predicate", func() {
 			Entry("release is draft", &github.RepositoryRelease{
 				Draft: github.Bool(true),
 			}, false),
-			Entry("release is pre-release", &github.RepositoryRelease{
-				Prerelease: github.Bool(true),
-			}, false),
 			Entry("release tag does not respect semver", &github.RepositoryRelease{
 				TagName: github.String("non-semver-tag-name"),
 			}, false),
@@ -46,6 +43,15 @@ var _ = Describe("Predicate", func() {
 			Entry("release tag does pass version constraint", &github.RepositoryRelease{
 				TagName: github.String("v2.0.1"),
 			}, true),
+			Entry("release tag has beta", &github.RepositoryRelease{
+				TagName: github.String("v2.0.1-beta1"),
+			}, true),
+			Entry("release tag has rc", &github.RepositoryRelease{
+				TagName: github.String("v2.0.1-rc2"),
+			}, true),
+			Entry("release is a pre-release", &github.RepositoryRelease{
+				Prerelease: github.Bool(true),
+			}, false),
 		)
 
 	})
