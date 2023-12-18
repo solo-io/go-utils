@@ -219,15 +219,17 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	}
 	if useGithubWriter {
 		repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+		logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 	} else if repo.Opts.OutputResultLocally {
 		repo.issueWriter, err = issuewriter.NewLocalIssueWriter(path.Join(repo.Opts.OutputDir, githubRepo.RepoName, "issue_results"))
 		if err != nil {
 			return err
 		}
+		logger.Debugf("LocalIssueWriter configured with Predicate: %+v", issuePredicate)
 	} else {
 		repo.issueWriter = issuewriter.NewNoopWriter()
+		logger.Debugf("NoopIssueWriter configured with Predicate: %+v", issuePredicate)
 	}
-	logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 
 	repo.trivyScanner = NewTrivyScanner(executils.CombinedOutputWithStatus)
 
