@@ -267,7 +267,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			if errors.Is(err, UnrecoverableErr) {
 				return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 			}
-			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s", imageWithRepo, err)
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n", imageWithRepo, err)
 		}
 
 		if vulnFound {
@@ -276,6 +276,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n\n", imageWithRepo, trivyScanMd)
+		} else {
+			vulnerabilityMd += fmt.Sprintf("# %s\n\n No Vulnerabilities Found for %s\n\n", imageWithRepo, imageWithRepo)
 		}
 
 	}
