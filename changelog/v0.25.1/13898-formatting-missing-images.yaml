@@ -1,0 +1,6 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/13898
+    description: >
+      Fix missing newline in scanner output Markdown.
+      Explicitly report "No Vulnerabilities Found" in Markdown for images when applicable.
