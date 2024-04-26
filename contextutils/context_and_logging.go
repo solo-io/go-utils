@@ -50,10 +50,7 @@ func buildProductionLogger() (*zap.Logger, error) {
 	// For non-split logging, allow the user/environment to specify a log file location.
 	// When we log to a file, we will not log it STDOUT.
 	if os.Getenv(LogToFileLocationEnvName) != "" {
-		fmt.Printf("LOGGING TO FILE LOCATION: %s\n", os.Getenv(LogToFileLocationEnvName))
 		config.OutputPaths = []string{os.Getenv(LogToFileLocationEnvName)}
-	} else {
-		fmt.Printf("NOT LOGGING TO FILE LOCATION\n")
 	}
 
 	level = zap.NewAtomicLevel()
@@ -109,13 +106,11 @@ func init() {
 		buildLogger = buildSplitOutputProductionLogger
 	}
 	if logger, err := buildLogger(); err != nil {
-		fmt.Printf("ERROR BUILDING LOGGER: %v\n", err)
 
 		// We failed to create a fallback logger. Our fallback
 		// unfortunately falls back to noop.
 		fallbackLogger = zap.NewNop().Sugar()
 	} else {
-		fmt.Printf("SETTING FALLBACKLOGGER TO LOGGER FROM BUILDLOGGER()\n")
 		fallbackLogger = logger.Sugar()
 	}
 }
@@ -137,7 +132,6 @@ func BuildLoggerFromConfig(config zap.Config) (*zap.Logger, error) {
 }
 
 func SetFallbackLogger(logger *zap.SugaredLogger) {
-	fmt.Printf("IN SetFallbackLogger()\n")
 	fallbackLogger = logger
 }
 
