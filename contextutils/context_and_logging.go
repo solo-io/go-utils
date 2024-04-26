@@ -19,7 +19,6 @@ package contextutils
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"go.uber.org/zap"
@@ -145,14 +144,11 @@ func withLogger(ctx context.Context, logger *zap.SugaredLogger) context.Context 
 // Returns nil if no logger is set in context, or if the stored value is
 // not of correct type.
 func fromContext(ctx context.Context) *zap.SugaredLogger {
-	fmt.Printf("GETTING LOGGER FROM CONTEXT: %+v\n", ctx)
 	if ctx != nil {
 		if logger, ok := ctx.Value(loggerKey{}).(*zap.SugaredLogger); ok {
-			fmt.Printf("USING EXISTING LOGGER IN CONTEXT\n")
 			return logger
 		}
 	}
-	fmt.Printf("RETURNING FALLBACK LOGGER\n")
 	return fallbackLogger
 }
 
