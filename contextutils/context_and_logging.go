@@ -109,16 +109,19 @@ func init() {
 		buildLogger = buildSplitOutputProductionLogger
 	}
 	if logger, err := buildLogger(); err != nil {
+		fmt.Printf("ERROR BUILDING LOGGER: %v\n", err)
 
 		// We failed to create a fallback logger. Our fallback
 		// unfortunately falls back to noop.
 		fallbackLogger = zap.NewNop().Sugar()
 	} else {
+		fmt.Printf("SETTING FALLBACKLOGGER TO LOGGER FROM BUILDLOGGER()\n")
 		fallbackLogger = logger.Sugar()
 	}
 }
 
 func SetFallbackLogger(logger *zap.SugaredLogger) {
+	fmt.Printf("IN SetFallbackLogger()\n")
 	fallbackLogger = logger
 }
 
@@ -132,11 +135,14 @@ func withLogger(ctx context.Context, logger *zap.SugaredLogger) context.Context 
 // Returns nil if no logger is set in context, or if the stored value is
 // not of correct type.
 func fromContext(ctx context.Context) *zap.SugaredLogger {
+	fmt.Printf("GETTING LOGGER FROM CONTEXT: %+v\n", ctx)
 	if ctx != nil {
 		if logger, ok := ctx.Value(loggerKey{}).(*zap.SugaredLogger); ok {
+			fmt.Printf("USING EXISTING LOGGER IN CONTEXT\n")
 			return logger
 		}
 	}
+	fmt.Printf("RETURNING FALLBACK LOGGER\n")
 	return fallbackLogger
 }
 
