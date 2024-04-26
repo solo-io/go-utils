@@ -129,8 +129,10 @@ func BuildLoggerFromConfig(config zap.Config) (*zap.Logger, error) {
 		config.OutputPaths = []string{os.Getenv(LogToFileLocationEnvName)}
 	}
 
-	level = zap.NewAtomicLevel()
-	config.Level = level
+	if config.Level == (zap.AtomicLevel{}) {
+		level = zap.NewAtomicLevel()
+		config.Level = level
+	}
 	return config.Build()
 }
 
