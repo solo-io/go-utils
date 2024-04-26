@@ -120,6 +120,20 @@ func init() {
 	}
 }
 
+func BuildLoggerFromConfig(config zap.Config) (*zap.Logger, error) {
+	if config.EncoderConfig.EncodeTime == nil {
+		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	}
+
+	if os.Getenv(LogToFileLocationEnvName) != "" {
+		config.OutputPaths = []string{os.Getenv(LogToFileLocationEnvName)}
+	}
+
+	level = zap.NewAtomicLevel()
+	config.Level = level
+	return config.Build()
+}
+
 func SetFallbackLogger(logger *zap.SugaredLogger) {
 	fmt.Printf("IN SetFallbackLogger()\n")
 	fallbackLogger = logger
