@@ -19,6 +19,7 @@ package contextutils
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"go.uber.org/zap"
@@ -46,10 +47,13 @@ func buildProductionLogger() (*zap.Logger, error) {
 	config := zap.NewProductionConfig()
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	// For non-splt logging, allow the user/environment to specify a log file location.
+	// For non-split logging, allow the user/environment to specify a log file location.
 	// When we log to a file, we will not log it STDOUT.
 	if os.Getenv(LogToFileLocationEnvName) != "" {
+		fmt.Printf("LOGGING TO FILE LOCATION: %s\n", os.Getenv(LogToFileLocationEnvName))
 		config.OutputPaths = []string{os.Getenv(LogToFileLocationEnvName)}
+	} else {
+		fmt.Printf("NOT LOGGING TO FILE LOCATION\n")
 	}
 
 	level = zap.NewAtomicLevel()
