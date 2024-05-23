@@ -1,0 +1,5 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >
+      Add `BuildLoggerFromConfig()` function that creates a logger from a `zap.Config` using a default timestamp format
+      if none is specified and populating the log file location from env.
