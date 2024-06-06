@@ -2,16 +2,12 @@ package testutils
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/rotisserie/eris"
-	"github.com/solo-io/go-utils/log"
-	"github.com/solo-io/go-utils/threadsafe"
+	"github.com/solo-io/go-utils/testutils/kubectl"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/pkg/errors"
@@ -40,94 +36,55 @@ func TeardownKube(namespace string) error {
 	return Kubectl("delete", "namespace", namespace)
 }
 
+// Deprecated; use testutils/kubectl.DeleteCrd
 func DeleteCrd(crd string) error {
-	return Kubectl("delete", "crd", crd)
+	return kubectl.DeleteCrd(context.Background(), crd, kubectl.NewParams())
 }
 
-func kubectl(args ...string) *exec.Cmd {
-	cmd := exec.Command("kubectl", args...)
-	cmd.Env = os.Environ()
-	// disable DEBUG=1 from getting through to kube
-	for i, pair := range cmd.Env {
-		if strings.HasPrefix(pair, "DEBUG") {
-			cmd.Env = append(cmd.Env[:i], cmd.Env[i+1:]...)
-			break
-		}
-	}
-	return cmd
-}
-
+// Deprecated; use testutils/kubectl.Kubectl
 func Kubectl(args ...string) error {
-	cmd := kubectl(args...)
-	cmd.Stdout = ginkgo.GinkgoWriter
-	cmd.Stderr = ginkgo.GinkgoWriter
-	log.Debugf("running: %s", strings.Join(cmd.Args, " "))
-	return cmd.Run()
+	p := kubectl.NewParams(args...)
+	p.Stdout = ginkgo.GinkgoWriter
+	p.Stderr = ginkgo.GinkgoWriter
+	return kubectl.Kubectl(context.Background(), p)
 }
 
+// Deprecated; use testutils/kubectl.KubectlOut
 func KubectlOut(args ...string) (string, error) {
-	cmd := kubectl(args...)
-	log.Debugf("running: %s", strings.Join(cmd.Args, " "))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		err = fmt.Errorf("%s (%v)", out, err)
-	}
-	return string(out), err
+	return kubectl.KubectlOut(context.Background(), kubectl.NewParams(args...))
 }
 
+// Deprecated; use testutils/kubectl.KubectlOutAsync
 func KubectlOutAsync(args ...string) (io.Reader, chan struct{}, error) {
-	cmd := kubectl(args...)
-	buf := &threadsafe.Buffer{}
-	cmd.Stdout = buf
-	cmd.Stderr = buf
-	log.Debugf("async running: %s", strings.Join(cmd.Args, " "))
-	err := cmd.Start()
-	if err != nil {
-		err = fmt.Errorf("%s (%v)", buf.Bytes(), err)
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+
+	buf, err := kubectl.KubectlOutAsync(ctx, kubectl.NewParams(args...))
+
 	done := make(chan struct{})
 	go func() {
 		select {
 		case <-done:
-			cmd.Process.Kill()
+			cancel()
 		}
 	}()
+
 	return buf, done, err
 }
 
+// Deprecated; use testutils/kubectl.KubectlOutChan
 func KubectlOutChan(r io.Reader, args ...string) (<-chan io.Reader, chan struct{}, error) {
-	cmd := kubectl(args...)
-	buf := &threadsafe.Buffer{}
-	cmd.Stdout = buf
-	cmd.Stderr = buf
-	cmd.Stdin = r
-	log.Debugf("async running: %s", strings.Join(cmd.Args, " "))
-	err := cmd.Start()
-	if err != nil {
-		return nil, nil, err
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+
+	p := kubectl.NewParams(args...)
+	p.Stdin = r
+
+	result, err := kubectl.KubectlOutChan(ctx, p)
+
 	done := make(chan struct{})
 	go func() {
 		select {
 		case <-done:
-			cmd.Process.Kill()
-		}
-	}()
-
-	result := make(chan io.Reader)
-	go func() {
-		for {
-			select {
-			case <-time.After(time.Second):
-				select {
-				case result <- buf:
-					continue
-				case <-done:
-					return
-				default:
-					continue
-				}
-			}
+			cancel()
 		}
 	}()
 
@@ -135,58 +92,17 @@ func KubectlOutChan(r io.Reader, args ...string) (<-chan io.Reader, chan struct{
 }
 
 // WaitPodsRunning waits for all pods to be running
+// Deprecated; use testutils/kubectl.WaitPodsRunning
 func WaitPodsRunning(ctx context.Context, interval time.Duration, namespace string, labels ...string) error {
-	finished := func(output string) bool {
-		return strings.Contains(output, "Running") || strings.Contains(output, "ContainerCreating")
-	}
-	for _, label := range labels {
-		if err := WaitPodStatus(ctx, interval, namespace, label, "Running or ContainerCreating", finished); err != nil {
-			return err
-		}
-	}
-	finished = func(output string) bool {
-		return strings.Contains(output, "Running")
-	}
-	for _, label := range labels {
-		if err := WaitPodStatus(ctx, interval, namespace, label, "Running", finished); err != nil {
-			return err
-		}
-	}
-	return nil
+	return kubectl.WaitPodsRunning(ctx, interval, namespace, kubectl.NewParams(), labels...)
 }
 
+// Deprecated; use testutils/kubectl.WaitPodStatus
 func WaitPodStatus(ctx context.Context, interval time.Duration, namespace, label, status string, finished func(output string) bool) error {
-	tick := time.Tick(interval)
-	deadline, _ := ctx.Deadline()
-	log.Debugf("waiting till %v for pod %v to be %v...", deadline, label, status)
-	for {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("timed out waiting for %v to be %v", label, status)
-		case <-tick:
-			out, err := KubectlOut("get", "pod", "-l", label, "-n", namespace)
-			if err != nil {
-				return fmt.Errorf("failed getting pod: %v", err)
-			}
-			if strings.Contains(out, "CrashLoopBackOff") {
-				out = KubeLogs(label)
-				return eris.Errorf("%v in crash loop with logs %v", label, out)
-			}
-			if strings.Contains(out, "ErrImagePull") || strings.Contains(out, "ImagePullBackOff") {
-				out, _ = KubectlOut("describe", "pod", "-l", label)
-				return eris.Errorf("%v in ErrImagePull with description %v", label, out)
-			}
-			if finished(out) {
-				return nil
-			}
-		}
-	}
+	return kubectl.WaitPodStatus(ctx, interval, namespace, label, status, finished, kubectl.NewParams())
 }
 
+// Deprecated; use testutils/kubectl.KubeLogs
 func KubeLogs(label string) string {
-	out, err := KubectlOut("logs", "-l", label)
-	if err != nil {
-		out = err.Error()
-	}
-	return out
+	return kubectl.KubeLogs(context.Background(), label, kubectl.NewParams())
 }
