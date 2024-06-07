@@ -63,6 +63,9 @@ func Kubectl(ctx context.Context, params Params) error {
 }
 
 func KubectlOut(ctx context.Context, params Params) (string, error) {
+	// because we are using CombinedOutput we need to set the Stdout and Stderr to nil
+	params.Stderr = nil
+	params.Stdout = nil
 	cmd := kubectl(ctx, params)
 	log.Debugf("running: %s", strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
