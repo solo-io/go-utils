@@ -104,5 +104,5 @@ func WaitPodStatus(ctx context.Context, interval time.Duration, namespace, label
 
 // Deprecated; use testutils/kubectl.KubeLogs
 func KubeLogs(label string) string {
-	return kubectl.KubeLogs(context.Background(), label, kubectl.NewParams())
+	return kubectl.KubeLogs(context.Background(), label, "", kubectl.NewParams())
 }
