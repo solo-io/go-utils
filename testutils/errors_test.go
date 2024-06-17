@@ -1,10 +1,9 @@
-package testutils_test
+package testutils
 
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rotisserie/eris"
-	. "github.com/solo-io/go-utils/testutils"
 )
 
 var _ = Describe("eris errors", func() {
