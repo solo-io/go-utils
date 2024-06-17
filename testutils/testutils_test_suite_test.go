@@ -1,4 +1,4 @@
-package testutils
+package testutils_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestTestutils(t *testing.T) {
+func TestTestutilsBlackbox(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Testutils Suite")
 }

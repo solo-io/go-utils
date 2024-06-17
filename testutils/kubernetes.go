@@ -17,6 +17,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Helper vars that allow us to mock the kubectl call with static echo text
+var (
+	kubectlExecutable          = "kubectl"
+	kubectlArgs       []string = nil
+)
+
 // Deprecated: this function is incredibly slow, use CreateNamespacesInParallel instead
 func SetupKubeForTest(namespace string) error {
 	context := os.Getenv("KUBECTL_CONTEXT")
@@ -45,7 +51,10 @@ func DeleteCrd(crd string) error {
 }
 
 func kubectl(args ...string) *exec.Cmd {
-	cmd := exec.Command("kubectl", args...)
+	if kubectlArgs != nil {
+		args = kubectlArgs
+	}
+	cmd := exec.Command(kubectlExecutable, args...)
 	cmd.Env = os.Environ()
 	// disable DEBUG=1 from getting through to kube
 	for i, pair := range cmd.Env {
