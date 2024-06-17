@@ -1,0 +1,6 @@
+changelog:
+- type: FIX
+  issueLink: https://github.com/solo-io/go-utils/issues/529
+  resolvesIssue: true
+  description: >-
+    Revise kubectl tool to not report `Terminating` pods as `Running`.
