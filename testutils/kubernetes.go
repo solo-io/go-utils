@@ -137,18 +137,10 @@ func KubectlOutChan(r io.Reader, args ...string) (<-chan io.Reader, chan struct{
 // WaitPodsRunning waits for all pods to be running
 func WaitPodsRunning(ctx context.Context, interval time.Duration, namespace string, labels ...string) error {
 	finished := func(output string) bool {
-		return strings.Contains(output, "Running") || strings.Contains(output, "ContainerCreating")
+		return strings.Contains(output, "Running") && !strings.Contains(output, "Terminating")
 	}
 	for _, label := range labels {
-		if err := WaitPodStatus(ctx, interval, namespace, label, "Running or ContainerCreating", finished); err != nil {
-			return err
-		}
-	}
-	finished = func(output string) bool {
-		return strings.Contains(output, "Running")
-	}
-	for _, label := range labels {
-		if err := WaitPodStatus(ctx, interval, namespace, label, "Running", finished); err != nil {
+		if err := WaitPodStatus(ctx, interval, namespace, label, "Running, not Terminating", finished); err != nil {
 			return err
 		}
 	}
