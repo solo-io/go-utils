@@ -56,6 +56,7 @@ func MustGenerateCliDocs(app *cobra.Command) {
 
 const frontMatter = `---
 title: "{{ replace .Name "_" " " }}"
+description: "Reference for the '{{ replace .Name "_" " " }}' command."
 weight: 5
 ---
 `

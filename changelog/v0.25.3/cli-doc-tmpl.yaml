@@ -1,0 +1,4 @@
+changelog:
+- type: NON_USER_FACING
+  description: >-
+    Revise CLI reference doc template to add a description metadata line.
