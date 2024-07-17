@@ -1,6 +1,7 @@
 package cliutils
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -26,12 +27,21 @@ func Print(output, template string, m proto.Message, tblPrn Printer, w io.Writer
 	case "yml":
 		return PrintYAML(m, w)
 	case "json":
-		return PrintJSON(m, w)
+		return PrintJSONInterface(m, w)
 	case "template":
 		return PrintTemplate(m, template, w)
 	default:
 		return tblPrn(m, w)
 	}
+}
+
+func PrintJSONInterface(obj interface{}, w io.Writer) error {
+	b, err := json.Marshal(obj)
+	if err != nil {
+		return errors.Wrap(err, "unable to marshal JSON")
+	}
+	_, err = fmt.Fprintln(w, string(b))
+	return err
 }
 
 // PrintJSON - prints the given proto.Message to io.Writer in JSON
@@ -91,17 +101,17 @@ func PrintJSONList(data interface{}, w io.Writer) error {
 		return errors.Wrap(err, "unable to print JSON list")
 	}
 	for i := 0; i < list.Len(); i++ {
-		v, ok := list.Index(i).Interface().(proto.Message)
-		if !ok {
-			return eris.New("unable to convert to proto message")
-		}
-		if i != 0 {
-			_, err = fmt.Fprintln(w, ",")
-			if err != nil {
-				return errors.Wrap(err, "unable to print JSON list")
-			}
-		}
-		err = PrintJSON(v, w)
+		obj := list.Index(i).Interface()
+		//if !ok {
+		//	return eris.New("unable to convert to proto message")
+		//}
+		//if i != 0 {
+		//	_, err = fmt.Fprintln(w, ",")
+		//	if err != nil {
+		//		return errors.Wrap(err, "unable to print JSON list")
+		//	}
+		//}
+		err = PrintJSONInterface(obj, w)
 		if err != nil {
 			return err
 		}
