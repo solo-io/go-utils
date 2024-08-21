@@ -1,4 +1,9 @@
 changelog:
+- type: BREAKING_CHANGE
+  issueLink: https://github.com/solo-io/gloo/issues/9819
+  description: >
+    Upgrade project dependencies across the board. May present issues for users due to our requirements, so marked as breaking.
+  resolvesIssue: false
 - type: DEPENDENCY_BUMP
   description: Bumped the go version for go.mod
   dependencyOwner: golang
@@ -7,7 +12,7 @@ changelog:
 - type: NON_USER_FACING
   description: >
     Bump dependencies to support Kubernetes 1.31
-  issueLink: https://github.com/solo-io/gloo/issues/8515
+  issueLink: https://github.com/solo-io/gloo/issues/9683
   resolvesIssue: false
 - type: DEPENDENCY_BUMP
   dependencyOwner: onsi
