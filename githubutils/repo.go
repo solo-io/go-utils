@@ -2,6 +2,7 @@ package githubutils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,8 +12,6 @@ import (
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
-
-	"github.com/imroc/req"
 
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/versionutils"
@@ -407,22 +406,29 @@ type ShaObject struct {
 // returns commit sha
 func GetCommitForTag(repoOwner, repo, tag string, auth bool) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/refs/tags/%s", repoOwner, repo, tag)
-	header := req.Header{}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", eris.Wrapf(err, "error  creating github GET request")
+	}
+
 	if auth {
 		githubToken, err := GetGithubToken()
 		if err != nil {
 			return "", err
 		}
-		header["Authorization"] = fmt.Sprintf("token %s", githubToken)
+		req.Header.Add("Authorization", fmt.Sprintf("token %s", githubToken))
 	}
-	resp, err := req.Get(url, header)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", eris.Wrapf(err, "Unable to get commit for version v%s", tag)
 	}
+	defer resp.Body.Close()
+
 	res := &Response{}
-	err = resp.ToJSON(res)
+	err = json.NewDecoder(resp.Body).Decode(res)
 	if err != nil {
-		return "", eris.Wrapf(err, "error marshalling response to Response object, response: %s", resp.String())
+		return "", eris.Wrapf(err, "error decoding response to Response object")
 	}
 	return res.Sha, nil
 }

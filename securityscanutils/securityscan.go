@@ -5,8 +5,11 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"math"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -25,7 +28,6 @@ import (
 	"github.com/solo-io/go-utils/stringutils"
 
 	"github.com/google/go-github/v32/github"
-	"github.com/imroc/req"
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/githubutils"
 )
@@ -386,15 +388,30 @@ func (r *SecurityScanRepo) UploadSecurityScanToGithub(fileName, versionTag strin
 		CommitSha: sha,
 		Sarif:     base64.StdEncoding.EncodeToString(sarifFile.Bytes()),
 	}
-	header := req.Header{
-		"Authorization": fmt.Sprintf("token %s", githubToken),
-		"Content-Type":  "application/json",
+
+	var sarifMetadataBuf bytes.Buffer
+	enc := json.NewEncoder(&sarifMetadataBuf)
+	err = enc.Encode(sarifMetadata)
+	if err != nil {
+		return eris.Wrap(err, "error encoding sarif metadata")
 	}
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/code-scanning/sarifs", r.Owner, r.Repo)
-	res, err := req.Post(url, req.BodyJSON(sarifMetadata), header)
-	if err != nil || res.Response().StatusCode != 200 {
-		return eris.Wrapf(err, "error uploading sarif file to github, response: \n%s", res)
+
+	var req *http.Request
+	req, err = http.NewRequest(http.MethodPost, url, &sarifMetadataBuf)
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", githubToken))
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return eris.Wrapf(err, "error uploading sarif file to github, response code: %d", resp.StatusCode)
 	}
-	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, res.String())
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return eris.Wrapf(err, "error reading http response body from github")
+	}
+	fmt.Printf("Response from API, uploading sarif %s: \n %s\n", fileName, string(body))
 	return nil
 }
