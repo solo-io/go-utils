@@ -3,3 +3,4 @@ changelog:
     description: >
       Remove unused code related to generating sarif security scans and uploading them to Github which relied on a dependency
       with a known CVE
+    issueLink: https://github.com/solo-io/go-utils/issues/534
