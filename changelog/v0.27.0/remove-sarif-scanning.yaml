@@ -4,3 +4,7 @@ changelog:
       Remove unused code related to generating sarif security scans and uploading them to Github which relied on a dependency
       with a known CVE
     issueLink: https://github.com/solo-io/go-utils/issues/534
+  - type: NON_USER_FACING
+    description: >
+      Update repo client tests that had gotten slow due to the number of releases since the last update and in one case
+      which had broken due to a deleted release
