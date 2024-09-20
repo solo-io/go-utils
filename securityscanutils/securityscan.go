@@ -251,7 +251,10 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	if err != nil {
 		return err
 	}
+
 	var vulnerabilityMd string
+	shouldCreateIssue := false
+
 	for _, image := range images {
 		var imageWithRepo string
 		// if the image contains the repo in it (gcr.io/gloo/image-name), we don't use the Opts.ImageRepo
@@ -267,6 +270,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			if errors.Is(err, UnrecoverableErr) {
 				return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 			}
+			shouldCreateIssue = true
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n", imageWithRepo, err)
 		}
 
@@ -275,6 +279,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			if err != nil {
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
+			shouldCreateIssue = true
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n\n", imageWithRepo, trivyScanMd)
 		} else {
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n No Vulnerabilities Found for %s\n\n", imageWithRepo, imageWithRepo)
@@ -284,8 +289,13 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	if vulnerabilityMd != "" && r.Opts.AdditionalContext != "" {
 		vulnerabilityMd = fmt.Sprintf("%s\n%s", r.Opts.AdditionalContext, vulnerabilityMd)
 	}
+
 	// Create / Update issue for the repo if a vulnerability is found
-	return r.issueWriter.Write(ctx, release, vulnerabilityMd)
+	if shouldCreateIssue {
+		return r.issueWriter.Write(ctx, release, vulnerabilityMd)
+	}
+
+	return nil
 }
 
 func (r *SecurityScanRepo) runGithubSarifScan(ctx context.Context, release *github.RepositoryRelease, sarifTplFile string) error {
