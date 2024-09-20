@@ -2,7 +2,6 @@ package githubutils
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -391,44 +390,4 @@ func FilterReleases(releases []*github.RepositoryRelease, constraint *semver.Con
 		}
 	}
 	return filteredReleases
-}
-
-type Response struct {
-	ShaObject `json:"object"`
-}
-
-type ShaObject struct {
-	Sha string `json:"sha"`
-}
-
-// Gets commit associated with a tag from github repo
-// uses GITHUB_TOKEN env var for api request if auth is true
-// returns commit sha
-func GetCommitForTag(repoOwner, repo, tag string, auth bool) (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/refs/tags/%s", repoOwner, repo, tag)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return "", eris.Wrapf(err, "error  creating github GET request")
-	}
-
-	if auth {
-		githubToken, err := GetGithubToken()
-		if err != nil {
-			return "", err
-		}
-		req.Header.Add("Authorization", fmt.Sprintf("token %s", githubToken))
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", eris.Wrapf(err, "Unable to get commit for version v%s", tag)
-	}
-	defer resp.Body.Close()
-
-	res := &Response{}
-	err = json.NewDecoder(resp.Body).Decode(res)
-	if err != nil {
-		return "", eris.Wrapf(err, "error decoding response to Response object")
-	}
-	return res.Sha, nil
 }
