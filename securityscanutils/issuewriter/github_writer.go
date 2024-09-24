@@ -82,12 +82,6 @@ func (g *GithubIssueWriter) Write(
 ) error {
 	logger := contextutils.LoggerFrom(ctx)
 
-	if vulnerabilityMarkdown == "" {
-		// There we no vulnerabilities discovered for this release
-		// do not create an empty github issue
-		return nil
-	}
-
 	if !g.shouldWriteIssue(release) {
 		logger.Debugf("GithubIssueWriter skipping release %s", release.GetTagName())
 		// The GithubIssueWriter can be configured to only write issues for certain releases
