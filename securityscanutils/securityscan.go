@@ -134,7 +134,7 @@ func (s *SecurityScanner) GenerateSecurityScans(ctx context.Context) error {
 				return eris.Wrapf(err, "error generating markdown file from security scan for version %s", release.GetTagName())
 			}
 
-			logger.Debugf("Completed running markdown scan for release %s after %s", release.GetTagName(), time.Since(releaseStart).String())
+			logger.Debugf("Completed running markdown scan for release %s of %s repo after %s", release.GetTagName(), repo.Repo, time.Since(releaseStart).String())
 		}
 
 	}
