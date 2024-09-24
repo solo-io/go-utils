@@ -12,8 +12,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 
-	"github.com/imroc/req"
-
 	"github.com/solo-io/go-utils/log"
 	"github.com/solo-io/go-utils/versionutils"
 
@@ -392,37 +390,4 @@ func FilterReleases(releases []*github.RepositoryRelease, constraint *semver.Con
 		}
 	}
 	return filteredReleases
-}
-
-type Response struct {
-	ShaObject `json:"object"`
-}
-
-type ShaObject struct {
-	Sha string `json:"sha"`
-}
-
-// Gets commit associated with a tag from github repo
-// uses GITHUB_TOKEN env var for api request if auth is true
-// returns commit sha
-func GetCommitForTag(repoOwner, repo, tag string, auth bool) (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/refs/tags/%s", repoOwner, repo, tag)
-	header := req.Header{}
-	if auth {
-		githubToken, err := GetGithubToken()
-		if err != nil {
-			return "", err
-		}
-		header["Authorization"] = fmt.Sprintf("token %s", githubToken)
-	}
-	resp, err := req.Get(url, header)
-	if err != nil {
-		return "", eris.Wrapf(err, "Unable to get commit for version v%s", tag)
-	}
-	res := &Response{}
-	err = resp.ToJSON(res)
-	if err != nil {
-		return "", eris.Wrapf(err, "error marshalling response to Response object, response: %s", resp.String())
-	}
-	return res.Sha, nil
 }
