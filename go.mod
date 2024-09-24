@@ -20,7 +20,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
-	github.com/imroc/req v0.3.0
 	github.com/k0kubun/pp v2.3.0+incompatible
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/hashstructure v1.0.0

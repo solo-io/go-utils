@@ -55,9 +55,8 @@ var _ = Describe("Security Scan Suite", func() {
 							// Scan should continue in the case an image cannot be found
 							"v1.7.0": {"thisimagecannotbefound", "gloo", "discovery"},
 						},
-						VersionConstraint:      verConstraint,
-						ImageRepo:              "quay.io/solo-io",
-						UploadCodeScanToGithub: false,
+						VersionConstraint: verConstraint,
+						ImageRepo:         "quay.io/solo-io",
 					},
 				}},
 			}
@@ -96,9 +95,8 @@ var _ = Describe("Security Scan Suite", func() {
 							">v1.6.0":  {"gloo", "discovery"},
 							">=v1.7.0": {"glooGreaterThan17"},
 						},
-						VersionConstraint:      verConstraint,
-						ImageRepo:              "quay.io/solo-io",
-						UploadCodeScanToGithub: false,
+						VersionConstraint: verConstraint,
+						ImageRepo:         "quay.io/solo-io",
 					},
 				}},
 			}
@@ -120,9 +118,8 @@ var _ = Describe("Security Scan Suite", func() {
 						ImagesPerVersion: map[string][]string{
 							"v1.6.0": {"gloo", "discovery"},
 						},
-						VersionConstraint:      verConstraint,
-						ImageRepo:              "quay.io/solo-io",
-						UploadCodeScanToGithub: false,
+						VersionConstraint: verConstraint,
+						ImageRepo:         "quay.io/solo-io",
 					},
 				}},
 			}
@@ -147,9 +144,8 @@ var _ = Describe("Security Scan Suite", func() {
 							ImagesPerVersion: map[string][]string{
 								"v1.7.0": {"gloo; $(poorly formatted image name to force UnrecoverableError)"},
 							},
-							VersionConstraint:      verConstraint,
-							ImageRepo:              "quay.io/solo-io",
-							UploadCodeScanToGithub: false,
+							VersionConstraint: verConstraint,
+							ImageRepo:         "quay.io/solo-io",
 						},
 					}},
 				}
@@ -187,9 +183,8 @@ var _ = Describe("Security Scan Suite", func() {
 							ImagesPerVersion: map[string][]string{
 								"v1.7.0": {"thisimagedoesnotexist"},
 							},
-							VersionConstraint:      verConstraint,
-							ImageRepo:              "quay.io/solo-io",
-							UploadCodeScanToGithub: false,
+							VersionConstraint: verConstraint,
+							ImageRepo:         "quay.io/solo-io",
 						},
 					}},
 				}
