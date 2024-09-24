@@ -264,6 +264,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	// Create / Update issue for the repo if a vulnerability is found
 	if shouldCreateIssue {
 		return r.issueWriter.Write(ctx, release, vulnerabilityMd)
+	} else {
+		contextutils.LoggerFrom(ctx).Infof("no vulnerabilities found for version %s of %s repo, skipping issue write", version, r.Repo)
 	}
 
 	return nil
