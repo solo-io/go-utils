@@ -1,0 +1,5 @@
+changelog:
+  - type: BUGFIX
+    description: >
+      Fix a bug that caused issues to be written for releases without vulnerabilities when running security scans
+    issueLink: https://github.com/solo-io/go-utils/issues/532
