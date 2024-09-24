@@ -224,7 +224,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	}
 
 	var vulnerabilityMd string
-	shouldCreateIssue := false
+	shouldWriteIssue := false
 
 	for _, image := range images {
 		var imageWithRepo string
@@ -238,10 +238,13 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 		output := path.Join(trivyScanOutputDir, fileName)
 		_, vulnFound, err := r.trivyScanner.ScanImage(ctx, imageWithRepo, markdownTplFile, output)
 		if err != nil {
+			// UnrecoverableErr should fail loudly; returning an error will fail the action altogether
 			if errors.Is(err, UnrecoverableErr) {
 				return eris.Wrapf(err, "error running image scan on image %s", imageWithRepo)
 			}
-			shouldCreateIssue = true
+			// recoverable errors should be written to an issue, so that they are visible to developers rather than
+			// swallowed silently
+			shouldWriteIssue = true
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n", imageWithRepo, err)
 		}
 
@@ -250,7 +253,8 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 			if err != nil {
 				return eris.Wrapf(err, "error reading trivy markdown scan file %s to generate github issue", output)
 			}
-			shouldCreateIssue = true
+			// if there is a vulnerability on any image we should write an issue
+			shouldWriteIssue = true
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n %s\n\n", imageWithRepo, trivyScanMd)
 		} else {
 			vulnerabilityMd += fmt.Sprintf("# %s\n\n No Vulnerabilities Found for %s\n\n", imageWithRepo, imageWithRepo)
@@ -262,7 +266,7 @@ func (r *SecurityScanRepo) RunMarkdownScan(ctx context.Context, release *github.
 	}
 
 	// Create / Update issue for the repo if a vulnerability is found
-	if shouldCreateIssue {
+	if shouldWriteIssue {
 		return r.issueWriter.Write(ctx, release, vulnerabilityMd)
 	} else {
 		contextutils.LoggerFrom(ctx).Infof("no vulnerabilities found for version %s of %s repo, skipping issue write", version, r.Repo)
