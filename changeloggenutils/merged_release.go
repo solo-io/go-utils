@@ -77,6 +77,25 @@ func (g *MergedReleaseGenerator) GenerateJSON(ctx context.Context) (string, erro
 	if err != nil {
 		return "", err
 	}
+	// Coerce LabelVersion to 1 for alpine labels. Without this, there will be duplicate versions
+	// in the changelog
+	for mainRelease, mainVersionData := range enterpriseReleases.Releases {
+		for version, changeLogNote := range mainVersionData.ChangelogNotes {
+			if version.Label == "alpine" && version.LabelVersion == 0 {
+				clonedChangeLogNotes := NewChangelogNotes()
+				clonedChangeLogNotes.Add(changeLogNote)
+				newVer := Version{
+					Major:        version.Major,
+					Minor:        version.Minor,
+					Patch:        version.Patch,
+					Label:        version.Label,
+					LabelVersion: 1,
+				}
+				enterpriseReleases.Releases[mainRelease].ChangelogNotes[newVer] = changeLogNote
+				delete(enterpriseReleases.Releases[mainRelease].ChangelogNotes, version)
+			}
+		}
+	}
 	var out struct {
 		Opts        Options
 		ReleaseData *ReleaseData
