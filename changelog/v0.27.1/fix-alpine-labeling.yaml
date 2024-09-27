@@ -1,0 +1,5 @@
+changelog:
+  - type: FIX
+    description: >
+      Fix a bug that results in duplicate versions in the output of the changeloggenutils GenerateJSON function when the label is "alpine"
+    issueLink: https://github.com/solo-io/go-utils/issues/537
