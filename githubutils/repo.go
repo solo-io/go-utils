@@ -103,7 +103,7 @@ func FindStatus(ctx context.Context, client *github.Client, statusLabel, owner, 
 
 func GetFilesFromGit(ctx context.Context, client *github.Client, owner, repo, ref, path string) ([]*github.RepositoryContent, error) {
 	var opts *github.RepositoryContentGetOptions
-	if ref != "" && ref != "master" {
+	if ref != "" && ref != "master" && ref != "main" {
 		opts = &github.RepositoryContentGetOptions{
 			Ref: ref,
 		}
