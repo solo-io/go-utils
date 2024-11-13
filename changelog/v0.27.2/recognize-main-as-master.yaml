@@ -1,0 +1,5 @@
+changelog:
+  - type: FIX
+    description: >
+      In support of docs generation, recognize "main" as an alias for "master" in the githubutils GetFilesFromGit function
+    issueLink: https://github.com/solo-io/solo-projects/issues/6888
