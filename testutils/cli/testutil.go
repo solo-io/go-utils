@@ -73,7 +73,7 @@ func (c *Console) PressDown() {
 func (c *Console) Esc() {
 	// I grabbed this value from here: gopkg.in/AlecAivazis/survey.v1/terminal/sequences.go
 	// Originally I tried to use escape codes (https://en.wikipedia.org/wiki/ANSI_escape_code)
-	// but it didnt work
+	// but it didn't work
 	_, err := c.Console.Write([]byte{27})
 	Expect(err).NotTo(HaveOccurred())
 }

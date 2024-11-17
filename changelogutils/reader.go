@@ -56,7 +56,7 @@ func (c *changelogReader) GetChangelogDirectory(ctx context.Context) string {
 	var settings ValidationSettings
 	bytes, err := c.code.GetFileContents(ctx, GetValidationSettingsPath())
 	if err != nil {
-		// unable to read validtion.yaml ~= "validation.yaml is not there"
+		// unable to read validation.yaml ~= "validation.yaml is not there"
 		return "changelog"
 	}
 
