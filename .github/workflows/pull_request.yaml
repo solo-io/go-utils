@@ -13,16 +13,16 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.11.0
+      uses: styfle/cancel-workflow-action@0.12.1
       with:
         access_token: ${{ github.token }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.8
+        python-version: 3.13
     - uses: google-github-actions/setup-gcloud@a48b55b3b0eeaf77b6e1384aab737fbefe2085ac
       with:
         version: '290.0.1'
@@ -32,10 +32,10 @@ jobs:
       name: Gcloud Login
     - name: Install Trivy
       run: |
-        wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.deb
-        sudo dpkg -i trivy_0.18.3_Linux-64bit.deb
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.57.0_Linux-64bit.deb
+        sudo dpkg -i trivy_0.57.0_Linux-64bit.deb
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version-file: "go.mod"
     - name: Run tests
