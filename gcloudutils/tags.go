@@ -9,7 +9,7 @@ import (
 type Tags []string
 
 const (
-	seperator    = "_"
+	separator    = "_"
 	tagConst     = "tag"
 	shaConst     = "sha"
 	refConst     = "ref"
@@ -27,11 +27,11 @@ func InitializeTags(input []string) Tags {
 }
 
 func createTag(title, item string) string {
-	return fmt.Sprintf("%s%s%s", title, seperator, item)
+	return fmt.Sprintf("%s%s%s", title, separator, item)
 }
 
 func createIntegerTag(title string, item int64) string {
-	return fmt.Sprintf("%s%s%d", title, seperator, item)
+	return fmt.Sprintf("%s%s%d", title, separator, item)
 }
 
 func (t Tags) AddReleaseTag(tag string) Tags {
@@ -104,7 +104,7 @@ func (t Tags) GetInstallationId() int64 {
 
 func (t Tags) getByConst(item string) string {
 	for _, v := range t {
-		splitVal := strings.SplitN(v, seperator, 2)
+		splitVal := strings.SplitN(v, separator, 2)
 		if len(splitVal) == 2 && splitVal[0] == item {
 			return splitVal[1]
 		}

@@ -172,7 +172,7 @@ metadata:
 		})
 		It("should find that the array is off by 4 spaces", func() {
 			// note the - "" is off by 4 spaces, this is acceptable
-			// this is whithin the array formatting specs. Same line, 2 spaces, or 4 spaces.
+			// this is within the array formatting specs. Same line, 2 spaces, or 4 spaces.
 			data := `
 resource:
   release: gloo-ee-test
