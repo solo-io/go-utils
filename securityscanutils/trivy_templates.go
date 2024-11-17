@@ -1,7 +1,7 @@
 package securityscanutils
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/rotisserie/eris"
 )
@@ -30,7 +30,7 @@ Trivy Returned Empty Report
 // Create tempoarary file that contains the trivy template
 // Trivy CLI only accepts files as input for a template, so this is a workaround
 func GetTemplateFile(trivyTemplate string) (string, error) {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		return "", eris.Wrap(err, "Unable to create temporary file to write template to")
 	}

@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -121,7 +120,7 @@ func writeSha256OrExit(ctx context.Context, file *os.File, outputPath string) {
 		contextutils.LoggerFrom(ctx).Fatal(err)
 	}
 	sha256String := hex.EncodeToString(h.Sum(nil)) + " " + filepath.Base(file.Name()) + "\n"
-	err := ioutil.WriteFile(outputPath, []byte(sha256String), 0700)
+	err := os.WriteFile(outputPath, []byte(sha256String), 0700)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Fatal(err)
 	}

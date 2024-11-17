@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -208,7 +208,7 @@ func GetSecurityScanReport(url string) (string, error) {
 
 	var report string
 	if resp.StatusCode == http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		bodyBytes, _ := io.ReadAll(resp.Body)
 		report = string(bodyBytes)
 	} else if resp.StatusCode == http.StatusNotFound {
 		// Older releases may be missing scan results

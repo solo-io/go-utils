@@ -3,7 +3,6 @@ package securityscanutils_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"sort"
@@ -28,7 +27,7 @@ var _ = Describe("Security Scan Suite", func() {
 
 	BeforeEach(func() {
 		var err error
-		outputDir, err = ioutil.TempDir("", "")
+		outputDir, err = os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -215,7 +214,7 @@ var _ = Describe("Security Scan Suite", func() {
 // Accepts a list of file names and passes all tests only if the directory path passed in
 // as dir includes all fileNames passed in.
 func ExpectDirToHaveFiles(dir string, fileNames ...string) {
-	dirResults, err := ioutil.ReadDir(dir)
+	dirResults, err := os.ReadDir(dir)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, dirResults).To(HaveLen(len(fileNames)))
 	var dirFiles []string

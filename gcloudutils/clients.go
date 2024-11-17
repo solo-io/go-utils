@@ -3,7 +3,6 @@ package gcloudutils
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -41,7 +40,7 @@ func credsFromProjectId(ctx context.Context, projectId string) (*google.Credenti
 	contextutils.LoggerFrom(ctx).Debugw("Looking for creds for project",
 		zap.String("projectId", projectId),
 		zap.String("credsFile", pathToCredsFile))
-	credByt, err := ioutil.ReadFile(pathToCredsFile)
+	credByt, err := os.ReadFile(pathToCredsFile)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Errorw("Error reading creds file",
 			zap.Error(err),
