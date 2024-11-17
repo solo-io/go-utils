@@ -1,4 +1,4 @@
 changelog:
   - type: FIX
-    description: Change how logrus dependency is handled to aovid downstream problems.
+    description: Change how logrus dependency is handled to avoid downstream problems.
     issueLink: https://github.com/solo-io/go-utils/issues/340
