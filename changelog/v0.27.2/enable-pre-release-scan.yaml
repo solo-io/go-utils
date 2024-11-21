@@ -1,0 +1,4 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >
+      Enable security scans for pre-releases if --enable-pre-release=true.

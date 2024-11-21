@@ -239,7 +239,7 @@ func readImageVersionConstraintsFile(opts *formatResultsOptions) (map[string][]s
 		if len(values) < 2 {
 			return nil, MalformedVersionImageConstraintLine(line)
 		}
-		for i, _ := range values {
+		for i := range values {
 			trimVal := strings.TrimSpace(values[i])
 			values[i] = trimVal
 			if i > 0 {
@@ -249,7 +249,7 @@ func readImageVersionConstraintsFile(opts *formatResultsOptions) (map[string][]s
 		imagesPerVersion[values[0]] = values[1:]
 	}
 	var allImages []string
-	for image, _ := range imageSet {
+	for image := range imageSet {
 		allImages = append(allImages, image)
 	}
 	opts.allImages = allImages

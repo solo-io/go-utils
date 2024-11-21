@@ -101,6 +101,9 @@ type SecurityScanOpts struct {
 	// Additional context to add to the top of the generated vulnerability report.
 	// Example: This could be used to provide debug instructions to developers.
 	AdditionalContext string
+
+	// Enable scanning of pre-release versions
+	EnablePreRelease bool
 }
 
 // GenerateSecurityScans generates .md files and writes them to the configured OutputDir for each repo
@@ -156,7 +159,8 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	repoOptions := repo.Opts
 
 	// Set the Predicate used to filter releases we wish to scan
-	repo.scanReleasePredicate = NewSecurityScanRepositoryReleasePredicate(repoOptions.VersionConstraint)
+	repo.scanReleasePredicate = NewSecurityScanRepositoryReleasePredicate(
+		repoOptions.VersionConstraint, repoOptions.EnablePreRelease)
 
 	logger.Debugf("Scanning github repo for releases that match version constraint: %s", repoOptions.VersionConstraint)
 

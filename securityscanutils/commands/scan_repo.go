@@ -49,6 +49,8 @@ type scanRepoOptions struct {
 	releaseVersionConstraint    string
 	imagesVersionConstraintFile string
 	additionalContextFile       string
+
+	enablePreRelease bool
 }
 
 func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
@@ -58,6 +60,8 @@ func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(&m.vulnerabilityAction, "vulnerability-action", "a", "none", "action to take when a vulnerability is discovered {none, github-issue-all, github-issue-latest, output-locally}")
 
 	flags.StringVarP(&m.releaseVersionConstraint, "release-constraint", "c", "", "version constraint for releases to scan")
+	flags.BoolVar(&m.enablePreRelease, "enable-pre-release", false, "enable pre-release versions to be scanned")
+
 	flags.StringVarP(&m.imagesVersionConstraintFile, "image-constraint-file", "i", "", "name of file with mapping of version to images")
 	flags.StringVarP(&m.additionalContextFile, "additional-context-file", "d", "", "name of file with any additional context to add to the top of the generated vulnerability report")
 
@@ -94,6 +98,7 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 					CreateGithubIssuePerVersion:            opts.vulnerabilityAction == "github-issue-all",
 					CreateGithubIssueForLatestPatchVersion: opts.vulnerabilityAction == "github-issue-latest",
 					AdditionalContext:                      additionalContext,
+					EnablePreRelease:                       opts.enablePreRelease,
 				},
 			},
 		},

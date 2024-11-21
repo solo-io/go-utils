@@ -12,55 +12,46 @@ import (
 )
 
 var _ = Describe("Predicate", func() {
-
 	Context("securityScanRepositoryReleasePredicate", func() {
-
-		var (
-			releasePredicate githubutils.RepositoryReleasePredicate
-		)
-
-		BeforeEach(func() {
-			twoPlusConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", "v2.0.0-0"))
-			Expect(err).NotTo(HaveOccurred())
-
-			releasePredicate = securityscanutils.NewSecurityScanRepositoryReleasePredicate(twoPlusConstraint)
-		})
-
 		DescribeTable(
 			"Returns true/false based on release properties",
-			func(release *github.RepositoryRelease, expectedResult bool) {
+			func(release *github.RepositoryRelease, enablePreRelease bool, expectedResult bool) {
+				twoPlusConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", "v2.0.0-0"))
+				Expect(err).NotTo(HaveOccurred())
+
+				releasePredicate := securityscanutils.NewSecurityScanRepositoryReleasePredicate(twoPlusConstraint, enablePreRelease)
 				Expect(releasePredicate.Apply(release)).To(Equal(expectedResult))
 			},
 			Entry("release is draft", &github.RepositoryRelease{
 				Draft: github.Bool(true),
-			}, false),
+			}, false, false),
 			Entry("release tag does not respect semver", &github.RepositoryRelease{
 				TagName: github.String("non-semver-tag-name"),
-			}, false),
+			}, false, false),
 			Entry("release tag does not pass version constraint", &github.RepositoryRelease{
 				TagName: github.String("v1.0.0"),
-			}, false),
+			}, false, false),
 			Entry("release tag does pass version constraint", &github.RepositoryRelease{
 				TagName: github.String("v2.0.1"),
-			}, true),
+			}, false, true),
 			Entry("release tag has beta", &github.RepositoryRelease{
 				TagName: github.String("v2.0.1-beta1"),
-			}, true),
+			}, false, true),
 			Entry("release tag has rc", &github.RepositoryRelease{
 				TagName: github.String("v2.0.1-rc2"),
-			}, true),
+			}, false, true),
 			Entry("release is a pre-release", &github.RepositoryRelease{
 				Prerelease: github.Bool(true),
-			}, false),
+			}, false, false),
+			Entry("pre-release scan is enabled", &github.RepositoryRelease{
+				TagName:    github.String("v2.0.1-alpha.0"),
+				Prerelease: github.Bool(true),
+			}, true, true),
 		)
-
 	})
 
 	Context("latestPatchRepositoryReleasePredicate", func() {
-
-		var (
-			releasePredicate githubutils.RepositoryReleasePredicate
-		)
+		var releasePredicate githubutils.RepositoryReleasePredicate
 
 		BeforeEach(func() {
 			releaseSet := []*github.RepositoryRelease{
@@ -93,7 +84,5 @@ var _ = Describe("Predicate", func() {
 				TagName: github.String("v1.0.3"),
 			}, true),
 		)
-
 	})
-
 })
