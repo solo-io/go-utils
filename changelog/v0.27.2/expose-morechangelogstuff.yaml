@@ -1,0 +1,4 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >
+      Expose a feature of changelogutils to allow for more control over the changelog outputs

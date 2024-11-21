@@ -42,23 +42,55 @@ func NewMinorReleaseGroupedChangelogGenerator(opts Options, client *github.Clien
 	}
 }
 
-// Entry point for generating changelog JSON
-func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context) (string, error) {
+type changelogOutput struct {
+	Opts        Options
+	ReleaseData *ReleaseData
+}
+
+// AddReleaseData without overriding the options.
+// Only adopt info that is not already present in the output.
+func (c changelogOutput) AddReleaseData(donorOutput changelogOutput) error {
+	if donorOutput.ReleaseData == nil {
+		return fmt.Errorf("donorOutput ReleaseData is nil")
+	}
+	for k, v := range donorOutput.ReleaseData.Releases {
+		if c.ReleaseData.Releases[k] == nil {
+			c.ReleaseData.Releases[k] = v
+		}
+	}
+	return nil
+}
+
+// GenerateJSON from a changelogoutput.
+// This simply marches the output to a JSON string.
+func (c changelogOutput) GenerateJSON() (string, error) {
+	res, err := json.Marshal(c)
+	return string(res), err
+}
+
+func (g *MinorReleaseGroupedChangelogGenerator) AddToOutput(ctx context.Context) (changelogOutput, error) {
+	var out changelogOutput
 	var err error
 	releaseData, err := g.GetReleaseData(ctx, g.opts.MainRepoReleases)
 	if err != nil {
-		return "", err
+		return out, err
 	}
-	var out struct {
-		Opts        Options
-		ReleaseData *ReleaseData
-	}
+
 	out.Opts = Options{
 		RepoOwner:     g.opts.RepoOwner,
 		MainRepo:      g.opts.MainRepo,
 		DependentRepo: g.opts.DependentRepo,
 	}
 	out.ReleaseData = releaseData
+	return out, nil
+}
+
+// Entry point for generating changelog JSON
+func (g *MinorReleaseGroupedChangelogGenerator) GenerateJSON(ctx context.Context) (string, error) {
+	out, err := g.AddToOutput(ctx)
+	if err != nil {
+		return "", err
+	}
 	res, err := json.Marshal(out)
 	return string(res), err
 }
