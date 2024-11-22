@@ -92,16 +92,16 @@ func (g *MergedReleaseGenerator) GenerateJSON(ctx context.Context) (string, erro
 }
 
 func (g *MergedReleaseGenerator) GetMergedEnterpriseRelease(ctx context.Context) (*ReleaseData, error) {
-	ossReleases, err := NewMinorReleaseGroupedChangelogGenerator(Options{
-		RepoOwner: g.opts.RepoOwner,
-		MainRepo:  g.opts.DependentRepo,
-	}, g.client).
-		GetReleaseData(ctx, g.opts.DependentRepoReleases)
+
+	enterpriseReleases, err := NewMinorReleaseGroupedChangelogGenerator(g.opts, g.client).
+		GetReleaseData(ctx, g.opts.MainRepoReleases)
 	if err != nil {
 		return nil, err
 	}
-	enterpriseReleases, err := NewMinorReleaseGroupedChangelogGenerator(g.opts, g.client).
-		GetReleaseData(ctx, g.opts.MainRepoReleases)
+	ossOpts := g.opts
+	ossOpts.MainRepo = g.opts.DependentRepo
+	ossReleases, err := NewMinorReleaseGroupedChangelogGenerator(ossOpts, g.client).
+		GetReleaseData(ctx, g.opts.DependentRepoReleases)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +146,7 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(enterpriseReleases
 			var finalChangelogNotes = NewChangelogNotes()
 			for _, version := range depVersions {
 				//prefix := fmt.Sprintf("(From OSS %s) ", getGithubReleaseMarkdownLink(version.String(), g.RepoOwner, g.openSourceRepo))
+				fmt.Println(version.String())
 				notes, err := osReleases.GetChangelogNotes(version)
 				if err != nil {
 					return nil, err

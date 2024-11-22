@@ -30,10 +30,12 @@ jobs:
         service_account_key: ${{ secrets.GCP_SA_KEY }}
         export_default_credentials: true
       name: Gcloud Login
-    - name: Install Trivy
+    - name: Install Trivy (latest)
       run: |
-        wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.deb
-        sudo dpkg -i trivy_0.18.3_Linux-64bit.deb
+          TRIVY_VERSION=$(curl --silent "https://api.github.com/repos/aquasecurity/trivy/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/') 
+          echo Using Trivy v${TRIVY_VERSION}
+          wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb
+          sudo dpkg -i trivy_${TRIVY_VERSION}_Linux-64bit.deb
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
