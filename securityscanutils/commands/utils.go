@@ -7,11 +7,9 @@ import (
 	"github.com/rotisserie/eris"
 )
 
-var (
-	MalformedVersionImageConstraintLine = func(line string) error {
-		return eris.Errorf("Could not properly split version image constraint line: %s", line)
-	}
-)
+var MalformedVersionImageConstraintLine = func(line string) error {
+	return eris.Errorf("Could not properly split version image constraint line: %s", line)
+}
 
 // GetImagesPerVersionFromFile Reads in a file, and tries to turn it into a map from version constraints to lists of images
 // As a byproduct, it also caches all unique images found into the option field 'allImages'
@@ -33,7 +31,7 @@ func GetImagesPerVersionFromFile(constraintsFile string) (map[string][]string, e
 		if len(values) < 2 {
 			return nil, MalformedVersionImageConstraintLine(line)
 		}
-		for i, _ := range values {
+		for i := range values {
 			trimVal := strings.TrimSpace(values[i])
 			values[i] = trimVal
 			if i > 0 {
