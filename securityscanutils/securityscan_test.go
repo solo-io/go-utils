@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	glooRepoName = "gloo"
+	repoName         = "gloo"
+	gatewayOwnerName = "solo-io"
 )
 
 var _ = Describe("Security Scan Suite", func() {
@@ -45,8 +46,8 @@ var _ = Describe("Security Scan Suite", func() {
 			fmt.Println("Output dir:", outputDir)
 			secScanner := &SecurityScanner{
 				Repos: []*SecurityScanRepo{{
-					Repo:  glooRepoName,
-					Owner: "solo-io",
+					Repo:  repoName,
+					Owner: gatewayOwnerName,
 					Opts: &SecurityScanOpts{
 						OutputDir:           outputDir,
 						OutputResultLocally: true,
@@ -86,8 +87,8 @@ var _ = Describe("Security Scan Suite", func() {
 			fmt.Println("Output dir:", outputDir)
 			secScanner := &SecurityScanner{
 				Repos: []*SecurityScanRepo{{
-					Repo:  glooRepoName,
-					Owner: "solo-io",
+					Repo:  repoName,
+					Owner: gatewayOwnerName,
 					Opts: &SecurityScanOpts{
 						OutputDir: outputDir,
 						// Specify redundant constraints
@@ -101,7 +102,7 @@ var _ = Describe("Security Scan Suite", func() {
 				}},
 			}
 
-			imagesToScan, err := secScanner.Repos[0].GetImagesToScan(semver.MustParse("v1.7.7"))
+			imagesToScan, err := secScanner.Repos[0].GetImagesToScan(semver.MustParse("v1.15.7"))
 			Expect(imagesToScan).To(ContainElements("gloo", "discovery", "glooGreaterThan17"))
 		})
 
@@ -111,8 +112,8 @@ var _ = Describe("Security Scan Suite", func() {
 			fmt.Println("Output dir:", outputDir)
 			secScanner := &SecurityScanner{
 				Repos: []*SecurityScanRepo{{
-					Repo:  glooRepoName,
-					Owner: "solo-io",
+					Repo:  repoName,
+					Owner: gatewayOwnerName,
 					Opts: &SecurityScanOpts{
 						OutputDir: outputDir,
 						ImagesPerVersion: map[string][]string{
@@ -136,8 +137,8 @@ var _ = Describe("Security Scan Suite", func() {
 				fmt.Println("Output dir:", outputDir)
 				secScanner := &SecurityScanner{
 					Repos: []*SecurityScanRepo{{
-						Repo:  glooRepoName,
-						Owner: "solo-io",
+						Repo:  repoName,
+						Owner: gatewayOwnerName,
 						Opts: &SecurityScanOpts{
 							OutputDir:           outputDir,
 							OutputResultLocally: true,
@@ -163,8 +164,8 @@ var _ = Describe("Security Scan Suite", func() {
 				// Have a directory for each repo we scanned
 				markdownDir := path.Join(outputDir, "gloo", "markdown_results")
 				// Have a directory for each version we scanned
-				ExpectDirToHaveFiles(markdownDir, "1.15.0")
-				ExpectDirToHaveFiles(path.Join(markdownDir, "1.15.0"))
+				ExpectDirToHaveFiles(markdownDir, "1.14.0")
+				ExpectDirToHaveFiles(path.Join(markdownDir, "1.14.0"))
 			})
 		})
 
@@ -175,8 +176,8 @@ var _ = Describe("Security Scan Suite", func() {
 				fmt.Println("Output dir:", outputDir)
 				secScanner := &SecurityScanner{
 					Repos: []*SecurityScanRepo{{
-						Repo:  glooRepoName,
-						Owner: "solo-io",
+						Repo:  repoName,
+						Owner: gatewayOwnerName,
 						Opts: &SecurityScanOpts{
 							OutputDir:           outputDir,
 							OutputResultLocally: true,
