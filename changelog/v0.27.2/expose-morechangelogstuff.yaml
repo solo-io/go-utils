@@ -1,0 +1,6 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >
+      Midterm update post gloo donation.
+      Eventually github tests should rely on this repo and not another repo
+      This also forced a trivy upgrade to the same style used else where
