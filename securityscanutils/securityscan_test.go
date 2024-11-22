@@ -41,7 +41,7 @@ var _ = Describe("Security Scan Suite", func() {
 	Context("Security Scanner", func() {
 
 		It("works", func() {
-			verConstraint, err := semver.NewConstraint("=v1.14.0 || =v1.15.0")
+			verConstraint, err := semver.NewConstraint("=v1.14.0 || =v1.15.1")
 			Expect(err).NotTo(HaveOccurred())
 			fmt.Println("Output dir:", outputDir)
 			secScanner := &SecurityScanner{
@@ -54,7 +54,7 @@ var _ = Describe("Security Scan Suite", func() {
 						ImagesPerVersion: map[string][]string{
 							"v1.14.0": {"gloo"},
 							// Scan should continue in the case an image cannot be found
-							"v1.15.0": {"thisimagecannotbefound", "gloo", "discovery"},
+							"v1.15.1": {"thisimagecannotbefound", "gloo", "discovery"},
 						},
 						VersionConstraint: verConstraint,
 						ImageRepo:         "quay.io/solo-io",
@@ -71,14 +71,14 @@ var _ = Describe("Security Scan Suite", func() {
 			glooDir := path.Join(outputDir, "gloo")
 			ExpectDirToHaveFiles(glooDir, "issue_results", "markdown_results")
 			githubIssueDir := path.Join(glooDir, "issue_results")
-			ExpectDirToHaveFiles(githubIssueDir, "1.14.0.md", "1.15.0.md")
+			ExpectDirToHaveFiles(githubIssueDir, "1.14.0.md", "1.15.1.md")
 			// Have a directory for each repo we scanned
 			markdownDir := path.Join(outputDir, "gloo", "markdown_results")
 			// Have a directory for each version we scanned
-			ExpectDirToHaveFiles(markdownDir, "1.14.0", "1.15.0")
+			ExpectDirToHaveFiles(markdownDir, "1.14.0", "1.15.1")
 			// Expect there to be a generated docgen file for each image per version
 			ExpectDirToHaveFiles(path.Join(markdownDir, "1.14.0"), "gloo_cve_report.docgen")
-			ExpectDirToHaveFiles(path.Join(markdownDir, "1.15.0"), "discovery_cve_report.docgen", "gloo_cve_report.docgen")
+			ExpectDirToHaveFiles(path.Join(markdownDir, "1.15.1"), "discovery_cve_report.docgen", "gloo_cve_report.docgen")
 		})
 
 		It("scans all images from all constraints matched", func() {
