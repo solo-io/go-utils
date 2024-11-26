@@ -146,7 +146,6 @@ func (g *MergedReleaseGenerator) MergeEnterpriseReleaseWithOS(enterpriseReleases
 			var finalChangelogNotes = NewChangelogNotes()
 			for _, version := range depVersions {
 				//prefix := fmt.Sprintf("(From OSS %s) ", getGithubReleaseMarkdownLink(version.String(), g.RepoOwner, g.openSourceRepo))
-				fmt.Println(version.String())
 				notes, err := osReleases.GetChangelogNotes(version)
 				if err != nil {
 					return nil, err
