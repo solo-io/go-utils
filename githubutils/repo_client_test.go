@@ -145,34 +145,36 @@ var _ = Describe("repo client utils", func() {
 			client = githubutils.NewRepoClient(githubClient, owner, "gloo")
 		})
 
-		It("properly finds the most recent release tag matching an SHA", func() {
-			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "36c4ba020048c4556ef8650d011ddb16368a4fef")
+		It("properly finds the most recent GA release tag matching an SHA", func() {
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "e658203d0a0b7b479cbb59cfc43832699d25fb1c")
 			Expect(err).To(BeNil())
-			Expect(tag).To(Equal("v1.15.16"))
+			Expect(tag).To(Equal("v1.17.8"))
 		})
 
 		It("properly finds the most recent beta release tag before an SHA", func() {
-			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "f3e76e63a1643c76cab3ad883944ae3e5182f2e7")
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "33cc7ee95c7319d33c36fb7d449a933dca95d211")
 			Expect(err).To(BeNil())
-			Expect(tag).To(Equal("v2.0.0-beta1"))
+			Expect(tag).To(Equal("v1.18.0-beta21"))
 		})
 
 		It("properly finds the most recent pre-release release tag before an SHA", func() {
-			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "1406a40283e691102a8133917efbe4ec97d8792b")
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "3e00d8140f91fe0111955bb46fbc29df8008bf47")
 			Expect(err).To(BeNil())
-			Expect(tag).To(Equal("v1.15.10"))
+			Expect(tag).To(Equal("v1.17.0-beta18"))
 		})
 
 		It("properly finds the most recent RC release tag before an SHA", func() {
-			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "8680ad631dd3ffd325bde9b40d13c0a190229f5d")
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "3067c264aa2025a31c7de82b8878b388d5bd0c4b")
 			Expect(err).To(BeNil())
-			Expect(tag).To(Equal("v1.15.0-rc3"))
+			Expect(tag).To(Equal("v1.17.0-rc12"))
 		})
 
+		// for this case, use a release that is not found on the first page of the API endpoint results here:
+		// https://api.github.com/repos/solo-io/gloo/releases
 		It("properly finds the most recent release tag before an SHA with pagination", func() {
-			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "4ac2822d6d762795b61da055085c77c0df53487c")
+			tag, err := client.FindLatestTagIncludingPrereleaseBeforeSha(ctx, "51cc97a355236c7f725fbf43fbee276a0208d12d")
 			Expect(err).To(BeNil())
-			Expect(tag).To(Equal("v1.15.9"))
+			Expect(tag).To(Equal("v1.18.0-beta7"))
 		})
 	})
 })
