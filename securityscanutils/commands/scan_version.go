@@ -65,7 +65,7 @@ func (s scanVersionResult) String() string {
 		return "No vulnerabilities found"
 	}
 
-	return fmt.Sprintf("Vulernabilities found! Affected images: %v. Formatted results: %s",
+	return fmt.Sprintf("Vulnerabilities found! Affected images: %v. Formatted results: %s",
 		s.ImagesWithVulnerabilities, s.OutputDir)
 }
 

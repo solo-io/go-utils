@@ -14,7 +14,7 @@ As we often release bug fixes on backported branches, chronological ordering isn
 often requires a non-trivial amount of scrolling to get to the desired changelog.
 
 In addition, users often have a tough time finding out changes between different versions of our products. A changelog
-"diff tool" would be exteremely useful here, but can not be done without additional processing on the 
+"diff tool" would be extremely useful here, but can not be done without additional processing on the 
 markdown release notes from github.
 
 ## Changelog Gen Utils
