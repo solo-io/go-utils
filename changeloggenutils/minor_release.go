@@ -123,7 +123,7 @@ type ReleaseData struct {
 }
 
 // Contains Changelog enterpriseNotes for Individual openSourceReleases
-// ChangelogNotes is a map of individiual openSourceReleases to enterpriseNotes
+// ChangelogNotes is a map of individual openSourceReleases to enterpriseNotes
 // e.g. v1.2.5-beta3 -> ChangelogNotes, v1.4.0 -> ChangelogNotes
 type VersionData struct {
 	ChangelogNotes map[Version]*ChangelogNotes
