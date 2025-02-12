@@ -7,6 +7,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/rotisserie/eris"
+	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/go-utils/versionutils"
 	"github.com/solo-io/go-utils/vfsutils"
 )
@@ -131,24 +132,30 @@ func (c *changelogReader) ReadChangelogFile(ctx context.Context, path string) (*
 	}
 
 	for _, entry := range changelog.Entries {
+		var err error
 		if entry.Type != NON_USER_FACING && entry.Type != DEPENDENCY_BUMP {
 			if entry.IssueLink == "" {
-				return nil, MissingIssueLinkError
+				err = MissingIssueLinkError
 			}
 			if entry.Description == "" {
-				return nil, MissingDescriptionError
+				err = MissingDescriptionError
 			}
 		}
 		if entry.Type == DEPENDENCY_BUMP {
 			if entry.DependencyOwner == "" {
-				return nil, MissingOwnerError
+				err = MissingOwnerError
 			}
 			if entry.DependencyRepo == "" {
-				return nil, MissingRepoError
+				err = MissingRepoError
 			}
 			if entry.DependencyTag == "" {
-				return nil, MissingTagError
+				err = MissingTagError
 			}
+		}
+		if err != nil {
+			contextutils.LoggerFrom(ctx).Errorf("Changelog entry %v is invalid: %v", entry, err)
+			contextutils.LoggerFrom(ctx).Errorf("Overall entries: %v", changelog.Entries)
+			return nil, err
 		}
 	}
 
