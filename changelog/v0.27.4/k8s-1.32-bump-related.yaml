@@ -1,0 +1,18 @@
+changelog:
+- type: NON_USER_FACING
+  description: >
+    Bump dependencies to match k8s-utils changes for Kubernetes 1.32
+  issueLink: https://github.com/solo-io/solo-projects/issues/7788
+  resolvesIssue: false  
+- type: DEPENDENCY_BUMP
+  dependencyOwner: google
+  dependencyRepo: protobuf
+  dependencyTag: v1.35.1
+- type: DEPENDENCY_BUMP
+  dependencyOwner: onsi
+  dependencyRepo: gomega
+  dependencyTag: v1.35.1
+- type: DEPENDENCY_BUMP
+  dependencyOwner: go.uber.org
+  dependencyRepo: zap
+  dependencyTag: v1.27.0
