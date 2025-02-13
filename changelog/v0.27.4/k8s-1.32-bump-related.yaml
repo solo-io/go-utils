@@ -1,5 +1,5 @@
 changelog:
-- type: DEPENDENCY_BUMP
+- type: NON_USER_FACING
   description: >
     Bump dependencies to match k8s-utils changes for Kubernetes 1.32
   issueLink: https://github.com/solo-io/solo-projects/issues/7788
