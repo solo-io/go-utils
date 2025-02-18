@@ -13,7 +13,7 @@ func MustMake(dir, args string) {
 	make.Dir = dir
 	out, err := make.CombinedOutput()
 	if err != nil {
-		fmt.Printf(string(out))
+		fmt.Print(string(out))
 	}
 	Expect(err).NotTo(HaveOccurred())
 }
