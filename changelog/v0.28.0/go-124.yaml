@@ -1,3 +1,4 @@
 changelog:
   - type: BREAKING_CHANGE
     description: "Update Go to 1.24"
+    issueLink: https://github.com/solo-io/solo-projects/issues/7609
