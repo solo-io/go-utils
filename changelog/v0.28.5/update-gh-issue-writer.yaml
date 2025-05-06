@@ -1,0 +1,4 @@
+changelog:
+  - type: NON_USER_FACING
+    description: |
+      Updated security scan GH issue writer to not purge existing labels.

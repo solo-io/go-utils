@@ -111,6 +111,24 @@ func (g *GithubIssueWriter) Write(
 		if issue.GetTitle() == issueTitle {
 			// Only create new issue if issue does not already exist
 			createNewIssue = false
+
+			// Merge existing labels with desired labels, avoiding duplicates
+			labelMap := map[string]struct{}{}
+			for _, l := range issue.Labels {
+				if l != nil && l.Name != nil {
+					labelMap[*l.Name] = struct{}{}
+				}
+			}
+			for _, l := range labels {
+				labelMap[l] = struct{}{}
+			}
+
+			mergedLabels := make([]string, 0, len(labelMap))
+			for l := range labelMap {
+				mergedLabels = append(mergedLabels, l)
+			}
+			issueRequest.Labels = &mergedLabels
+
 			err := githubutils.UpdateIssue(ctx, g.client, g.repo.Owner, g.repo.RepoName, issue.GetNumber(), issueRequest)
 			if err != nil {
 				return eris.Wrapf(err, "error updating issue with issue request %+v", issueRequest)
