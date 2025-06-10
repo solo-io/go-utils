@@ -1,0 +1,6 @@
+changelog:
+  - type: FIX
+    description: |
+      Updates the default value for the `resolvesIssue` field in the changelog to be `false`
+      to reduce developer friction and silence copilot PR review comments.
+    issueLink: https://github.com/solo-io/solo-projects/issues/8332

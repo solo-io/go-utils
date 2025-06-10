@@ -61,7 +61,7 @@ changelog:
 ``` 
 
 Changelog entries can set an optional boolean field called `resolvesIssue`. This can be used by CI 
-systems to automatically close issues linked to the changelog. The default value for this field is `true`. 
+systems to automatically close issues linked to the changelog. The default value for this field is `false`. 
 
 The description field should be one or more complete sentences (starting with a capital letter, ending 
 with a period). The issue link should point to a valid github URL. These conventions are currently

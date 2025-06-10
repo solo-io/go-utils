@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -62,7 +63,7 @@ var _ = Describe("ChangelogTest", func() {
 				Expect(value.Type.String()).NotTo(BeEmpty())
 				Expect(value.Description).NotTo(BeEmpty())
 				Expect(value.IssueLink).NotTo(BeEmpty())
-				Expect(value.GetResolvesIssue()).To(BeTrue()) // default
+				Expect(value.GetResolvesIssue()).To(BeFalse()) // default
 			}
 			Expect(err).NotTo(HaveOccurred())
 			byt, err := yaml.Marshal(clf)
@@ -70,41 +71,19 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(strings.Contains(string(byt), "releaseStableApi")).To(BeFalse())
 		})
 
-		It("can handle resolvesIssue set to false", func() {
+		DescribeTable("can handle resolvesIssue set to boolean values", func(resolvesIssue bool) {
 			var clf changelogutils.ChangelogFile
 			contents := `changelog:
 - type: FIX
   description: foo
   issueLink: bar
-  resolvesIssue: false`
-			err := yaml.Unmarshal([]byte(contents), &clf)
-			Expect(err).NotTo(HaveOccurred())
-			boolValue := new(bool)
-			*boolValue = false
-			expected := changelogutils.ChangelogFile{
-				Entries: []*changelogutils.ChangelogEntry{
-					{
-						Type:          changelogutils.FIX,
-						Description:   "foo",
-						IssueLink:     "bar",
-						ResolvesIssue: boolValue,
-					},
-				},
-			}
-			Expect(clf).To(BeEquivalentTo(expected))
-		})
+  resolvesIssue: ` + strconv.FormatBool(resolvesIssue)
+			fmt.Println(contents)
 
-		It("can handle resolvesIssue set to true", func() {
-			var clf changelogutils.ChangelogFile
-			contents := `changelog:
-- type: FIX
-  description: foo
-  issueLink: bar
-  resolvesIssue: true`
 			err := yaml.Unmarshal([]byte(contents), &clf)
 			Expect(err).NotTo(HaveOccurred())
 			boolValue := new(bool)
-			*boolValue = true
+			*boolValue = resolvesIssue
 			expected := changelogutils.ChangelogFile{
 				Entries: []*changelogutils.ChangelogEntry{
 					{
@@ -116,7 +95,11 @@ var _ = Describe("ChangelogTest", func() {
 				},
 			}
 			Expect(clf).To(BeEquivalentTo(expected))
-		})
+		},
+			Entry("true", true),
+			Entry("false", false),
+		)
+
 	})
 
 	var _ = Context("Changelog computing and rendering", func() {

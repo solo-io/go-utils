@@ -28,7 +28,7 @@ type ChangelogEntry struct {
 
 func (c *ChangelogEntry) GetResolvesIssue() bool {
 	if c.ResolvesIssue == nil {
-		return true
+		return false
 	}
 	return *c.ResolvesIssue
 }
