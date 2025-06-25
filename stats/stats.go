@@ -12,6 +12,7 @@ import (
 	"net/http/pprof"
 
 	"contrib.go.opencensus.io/exporter/prometheus"
+	"github.com/kgateway-dev/kgateway/v2/pkg/metrics"
 	"github.com/solo-io/go-utils/contextutils"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/zpages"
@@ -37,6 +38,8 @@ type StartupOptions struct {
 	// If set, the server will use this `AtomicLevel` to serve
 	// the "/logging" endpoint instead of building its own logger.
 	LogLevel *zap.AtomicLevel
+
+	Registry metrics.RegistererGatherer
 }
 
 // return options indicating that the server should:
@@ -74,7 +77,7 @@ func StartCancellableStatsServerWithPort(ctx context.Context, startupOpts Startu
 	// The running instance of the Stats server
 	var server *http.Server
 
-	addHandlers := append(customAddHandlers, addPprof, addStats)
+	addHandlers := append(customAddHandlers, addPprof, getAddStats(startupOpts.Registry))
 
 	// Run the server in a goroutine
 	go func() {
@@ -137,17 +140,26 @@ func addPprof(mux *http.ServeMux, profiles map[string]string) {
 	`
 }
 
-func addStats(mux *http.ServeMux, profiles map[string]string) {
-	exporter, err := prometheus.NewExporter(prometheus.Options{})
-	if err == nil {
-		view.RegisterExporter(exporter)
-		mux.Handle("/metrics", exporter)
+func getAddStats(registry metrics.RegistererGatherer) func(mux *http.ServeMux, profiles map[string]string) {
+	return func(mux *http.ServeMux, profiles map[string]string) {
+		opts := prometheus.Options{}
 
-		profiles["/metrics"] = "Prometheus format metrics"
+		if registry != nil {
+			opts.Registerer = registry
+			opts.Gatherer = registry
+		}
+
+		exporter, err := prometheus.NewExporter(opts)
+		if err == nil {
+			view.RegisterExporter(exporter)
+			mux.Handle("/metrics", exporter)
+
+			profiles["/metrics"] = "Prometheus format metrics"
+		}
+
+		zpages.Handle(mux, "/zpages")
+		profiles["/zpages"] = `Tracing. See <a href="/zpages/tracez">list of spans</a>`
 	}
-
-	zpages.Handle(mux, "/zpages")
-	profiles["/zpages"] = `Tracing. See <a href="/zpages/tracez">list of spans</a>`
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
