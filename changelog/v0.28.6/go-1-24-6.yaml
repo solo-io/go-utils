@@ -3,4 +3,6 @@ changelog:
     dependencyOwner: golang
     dependencyRepo: go
     dependencyTag: v1.24.6
-    description: "Update Go to 1.24.6" 
+    description: "Update Go to 1.24.6"
+    issueLink: https://github.com/solo-io/solo-projects/issues/8512
+    resolvesIssue: false 
