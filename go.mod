@@ -2,8 +2,6 @@ module github.com/solo-io/go-utils
 
 go 1.23.0
 
-toolchain go1.23.3
-
 require (
 	cloud.google.com/go/pubsub v1.30.0
 	cloud.google.com/go/storage v1.28.1
