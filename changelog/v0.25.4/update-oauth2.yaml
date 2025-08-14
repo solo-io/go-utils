@@ -1,6 +1,12 @@
 changelog:
 - type: DEPENDENCY_BUMP
   description: Bumped the go version for go.mod
+  dependencyOwner: golang
+  dependencyRepo: go
+  dependencyTag: v1.24.6
+  issueLink: https://github.com/solo-io/gloo/issues/10934
+- type: DEPENDENCY_BUMP
+  description: Bumped the go version for go.mod
   dependencyOwner: go
   dependencyRepo: mod
   dependencyTag: v0.20.0
