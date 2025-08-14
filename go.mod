@@ -1,6 +1,8 @@
 module github.com/solo-io/go-utils
 
-go 1.19
+go 1.23.0
+
+toolchain go1.23.3
 
 require (
 	cloud.google.com/go/pubsub v1.30.0
@@ -42,7 +44,7 @@ require (
 	go.uber.org/zap v1.25.0
 	goji.io v2.0.2+incompatible
 	golang.org/x/mod v0.10.0
-	golang.org/x/oauth2 v0.8.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/sync v0.2.0
 	golang.org/x/tools v0.9.3
 	google.golang.org/api v0.114.0
@@ -55,8 +57,7 @@ require (
 
 require (
 	cloud.google.com/go v0.110.0 // indirect
-	cloud.google.com/go/compute v1.19.0 // indirect
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v0.13.0 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
