@@ -1,0 +1,36 @@
+changelog:
+- type: DEPENDENCY_BUMP
+  description: Bumped the go version for go.mod
+  dependencyOwner: golang
+  dependencyRepo: go
+  dependencyTag: v1.24.6
+  issueLink: https://github.com/solo-io/gloo/issues/10934
+  resolvesIssue: false
+- type: DEPENDENCY_BUMP
+  description: Bumped the go version for go.mod
+  dependencyOwner: go
+  dependencyRepo: mod
+  dependencyTag: v0.20.0
+  issueLink: https://github.com/solo-io/gloo/issues/10934
+  resolvesIssue: false
+- type: DEPENDENCY_BUMP
+  description: Bumped the go version for go.mod
+  dependencyOwner: go
+  dependencyRepo: oauth2
+  dependencyTag: v0.27.0
+  issueLink: https://github.com/solo-io/gloo/issues/10934
+  resolvesIssue: false
+- type: DEPENDENCY_BUMP
+  description: Bumped the go version for go.mod
+  dependencyOwner: go
+  dependencyRepo: sync
+  dependencyTag: v0.3.0
+  issueLink: https://github.com/solo-io/gloo/issues/10934
+  resolvesIssue: false
+- type: DEPENDENCY_BUMP
+  description: Bumped the go version for go.mod
+  dependencyOwner: go
+  dependencyRepo: tools
+  dependencyTag: v0.13.0
+  issueLink: https://github.com/solo-io/gloo/issues/10934
+  resolvesIssue: false
