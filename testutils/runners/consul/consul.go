@@ -2,7 +2,6 @@ package consul
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,7 +41,7 @@ func NewConsulFactory() (*ConsulFactory, error) {
 	}
 
 	// try to grab one form docker...
-	tmpdir, err := ioutil.TempDir(os.Getenv("HELPER_TMP"), "consul")
+	tmpdir, err := os.MkdirTemp(os.Getenv("HELPER_TMP"), "consul")
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +59,7 @@ docker rm -f $CID
     `, defaultConsulDockerImage, defaultConsulDockerImage)
 	scriptfile := filepath.Join(tmpdir, "getconsul.sh")
 
-	ioutil.WriteFile(scriptfile, []byte(bash), 0755)
+	os.WriteFile(scriptfile, []byte(bash), 0755)
 
 	cmd := exec.Command("bash", scriptfile)
 	cmd.Dir = tmpdir
@@ -97,7 +96,7 @@ type ConsulInstance struct {
 
 func (ef *ConsulFactory) NewConsulInstance() (*ConsulInstance, error) {
 	// try to grab one form docker...
-	tmpdir, err := ioutil.TempDir(os.Getenv("HELPER_TMP"), "consul")
+	tmpdir, err := os.MkdirTemp(os.Getenv("HELPER_TMP"), "consul")
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,6 @@
 package osutils
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -18,7 +17,7 @@ func (*osClient) Getenv(key string) string {
 }
 
 func (*osClient) ReadFile(path string) ([]byte, error) {
-	return ioutil.ReadFile(path)
+	return os.ReadFile(path)
 }
 
 func NewOsClient() OsClient {
