@@ -20,7 +20,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: 3.8
     - uses: google-github-actions/setup-gcloud@a48b55b3b0eeaf77b6e1384aab737fbefe2085ac
