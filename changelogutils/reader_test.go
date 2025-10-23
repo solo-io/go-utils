@@ -2,6 +2,7 @@ package changelogutils_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -27,8 +28,6 @@ var _ = Describe("ReaderTest", func() {
 
 		const (
 			owner = "solo-io"
-			repo  = "testrepo"
-			sha   = "9065a9a84e286ea7f067f4fc240944b0a4d4c82a"
 		)
 
 		var (
@@ -41,7 +40,21 @@ var _ = Describe("ReaderTest", func() {
 			file = changelogutils.ChangelogFile{
 				Entries: []*changelogutils.ChangelogEntry{&entry},
 			}
+			log  = "1.yaml"
+			repo = "testrepo"
+			sha  = "9065a9a84e286ea7f067f4fc240944b0a4d4c82a"
 		)
+
+		if os.Getenv("HAS_CLOUDBUILD_GITHUB_TOKEN") == "" {
+			log = "new-signature-manager.yaml"
+			repo = "reporting-client"
+			sha = "af5d207720ee6b548704b06bfa6631f9a2897294"
+			entry = changelogutils.ChangelogEntry{
+				Type:        changelogutils.NEW_FEATURE,
+				Description: "New signature manager implementation to be used in CLI clients that writes the signature to ~/.soloio",
+				IssueLink:   "https://github.com/solo-io/gloo/issues/1559",
+			}
+		}
 
 		BeforeEach(func() {
 			client, err := githubutils.GetClient(ctx)
@@ -51,7 +64,7 @@ var _ = Describe("ReaderTest", func() {
 		})
 
 		It("can read changelog file", func() {
-			changelogFile, err := reader.ReadChangelogFile(ctx, "changelog/v0.1.1/1.yaml")
+			changelogFile, err := reader.ReadChangelogFile(ctx, fmt.Sprintf("changelog/v0.1.1/%s", log))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(*changelogFile).To(BeEquivalentTo(file))
 		})
