@@ -2,6 +2,7 @@ package builders
 
 import (
 	"context"
+	"os"
 	"path"
 
 	"cloud.google.com/go/storage"
@@ -23,39 +24,41 @@ var _ = Describe("gcloud unit tests", func() {
 		Expect(dir).To(Equal("gs://one/two/"))
 	})
 
-	Context("builders", func() {
-		var builderCtx *mockBuilderContext
-		BeforeEach(func() {
-			var err error
-			builderCtx, err = DefaultMockBuilderContext(ctx)
-			Expect(err).NotTo(HaveOccurred())
-		})
-		Context("storage source", func() {
-			var (
-				sb *StorageBuilder
-			)
-
+	if os.Getenv("SKIP_GCLOUD_TESTS") == "" {
+		Context("builders", func() {
+			var builderCtx *mockBuilderContext
 			BeforeEach(func() {
 				var err error
-				client, err := storage.NewClient(ctx)
+				builderCtx, err = DefaultMockBuilderContext(ctx)
 				Expect(err).NotTo(HaveOccurred())
+			})
+			Context("storage source", func() {
+				var (
+					sb *StorageBuilder
+				)
 
-				sb = &StorageBuilder{
-					client: client,
-				}
+				BeforeEach(func() {
+					var err error
+					client, err := storage.NewClient(ctx)
+					Expect(err).NotTo(HaveOccurred())
+
+					sb = &StorageBuilder{
+						client: client,
+					}
+				})
+				It("can init build with sha", func() {
+					_, err := sb.InitBuildWithSha(ctx, builderCtx)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("can init build with tag", func() {
+					_, err := sb.InitBuildWithTag(ctx, builderCtx)
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
-			It("can init build with sha", func() {
-				_, err := sb.InitBuildWithSha(ctx, builderCtx)
-				Expect(err).NotTo(HaveOccurred())
-			})
-			It("can init build with tag", func() {
-				_, err := sb.InitBuildWithTag(ctx, builderCtx)
-				Expect(err).NotTo(HaveOccurred())
+
+			Context("repo source", func() {
+
 			})
 		})
-
-		Context("repo source", func() {
-
-		})
-	})
+	}
 })
