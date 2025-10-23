@@ -42,7 +42,7 @@ jobs:
         go-version-file: "go.mod"
     - name: Run tests
       env:
-        GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN || github.token }}
         TEST_PKG: ./... # Run all tests
       run: make test
     - uses: testspace-com/setup-testspace@v1
