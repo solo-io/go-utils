@@ -15,10 +15,10 @@ var _ = Describe("github utils", func() {
 		client                  *github.Client
 		ctx                     = context.Background()
 		owner                   = "solo-io"
-		reponame                = "testrepo"
-		repoWithoutReleasesName = "testrepo-noreleases"
-		version                 = "v0.0.16"
-		ref                     = "v0.0.17"
+		reponame                = "reporting-client"
+		repoWithoutReleasesName = "unik-hub"
+		version                 = "v0.1.0"
+		ref                     = "v0.1.3"
 	)
 
 	var _ = BeforeEach(func() {

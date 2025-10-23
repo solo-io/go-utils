@@ -414,7 +414,7 @@ closing
 			ctx := context.Background()
 			client, err := githubutils.GetClient(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "testrepo", "master")
+			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "reporting-client", "master")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasChangelog).To(BeTrue())
 		})
