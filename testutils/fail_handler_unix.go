@@ -5,7 +5,6 @@ package testutils
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -34,7 +33,7 @@ func init() {
 	}
 
 	IsDebuggerPresent = func() bool {
-		f, err := ioutil.ReadFile("/proc/self/status")
+		f, err := os.ReadFile("/proc/self/status")
 		if err != nil {
 			// no status so we don't know
 			return false

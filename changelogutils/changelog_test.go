@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -508,7 +507,7 @@ func createSubdirs(dir string, names ...string) error {
 }
 
 func mustWriteTestDir() string {
-	tmpDir, err := ioutil.TempDir("", "changelog-test-")
+	tmpDir, err := os.MkdirTemp("", "changelog-test-")
 	Expect(err).NotTo(HaveOccurred())
 	return tmpDir
 }
