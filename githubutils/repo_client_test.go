@@ -3,6 +3,7 @@ package githubutils_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/solo-io/go-utils/randutils"
@@ -116,40 +117,48 @@ var _ = Describe("repo client utils", func() {
 		expectStatus(loaded, status)
 	}
 
-	It("can manage status", func() {
-		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		// randomizing this would create a (slim) potential race
-		// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
-		status := &github.RepoStatus{
-			State:       github.String(githubutils.STATUS_SUCCESS),
-			Context:     github.String("test"),
-			Description: github.String("test"), // longer than 140 characters will be truncated
-		}
-		testManageStatus(client, status, sha)
-	})
+	Context("With write token", func() {
+		BeforeEach(func() {
+			if os.Getenv("HAS_CLOUDBUILD_GITHUB_TOKEN") == "" {
+				Skip("Needs write token")
+			}
+		})
 
-	It("can manage status even when it exceeds 140 character", func() {
-		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		// randomizing this would create a (slim) potential race
-		// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
-		status := &github.RepoStatus{
-			State:       github.String(githubutils.STATUS_SUCCESS),
-			Context:     github.String("test"),
-			Description: github.String(strings.Repeat("test", 40)), // longer than 140 characters will be truncated
-		}
-		testManageStatus(client, status, otherSha) // don't share sha with other test to avoid race
-	})
+		It("can manage status", func() {
+			client = githubutils.NewRepoClient(githubClient, owner, repo)
+			// randomizing this would create a (slim) potential race
+			// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
+			status := &github.RepoStatus{
+				State:       github.String(githubutils.STATUS_SUCCESS),
+				Context:     github.String("test"),
+				Description: github.String("test"), // longer than 140 characters will be truncated
+			}
+			testManageStatus(client, status, sha)
+		})
 
-	It("can create and delete comments", func() {
-		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		body := fmt.Sprintf("test-%s", randutils.RandString(4))
-		comment := &github.IssueComment{
-			Body: github.String(body),
-		}
-		stored, err := client.CreateComment(ctx, pr, comment)
-		Expect(err).To(BeNil())
-		err = client.DeleteComment(ctx, stored.GetID())
-		Expect(err).To(BeNil())
+		It("can manage status even when it exceeds 140 character", func() {
+			client = githubutils.NewRepoClient(githubClient, owner, repo)
+			// randomizing this would create a (slim) potential race
+			// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
+			status := &github.RepoStatus{
+				State:       github.String(githubutils.STATUS_SUCCESS),
+				Context:     github.String("test"),
+				Description: github.String(strings.Repeat("test", 40)), // longer than 140 characters will be truncated
+			}
+			testManageStatus(client, status, otherSha) // don't share sha with other test to avoid race
+		})
+
+		It("can create and delete comments", func() {
+			client = githubutils.NewRepoClient(githubClient, owner, repo)
+			body := fmt.Sprintf("test-%s", randutils.RandString(4))
+			comment := &github.IssueComment{
+				Body: github.String(body),
+			}
+			stored, err := client.CreateComment(ctx, pr, comment)
+			Expect(err).To(BeNil())
+			err = client.DeleteComment(ctx, stored.GetID())
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Context("Can properly find the most recent tag before an SHA", func() {
