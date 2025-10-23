@@ -55,7 +55,7 @@ clean: ## Clean any local assets
 
 GINKGO_VERSION ?= $(shell echo $(shell go list -m github.com/onsi/ginkgo/v2) | cut -d' ' -f2)
 GINKGO_ENV ?= GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore ACK_GINKGO_DEPRECATIONS=$(GINKGO_VERSION)
-GINKGO_FLAGS ?= -v -tags=purego -compilers=4 -fail-fast -race -randomize-suites -randomize-all -skip-package=./installutils/kubeinstall,./debugutils/test
+GINKGO_FLAGS ?= -v -tags=purego -compilers=4 $(shell [ -z "${CI}" ] && echo '-fail-fast') -race -randomize-suites -randomize-all -skip-package=./installutils/kubeinstall,./debugutils/test
 GINKGO_REPORT_FLAGS ?= --json-report=test-report.json --junit-report=junit.xml -output-dir=$(OUTPUT_DIR)
 GINKGO_COVERAGE_FLAGS ?= --cover --covermode=atomic --coverprofile=coverage.cov
 TEST_PKG ?= ./... # Default to run all tests
