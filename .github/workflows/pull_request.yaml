@@ -54,8 +54,8 @@ jobs:
       uses: testspace-com/setup-testspace@v1
       with:
         domain: solo-io.testspace.com
-      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'solo-io' }}
     - name: Push result to Testspace server
       run: |
         testspace push --verbose "**/junit.xml"
-      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'solo-io' }}
