@@ -50,7 +50,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN || github.token }}
         TEST_PKG: ./... # Run all tests
       run: make test
-    - uses: testspace-com/setup-testspace@v1
+    - name: Set up testspaceTestspace
+      uses: testspace-com/setup-testspace@v1
       with:
         domain: solo-io.testspace.com
       if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
