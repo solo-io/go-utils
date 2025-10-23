@@ -48,6 +48,7 @@ jobs:
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN || github.token }}
+        SKIP_GCLOUD_TESTS: ${{ secrets.GCP_SA_KEY == '' && '1' || '' }}
         TEST_PKG: ./... # Run all tests
       run: make test
     - name: Set up testspaceTestspace
