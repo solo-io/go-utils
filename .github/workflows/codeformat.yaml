@@ -11,6 +11,7 @@ jobs:
           access_token: ${{ github.token }}
       - name: Free disk space
         run: |
+          : Free disk space
           echo "Before clearing disk space:"
           df -h
 
