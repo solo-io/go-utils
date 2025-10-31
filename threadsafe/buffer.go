@@ -2,6 +2,7 @@ package threadsafe
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"sync"
 )
@@ -19,6 +20,7 @@ func (b *Buffer) Read(p []byte) (n int, err error) {
 	return b.b.Read(p)
 }
 func (b *Buffer) Write(p []byte) (n int, err error) {
+	fmt.Println("Threadsafe Buffer Write", p)
 	b.m.Lock()
 	defer b.m.Unlock()
 	return b.b.Write(p)
@@ -31,8 +33,10 @@ func (b *Buffer) String() string {
 
 func (b *Buffer) Bytes() []byte {
 	b.m.Lock()
-	defer b.m.Unlock()
-	return b.b.Bytes()
+	original := b.b.Bytes()
+	deep := make([]byte, len(original))
+	copy(deep, original)
+	return deep
 }
 func (b *Buffer) Cap() int {
 	b.m.Lock()
