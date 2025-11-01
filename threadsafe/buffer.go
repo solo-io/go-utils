@@ -33,6 +33,7 @@ func (b *Buffer) String() string {
 
 func (b *Buffer) Bytes() []byte {
 	b.m.Lock()
+	defer b.m.Unlock()
 	original := b.b.Bytes()
 	deep := make([]byte, len(original))
 	copy(deep, original)
