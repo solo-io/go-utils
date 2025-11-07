@@ -38,6 +38,10 @@ type GithubIssueWriter struct {
 	// A local cache of all existing GitHub issues
 	// Used to ensure that we are updating existing issues that were created by previous scans
 	allGithubIssues []*github.Issue
+
+	// If true, the issue title will be created per minor (e.g. "Security Alert: 2.0.x")
+	// instead of per exact patch (e.g. "Security Alert: 2.0.1")
+	useMinorIssueTitle bool
 }
 
 var _ IssueWriter = &GithubIssueWriter{}
@@ -48,6 +52,18 @@ func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate
 		client:                     client,
 		createGithubIssuePredicate: issuePredicate,
 		allGithubIssues:            nil, // initially nil, we'll lazy load these
+		useMinorIssueTitle:         false,
+	}
+}
+
+// NewGithubIssueWriterWithMinorTitle constructs a GithubIssueWriter that titles issues per minor version (X.Y.x)
+func NewGithubIssueWriterWithMinorTitle(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate) IssueWriter {
+	return &GithubIssueWriter{
+		repo:                       repo,
+		client:                     client,
+		createGithubIssuePredicate: issuePredicate,
+		allGithubIssues:            nil,
+		useMinorIssueTitle:         true,
 	}
 }
 
@@ -92,7 +108,12 @@ func (g *GithubIssueWriter) Write(
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
 
-	issueTitle := fmt.Sprintf("Security Alert: %s", versionToScan.String())
+	var issueTitle string
+	if g.useMinorIssueTitle {
+		issueTitle = fmt.Sprintf("Security Alert: %d.%d.x", versionToScan.Major(), versionToScan.Minor())
+	} else {
+		issueTitle = fmt.Sprintf("Security Alert: %s", versionToScan.String())
+	}
 	issueRequest := &github.IssueRequest{
 		Title:  github.String(issueTitle),
 		Body:   github.String(vulnerabilityMarkdown),
