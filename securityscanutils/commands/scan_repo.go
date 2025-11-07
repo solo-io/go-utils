@@ -42,6 +42,7 @@ type scanRepoOptions struct {
 	// action to take when a vulnerability is discovered. supported actions are:
 	//  none (default): do nothing when a vulnerability is discovered
 	//  github-issue-latest (preferred): create a github issue only for the latest patch version of each minor version, when a vulnerability is discovered
+	//  github-issue-minor: create/update a single github issue per minor (e.g. 2.0.x)
 	//  github-issue-all: create a github issue for every version where a vulnerability is discovered
 	//  output-locally: create a file in the generated output dir containing the final Markdown for each repo / version
 	vulnerabilityAction string
@@ -57,7 +58,7 @@ func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(&m.githubRepository, "github-repo", "g", "", "github repository to scan")
 	flags.StringVarP(&m.imageRepository, "image-repo", "r", securityscanutils.QuayRepository, "image repository to scan")
 
-	flags.StringVarP(&m.vulnerabilityAction, "vulnerability-action", "a", "none", "action to take when a vulnerability is discovered {none, github-issue-all, github-issue-latest, output-locally}")
+	flags.StringVarP(&m.vulnerabilityAction, "vulnerability-action", "a", "none", "action to take when a vulnerability is discovered {none, github-issue-all, github-issue-latest, github-issue-minor, output-locally}")
 
 	flags.StringVarP(&m.releaseVersionConstraint, "release-constraint", "c", "", "version constraint for releases to scan")
 	flags.BoolVar(&m.enablePreRelease, "enable-pre-release", false, "enable pre-release versions to be scanned")
@@ -97,8 +98,9 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 					OutputResultLocally:                    opts.vulnerabilityAction == "output-locally",
 					CreateGithubIssuePerVersion:            opts.vulnerabilityAction == "github-issue-all",
 					CreateGithubIssueForLatestPatchVersion: opts.vulnerabilityAction == "github-issue-latest",
-					AdditionalContext:                      additionalContext,
-					EnablePreRelease:                       opts.enablePreRelease,
+					CreateGithubIssueForMinorLatestPatchVersion: opts.vulnerabilityAction == "github-issue-minor",
+					AdditionalContext: additionalContext,
+					EnablePreRelease:  opts.enablePreRelease,
 				},
 			},
 		},

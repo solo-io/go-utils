@@ -104,6 +104,11 @@ type SecurityScanOpts struct {
 
 	// Enable scanning of pre-release versions
 	EnablePreRelease bool
+
+	// Create/Update a single GitHub issue per minor version (e.g., "Security Alert: 2.0.x")
+	// rather than per exact patch version. When enabled, the writer will target a minor-scoped
+	// issue title. Scanning behavior is unchanged; it will scan the selected release(s).
+	CreateGithubIssueForMinorLatestPatchVersion bool
 }
 
 // GenerateSecurityScans generates .md files and writes them to the configured OutputDir for each repo
@@ -193,7 +198,11 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 		issuePredicate = NewLatestPatchRepositoryReleasePredicate(releasesToScan)
 	}
 	if useGithubWriter {
-		repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+		if repo.Opts.CreateGithubIssueForMinorLatestPatchVersion {
+			repo.issueWriter = issuewriter.NewGithubIssueWriterWithMinorTitle(githubRepo, s.githubClient, issuePredicate)
+		} else {
+			repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+		}
 		logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 	} else if repo.Opts.OutputResultLocally {
 		repo.issueWriter, err = issuewriter.NewLocalIssueWriter(path.Join(repo.Opts.OutputDir, githubRepo.RepoName, "issue_results"))
