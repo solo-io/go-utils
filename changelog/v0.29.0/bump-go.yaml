@@ -1,0 +1,12 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: golang
+    dependencyRepo: go
+    dependencyTag: v1.25.5
+    issueLink: https://github.com/solo-io/solo-projects/issues/8681
+    resolvesIssue: false 
+  - type: BREAKING_CHANGE
+    description: "Update Go to 1.25.5"
+    issueLink: https://github.com/solo-io/solo-projects/issues/8681
+    resolvesIssue: false
+
