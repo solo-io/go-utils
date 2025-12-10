@@ -1,4 +1,4 @@
-name: pull_request
+name: Code format check
 on: pull_request
 jobs:
   codegen:
@@ -6,11 +6,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Cancel Previous Actions
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.12.1
         with:
           access_token: ${{ github.token }}
       - name: Free disk space
         run: |
+          : Free disk space
           echo "Before clearing disk space:"
           df -h
 
@@ -27,11 +28,11 @@ jobs:
           echo "After clearing disk space:"
           df -h
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
         id: go

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -415,7 +414,7 @@ closing
 			ctx := context.Background()
 			client, err := githubutils.GetClient(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "testrepo", "master")
+			hasChangelog, err := changelogutils.RefHasChangelog(ctx, client, "solo-io", "reporting-client", "master")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasChangelog).To(BeTrue())
 		})
@@ -508,7 +507,7 @@ func createSubdirs(dir string, names ...string) error {
 }
 
 func mustWriteTestDir() string {
-	tmpDir, err := ioutil.TempDir("", "changelog-test-")
+	tmpDir, err := os.MkdirTemp("", "changelog-test-")
 	Expect(err).NotTo(HaveOccurred())
 	return tmpDir
 }

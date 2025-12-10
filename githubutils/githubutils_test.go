@@ -2,7 +2,6 @@ package githubutils
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 
 	"github.com/google/go-github/v32/github"
@@ -16,10 +15,10 @@ var _ = Describe("github utils", func() {
 		client                  *github.Client
 		ctx                     = context.Background()
 		owner                   = "solo-io"
-		reponame                = "testrepo"
-		repoWithoutReleasesName = "testrepo-noreleases"
-		version                 = "v0.0.16"
-		ref                     = "v0.0.17"
+		reponame                = "reporting-client"
+		repoWithoutReleasesName = "unik-hub"
+		version                 = "v0.1.0"
+		ref                     = "v0.1.3"
 	)
 
 	var _ = BeforeEach(func() {
@@ -72,9 +71,9 @@ var _ = Describe("github utils", func() {
 })
 
 func mustSetupTempFiles() (file *os.File, dir string) {
-	tmpf, err := ioutil.TempFile("", "tar-file-")
+	tmpf, err := os.CreateTemp("", "tar-file-")
 	Expect(err).NotTo(HaveOccurred())
-	tmpd, err := ioutil.TempDir("", "tar-dir-")
+	tmpd, err := os.MkdirTemp("", "tar-dir-")
 	Expect(err).NotTo(HaveOccurred())
 	return tmpf, tmpd
 }

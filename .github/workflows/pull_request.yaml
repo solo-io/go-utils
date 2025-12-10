@@ -1,4 +1,4 @@
-name: pull_request
+name: Tests
 
 on:
   push:
@@ -13,43 +13,51 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.11.0
+      uses: styfle/cancel-workflow-action@0.12.1
       with:
         access_token: ${{ github.token }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: 3.8
-    - uses: google-github-actions/setup-gcloud@a48b55b3b0eeaf77b6e1384aab737fbefe2085ac
+
+    - name: Gcloud login
+      if: ${{ env.has_auth }}
+      uses: google-github-actions/auth@v2
       with:
-        version: '290.0.1'
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
-      name: Gcloud Login
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        create_credentials_file: true
+      env:
+        has_auth: ${{ secrets.GCP_PROJECT_ID && secrets.GCP_SA_KEY && 1 }}
+
     - name: Install Trivy (latest)
       run: |
+          : "Install Trivy (latest)"
           TRIVY_VERSION=$(curl --silent "https://api.github.com/repos/aquasecurity/trivy/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/') 
           echo Using Trivy v${TRIVY_VERSION}
           wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb
           sudo dpkg -i trivy_${TRIVY_VERSION}_Linux-64bit.deb
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v6
       with:
         go-version-file: "go.mod"
     - name: Run tests
       env:
-        GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN || github.token }}
+        SKIP_GCLOUD_TESTS: ${{ secrets.GCP_SA_KEY == '' && '1' || '' }}
+        HAS_CLOUDBUILD_GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN && '1' || '' }}
         TEST_PKG: ./... # Run all tests
       run: make test
-    - uses: testspace-com/setup-testspace@v1
+    - name: Set up testspaceTestspace
+      uses: testspace-com/setup-testspace@v1
       with:
         domain: solo-io.testspace.com
-      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'solo-io' }}
     - name: Push result to Testspace server
       run: |
         testspace push --verbose "**/junit.xml"
-      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'solo-io' }}

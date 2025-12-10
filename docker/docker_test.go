@@ -2,7 +2,7 @@ package docker_test
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -50,14 +50,14 @@ var _ = Describe("Docker", func() {
 	Context("Save", func() {
 		It("can save a valid, present container", func() {
 			pullValidImage()
-			file, err := ioutil.TempFile("", "docker_test")
+			file, err := os.CreateTemp("", "docker_test")
 			Expect(err).NotTo(HaveOccurred())
 			err = docker.Save(validImage, file.Name())
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("cannot save an invalid container", func() {
-			file, err := ioutil.TempFile("", "docker_test")
+			file, err := os.CreateTemp("", "docker_test")
 			Expect(err).NotTo(HaveOccurred())
 			err = docker.Save(invalidImage, file.Name())
 			Expect(err).To(HaveOccurred())

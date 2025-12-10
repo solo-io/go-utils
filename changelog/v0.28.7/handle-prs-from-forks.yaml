@@ -1,0 +1,80 @@
+changelog:
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: actions
+    dependencyRepo: checkout
+    dependencyTag: v5
+    description: "Use node 24"
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: actions
+    dependencyRepo: setup-go
+    dependencyTag: v6
+    description: "Use node 24"
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: actions
+    dependencyRepo: setup-python
+    dependencyTag: v6
+    description: "Use node 24"
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: styfle
+    dependencyRepo: cancel-workflow-action
+    dependencyTag: 0.12.1
+    description: "Bump to node20"
+    resolvesIssue: false
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    dependencyOwner: google-github-actions
+    dependencyRepo: auth
+    dependencyTag: v2
+    description: "Replace deprecated action flow"
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Show all failures in CI.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Replace deprecated methods.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Add name to testspace step.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Add name to testspace step.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Add pretty comments to workflows.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Skip gcloud steps for forks without gcloud secrets.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Skip testspace steps for forks.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Skip write steps for forks without cloudbuild secrets.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Use public repositories for tests for forks without github secrets.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: NON_USER_FACING
+    resolvesIssue: false
+    description: Use public repositories for tests.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: FIX
+    resolvesIssue: false
+    description: Fix running tests for forks.
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+  - type: FIX
+    issueLink: https://github.com/solo-io/go-utils/pull/556
+    description: Fixing handling of PRs from forks
+    resolvesIssue: true

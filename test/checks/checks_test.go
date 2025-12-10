@@ -1,7 +1,7 @@
 package checks
 
 import (
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -19,7 +19,7 @@ var _ = Describe("Checks", func() {
 		gomod, err := exec.Command("go", "env", "GOMOD").CombinedOutput()
 		Expect(err).NotTo(HaveOccurred())
 		gomodfile := strings.TrimSpace(string(gomod))
-		data, err := ioutil.ReadFile(gomodfile)
+		data, err := os.ReadFile(gomodfile)
 		Expect(err).NotTo(HaveOccurred())
 
 		modFile, err := modfile.Parse(gomodfile, data, nil)

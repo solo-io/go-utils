@@ -3,6 +3,7 @@ package githubutils_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/solo-io/go-utils/randutils"
@@ -23,9 +24,25 @@ var _ = Describe("repo client utils", func() {
 		repo                    = "testrepo"
 		repoWithoutReleasesName = "testrepo-noreleases"
 		sha                     = "9065a9a84e286ea7f067f4fc240944b0a4d4c82a"
+		commitsInSha            = 3
 		otherSha                = "ea649cd931820a6a59970b051d480094f9d61c4e"
 		pr                      = 62
+		commit1                 = "6d389bc860e1cefdcbc99d43979e62104f13092f"
+		commit2                 = "9065a9a84e286ea7f067f4fc240944b0a4d4c82a"
+		tagWithSha              = "v0.1.16"
+		shaForTag               = "04da4a385be3fde4797963cd4f3f76a185e56ba7"
 	)
+
+	if os.Getenv("HAS_CLOUDBUILD_GITHUB_TOKEN") == "" {
+		repo = "reporting-client"
+		repoWithoutReleasesName = "unik-hub"
+		sha = "af5d207720ee6b548704b06bfa6631f9a2897294"
+		commitsInSha = 2
+		commit1 = "7ef898bc3df32db0e1ed2dee70a838c955a7b422"
+		commit2 = "f47eacc21bd62e6bc8bb8954af0dc1817079af0d"
+		tagWithSha = "v0.1.2"
+		shaForTag = "a1c75ffaa40ea2b89368bfc338dc3f6f990b6df2"
+	}
 
 	BeforeEach(func() {
 		c, err := githubutils.GetClient(ctx)
@@ -66,23 +83,23 @@ var _ = Describe("repo client utils", func() {
 
 	It("can do a commit comparison", func() {
 		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		cc, err := client.CompareCommits(ctx, "6d389bc860e1cefdcbc99d43979e62104f13092f", "9065a9a84e286ea7f067f4fc240944b0a4d4c82a")
+		cc, err := client.CompareCommits(ctx, commit1, commit2)
 		Expect(err).To(BeNil())
 		Expect(cc.Files).To(HaveLen(5))
 	})
 
 	It("can get sha for tag", func() {
 		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		sha, err := client.GetShaForTag(ctx, "v0.1.16")
+		sha, err := client.GetShaForTag(ctx, tagWithSha)
 		Expect(err).To(BeNil())
-		Expect(sha).To(Equal("04da4a385be3fde4797963cd4f3f76a185e56ba7"))
+		Expect(sha).To(Equal(shaForTag))
 	})
 
 	It("can get a commit", func() {
 		client = githubutils.NewRepoClient(githubClient, owner, repo)
 		commit, err := client.GetCommit(ctx, sha)
 		Expect(err).To(BeNil())
-		Expect(len(commit.Files)).To(Equal(3))
+		Expect(len(commit.Files)).To(Equal(commitsInSha))
 	})
 
 	expectStatus := func(actual, expected *github.RepoStatus) {
@@ -100,40 +117,48 @@ var _ = Describe("repo client utils", func() {
 		expectStatus(loaded, status)
 	}
 
-	It("can manage status", func() {
-		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		// randomizing this would create a (slim) potential race
-		// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
-		status := &github.RepoStatus{
-			State:       github.String(githubutils.STATUS_SUCCESS),
-			Context:     github.String("test"),
-			Description: github.String("test"), // longer than 140 characters will be truncated
-		}
-		testManageStatus(client, status, sha)
-	})
+	Context("With write token", func() {
+		BeforeEach(func() {
+			if os.Getenv("HAS_CLOUDBUILD_GITHUB_TOKEN") == "" {
+				Skip("Needs write token")
+			}
+		})
 
-	It("can manage status even when it exceeds 140 character", func() {
-		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		// randomizing this would create a (slim) potential race
-		// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
-		status := &github.RepoStatus{
-			State:       github.String(githubutils.STATUS_SUCCESS),
-			Context:     github.String("test"),
-			Description: github.String(strings.Repeat("test", 40)), // longer than 140 characters will be truncated
-		}
-		testManageStatus(client, status, otherSha) // don't share sha with other test to avoid race
-	})
+		It("can manage status", func() {
+			client = githubutils.NewRepoClient(githubClient, owner, repo)
+			// randomizing this would create a (slim) potential race
+			// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
+			status := &github.RepoStatus{
+				State:       github.String(githubutils.STATUS_SUCCESS),
+				Context:     github.String("test"),
+				Description: github.String("test"), // longer than 140 characters will be truncated
+			}
+			testManageStatus(client, status, sha)
+		})
 
-	It("can create and delete comments", func() {
-		client = githubutils.NewRepoClient(githubClient, owner, repo)
-		body := fmt.Sprintf("test-%s", randutils.RandString(4))
-		comment := &github.IssueComment{
-			Body: github.String(body),
-		}
-		stored, err := client.CreateComment(ctx, pr, comment)
-		Expect(err).To(BeNil())
-		err = client.DeleteComment(ctx, stored.GetID())
-		Expect(err).To(BeNil())
+		It("can manage status even when it exceeds 140 character", func() {
+			client = githubutils.NewRepoClient(githubClient, owner, repo)
+			// randomizing this would create a (slim) potential race
+			// not randomizing makes it less easy to validate that the create worked, but we'll assume github api responses are accurate
+			status := &github.RepoStatus{
+				State:       github.String(githubutils.STATUS_SUCCESS),
+				Context:     github.String("test"),
+				Description: github.String(strings.Repeat("test", 40)), // longer than 140 characters will be truncated
+			}
+			testManageStatus(client, status, otherSha) // don't share sha with other test to avoid race
+		})
+
+		It("can create and delete comments", func() {
+			client = githubutils.NewRepoClient(githubClient, owner, repo)
+			body := fmt.Sprintf("test-%s", randutils.RandString(4))
+			comment := &github.IssueComment{
+				Body: github.String(body),
+			}
+			stored, err := client.CreateComment(ctx, pr, comment)
+			Expect(err).To(BeNil())
+			err = client.DeleteComment(ctx, stored.GetID())
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Context("Can properly find the most recent tag before an SHA", func() {
