@@ -52,6 +52,8 @@ type scanRepoOptions struct {
 	additionalContextFile       string
 
 	enablePreRelease bool
+
+	issueTitleSuffix string
 }
 
 func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
@@ -65,6 +67,8 @@ func (m *scanRepoOptions) addToFlags(flags *pflag.FlagSet) {
 
 	flags.StringVarP(&m.imagesVersionConstraintFile, "image-constraint-file", "i", "", "name of file with mapping of version to images")
 	flags.StringVarP(&m.additionalContextFile, "additional-context-file", "d", "", "name of file with any additional context to add to the top of the generated vulnerability report")
+
+	flags.StringVar(&m.issueTitleSuffix, "issue-title-suffix", "", "text to append to the GitHub issue title (appended in parentheses)")
 
 	cliutils.MustMarkFlagRequired(flags, "github-repo")
 	cliutils.MustMarkFlagRequired(flags, "release-constraint")
@@ -101,6 +105,7 @@ func doScanRepo(ctx context.Context, opts *scanRepoOptions) error {
 					CreateGithubIssueForMinorLatestPatchVersion: opts.vulnerabilityAction == "github-issue-minor",
 					AdditionalContext: additionalContext,
 					EnablePreRelease:  opts.enablePreRelease,
+					IssueTitleSuffix:  opts.issueTitleSuffix,
 				},
 			},
 		},

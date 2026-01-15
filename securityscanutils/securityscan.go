@@ -109,6 +109,9 @@ type SecurityScanOpts struct {
 	// rather than per exact patch version. When enabled, the writer will target a minor-scoped
 	// issue title. Scanning behavior is unchanged; it will scan the selected release(s).
 	CreateGithubIssueForMinorLatestPatchVersion bool
+
+	// Optional string appended to the GitHub issue title in parentheses.
+	IssueTitleSuffix string
 }
 
 // GenerateSecurityScans generates .md files and writes them to the configured OutputDir for each repo
@@ -199,9 +202,9 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	}
 	if useGithubWriter {
 		if repo.Opts.CreateGithubIssueForMinorLatestPatchVersion {
-			repo.issueWriter = issuewriter.NewGithubIssueWriterWithMinorTitle(githubRepo, s.githubClient, issuePredicate)
+			repo.issueWriter = issuewriter.NewGithubIssueWriterWithMinorTitle(githubRepo, s.githubClient, issuePredicate, repo.Opts.IssueTitleSuffix)
 		} else {
-			repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+			repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate, repo.Opts.IssueTitleSuffix)
 		}
 		logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 	} else if repo.Opts.OutputResultLocally {
