@@ -45,6 +45,14 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version-file: "go.mod"
+    - name: Ensure Google Cloud tests are runnable for main repository
+      if: github.event_name == 'push' && github.repository_owner == 'solo-io' && env.SKIP_GCLOUD_TESTS
+      shell: bash
+      run: |
+        echo ::error title=Misconfigured::GCP_SA_KEY is missing
+        exit 1000
+      env:
+        SKIP_GCLOUD_TESTS: ${{ secrets.GCP_SA_KEY == '' && '1' || '' }}
     - name: Run tests
       env:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN || github.token }}
