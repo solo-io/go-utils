@@ -1,0 +1,6 @@
+changelog:
+  - type: NON_USER_FACING
+    description: |
+      Updated security scan GH issue writer to:
+      - create single issue for a given major.minor.patch, e.g. 2.1.x.
+      - append suffix to GH issue title so we can create multiple issues for a repo.
