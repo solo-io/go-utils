@@ -38,16 +38,37 @@ type GithubIssueWriter struct {
 	// A local cache of all existing GitHub issues
 	// Used to ensure that we are updating existing issues that were created by previous scans
 	allGithubIssues []*github.Issue
+
+	// If true, the issue title will be created per minor (e.g. "Security Alert: 2.0.x")
+	// instead of per exact patch (e.g. "Security Alert: 2.0.1")
+	useMinorIssueTitle bool
+
+	// Optional suffix appended to the issue title in parentheses.
+	titleSuffix string
 }
 
 var _ IssueWriter = &GithubIssueWriter{}
 
-func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate) IssueWriter {
+func NewGithubIssueWriter(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate, titleSuffix string) IssueWriter {
 	return &GithubIssueWriter{
 		repo:                       repo,
 		client:                     client,
 		createGithubIssuePredicate: issuePredicate,
 		allGithubIssues:            nil, // initially nil, we'll lazy load these
+		useMinorIssueTitle:         false,
+		titleSuffix:                titleSuffix,
+	}
+}
+
+// NewGithubIssueWriterWithMinorTitle constructs a GithubIssueWriter that titles issues per minor version (X.Y.x)
+func NewGithubIssueWriterWithMinorTitle(repo GithubRepo, client *github.Client, issuePredicate githubutils.RepositoryReleasePredicate, titleSuffix string) IssueWriter {
+	return &GithubIssueWriter{
+		repo:                       repo,
+		client:                     client,
+		createGithubIssuePredicate: issuePredicate,
+		allGithubIssues:            nil,
+		useMinorIssueTitle:         true,
+		titleSuffix:                titleSuffix,
 	}
 }
 
@@ -92,7 +113,15 @@ func (g *GithubIssueWriter) Write(
 	// will not be included in the filtered list
 	versionToScan, _ := semver.NewVersion(release.GetTagName())
 
-	issueTitle := fmt.Sprintf("Security Alert: %s", versionToScan.String())
+	var issueTitle string
+	if g.useMinorIssueTitle {
+		issueTitle = fmt.Sprintf("Security Alert: %d.%d.x", versionToScan.Major(), versionToScan.Minor())
+	} else {
+		issueTitle = fmt.Sprintf("Security Alert: %s", versionToScan.String())
+	}
+	if g.titleSuffix != "" {
+		issueTitle = fmt.Sprintf("%s (%s)", issueTitle, g.titleSuffix)
+	}
 	issueRequest := &github.IssueRequest{
 		Title:  github.String(issueTitle),
 		Body:   github.String(vulnerabilityMarkdown),

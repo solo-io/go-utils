@@ -39,7 +39,7 @@ func (l *LocalIssueWriter) Write(_ context.Context, release *github.RepositoryRe
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(f, contents)
+	_, err = fmt.Fprint(f, contents)
 	if err != nil {
 		return err
 	}

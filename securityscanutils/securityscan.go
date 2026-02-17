@@ -104,6 +104,14 @@ type SecurityScanOpts struct {
 
 	// Enable scanning of pre-release versions
 	EnablePreRelease bool
+
+	// Create/Update a single GitHub issue per minor version (e.g., "Security Alert: 2.0.x")
+	// rather than per exact patch version. When enabled, the writer will target a minor-scoped
+	// issue title. Scanning behavior is unchanged; it will scan the selected release(s).
+	CreateGithubIssueForMinorLatestPatchVersion bool
+
+	// Optional string appended to the GitHub issue title in parentheses.
+	IssueTitleSuffix string
 }
 
 // GenerateSecurityScans generates .md files and writes them to the configured OutputDir for each repo
@@ -182,18 +190,24 @@ func (s *SecurityScanner) initializeRepoConfiguration(ctx context.Context, repo 
 	}
 	// Default to not creating any issues
 	var issuePredicate githubutils.RepositoryReleasePredicate = &githubutils.NoReleasesPredicate{}
-	useGithubWriter := repoOptions.CreateGithubIssuePerVersion || repoOptions.CreateGithubIssueForLatestPatchVersion
+	useGithubWriter := repoOptions.CreateGithubIssuePerVersion ||
+		repoOptions.CreateGithubIssueForLatestPatchVersion ||
+		repoOptions.CreateGithubIssueForMinorLatestPatchVersion
 	if repoOptions.CreateGithubIssuePerVersion {
 		// Create Github issue for all releases, if configured
 		issuePredicate = &githubutils.AllReleasesPredicate{}
 	}
 
-	if repoOptions.CreateGithubIssueForLatestPatchVersion {
-		// Create Github issues for all releases in the set
+	if repoOptions.CreateGithubIssueForLatestPatchVersion || repoOptions.CreateGithubIssueForMinorLatestPatchVersion {
+		// For both "latest" and "minor-latest" modes, only write for the latest patch releases
 		issuePredicate = NewLatestPatchRepositoryReleasePredicate(releasesToScan)
 	}
 	if useGithubWriter {
-		repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate)
+		if repo.Opts.CreateGithubIssueForMinorLatestPatchVersion {
+			repo.issueWriter = issuewriter.NewGithubIssueWriterWithMinorTitle(githubRepo, s.githubClient, issuePredicate, repo.Opts.IssueTitleSuffix)
+		} else {
+			repo.issueWriter = issuewriter.NewGithubIssueWriter(githubRepo, s.githubClient, issuePredicate, repo.Opts.IssueTitleSuffix)
+		}
 		logger.Debugf("GithubIssueWriter configured with Predicate: %+v", issuePredicate)
 	} else if repo.Opts.OutputResultLocally {
 		repo.issueWriter, err = issuewriter.NewLocalIssueWriter(path.Join(repo.Opts.OutputDir, githubRepo.RepoName, "issue_results"))
