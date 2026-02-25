@@ -30,6 +30,9 @@ func Tar(src string, fs afero.Fs, writers ...io.Writer) error {
 	defer tw.Close()
 	// walk path
 	return afero.Walk(fs, src, func(file string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if file == src {
 			return nil
 		}
