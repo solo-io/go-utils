@@ -1,6 +1,6 @@
 module github.com/solo-io/go-utils
 
-go 1.25.5
+go 1.26.1
 
 require (
 	cloud.google.com/go/pubsub v1.33.0
