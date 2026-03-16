@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -104,7 +103,7 @@ func (sb *StorageBuilder) copyArchiveToStorage(ctx context.Context, builderCtx B
 		return nil, err
 	}
 
-	tmpf, err := ioutil.TempFile("", "*.tar.gz")
+	tmpf, err := os.CreateTemp("", "*.tar.gz")
 	if err != nil {
 		logger.Error().Err(err).Msg("can't create temp file")
 		return nil, err
@@ -169,7 +168,7 @@ func (sb *StorageBuilder) copyToBucket(ctx context.Context, builderCtx BuildCont
 func removeGHPrefix(ctx context.Context, archiveFile string) (*os.File, error) {
 	logger := zerolog.Ctx(ctx)
 
-	tmpf, err := ioutil.TempFile("", "*.tar.gz")
+	tmpf, err := os.CreateTemp("", "*.tar.gz")
 	if err != nil {
 		logger.Error().Err(err).Msg("can't create temp file")
 		return nil, err
