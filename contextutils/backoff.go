@@ -53,8 +53,6 @@ type exponentialBackoff struct {
 	MaxRetries  uint
 	MaxDuration *time.Duration
 	MaxDelay    time.Duration
-
-	start *time.Duration
 }
 
 func (e *exponentialBackoff) Backoff(ctx context.Context, f func(ctx context.Context) error) error {
