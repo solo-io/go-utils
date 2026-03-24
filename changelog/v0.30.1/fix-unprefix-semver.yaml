@@ -1,0 +1,9 @@
+changelog:
+  - type: FIX
+    description: |
+      Use semver library instead of versionutils.ParseVersion in SortReleasesBySemver
+      and NewLatestPatchRepositoryReleasePredicate so that release tags without a 'v'
+      prefix (e.g. "2.0.1") are parsed correctly. Previously these tags were silently
+      skipped, causing the GitHub issue writer to never create issues for affected releases.
+    issueLink: https://github.com/solo-io/gloo-gateway/issues/1927
+    resolvesIssue: false
