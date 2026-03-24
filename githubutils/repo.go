@@ -357,15 +357,16 @@ func DownloadFile(url string, w io.Writer) error {
 func SortReleasesBySemver(releases []*github.RepositoryRelease) {
 	sort.Slice(releases, func(i, j int) bool {
 		rA, rB := releases[i], releases[j]
-		verA, err := versionutils.ParseVersion(rA.GetTagName())
-		if err != nil {
+		verA, errA := semver.NewVersion(rA.GetTagName())
+		verB, errB := semver.NewVersion(rB.GetTagName())
+		// Push non-semver tags to the end
+		if errA != nil {
 			return false
 		}
-		verB, err := versionutils.ParseVersion(rB.GetTagName())
-		if err != nil {
-			return false
+		if errB != nil {
+			return true
 		}
-		return verA.MustIsGreaterThan(*verB)
+		return verA.GreaterThan(verB)
 	})
 }
 

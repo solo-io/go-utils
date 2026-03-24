@@ -5,7 +5,6 @@ import (
 	"github.com/google/go-github/v32/github"
 	"github.com/solo-io/go-utils/githubutils"
 	"github.com/solo-io/go-utils/log"
-	"github.com/solo-io/go-utils/versionutils"
 )
 
 // The securityScanRepositoryReleasePredicate is responsible for defining which
@@ -70,17 +69,19 @@ func NewLatestPatchRepositoryReleasePredicate(releases []*github.RepositoryRelea
 	recentMajor := -1
 	recentMinor := -1
 	for _, release := range releases {
-		version, err := versionutils.ParseVersion(release.GetTagName())
+		version, err := semver.NewVersion(release.GetTagName())
 		if err != nil {
 			continue
 		}
-		if version.Major == recentMajor && version.Minor == recentMinor {
+		major := int(version.Major())
+		minor := int(version.Minor())
+		if major == recentMajor && minor == recentMinor {
 			continue
 		}
 
 		// This is the largest patch release
-		recentMajor = version.Major
-		recentMinor = version.Minor
+		recentMajor = major
+		recentMinor = minor
 		latestPatchReleasesByTagName[release.GetTagName()] = release
 	}
 
