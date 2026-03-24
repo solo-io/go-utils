@@ -11,6 +11,18 @@ import (
 	"github.com/solo-io/go-utils/securityscanutils"
 )
 
+func release(tag string) *github.RepositoryRelease {
+	return &github.RepositoryRelease{TagName: github.String(tag)}
+}
+
+func releases(tags ...string) []*github.RepositoryRelease {
+	out := make([]*github.RepositoryRelease, len(tags))
+	for i, t := range tags {
+		out[i] = release(t)
+	}
+	return out
+}
+
 var _ = Describe("Predicate", func() {
 	Context("securityScanRepositoryReleasePredicate", func() {
 		DescribeTable(
@@ -51,74 +63,159 @@ var _ = Describe("Predicate", func() {
 	})
 
 	Context("latestPatchRepositoryReleasePredicate", func() {
-		var releasePredicate githubutils.RepositoryReleasePredicate
 
-		BeforeEach(func() {
-			releaseSet := []*github.RepositoryRelease{
-				{
-					TagName: github.String("v1.0.1"),
+		Context("with v-prefixed tags", func() {
+			DescribeTable("single minor series",
+				func(tag string, expected bool) {
+					pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+						releases("v1.0.1", "v1.0.2", "v1.0.3"))
+					Expect(pred.Apply(release(tag))).To(Equal(expected))
 				},
-				{
-					TagName: github.String("v1.0.2"),
-				},
-				{
-					TagName: github.String("v1.0.3"),
-				},
-			}
+				Entry("latest patch is accepted", "v1.0.3", true),
+				Entry("older patch is rejected", "v1.0.2", false),
+				Entry("oldest patch is rejected", "v1.0.1", false),
+				Entry("unknown version is rejected", "v3.0.0", false),
+			)
 
-			releasePredicate = securityscanutils.NewLatestPatchRepositoryReleasePredicate(releaseSet)
+			DescribeTable("multiple minor series",
+				func(tag string, expected bool) {
+					pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+						releases("v1.0.0", "v1.0.1", "v1.1.0", "v1.1.1", "v2.0.0"))
+					Expect(pred.Apply(release(tag))).To(Equal(expected))
+				},
+				Entry("latest patch of 1.0.x", "v1.0.1", true),
+				Entry("older patch of 1.0.x", "v1.0.0", false),
+				Entry("latest patch of 1.1.x", "v1.1.1", true),
+				Entry("older patch of 1.1.x", "v1.1.0", false),
+				Entry("latest patch of 2.0.x", "v2.0.0", true),
+			)
 		})
 
-		DescribeTable(
-			"Returns true/false based on release properties",
-			func(release *github.RepositoryRelease, expectedResult bool) {
-				Expect(releasePredicate.Apply(release)).To(Equal(expectedResult))
-			},
-			Entry("release is not in release set", &github.RepositoryRelease{
-				TagName: github.String("v3.0.0"), // not in the original release set
-			}, false),
-			Entry("release is not latest patch release", &github.RepositoryRelease{
-				TagName: github.String("v1.0.1"),
-			}, false),
-			Entry("release is latest patch release", &github.RepositoryRelease{
-				TagName: github.String("v1.0.3"),
-			}, true),
-		)
+		Context("without v prefix", func() {
+			DescribeTable("single minor series",
+				func(tag string, expected bool) {
+					pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+						releases("2.0.0", "2.0.1", "2.0.2"))
+					Expect(pred.Apply(release(tag))).To(Equal(expected))
+				},
+				Entry("latest patch is accepted", "2.0.2", true),
+				Entry("older patch is rejected", "2.0.1", false),
+				Entry("oldest patch is rejected", "2.0.0", false),
+			)
+
+			DescribeTable("multiple minor series",
+				func(tag string, expected bool) {
+					pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+						releases("2.0.1", "2.1.2", "2.1.3"))
+					Expect(pred.Apply(release(tag))).To(Equal(expected))
+				},
+				Entry("latest patch of 2.0.x", "2.0.1", true),
+				Entry("older patch of 2.1.x", "2.1.2", false),
+				Entry("latest patch of 2.1.x", "2.1.3", true),
+			)
+
+			DescribeTable("multiple major series",
+				func(tag string, expected bool) {
+					pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+						releases("1.0.5", "1.1.3", "2.0.1", "2.1.0"))
+					Expect(pred.Apply(release(tag))).To(Equal(expected))
+				},
+				Entry("latest patch of 1.0.x", "1.0.5", true),
+				Entry("latest patch of 1.1.x", "1.1.3", true),
+				Entry("latest patch of 2.0.x", "2.0.1", true),
+				Entry("latest patch of 2.1.x", "2.1.0", true),
+			)
+		})
+
+		Context("unsorted input", func() {
+			It("sorts internally and picks correct latest patches", func() {
+				// provide releases in random order
+				pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+					releases("1.0.0", "1.0.3", "1.0.1", "1.1.0", "1.0.2", "1.1.2", "1.1.1"))
+				Expect(pred.Apply(release("1.0.3"))).To(BeTrue(), "1.0.3 should be latest of 1.0.x")
+				Expect(pred.Apply(release("1.1.2"))).To(BeTrue(), "1.1.2 should be latest of 1.1.x")
+				Expect(pred.Apply(release("1.0.2"))).To(BeFalse())
+				Expect(pred.Apply(release("1.1.1"))).To(BeFalse())
+				Expect(pred.Apply(release("1.0.0"))).To(BeFalse())
+			})
+		})
+
+		Context("non-semver tags are skipped", func() {
+			It("ignores invalid tags and still picks correct latest patches", func() {
+				pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+					releases("not-a-version", "2.0.1", "also-bad", "2.0.2"))
+				Expect(pred.Apply(release("2.0.2"))).To(BeTrue())
+				Expect(pred.Apply(release("2.0.1"))).To(BeFalse())
+				Expect(pred.Apply(release("not-a-version"))).To(BeFalse())
+			})
+		})
+
+		Context("empty release set", func() {
+			It("rejects everything", func() {
+				pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(releases())
+				Expect(pred.Apply(release("1.0.0"))).To(BeFalse())
+				Expect(pred.Apply(release("v1.0.0"))).To(BeFalse())
+			})
+		})
+
+		Context("single release", func() {
+			It("accepts the only release", func() {
+				pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+					releases("3.5.7"))
+				Expect(pred.Apply(release("3.5.7"))).To(BeTrue())
+			})
+		})
 	})
 
-	Context("latestPatchRepositoryReleasePredicate without v prefix", func() {
-		var releasePredicate githubutils.RepositoryReleasePredicate
-
-		BeforeEach(func() {
-			releaseSet := []*github.RepositoryRelease{
-				{
-					TagName: github.String("2.0.1"),
-				},
-				{
-					TagName: github.String("2.1.2"),
-				},
-				{
-					TagName: github.String("2.1.3"),
-				},
+	Context("SortReleasesBySemver", func() {
+		tags := func(rels []*github.RepositoryRelease) []string {
+			out := make([]string, len(rels))
+			for i, r := range rels {
+				out[i] = r.GetTagName()
 			}
+			return out
+		}
 
-			releasePredicate = securityscanutils.NewLatestPatchRepositoryReleasePredicate(releaseSet)
+		It("sorts v-prefixed tags descending", func() {
+			rels := releases("v1.0.0", "v2.0.0", "v1.1.0", "v1.0.1")
+			githubutils.SortReleasesBySemver(rels)
+			Expect(tags(rels)).To(Equal([]string{"v2.0.0", "v1.1.0", "v1.0.1", "v1.0.0"}))
 		})
 
-		DescribeTable(
-			"Returns true/false based on release properties",
-			func(release *github.RepositoryRelease, expectedResult bool) {
-				Expect(releasePredicate.Apply(release)).To(Equal(expectedResult))
-			},
-			Entry("release is latest patch for 2.0.x", &github.RepositoryRelease{
-				TagName: github.String("2.0.1"),
-			}, true),
-			Entry("release is not latest patch for 2.1.x", &github.RepositoryRelease{
-				TagName: github.String("2.1.2"),
-			}, false),
-			Entry("release is latest patch for 2.1.x", &github.RepositoryRelease{
-				TagName: github.String("2.1.3"),
-			}, true),
-		)
+		It("sorts non-prefixed tags descending", func() {
+			rels := releases("1.0.0", "2.0.0", "1.1.0", "1.0.1")
+			githubutils.SortReleasesBySemver(rels)
+			Expect(tags(rels)).To(Equal([]string{"2.0.0", "1.1.0", "1.0.1", "1.0.0"}))
+		})
+
+		It("sorts a realistic release set", func() {
+			rels := releases("2.0.1", "2.1.3", "2.1.2", "2.0.0", "2.1.0", "2.1.1")
+			githubutils.SortReleasesBySemver(rels)
+			Expect(tags(rels)).To(Equal([]string{"2.1.3", "2.1.2", "2.1.1", "2.1.0", "2.0.1", "2.0.0"}))
+		})
+
+		It("handles pre-release tags", func() {
+			rels := releases("2.0.0", "2.1.0-beta.1", "2.1.0-beta.2", "2.1.0")
+			githubutils.SortReleasesBySemver(rels)
+			Expect(tags(rels)).To(Equal([]string{"2.1.0", "2.1.0-beta.2", "2.1.0-beta.1", "2.0.0"}))
+		})
+
+		It("pushes non-semver tags to the end", func() {
+			rels := releases("bad-tag", "2.0.0", "1.0.0")
+			githubutils.SortReleasesBySemver(rels)
+			Expect(tags(rels)).To(Equal([]string{"2.0.0", "1.0.0", "bad-tag"}))
+		})
+
+		It("handles empty list", func() {
+			rels := releases()
+			githubutils.SortReleasesBySemver(rels)
+			Expect(rels).To(BeEmpty())
+		})
+
+		It("handles single element", func() {
+			rels := releases("1.0.0")
+			githubutils.SortReleasesBySemver(rels)
+			Expect(tags(rels)).To(Equal([]string{"1.0.0"}))
+		})
 	})
 })
