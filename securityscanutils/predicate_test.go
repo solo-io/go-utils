@@ -165,6 +165,31 @@ var _ = Describe("Predicate", func() {
 				Expect(pred.Apply(release("3.5.7"))).To(BeTrue())
 			})
 		})
+
+		// Regression: before switching from versionutils.ParseVersion to semver.NewVersion,
+		// non-v-prefixed tags silently failed parsing, producing an empty predicate map.
+		// This is the bug visible in the log as:
+		//   GithubIssueWriter configured with Predicate: &{releasesByTagName:map[]}
+		// With an empty map the predicate rejects every release, so no GitHub issues
+		// are created even when github-issue-minor output is configured.
+		Context("non-v-prefixed tags must not produce an empty predicate (regression)", func() {
+			It("accepts latest patches for strict-semver tags like those used by github-issue-minor repos", func() {
+				// Simulate the exact flow from initializeRepoConfiguration (securityscan.go:201-203):
+				//   issuePredicate = NewLatestPatchRepositoryReleasePredicate(releasesToScan)
+				// using tags that lack the v prefix, as seen in production.
+				pred := securityscanutils.NewLatestPatchRepositoryReleasePredicate(
+					releases("2.0.0", "2.0.1", "2.1.0", "2.1.2", "2.1.3"))
+
+				// The predicate must NOT be a no-op: latest patches must be accepted
+				Expect(pred.Apply(release("2.0.1"))).To(BeTrue(), "latest patch of 2.0.x must be accepted")
+				Expect(pred.Apply(release("2.1.3"))).To(BeTrue(), "latest patch of 2.1.x must be accepted")
+
+				// Older patches must still be rejected
+				Expect(pred.Apply(release("2.0.0"))).To(BeFalse())
+				Expect(pred.Apply(release("2.1.2"))).To(BeFalse())
+				Expect(pred.Apply(release("2.1.0"))).To(BeFalse())
+			})
+		})
 	})
 
 	Context("SortReleasesBySemver", func() {
