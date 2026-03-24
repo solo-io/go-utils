@@ -85,4 +85,40 @@ var _ = Describe("Predicate", func() {
 			}, true),
 		)
 	})
+
+	Context("latestPatchRepositoryReleasePredicate without v prefix", func() {
+		var releasePredicate githubutils.RepositoryReleasePredicate
+
+		BeforeEach(func() {
+			releaseSet := []*github.RepositoryRelease{
+				{
+					TagName: github.String("2.0.1"),
+				},
+				{
+					TagName: github.String("2.1.2"),
+				},
+				{
+					TagName: github.String("2.1.3"),
+				},
+			}
+
+			releasePredicate = securityscanutils.NewLatestPatchRepositoryReleasePredicate(releaseSet)
+		})
+
+		DescribeTable(
+			"Returns true/false based on release properties",
+			func(release *github.RepositoryRelease, expectedResult bool) {
+				Expect(releasePredicate.Apply(release)).To(Equal(expectedResult))
+			},
+			Entry("release is latest patch for 2.0.x", &github.RepositoryRelease{
+				TagName: github.String("2.0.1"),
+			}, true),
+			Entry("release is not latest patch for 2.1.x", &github.RepositoryRelease{
+				TagName: github.String("2.1.2"),
+			}, false),
+			Entry("release is latest patch for 2.1.x", &github.RepositoryRelease{
+				TagName: github.String("2.1.3"),
+			}, true),
+		)
+	})
 })
