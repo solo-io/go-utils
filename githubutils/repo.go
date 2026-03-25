@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -139,7 +138,7 @@ func GetRawGitFile(ctx context.Context, client *github.Client, content *github.R
 	}
 	defer r.Close()
 
-	byt, err := ioutil.ReadAll(r)
+	byt, err := io.ReadAll(r)
 	return byt, err
 }
 

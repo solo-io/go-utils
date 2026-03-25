@@ -1,7 +1,6 @@
 package versionutils_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -36,10 +35,10 @@ var _ = Describe("Repo", func() {
 	)
 
 	BeforeEach(func() {
-		tmpDir, err = ioutil.TempDir("", "toml-parse-test-")
+		tmpDir, err = os.MkdirTemp("", "toml-parse-test-")
 		Expect(err).NotTo(HaveOccurred())
 		tomlFile = filepath.Join(tmpDir, "Gopkg.toml")
-		err = ioutil.WriteFile(tomlFile, []byte(tomlContent), 0700)
+		err = os.WriteFile(tomlFile, []byte(tomlContent), 0700)
 		Expect(err).NotTo(HaveOccurred())
 
 		tomlWrapper, err = ParseFullTomlFromDir(tmpDir)

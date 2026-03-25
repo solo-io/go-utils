@@ -4,7 +4,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"io/ioutil"
 	"os"
 
 	"github.com/gogo/protobuf/types"
@@ -14,7 +13,7 @@ import (
 var _ = Describe("Messages", func() {
 	var filename string
 	BeforeEach(func() {
-		f, err := ioutil.TempFile("", "messages_test")
+		f, err := os.CreateTemp("", "messages_test")
 		Expect(err).NotTo(HaveOccurred())
 		filename = f.Name()
 	})
@@ -32,7 +31,7 @@ var _ = Describe("Messages", func() {
 		err := WriteToFile(filename, input)
 		Expect(err).NotTo(HaveOccurred())
 
-		b, err := ioutil.ReadFile(filename)
+		b, err := os.ReadFile(filename)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(string(b)).To(Equal("foo: bar\n"))

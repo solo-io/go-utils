@@ -2,7 +2,6 @@ package securityscanutils_test
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,7 +27,7 @@ var _ = Describe("Trivy Scanner", func() {
 		t = NewTrivyScanner(executils.CombinedOutputWithStatus)
 		inputMarkdownTemplateFile, err = GetTemplateFile(MarkdownTrivyTemplate)
 		Expect(err).NotTo(HaveOccurred())
-		outputDir, err := ioutil.TempDir("", "")
+		outputDir, err := os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 		outputFile = filepath.Join(outputDir, "test_report.docgen")
 		inputImage = "quay.io/solo-io/gloo:1.11.1"
