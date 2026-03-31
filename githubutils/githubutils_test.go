@@ -2,7 +2,6 @@ package githubutils
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 
 	"github.com/google/go-github/v32/github"
@@ -72,9 +71,9 @@ var _ = Describe("github utils", func() {
 })
 
 func mustSetupTempFiles() (file *os.File, dir string) {
-	tmpf, err := ioutil.TempFile("", "tar-file-")
+	tmpf, err := os.CreateTemp("", "tar-file-")
 	Expect(err).NotTo(HaveOccurred())
-	tmpd, err := ioutil.TempDir("", "tar-dir-")
+	tmpd, err := os.MkdirTemp("", "tar-dir-")
 	Expect(err).NotTo(HaveOccurred())
 	return tmpf, tmpd
 }

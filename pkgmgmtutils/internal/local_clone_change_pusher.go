@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -33,7 +32,7 @@ func (l *localCloneChangePusher) UpdateAndPush(
 	formulaOptions *formula_updater_types.FormulaOptions,
 ) error {
 	// create temp dir for local git clone
-	dirTemp, err := ioutil.TempDir("", formulaOptions.RepoName)
+	dirTemp, err := os.MkdirTemp("", formulaOptions.RepoName)
 	if err != nil {
 		return err
 	}
@@ -86,7 +85,7 @@ func (l *localCloneChangePusher) UpdateAndPush(
 
 	formulaPath := filepath.Join(dirTemp, formulaOptions.Path)
 
-	byt, err := ioutil.ReadFile(formulaPath)
+	byt, err := os.ReadFile(formulaPath)
 	if err != nil {
 		return err
 	}
@@ -98,7 +97,7 @@ func (l *localCloneChangePusher) UpdateAndPush(
 	}
 
 	// Write Updated file to git clone directory
-	err = ioutil.WriteFile(formulaPath, byt, 0644)
+	err = os.WriteFile(formulaPath, byt, 0644)
 	if err != nil {
 		return err
 	}
