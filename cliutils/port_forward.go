@@ -109,7 +109,7 @@ func GetFreePort() (int, error) {
 	defer l.Close()
 	tcpAddr, ok := l.Addr().(*net.TCPAddr)
 	if !ok {
-		return 0, errors.Errorf("Error occured looking for an open tcp port")
+		return 0, errors.Errorf("Error occurred looking for an open tcp port")
 	}
 	return tcpAddr.Port, nil
 }
