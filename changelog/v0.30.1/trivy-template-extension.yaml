@@ -1,0 +1,9 @@
+changelog:
+  - type: NON_USER_FACING
+    description: >-
+      Create Trivy templates with the required .tpl extension so security scans
+      remain compatible with Trivy v0.70.0 and later.
+  - type: DEPENDENCY_BUMP
+    dependencyOwner: golang
+    dependencyRepo: go
+    dependencyTag: v1.26.5

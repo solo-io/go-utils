@@ -35,7 +35,9 @@ var _ = Describe("Trivy Scanner", func() {
 	})
 
 	JustAfterEach(func() {
-		err := os.RemoveAll(outputDir)
+		err := os.Remove(inputMarkdownTemplateFile)
+		Expect(err).NotTo(HaveOccurred())
+		err = os.RemoveAll(outputDir)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
