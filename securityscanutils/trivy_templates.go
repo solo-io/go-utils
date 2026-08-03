@@ -1,7 +1,7 @@
 package securityscanutils
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/rotisserie/eris"
 )
@@ -27,17 +27,22 @@ Vulnerability ID|Package|Severity|Installed Version|Fixed Version|Reference
 Trivy Returned Empty Report
 {{- end }}`
 
-// Create tempoarary file that contains the trivy template
-// Trivy CLI only accepts files as input for a template, so this is a workaround
+// Create temporary file that contains the trivy template.
+// Trivy requires custom template files to use the .tpl extension.
 func GetTemplateFile(trivyTemplate string) (string, error) {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "trivy-*.tpl")
 	if err != nil {
 		return "", eris.Wrap(err, "Unable to create temporary file to write template to")
 	}
-	_, err = f.Write([]byte(trivyTemplate))
-	if err != nil {
+	templateFile := f.Name()
+	if _, err = f.WriteString(trivyTemplate); err != nil {
+		_ = f.Close()
+		_ = os.Remove(templateFile)
 		return "", eris.Wrapf(err, "Unable to write template to file %s", f.Name())
 	}
-	f.Close()
-	return f.Name(), nil
+	if err = f.Close(); err != nil {
+		_ = os.Remove(templateFile)
+		return "", eris.Wrapf(err, "Unable to close template file %s", templateFile)
+	}
+	return templateFile, nil
 }
