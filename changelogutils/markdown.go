@@ -2,6 +2,7 @@ package changelogutils
 
 import (
 	"context"
+	"golang.org/x/mod/semver"
 	"html/template"
 	"io"
 	"sort"
@@ -123,12 +124,68 @@ func GenerateChangelogMarkdown(changelog *Changelog) string {
 }
 
 func renderDependencyBumps(changelog *Changelog) string {
-	output := ""
+	maxDependencyMap := make(map[string]string)
+	// Using a set instead of a slice to avoid duplicate entries on non-semantic version bumps
+	type set map[string]struct{}
+	nonSemanticVersionMap := make(map[string]set)
 	for _, file := range changelog.Files {
 		for _, entry := range file.Entries {
 			if entry.Type == DEPENDENCY_BUMP {
-				output = output + "- " + entry.DependencyOwner + "/" + entry.DependencyRepo + " has been upgraded to " + entry.DependencyTag + ".\n"
+				dependency := entry.DependencyOwner + "/" + entry.DependencyRepo
+				// If the tag is not a valid semantic version, we can't compare it to other tags, so we will output all
+				if !semver.IsValid(entry.DependencyTag) {
+					if _, ok := nonSemanticVersionMap[dependency]; ok {
+						nonSemanticVersionMap[dependency][entry.DependencyTag] = struct{}{}
+					} else {
+						nonSemanticVersionMap[dependency] = set{entry.DependencyTag: struct{}{}}
+					}
+				} else {
+					if val, ok := maxDependencyMap[dependency]; ok {
+						// Note: A limitation with semver.Compare is that postfixes are compared as strings.
+						// For example, an issue is the comparison between "v1.0.0-patch1" and "v1.0.0-rc1".
+						// This would result that "v1.0.0-patch1" is greater than "v1.0.0-rc1", which is technically not true.
+						// TODO: We could set a priority (ex. `rc` > `patch` > `beta`) and do a second comparison through that.
+						if semver.Compare(entry.DependencyTag, val) > 0 {
+							maxDependencyMap[dependency] = entry.DependencyTag
+						}
+					} else {
+						maxDependencyMap[dependency] = entry.DependencyTag
+					}
+				}
 			}
+		}
+	}
+
+	var semanticKeys []string
+	for k := range maxDependencyMap {
+		semanticKeys = append(semanticKeys, k)
+	}
+	var nonSemanticKeys []string
+	for k := range nonSemanticVersionMap {
+		nonSemanticKeys = append(nonSemanticKeys, k)
+	}
+	sort.Strings(semanticKeys)
+	sort.Strings(nonSemanticKeys)
+
+	output := ""
+	var semanticKeyIndex, nonSemanticKeyIndex int
+	for semanticKeyIndex < len(semanticKeys) && nonSemanticKeyIndex < len(nonSemanticKeys) {
+		if semanticKeys[semanticKeyIndex] < nonSemanticKeys[nonSemanticKeyIndex] {
+			output = output + "- " + semanticKeys[semanticKeyIndex] + " has been upgraded to " + maxDependencyMap[semanticKeys[semanticKeyIndex]] + ".\n"
+			semanticKeyIndex++
+		} else {
+			for dependencyTag, _ := range nonSemanticVersionMap[nonSemanticKeys[nonSemanticKeyIndex]] {
+				output = output + "- " + nonSemanticKeys[nonSemanticKeyIndex] + " has been upgraded to " + dependencyTag + ".\n"
+			}
+			nonSemanticKeyIndex++
+		}
+	}
+	for _, key := range semanticKeys[semanticKeyIndex:] {
+		output = output + "- " + key + " has been upgraded to " + maxDependencyMap[key] + ".\n"
+	}
+	for _, key := range nonSemanticKeys[nonSemanticKeyIndex:] {
+		for dependencyTag, _ := range nonSemanticVersionMap[key] {
+			output = output + "- " + key + " has been upgraded to " + dependencyTag + ".\n"
 		}
 	}
 	return output
