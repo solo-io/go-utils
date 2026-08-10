@@ -1,0 +1,5 @@
+changelog:
+  - type: NEW_FEATURE
+    description: Allow skipping ci when label is added to changelog.
+    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/1127
+    resolvesIssue: false

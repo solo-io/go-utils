@@ -76,11 +76,14 @@ var _ = Describe("ChangelogTest", func() {
 - type: FIX
   description: foo
   issueLink: bar
-  resolvesIssue: false`
+  resolvesIssue: false
+  skipCI: true`
 			err := yaml.Unmarshal([]byte(contents), &clf)
 			Expect(err).NotTo(HaveOccurred())
 			boolValue := new(bool)
 			*boolValue = false
+			skipCIValue := new(bool)
+			*skipCIValue = true
 			expected := changelogutils.ChangelogFile{
 				Entries: []*changelogutils.ChangelogEntry{
 					{
@@ -88,6 +91,7 @@ var _ = Describe("ChangelogTest", func() {
 						Description:   "foo",
 						IssueLink:     "bar",
 						ResolvesIssue: boolValue,
+						SkipCI:        skipCIValue,
 					},
 				},
 			}

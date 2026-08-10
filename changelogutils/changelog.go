@@ -24,13 +24,23 @@ type ChangelogEntry struct {
 	DependencyRepo  string             `json:"dependencyRepo,omitempty"`
 	DependencyTag   string             `json:"dependencyTag,omitempty"`
 	ResolvesIssue   *bool              `json:"resolvesIssue,omitempty"`
+	SkipCI          *bool              `json:"skipCI,omitempty"`
 }
 
+// default true
 func (c *ChangelogEntry) GetResolvesIssue() bool {
 	if c.ResolvesIssue == nil {
 		return true
 	}
 	return *c.ResolvesIssue
+}
+
+// default false
+func (c *ChangelogEntry) GetSkipCI() bool {
+	if c.SkipCI == nil {
+		return false
+	}
+	return *c.SkipCI
 }
 
 type ChangelogFile struct {
