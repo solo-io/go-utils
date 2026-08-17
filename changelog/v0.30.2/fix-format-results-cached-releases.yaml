@@ -1,0 +1,11 @@
+changelog:
+  - type: FIX
+    description: |
+      Fix an inverted condition in securityscanutils format-results (doFormatResults)
+      that ignored the -c/--CachedReleasesFile flag and always made a live, paginated
+      GitHub API call to list releases. A non-empty cache file path is now honored,
+      and the -p/--GenerateCachedReleases flag is wired up: when set, fetched releases
+      are written back to the cache file so subsequent runs can read from it instead
+      of hitting the GitHub API.
+    issueLink: https://github.com/solo-io/go-utils/issues/566
+    resolvesIssue: true
