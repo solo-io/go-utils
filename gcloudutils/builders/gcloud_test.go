@@ -4,7 +4,7 @@ import (
 	"context"
 	"path"
 
-	"cloud.google.com/go/storage"
+	"github.com/fsouza/fake-gcs-server/fakestorage"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -32,17 +32,25 @@ var _ = Describe("gcloud unit tests", func() {
 		})
 		Context("storage source", func() {
 			var (
-				sb *StorageBuilder
+				sb     *StorageBuilder
+				server *fakestorage.Server
 			)
 
 			BeforeEach(func() {
 				var err error
-				client, err := storage.NewClient(ctx)
+				server, err = fakestorage.NewServerWithOptions(fakestorage.Options{})
 				Expect(err).NotTo(HaveOccurred())
+				server.CreateBucketWithOpts(fakestorage.CreateBucketOpts{
+					Name: bucketName(builderCtx.ProjectId()),
+				})
 
 				sb = &StorageBuilder{
-					client: client,
+					client: server.Client(),
 				}
+			})
+
+			AfterEach(func() {
+				server.Stop()
 			})
 			It("can init build with sha", func() {
 				_, err := sb.InitBuildWithSha(ctx, builderCtx)

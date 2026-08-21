@@ -1,0 +1,7 @@
+changelog:
+  - type: NON_USER_FACING
+    description: |
+      Replace the live Google Cloud Storage client in the gcloudutils/builders
+      tests with github.com/fsouza/fake-gcs-server, removing the test suite's
+      dependency on real GCP credentials (GCP_PROJECT_ID/GCP_SA_KEY) and the
+      "Gcloud Login" step in the pull_request CI workflow.
