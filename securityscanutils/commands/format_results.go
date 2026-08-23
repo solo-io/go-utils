@@ -91,7 +91,6 @@ func (f *formatResultsOptions) addToFlags(flags *pflag.FlagSet) {
 	cliutils.MustMarkFlagRequired(flags, "ImageFile")
 }
 
-// copied verbatim from: https://github.com/solo-io/go-utils/blob/877b67c2d5c4eee8bf710bd4c0337188698396dc/securityscanutils/security_scan_command.go#L266
 func doFormatResults(ctx context.Context, opts *formatResultsOptions) error {
 	// Initialize Auth
 	client, err := githubutils.GetClient(ctx)
@@ -100,18 +99,32 @@ func doFormatResults(ctx context.Context, opts *formatResultsOptions) error {
 	if err != nil {
 		return err
 	}
+
+	hasCacheFile := len(opts.repoCachedReleasesFile) > 0
+	useCache := hasCacheFile && (!opts.generateCachedReleases || cachedReleasesFileExists(opts.repoCachedReleasesFile))
+
 	var allReleases []*github.RepositoryRelease
-	if len(opts.repoCachedReleasesFile) == 0 {
+	if useCache {
 		allReleases = getCachedReleases(opts.repoCachedReleasesFile)
 	} else {
 		allReleases, err = githubutils.GetAllRepoReleases(ctx, client, securityscanutils.GithubRepositoryOwner, opts.targetRepo)
 		if err != nil {
 			return err
 		}
+		if hasCacheFile && opts.generateCachedReleases {
+			if err := writeCachedReleases(opts.repoCachedReleasesFile, allReleases); err != nil {
+				return err
+			}
+		}
 	}
 	githubutils.SortReleasesBySemver(allReleases)
 	versionsToScan := getVersionsToScan(opts, allReleases)
 	return BuildSecurityScanReportForRepo(versionsToScan, opts)
+}
+
+func cachedReleasesFileExists(fileName string) bool {
+	_, err := os.Stat(fileName)
+	return err == nil
 }
 
 func getCachedReleases(fileName string) []*github.RepositoryRelease {
@@ -127,6 +140,15 @@ func getCachedReleases(fileName string) []*github.RepositoryRelease {
 		return nil
 	}
 	return releases
+}
+
+func writeCachedReleases(fileName string, releases []*github.RepositoryRelease) error {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(releases); err != nil {
+		return err
+	}
+	return os.WriteFile(fileName, buf.Bytes(), 0644)
 }
 
 func getVersionsToScan(opts *formatResultsOptions, releases []*github.RepositoryRelease) []string {
