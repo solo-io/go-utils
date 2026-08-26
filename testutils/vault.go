@@ -45,7 +45,7 @@ func NewVaultFactory() (*VaultFactory, error) {
 set -ex
 CID=$(docker run -d  %s /bin/sh -c exit)
 
-# just print the image sha for repoducibility
+# just print the image sha for reproducibility
 echo "Using Vault Image:"
 docker inspect %s -f "{{.RepoDigests}}"
 

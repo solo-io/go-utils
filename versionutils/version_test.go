@@ -16,7 +16,7 @@ var _ = Describe("Version", func() {
 			Expect(versionutils.MatchesRegex("v1.0.0")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v1.0.0-rc1")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("v1.0.0-rc10")).To(BeTrue(), "should allow versions with 2 digits")
-			Expect(versionutils.MatchesRegex("v0.5.20-rc100")).To(BeTrue(), "should allow verions with 3 digits")
+			Expect(versionutils.MatchesRegex("v0.5.20-rc100")).To(BeTrue(), "should allow versions with 3 digits")
 			Expect(versionutils.MatchesRegex("v0.0.0-rc1")).To(BeTrue())
 			Expect(versionutils.MatchesRegex("0.1.2")).To(BeFalse())
 			Expect(versionutils.MatchesRegex("v1.2")).To(BeFalse())

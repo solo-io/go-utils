@@ -1,5 +1,5 @@
 // Package errgroup provides synchronization, error propagation, and Context
-// cancelation for groups of goroutines working on subtasks of a common task.
+// cancellation for groups of goroutines working on subtasks of a common task.
 // Based on golangorg/x/sync
 package errgroup
 

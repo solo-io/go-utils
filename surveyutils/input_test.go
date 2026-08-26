@@ -41,7 +41,7 @@ var _ = Describe("GetInput", func() {
 			})
 		})
 		Context("multi select", func() {
-			It("can select one from a mutli-select list", func() {
+			It("can select one from a multi-select list", func() {
 				clitestutils.ExpectInteractive(func(c *clitestutils.Console) {
 					c.ExpectString("select option")
 					c.PressDown()
@@ -56,7 +56,7 @@ var _ = Describe("GetInput", func() {
 				})
 			})
 
-			It("can select mutli from a mutli-select list", func() {
+			It("can select multi from a multi-select list", func() {
 				clitestutils.ExpectInteractive(func(c *clitestutils.Console) {
 					c.ExpectString("select option")
 					c.PressDown()

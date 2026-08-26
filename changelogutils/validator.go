@@ -112,7 +112,7 @@ type changelogValidator struct {
 	reader ChangelogReader
 	client githubutils.RepoClient
 	code   vfsutils.MountedRepo
-	// list of arbitrary labels whos order is used to tie-break tag comparisons between
+	// list of arbitrary labels whose order is used to tie-break tag comparisons between
 	// versions with different labels. Labels ordered earlier are greater.
 	labelOrder []string
 }
