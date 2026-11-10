@@ -54,7 +54,7 @@ var _ = Describe("Version", func() {
 	Context("ParseVersion", func() {
 		matches := func(tag string, major, minor, patch int, label string, labelVersion int) bool {
 			parsed, err := versionutils.ParseVersion(tag)
-			return err == nil && (*parsed == *versionutils.NewVersion(major, minor, patch, label, labelVersion))
+			return err == nil && parsed.Equals(versionutils.NewVersion(major, minor, patch, label, labelVersion))
 		}
 
 		It("works", func() {
