@@ -1,0 +1,11 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/ext-auth-service/pull/1039
+    resolvesIssue: false
+    description: |
+      versionutils.Version.String() keeps an explicit zero label version, so
+      ParseVersion("v0.71.4-patch0").String() is "v0.71.4-patch0" instead of
+      "v0.71.4". RepoClient.FindLatestTagIncludingPrereleaseBeforeSha now
+      returns the real latest tag, and the changelog validator accepts
+      "-patch1" changelogs on release lines whose newest release is "-patch0".
+      Labels without a number ("v0.4.3-beta") print as before.
