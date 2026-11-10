@@ -152,3 +152,16 @@ func MustParseVersion(version string) *Version {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	return v
 }
+
+var _ = Describe("GetOtherRepoDepsBetweenVersions", func() {
+	It("matches a built bound against parsed tags with a zero label version", func() {
+		var releases []Version
+		for _, tag := range []string{"v1.0.0-rc2", "v1.0.0-rc1", "v1.0.0-rc0"} {
+			v, err := ParseVersion(tag)
+			Expect(err).NotTo(HaveOccurred())
+			releases = append(releases, *v)
+		}
+		deps := GetOtherRepoDepsBetweenVersions(releases, NewVersion(1, 0, 0, "rc", 0), &releases[0])
+		Expect(deps).To(Equal(releases[:2]))
+	})
+})
