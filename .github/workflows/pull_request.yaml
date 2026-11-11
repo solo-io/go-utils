@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.11.0
+      uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5 # 0.11.0
       with:
         access_token: ${{ github.token }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
       with:
         fetch-depth: 0
     - name: Install Trivy
@@ -27,7 +27,7 @@ jobs:
           wget "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
           sudo dpkg -i "trivy_${TRIVY_VERSION}_Linux-64bit.deb"
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@7b8cf10d4e4a01d4992d18a89f4d7dc5a3e6d6f4 # v4.3.0
       with:
         go-version-file: "go.mod"
     - name: Run tests
@@ -35,7 +35,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.CLOUDBUILD_GITHUB_TOKEN }}
         TEST_PKG: ./... # Run all tests
       run: make test
-    - uses: testspace-com/setup-testspace@v1
+    - uses: testspace-com/setup-testspace@5fc620521eddeba83c1c0dd58f5a524adf474c93 # v1.0.8
       with:
         domain: solo-io.testspace.com
       if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
