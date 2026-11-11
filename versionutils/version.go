@@ -36,6 +36,9 @@ type Version struct {
 	//  - "1.0.0-aX" is not greater than or less than "1.0.0-bY", except by convention
 	Label        string
 	LabelVersion int
+
+	// set when the tag spelled out a zero label version, e.g. "1.0.0-patch0", so String() keeps the label
+	explicitZeroLabelVersion bool
 }
 
 func NewVersion(major, minor, patch int, label string, labelVersion int) *Version {
@@ -49,7 +52,7 @@ func NewVersion(major, minor, patch int, label string, labelVersion int) *Versio
 }
 
 func (v *Version) String() string {
-	if v.LabelVersion == 0 {
+	if v.LabelVersion == 0 && !v.explicitZeroLabelVersion {
 		return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 	}
 	return fmt.Sprintf("v%d.%d.%d-%s%d", v.Major, v.Minor, v.Patch, v.Label, v.LabelVersion)
@@ -185,8 +188,13 @@ func (v Version) MustIsGreaterThan(lesser Version) bool {
 	return v.Label > lesser.Label
 }
 
+// "1.0.0-rc0" and "1.0.0-rc" are equal
 func (v *Version) Equals(other *Version) bool {
-	return *v == *other
+	return v.Major == other.Major &&
+		v.Minor == other.Minor &&
+		v.Patch == other.Patch &&
+		v.Label == other.Label &&
+		v.LabelVersion == other.LabelVersion
 }
 
 func (v *Version) IncrementVersion(breakingChange, newFeature bool) *Version {
@@ -307,6 +315,7 @@ func ParseVersion(tag string) (*Version, error) {
 		}
 		version.Label = label
 		version.LabelVersion = labelVersion
+		version.explicitZeroLabelVersion = labelVersion == 0 && label != labelAndVersion
 	}
 
 	isGtEq, _ := version.IsGreaterThanOrEqualTo(Zero())
@@ -345,7 +354,7 @@ func GetImageVersion(version *Version) string {
 
 func Index(versions []Version, v Version) int {
 	for idx, ver := range versions {
-		if v == ver {
+		if v.Equals(&ver) {
 			return idx
 		}
 	}
@@ -354,7 +363,7 @@ func Index(versions []Version, v Version) int {
 
 func IndexPtr(versions []*Version, v Version) int {
 	for idx, ver := range versions {
-		if v == *ver {
+		if v.Equals(ver) {
 			return idx
 		}
 	}

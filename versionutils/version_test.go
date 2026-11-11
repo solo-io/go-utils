@@ -54,7 +54,7 @@ var _ = Describe("Version", func() {
 	Context("ParseVersion", func() {
 		matches := func(tag string, major, minor, patch int, label string, labelVersion int) bool {
 			parsed, err := versionutils.ParseVersion(tag)
-			return err == nil && (*parsed == *versionutils.NewVersion(major, minor, patch, label, labelVersion))
+			return err == nil && parsed.Equals(versionutils.NewVersion(major, minor, patch, label, labelVersion))
 		}
 
 		It("works", func() {
@@ -93,6 +93,56 @@ var _ = Describe("Version", func() {
 			Expect(matches("v1.2.3-foo-bar1", 1, 2, 3, "foo-bar", 1)).To(BeTrue())
 		})
 
+	})
+
+	Describe("String", func() {
+		DescribeTable("prints a parsed tag", func(tag, expected string) {
+			parsed, err := versionutils.ParseVersion(tag)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsed.String()).To(Equal(expected))
+		},
+			Entry("no label", "v1.2.3", "v1.2.3"),
+			Entry("label with version", "v1.0.0-rc1", "v1.0.0-rc1"),
+			Entry("label with multi-digit version", "v0.5.20-rc100", "v0.5.20-rc100"),
+			Entry("patch0", "v0.71.4-patch0", "v0.71.4-patch0"),
+			Entry("rc0", "v1.0.0-rc0", "v1.0.0-rc0"),
+			Entry("beta0", "v1.0.0-beta0", "v1.0.0-beta0"),
+			Entry("hyphenated label with version 0", "v1.5.0-wasm-rc0", "v1.5.0-wasm-rc0"),
+			Entry("label without version drops the label", "v0.4.3-beta", "v0.4.3"),
+			Entry("wasm label drops the label", "v1.5.1-wasm", "v1.5.1"),
+		)
+
+		It("drops a zero label version on a constructed version", func() {
+			Expect(versionutils.NewVersion(1, 0, 0, "rc", 0).String()).To(Equal("v1.0.0"))
+		})
+
+		It("keeps the existing increment of a zero label version", func() {
+			parsed, err := versionutils.ParseVersion("v0.71.4-patch0")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsed.IncrementVersion(false, false).String()).To(Equal("v0.71.5"))
+		})
+	})
+
+	Describe("Equals", func() {
+		DescribeTable("compares parsed tags", func(a, b string, expected bool) {
+			aVer, err := versionutils.ParseVersion(a)
+			Expect(err).NotTo(HaveOccurred())
+			bVer, err := versionutils.ParseVersion(b)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aVer.Equals(bVer)).To(Equal(expected))
+		},
+			Entry("rc0 equals rc", "v1.0.0-rc0", "v1.0.0-rc", true),
+			Entry("patch0 equals itself", "v0.71.4-patch0", "v0.71.4-patch0", true),
+			Entry("patch0 does not equal patch1", "v0.71.4-patch0", "v0.71.4-patch1", false),
+			Entry("patch0 does not equal unlabelled", "v0.71.4-patch0", "v0.71.4", false),
+		)
+
+		It("ignores how a zero label version was written", func() {
+			parsed, err := versionutils.ParseVersion("v1.0.0-rc0")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsed.Equals(versionutils.NewVersion(1, 0, 0, "rc", 0))).To(BeTrue())
+			Expect(versionutils.IndexPtr([]*versionutils.Version{parsed}, *versionutils.NewVersion(1, 0, 0, "rc", 0))).To(Equal(0))
+		})
 	})
 
 	Context("IsGreaterThanTag", func() {

@@ -216,6 +216,16 @@ var _ = Describe("ChangelogTest", func() {
 			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
 		})
 
+		It("accepts a proposed tag with an explicit zero label version", func() {
+			newTag := "v0.71.5-patch0"
+			changelog := getChangelog(newTag, "", "",
+				getChangelogFile(getEntry(changelogutils.FIX, "fixes foo", "foo")))
+			writeChangelog(changelog)
+			loadedChangelog, err := changelogutils.ComputeChangelogForNonRelease(fs, "v0.71.4-patch0", newTag, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedChangelog).To(BeEquivalentTo(changelog))
+		})
+
 		It("validates minor version should get bumped for breaking change", func() {
 			tag := "v0.0.2"
 			changelog := getChangelog(tag, "", "",

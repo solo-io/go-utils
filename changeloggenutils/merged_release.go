@@ -189,10 +189,10 @@ func GetOtherRepoDepsBetweenVersions(otherRepoReleasesSorted []Version, earlierV
 	var i, j = -1, -1
 	// otherRepoReleasesSorted is sorted from highest semver to lowest semver v1.7.0 -> v1.0.0
 	for idx, release := range otherRepoReleasesSorted {
-		if release == *laterVersion {
+		if release.Equals(laterVersion) {
 			i = idx
 		}
-		if release == *earlierVersion {
+		if release.Equals(earlierVersion) {
 			j = idx
 			break
 		}

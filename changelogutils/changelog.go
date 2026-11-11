@@ -334,7 +334,7 @@ func ComputeChangelogForNonRelease(fs afero.Fs, latestTag, proposedTag, changelo
 		}
 		expectedVersion = &stableApiVer
 	}
-	if proposedVersion.LabelVersion == 0 && *proposedVersion != *expectedVersion {
+	if proposedVersion.LabelVersion == 0 && !proposedVersion.Equals(expectedVersion) {
 		return nil, eris.Errorf("Expected version %s to be next changelog version, found %s", expectedVersion, proposedVersion)
 	}
 	return changelog, nil
