@@ -1,0 +1,11 @@
+changelog:
+  - type: FIX
+    issueLink: https://github.com/solo-io/solo-tools/issues/663
+    resolvesIssue: false
+    description: |
+      RepoClient.FindLatestTagIncludingPrereleaseBeforeSha no longer returns an
+      rc when its final release was tagged the same day. GitHub lists
+      "v2.15.0-rc2" before "v2.15.0" in that case, so the changelog validator
+      rejected changelogs for the next patch version. The lookup now checks
+      every release from the day of the first match and keeps the newest one.
+      A "-patchN" release still counts as newer than its base release.
