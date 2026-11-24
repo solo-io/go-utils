@@ -57,7 +57,13 @@ func (c *repoClient) FindLatestReleaseTagIncudingPrerelease(ctx context.Context)
 	return FindLatestReleaseTagIncudingPrerelease(ctx, c.client, c.owner, c.repo)
 }
 
+// FindLatestTagIncludingPrereleaseBeforeSha returns the newest non-draft release whose tag is an
+// ancestor of sha. GitHub lists releases by the UTC day of their tagged commit and then by tag
+// name, so an rc tagged the same day as its final release ("v1.0.0-rc2", "v1.0.0") is listed
+// first. Every release from the day of the first match is checked, and the newest one wins.
 func (c *repoClient) FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Context, sha string) (string, error) {
+	var latest *versionutils.Version
+	latestDay := ""
 	for page := 1; ; page++ {
 		opts := &github.ListOptions{Page: page}
 		releases, _, err := c.client.Repositories.ListReleases(ctx, c.owner, c.repo, opts)
@@ -65,25 +71,62 @@ func (c *repoClient) FindLatestTagIncludingPrereleaseBeforeSha(ctx context.Conte
 			return "", err
 		}
 		if len(releases) == 0 {
+			if latest != nil {
+				return latest.String(), nil
+			}
 			return "", NoReleaseBeforeShaFound
 		}
 		for _, release := range releases {
 			if release.GetDraft() {
 				continue
 			}
+			day := release.GetCreatedAt().UTC().Format("2006-01-02")
+			if latest != nil && day != latestDay {
+				return latest.String(), nil
+			}
 
 			comparison, _, err := c.client.Repositories.CompareCommits(ctx, c.owner, c.repo, release.GetTagName(), sha)
 			if err != nil {
 				return "", err
 			}
-			if comparison.GetStatus() == "ahead" || comparison.GetStatus() == "identical" {
-				releaseVersion, err := versionutils.ParseVersion(release.GetTagName())
+			if comparison.GetStatus() != "ahead" && comparison.GetStatus() != "identical" {
+				continue
+			}
+			releaseVersion, err := versionutils.ParseVersion(release.GetTagName())
+			if latest == nil {
 				if err != nil {
 					return "", err
 				}
-				return releaseVersion.String(), nil
+				latest, latestDay = releaseVersion, day
+			} else if err == nil && releasedAfter(releaseVersion, latest) {
+				latest = releaseVersion
 			}
 		}
+	}
+}
+
+// releasedAfter reports whether a was released after b. A "patch" label marks a release after
+// its base version ("v1.0.0-patch1" follows "v1.0.0"), and any other label marks one before it
+// ("v1.0.0-rc2" precedes "v1.0.0"). Two different pre-release labels do not compare, so b stays.
+func releasedAfter(a, b *versionutils.Version) bool {
+	if a.Major != b.Major || a.Minor != b.Minor || a.Patch != b.Patch {
+		greater, _ := a.IsGreaterThan(*b)
+		return greater
+	}
+	if labelRank(a.Label) != labelRank(b.Label) {
+		return labelRank(a.Label) > labelRank(b.Label)
+	}
+	return a.Label == b.Label && a.LabelVersion > b.LabelVersion
+}
+
+func labelRank(label string) int {
+	switch label {
+	case "":
+		return 1
+	case "patch":
+		return 2
+	default:
+		return 0
 	}
 }
 
