@@ -1,0 +1,5 @@
+changelog:
+  - type: NON_USER_FACING
+    description: |
+      Fix a typo in the GetFreePort error message ('occured' -> 'occurred').
+    resolvesIssue: false
