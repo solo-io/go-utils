@@ -1,4 +1,4 @@
 changelog:
   - type: NEW_FEATURE
-    description: Add a tiemout to the cluster lock.
+    description: Add a timeout to the cluster lock.
     issueLink: https://github.com/solo-io/go-utils/issues/72

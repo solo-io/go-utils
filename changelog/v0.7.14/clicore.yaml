@@ -4,7 +4,7 @@ changelog:
       Introduce a utility for managing zap logs from a CLI tool. The new `clicore`
       library provides a means of sending human-friendly log messages to the console
       while capturing full json-formatted logs to a file. Library includes a pair of
-      `Run` methods for siplified execution of the "main" file and simplified output
+      `Run` methods for simplified execution of the "main" file and simplified output
       validation during integration tests.
     issueLink: https://github.com/solo-io/go-utils/issues/135
   - type: NEW_FEATURE

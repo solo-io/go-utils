@@ -122,7 +122,7 @@ func (s *serverImpl) GoListen(ctx context.Context, addr string) error {
 			time.Sleep(time.Second / 2)
 			continue
 		}
-		// succcess
+		// success
 		return nil
 	}
 	return errs

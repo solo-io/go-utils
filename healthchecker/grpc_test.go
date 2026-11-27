@@ -81,7 +81,7 @@ var _ = Describe("grpc healthchecker", func() {
 	})
 
 	Context("without service name", func() {
-		It("can recieve serving from a healthy server", func() {
+		It("can receive serving from a healthy server", func() {
 			resp, err := client.Check(ctx, &healthpb.HealthCheckRequest{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.Status).To(Equal(healthpb.HealthCheckResponse_SERVING))
@@ -98,7 +98,7 @@ var _ = Describe("grpc healthchecker", func() {
 			Expect(resp.Status).To(Equal(s))
 		}
 
-		It("can recieve serving from a healthy server", func() {
+		It("can receive serving from a healthy server", func() {
 			ExpectStatus(healthpb.HealthCheckResponse_SERVING)
 		})
 

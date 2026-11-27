@@ -24,7 +24,7 @@ import (
 // returns the windows of the helm chart that contain white spacing and formatting issues.
 func FindHelmChartWhiteSpaces(data string, opts HelmDetectOptions) [][]string {
 	lines := strings.Split(string(data), "\n")
-	// we want to count each line, if the number of spaces at the begining is equal to 0, +2, or -2 from the previous line
+	// we want to count each line, if the number of spaces at the beginning is equal to 0, +2, or -2 from the previous line
 	// then we want to continue to the next line. Else we want to throw an error.
 	previous := previousInfo{NumOfSpaces: 0, BeganWithArray: false}
 	badWindows := [][]string{}
@@ -48,7 +48,7 @@ func FindHelmChartWhiteSpaces(data string, opts HelmDetectOptions) [][]string {
 		shouldContinue := false
 		currentNumOfSpaces := s.GetNumberOfSpacesAtBeginning()
 		beginsWithArray := s.BeginsWithArray()
-		// next level is the next accpetable number of spaces
+		// next level is the next acceptable number of spaces
 		nextLevel := previous.NumOfSpaces + 2
 		twoLevels := previous.NumOfSpaces + 4
 		isCurrentLevel := previous.NumOfSpaces == currentNumOfSpaces
@@ -64,7 +64,7 @@ func FindHelmChartWhiteSpaces(data string, opts HelmDetectOptions) [][]string {
 			// until we exit the specialBreak
 			continue
 		}
-		// // this means an empty line has occured, and it contains only spaces, so move on to the next line
+		// // this means an empty line has occurred, and it contains only spaces, so move on to the next line
 		if (isCurrentLevel || isNextLevel) && containsOnlySpaces {
 			continue
 		}
@@ -174,7 +174,7 @@ func (s *Spaces) IsEmptyLine() bool {
 	return s.line == ""
 }
 
-// HasSpecialBreak if the last section contians a special break
+// HasSpecialBreak if the last section contains a special break
 func (s *Spaces) HasSpecialBreak() bool {
 	specialBreaks := []string{"|", "|-", "|+", ">", ">+", ">-"}
 	chars := s.spaces[len(s.spaces)-1]

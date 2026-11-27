@@ -52,7 +52,7 @@ func Contains(a []string, s string) bool {
 	return false
 }
 
-// Contains indicates if a string slice 'a' contains a string that encompases the string s
+// Contains indicates if a string slice 'a' contains a string that encompasses the string s
 func ContainsSubstring(a []string, substring string) bool {
 	for _, n := range a {
 		if strings.Contains(n, substring) {
